@@ -1,0 +1,23 @@
+Acknowledgements
+----------------
+
+This list, hopefully complete and in chronological order, is a compendium of
+all the people who contributed and whom I would like to thank. I am deeply
+grateful for the ideas, enthusiastic questions, thorough answers and moral
+support received during these years, and look forward to the day on which
+somebody finally submits a patch. See you at GitHub! -- Víctor
+
+Matilde Fernández, aka The Mastermind (also, the Principal Investigator)
+Nuria Huélamo, a loyal companion at the Fortress of Solitude (1.23m CAHA)
+Nicolás Cardiel, for his help on error propagation (via email)
+Frank Valdes, on qphot and stars saturation (the IRAF.net forums)
+
+Michael Newberry,
+Jim Jones,
+Gary Walker and
+Bradley Walter [AAVSO-Photometry mailing list]
+
+Hernán J. González, also helped on error propagation (at Math Stack Exchange)
+César Husillos, for his help on image alignment through cross-correlation
+Ilse Plauchu, for her useful comments on Gaussian distribution fitting
+
