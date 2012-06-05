@@ -124,7 +124,7 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
             if not os.access(output_directory, os.W_OK):
                 raise IOError("The output directory '" + output_directory + "' is not writable.")
             if not quiet:
-                print "%sImages will be saved to directory '%s'" \
+                print "%sImages will be saved to directory '%s'" % \
                       (style.prefix, output_directory)
 
         return output_directory
