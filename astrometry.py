@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import atexit
 import optparse
 import os
 import shutil
@@ -107,6 +108,11 @@ parser.add_option('-o', action = 'store', type = 'str',
 
 parser.add_option('-w', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
+
+parser.add_option('-u', action = 'store_true', dest = 'update',
+                  help = "do not output a FITS image; instead, update the "
+                  "input image with the astrometric solution. This causes "
+                  "the -o and -w options to be ignored")
 
 # CCD SITE#2b focus scale = 0.50209205 arcsec/pixel
 parser.add_option('-s', action = 'store', type = 'float',
@@ -199,7 +205,27 @@ def main(arguments = None):
         assert len(args) == 1
         img_path = args[0]
 
-    if os.path.exists(options.output_path) and not options.overwrite:
+    # Images cannot be directly updated with the astrometric solution. Instead,
+    # what we do is to save it to a temporary file and then overwrite the input
+    # image. This is what the user views as an "update" of the original file.
+    if options.update:
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix = '.fits')
+        os.close(tmp_fd)
+        options.output_path = tmp_path
+        options.overwrite = True
+
+        # Use a simple cleanup function to guarante that the temporary file is
+        # removed -- we want it to be deleted even if the program crashes or
+        # the execution is aborted before the input image is overwritten.
+        @atexit.register
+        def clean_tempfile():
+            if os.path.exists(options.output_path):
+                try:
+                    os.unlink(options.output_path)
+                except (IOError, OSError):
+                    pass
+
+    elif os.path.exists(options.output_path) and not options.overwrite:
         print "%sError. The output image '%s' already exists." % \
               (style.prefix, options.output_path)
         print style.error_exit_message
@@ -258,8 +284,14 @@ def main(arguments = None):
     output_img.add_history(msg4)
     output_img.add_history(msg5)
 
-    print "%sImage with astrometry saved to '%s'." % \
-          (style.prefix, options.output_path)
+    if not options.update:
+        print "%sImage with astrometry saved to '%s'." % \
+              (style.prefix, options.output_path)
+    else:
+        shutil.move(options.output_path, img_path)
+        print "%sImage '%s' was updated with the astrometric solution." % \
+              (style.prefix, img_path)
+
     print "%sYou're done ^_^" % style.prefix
     return 0
 
