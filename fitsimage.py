@@ -1272,58 +1272,44 @@ class FITSet(list):
         imgs = sorted(dates_cache.iterkeys(), key = lambda x: dates_cache[x])
         return FITSet(imgs)
 
-    @classmethod
-    def find_fits(cls, *paths, **kwargs):
-        """ Find all the FITS images that can be found in the given paths.
+def find_files(paths, followlinks = True, pattern = None):
+    """ Find all the regular files that can be found in the given paths.
 
-        The method receives a variable number of paths and returns a FITSet
-        instance which contains all the FITS files that could be found at these
-        locations. If a path corresponds to a FITS image, it is simply added to
-        the set, while if the path points to a directory it is recursively
-        walked top-down in search for FITS files. In other words: if the path
-        to a directory is given, all the FITS files in the directory tree are
-        included in the returned set.
+    The method receives a variable number of paths and returns a list with all
+    the existing regular files that were found at these locations. If a path
+    corresponds to a regular file, it is simply added to the list, while if it
+    points to a directory it is recursively walked top-down in search of
+    regular files. In other words: if the path to a directory is given, all
+    the regular files in the directory tree are included in the returned list.
 
-        Keyword arguments:
-        followlinks - by default, the method will walk down into symbolic links
-                      that resolve to directories. You may set this to False to
-                      disable visiting directories pointed to by symlinks. Note
-                      that setting followlinks to True can lead to infinite
-                      recursion if a link points to a parent directory of
-                      itself.
-        pattern - the pattern, according to the rules used by the Unix shell
-                  (which are not the same as regular expressions) that the
-                  base name of a FITS image must match to be considered when
-                  scanning the paths. Non-matching images are ignored.
+    Keyword arguments:
+    followlinks - by default, the method will walk down into symbolic links
+                  that resolve to directories. You may set this to False to
+                  disable visiting directories pointed to by symlinks. Note
+                  that setting followlinks to True can lead to infinite
+                  recursion if a link points to a parent directory of itself.
+    pattern - the pattern, according to the rules used by the Unix shell (which
+              are not the same as regular expressions) that the base name of a
+              regular file must match to be considered when scanning the
+              paths. Non-matching files are ignored.
 
-        """
+    """
 
-        followlinks = kwargs.pop('followlinks', True)
-        pattern = kwargs.pop('pattern', None)
+    files_paths = []
+    for path in sorted(paths):
+        if os.path.isfile(path):
+            basename = os.path.basename(path)
+            if not pattern or fnmatch.fnmatch(basename, pattern):
+                files_paths.append(path)
 
-        if kwargs:
-            # Report only the first invalid keyword
-            kwd = kwargs.keys()[0]
-            msg = "'%s' is an invalid keyword argument for this function" % kwd
-            raise TypeError(msg)
-
-        found_imgs = cls()
-
-        for path in sorted(paths):
-            if os.path.isfile(path):
-                try:
-                    basename = os.path.basename(path)
-                    if not pattern or fnmatch.fnmatch(basename, pattern):
-                        found_imgs.append(FITSImage(path))
-                except (NonFITSFile, NonStandardFITS):
-                    pass
-
-            elif os.path.isdir(path):
-                tree = os.walk(path, followlinks = followlinks)
-                for dirpath, dirnames, filenames in tree:
-                      dirnames.sort()
-                      for basename in sorted(filenames):
-                          abs_path = os.path.join(dirpath, basename)
-                          found_imgs += cls.find_fits(abs_path, **kwargs)
-        return found_imgs
+        elif os.path.isdir(path):
+            tree = os.walk(path, followlinks = followlinks)
+            for dirpath, dirnames, filenames in tree:
+                dirnames.sort()
+                for basename in sorted(filenames):
+                    abs_path = os.path.join(dirpath, basename)
+                    files_paths += find_files([abs_path],
+                                              followlinks = followlinks,
+                                              pattern = pattern)
+    return files_paths
 

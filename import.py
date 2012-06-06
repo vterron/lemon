@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+
 description = """
 The purpose of this module, the first of the LEMON pipeline, is to
 automatically detect all the FITS files belonging to an observation campaign
@@ -80,7 +82,7 @@ parser.add_option('--pattern', action = 'store', type = 'str',
                   help = "pattern, according to the rules used by the Unix "
                   "shell, that the filename of a FITS image must match if "
                   "it is to be considered when scanning the directories. "
-                  "Non-matching images will be ignored")
+                  "Non-matching images will be ignored.")
 
 parser.add_option('--counts', action = 'store', type = 'int',
                   dest = 'max_counts', default = None,
@@ -102,7 +104,7 @@ parser.add_option('-f', '--follow', action = 'store_true', default = False,
                   help = "walk down into symbolic links that resolve to "
                   "directories, on systems that support them. This can lead "
                   "to infinite recursion if a link points to a parent "
-                  "directory of itself")
+                  "directory of itself.")
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
@@ -175,13 +177,33 @@ def main(arguments = None):
     # Make sure that the output directory exists, create it otherwise
     methods.determine_output_dir(output_dir)
 
-    # Recursively walk down the input directory, detecting all the FITS images
-    print "%sDetecting all FITS files within directory trees starting at " \
-          "INPUT_DIRS..." % style.prefix
+    # Recursively walk down the input directories, obtaining a list of all the
+    # regular files. Then, and while a progress bar is shown to let the user
+    # estimate how much longer it is, detect which among them are FITS files.
 
-    images_set = fitsimage.FITSet.find_fits(*input_dirs,
-                                            followlinks = options.followlinks,
-                                            pattern = options.pattern)
+    print "%sIndexing regular files within directory trees starting at " \
+          "INPUT_DIRS..." % style.prefix ,
+    files_paths = fitsimage.find_files(input_dirs,
+                                       followlinks = options.followlinks,
+                                       pattern = options.pattern)
+    print 'done.'
+
+    print "%sDetecting FITS images among the %d indexed regular files..." % \
+          (style.prefix, len(files_paths))
+
+    images_set = fitsimage.FITSet()
+    methods.show_progress(0.0)
+    for path_index, path in enumerate(files_paths):
+        try:
+            images_set.append(fitsimage.FITSImage(path))
+            fraction = (path_index + 1) / len(files_paths) * 100
+            methods.show_progress(fraction)
+        except (fitsimage.NonFITSFile, fitsimage.NonStandardFITS):
+            pass
+    else:
+        methods.show_progress(100)
+        print
+
     if not len(images_set):
         print "%sNo FITS files were found. Exiting." % style.prefix
         return 1

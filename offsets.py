@@ -126,7 +126,7 @@ def offset(reference_path, shifted_path, margin, per,
 # See http://stackoverflow.com/a/3217427/184363
 queue = multiprocessing.Queue()
 
-def calculate_offset(args):
+def parallel_offset(args):
     """ Method argument of map_async to compute offsets in parallel.
 
     Functions defined in classes don't pickle, so we have moved this code here
@@ -136,8 +136,20 @@ def calculate_offset(args):
 
     """
 
-    reference, shifted, options = args
-    img_offset = offset(reference.path, shifted.path, options.margin,
+    reference, shifted_path, options = args
+
+    # We did not check that the given paths do actually refer to existing, FITS
+    # files before starting the work in parallel. Thus, IOError may be raised
+    # if 'shifted_path' does not exist, as well as the self-explanatory
+    # NonFITSFile and NonStandardFITS exceptions. In these cases, the path is
+    # silently ignored and the worker (CPU core) can move to the next path.
+
+    try:
+        fitsimage.FITSImage(shifted_path)
+    except (IOError, fitsimage.NonFITSFile, fitsimage.NonStandardFITS):
+        return
+
+    img_offset = offset(reference.path, shifted_path, options.margin,
                         options.percentile, options.filterk,
                         options.datek, options.exptimek)
     queue.put(img_offset)
@@ -256,22 +268,14 @@ def main(arguments = None):
         else:
             os.unlink(options.output_xml)
 
-    # Determine which among the rest of the given paths do actually refer to
-    # existing, FITS images, and run SExtractor on them. Note that an IOError
-    # exception will be raised if one of the paths does not exist, while
-    # non-FITS files will be silently ignored.
-    print "%sDetecting all FITS files in REST_OF_IMAGES..." % style.prefix
-    images_set = fitsimage.FITSet.find_fits(*rest_of_images_paths)
+    print "%sIndexing FITS files in REST_OF_IMAGES..." % style.prefix ,
+    indexed_paths = fitsimage.find_files(rest_of_images_paths)
+    print 'done.'
 
-    if not images_set:
-        raise TypeError("None of the given REST_OF_IMAGES is a FITS image.")
-    else:
-        print "%s%d FITS file%s among the given REST_OF_IMAGES." % \
-              (style.prefix, len(images_set),
-               len(images_set) > 1 and 's' or '') # file(s)
+    if not indexed_paths:
+        raise TypeError("REST_OF_IMAGES is empty")
 
-
-    print "%sDetecting sources on REFERENCE_IMAGE..." % style.prefix ,
+    print "%sDetecting sources on %s..." % (style.prefix, reference_path) ,
     sys.stdout.flush()
     reference_img = seeing.FITSeeingImage(reference_path, options.margin)
     print 'done.'
@@ -291,21 +295,21 @@ def main(arguments = None):
     # the memory requirements to what you could expect: almost nothing.
 
     offsets_list = []
-    print "%sCalculating the offset betwen '%s' and all the images... " % \
-          (style.prefix, reference_path)
+    print "%sCalculating offsets between REFERENCE_IMAGE and the %d " \
+          "indexed FITS images... " % (style.prefix, len(indexed_paths))
 
     # Use a pool of workers to which to assign the calculation of the offsets
     pool = multiprocessing.Pool(options.ncores)
 
     # map_async supports only one iterable argument, so we need to pass all the
-    # arguments as a tuple which is then unpacked by the calculate_offset method
-    map_async_args = ((reference_img, img, options) for img in images_set)
-    result = pool.map_async(calculate_offset, map_async_args)
+    # arguments as a tuple which is then unpacked by the parallel_offset method
+    map_async_args = ((reference_img, path, options) for path in indexed_paths)
+    result = pool.map_async(parallel_offset, map_async_args)
 
     methods.show_progress(0.0)
     while not result.ready():
         time.sleep(1)
-        methods.show_progress(queue.qsize() / len(images_set) * 100)
+        methods.show_progress(queue.qsize() / len(indexed_paths) * 100)
 
     result.get() # reraise exceptions of the remote call, if any
     methods.show_progress(100) # in case the queue was ready too soon
@@ -313,7 +317,6 @@ def main(arguments = None):
 
     # The offsets are sorted by their observation date
     offsets_list = sorted(queue.get() for x in xrange(queue.qsize()))
-    assert len(offsets_list) == len(images_set)
 
     print  "%sGenerating the output XML tree..." % style.prefix ,
     sys.stdout.flush()
