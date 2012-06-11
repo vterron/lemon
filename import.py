@@ -106,6 +106,14 @@ parser.add_option('-f', '--follow', action = 'store_true', default = False,
                   "to infinite recursion if a link points to a parent "
                   "directory of itself.")
 
+parser.add_option('--exact', action = 'store_true', default = False,
+                  dest = 'exact',
+                  help = "do not modify the imported files, but just rename "
+                  "their exact copies. This means that FITS headers are not "
+                  "altered and, in particular, that the --uik keyword is not "
+                  "added. The SHA-1 hash is used to verify that the copy of "
+                  "the FITS images is identical.")
+
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
@@ -392,21 +400,30 @@ def main(arguments = None):
 
         dest_img = fitsimage.FITSImage(dest_path)
 
-        # Store in the FITS header the relative path (absolute paths may be,
-        # unfortunately, too long for a FITS header) to the image. This value
-        # is propagated across the pipeline stages and may be accessed by later
-        # modules in case some analysis must be done on the original image,
-        # before any calibration step.
+        # Add some information to the FITS header...
+        if not options.exact:
 
-        comment = "before any calibration task"
-        dest_img.update_keyword(options.uncimgk,
-                                os.path.relpath(dest_img.path),
-                                comment = comment)
+            # Store the relative path (absolute paths may be, unfortunately,
+            # too long for a FITS header) to the image. This value propagates
+            # across the pipeline stages and may be accessed by later modules
+            # in case some analysis must be done on the original image, before
+            # any calibration step.
 
-        msg1 = "File imported by LEMON on %s UTC" % time.asctime(time.gmtime())
-        msg2 = "[Import] Original image: %s" % os.path.relpath(fits_file.path)
-        dest_img.add_history(msg1)
-        dest_img.add_history(msg2)
+            comment = "before any calibration task"
+            dest_img.update_keyword(options.uncimgk,
+                                    os.path.relpath(dest_img.path),
+                                    comment = comment)
+
+            msg1 = "File imported by LEMON on %s UTC" % time.asctime(time.gmtime())
+            msg2 = "[Import] Original image: %s" % os.path.relpath(fits_file.path)
+            dest_img.add_history(msg1)
+            dest_img.add_history(msg2)
+
+        # ... unless we want an exact copy of the images. If that is the case,
+        # verify that the SHA-1 checksum of the original and the copy matches
+        elif fits_file.sha1sum != dest_img.sha1sum:
+            msg = "copy of %s not identical (SHA-1 differs)" % fits_file.path
+            raise IOError(msg)
 
         # Show which file has been copied, using the format of the
         # 'cp -v' command: `./ultra2/ferM_11.fits' -> `imported/img_01.fits'
