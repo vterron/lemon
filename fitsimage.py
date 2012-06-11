@@ -35,6 +35,7 @@ from pyraf.iraf import noao, artdata  # 'noao.artdata' package
 
 import calendar
 import fnmatch
+import hashlib
 import os.path
 import pyfits
 import re
@@ -1077,6 +1078,17 @@ class FITSImage(object):
         finally:
             try: os.unlink(catalog_path)
             except NameError: pass
+
+    @property
+    def sha1sum(self):
+        """ Return the hexadecimal SHA-1 checksum of the FITS image """
+
+        sha1 = hashlib.sha1()
+        with open(self.path, 'rb') as fd:
+            for line in fd:
+                sha1.update(line)
+            return sha1.hexdigest()
+
 
 class FITSet(list):
     """ Encapsulates a set of FITS images (although it subclasses 'list') """
