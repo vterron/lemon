@@ -136,8 +136,9 @@ class Passband(object):
 
     def different(self):
         """ Return a random filter other than this one """
-        except_me = [x for x in Passband.wavelengths.keys() if x != self.letter]
-        return Passband(random.choice(except_me))
 
-if __name__ == "__main__":
-    pass
+        while True:
+            passband = random.choice(Passband.all())
+            if passband != self:
+                return passband
+
