@@ -94,6 +94,7 @@ class DBStar(object):
         return self._phot_info[0][index]
 
     def _time_index(self, unix_time):
+        """ Return the index of the Unix time in '_phot_info' """
         return self._time_indexes[unix_time]
 
     def mag(self, index):
@@ -106,11 +107,11 @@ class DBStar(object):
 
     @property
     def _unix_times(self):
-        """ Return the Unix times in which the star was observed """
+        """ Return the Unix times at which the star was observed """
         return self._phot_info[0]
 
     def issubset(self, other):
-        """ Return True if for each Unix time in which 'self' was observed,
+        """ Return True if for each Unix time at which 'self' was observed,
         there is also an observation for 'other'; False otherwise """
 
         for unix_time in self._unix_times:
@@ -119,7 +120,7 @@ class DBStar(object):
         return True
 
     def _trim_to(self, other):
-        """ Return a new DBStar which contains the records of 'self' that where
+        """ Return a new DBStar which contains the records of 'self' that were
         observed at the Unix times that can be found in 'other'. KeyError will
         be raised if self if not a subset of other -- so you should check for
         that before trimming anything"""
@@ -134,21 +135,18 @@ class DBStar(object):
                       other._time_indexes, dtype = self.dtype)
 
     def complete_for(self, iterable):
-        """ Iterate over the supplied DBStars and return a list with the
-        trimmed those, different than 'self' (i.e., a star instance will not be
-        considered to be a subset of itself), for which it it is a subset."""
+        """ Iterate over the supplied DBStars and trim them.
+
+        The method returns a list with the 'trimmed' version of those DBStars
+        which are different than 'self' (i.e., a star instance will not be
+        considered to be a subset of itself) and of which it it is a subset.
+
+        """
 
         complete_stars = []
         for star in iterable:
             if self is not star and self.issubset(star):
                 complete_stars.append(star._trim_to(self))
-
-                # Both stars must contain records for the same Unix times, and
-                # in the exact same order. This should be moved to the unit
-                # test of this method in due time.
-                if __debug__:
-                    assert all(self._unix_times == complete_stars[-1]._unix_times)
-
         return complete_stars
 
 
