@@ -30,8 +30,8 @@ import unittest
 
 import passband
 from database import DBStar
-from database import PhotometricParameters
 from database import Image
+from database import PhotometricParameters
 from database import ReferenceImage
 
 NITERS = 100      # How many times each test case is run with random data
@@ -424,34 +424,22 @@ class ImageTest(unittest.TestCase):
 
 class ReferenceImageTest(unittest.TestCase):
 
-    MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
-    MAX_UNIX_TIME = time.time()  # Minimum and maximum Unix time
-    MIN_AIRMASS = 1     # Minimum value for random airmasses (zenith)
-    MAX_AIRMASS = 2.92  # Maximum value for random airmasses (~70 dec)
-    MIN_GAIN = 1   # Minimum value for random CCD gains
-    MAX_GAIN = 10  # Maximum value for random CCD gains
+    @classmethod
+    def random_data(cls):
+        """ Return the args needed to instantiate a random ReferenceImage"""
+        args = ImageTest.random_data()
+        # Return the first six elements, except for 'pparams'
+        return args[:2] + args[3:6]
 
     def test_init_(self):
         for _ in xrange(NITERS):
             cls = self.__class__
-
-            fd, path = tempfile.mkstemp(suffix = '.fits')
-            os.close(fd)
-
-            try:
-                pfilter = passband.Passband.random()
-                unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
-                airmass = random.uniform(cls.MIN_AIRMASS, cls.MAX_AIRMASS)
-                gain = random.uniform(cls.MIN_GAIN, cls.MAX_GAIN)
-                args = (path, pfilter, unix_time, airmass, gain)
-
-                rimage = ReferenceImage(*args)
-                self.assertEqual(rimage.path, path)
-                self.assertEqual(rimage.pfilter, pfilter)
-                self.assertEqual(rimage.unix_time, unix_time)
-                self.assertEqual(rimage.airmass, airmass)
-                self.assertEqual(rimage.gain, gain)
-
-            finally:
-                os.unlink(path)
+            args = cls.random_data()
+            path, pfilter, unix_time, airmass, gain = args
+            rimage = ReferenceImage(*args)
+            self.assertEqual(rimage.path, path)
+            self.assertEqual(rimage.pfilter, pfilter)
+            self.assertEqual(rimage.unix_time, unix_time)
+            self.assertEqual(rimage.airmass, airmass)
+            self.assertEqual(rimage.gain, gain)
 

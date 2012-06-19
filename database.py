@@ -167,6 +167,7 @@ class ReferenceImage(object):
         self.airmass = airmass
         self.gain = gain
 
+
 class Image(ReferenceImage):
     """ Encapsulates the images shifted from the reference one """
     def __init__(self, path, pfilter, pparams, unix_time, airmass, gain,
