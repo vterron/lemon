@@ -29,7 +29,7 @@ import time
 import unittest
 
 import passband
-from database import DBStar, PhotometricParameters, ReferenceImage
+from database import DBStar, PhotometricParameters, Image, ReferenceImage
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 10   # Minimum number of items for random collections of DBStars
@@ -329,9 +329,9 @@ class PhotometricParametersTest(unittest.TestCase):
     MIN_DANNULUS = 0.1
     MAX_DANNULUS = 20
 
-    @staticmethod
+    @classmethod
     def random_data(cls):
-        """ Return the information needed to instantiate a random DBStar """
+        """ Return the information needed to instantiate a random instance"""
 
         # These values may be unrealistic, as the inner radius of the sky
         # annulus ('annulus') may be smaller than the aperture radius, but
@@ -339,14 +339,15 @@ class PhotometricParametersTest(unittest.TestCase):
         # are correctly set at instantiation time, and the class must work
         # for all numbers anyway, whether realistic or not.
         aperture = random.uniform(cls.MIN_APERTURE, cls.MAX_APERTURE)
-        annulus = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
+        annulus  = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
         dannulus = random.uniform(cls.MIN_DANNULUS, cls.MAX_DANNULUS)
+        return aperture, annulus, dannulus
 
     @classmethod
     def random(cls):
         """ Return a random PhotometricParameters """
         args = cls.random_data()
-        return cls(*args)
+        return PhotometricParameters(*args)
 
     def test_init_(self):
         for _ in xrange(NITERS):
@@ -356,6 +357,66 @@ class PhotometricParametersTest(unittest.TestCase):
             self.assertEqual(pparams.aperture, aperture)
             self.assertEqual(pparams.annulus, annulus)
             self.assertEqual(pparams.dannulus, dannulus)
+
+
+class ImageTest(unittest.TestCase):
+
+    MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
+    MAX_UNIX_TIME = time.time()  # Minimum and maximum Unix time
+    MIN_AIRMASS = 1     # Minimum value for random airmasses (zenith)
+    MAX_AIRMASS = 2.92  # Maximum value for random airmasses (~70 dec)
+    MIN_GAIN = 1   # Minimum value for random CCD gains
+    MAX_GAIN = 10  # Maximum value for random CCD gains
+    MIN_XOFFSET = MIN_YOFFSET = 0    # Minimum and maximum values for random
+    MAX_XOFFSET = MAX_YOFFSET = 500  # ... offsets in both axes (pixels)
+    MIN_XOVERLAP = MIN_YOVERLAP = 0    # Minimum and maximum values for random
+    MAX_XOVERLAP = MAX_YOVERLAP = 2000 # ... numbers of stars that overlap
+
+    @classmethod
+    def random_data(cls):
+        """ Return the information needed to instantiate a random Image """
+
+        fd, path = tempfile.mkstemp(suffix = '.fits')
+        os.close(fd)
+        os.unlink(path)
+
+        pfilter = passband.Passband.random()
+        pparams = PhotometricParametersTest.random()
+        unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
+        airmass = random.uniform(cls.MIN_AIRMASS, cls.MAX_AIRMASS)
+        gain = random.uniform(cls.MIN_GAIN, cls.MAX_GAIN)
+        xoffset = random.uniform(cls.MIN_XOFFSET, cls.MAX_XOFFSET)
+        yoffset = random.uniform(cls.MIN_YOFFSET, cls.MAX_YOFFSET)
+        xoverlap = random.randint(cls.MIN_XOVERLAP, cls.MAX_XOVERLAP)
+        yoverlap = random.randint(cls.MIN_YOVERLAP, cls.MAX_YOVERLAP)
+
+        return (path, pfilter, pparams, unix_time, airmass,
+                gain, xoffset, yoffset, xoverlap, yoverlap)
+
+    @classmethod
+    def random(cls):
+        """ Return a random Image """
+        args = cls.random_data()
+        return Image(*args)
+
+    def test_init_(self):
+        for _ in xrange(NITERS):
+            cls = self.__class__
+            args = cls.random_data()
+            img = Image(*args)
+            self.assertEqual(img.path, args[0])
+            self.assertEqual(img.pfilter, args[1])
+            pparams = args[2]
+            self.assertEqual(img.pparams.aperture, pparams.aperture)
+            self.assertEqual(img.pparams.annulus, pparams.annulus)
+            self.assertEqual(img.pparams.dannulus, pparams.dannulus)
+            self.assertEqual(img.unix_time, args[3])
+            self.assertEqual(img.airmass, args[4])
+            self.assertEqual(img.gain, args[5])
+            self.assertEqual(img.xoffset, args[6])
+            self.assertEqual(img.yoffset, args[7])
+            self.assertEqual(img.xoverlap, args[8])
+            self.assertEqual(img.yoverlap, args[9])
 
 
 class ReferenceImageTest(unittest.TestCase):
