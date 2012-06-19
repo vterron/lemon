@@ -29,7 +29,10 @@ import time
 import unittest
 
 import passband
-from database import DBStar, PhotometricParameters, Image, ReferenceImage
+from database import DBStar
+from database import PhotometricParameters
+from database import Image
+from database import ReferenceImage
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 10   # Minimum number of items for random collections of DBStars
