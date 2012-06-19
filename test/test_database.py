@@ -27,7 +27,7 @@ import random
 import time
 
 import passband
-from database import DBStar
+from database import DBStar, PhotometricParameters
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 10   # Minimum number of items for random collections of DBStars
@@ -316,4 +316,32 @@ class DBStarTest(unittest.TestCase):
             self.assertEqual(sorted(complete_ids), sorted(super_ids))
             for cstar in complete:
                 self.assertTrue(original.issubset(cstar))
+
+
+class PhotometricParametersTest(unittest.TestCase):
+
+    MIN_APERTURE = 0.1
+    MAX_APERTURE = 20
+    MIN_ANNULUS = 0.1
+    MAX_ANNULUS = 20
+    MIN_DANNULUS = 0.1
+    MAX_DANNULUS = 20
+
+    def test_init_(self):
+        for _ in xrange(NITERS):
+            cls = self.__class__
+
+            # These values may be unrealistic, as the inner radius of the sky
+            # annulus ('annulus') may be smaller than the aperture radius, but
+            # it does not matter here. We only need to verify that the values
+            # are correctly set at instantiation time, and the class must work
+            # for all numbers anyway, whether realistic or not.
+            aperture = random.uniform(cls.MIN_APERTURE, cls.MAX_APERTURE)
+            annulus = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
+            dannulus = random.uniform(cls.MIN_DANNULUS, cls.MAX_DANNULUS)
+
+            pparams = PhotometricParameters(aperture, annulus, dannulus)
+            self.assertEqual(pparams.aperture, aperture)
+            self.assertEqual(pparams.annulus, annulus)
+            self.assertEqual(pparams.dannulus, dannulus)
 
