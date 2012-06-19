@@ -22,6 +22,7 @@ from __future__ import division
 
 import itertools
 import numpy
+import operator
 import os
 import random
 import tempfile
@@ -31,8 +32,11 @@ import unittest
 import passband
 from database import DBStar
 from database import Image
+from database import LightCurve
 from database import PhotometricParameters
 from database import ReferenceImage
+
+from diffphot import Weights
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 10   # Minimum number of items for random collections of DBStars
@@ -442,4 +446,129 @@ class ReferenceImageTest(unittest.TestCase):
             self.assertEqual(rimage.unix_time, unix_time)
             self.assertEqual(rimage.airmass, airmass)
             self.assertEqual(rimage.gain, gain)
+
+
+class LightCurveTest(unittest.TestCase):
+
+    MIN_ID = 1     # Minimum value for random DBStar IDs
+    MAX_ID = 9999  # Maximum value for random DBStar IDs
+    MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
+    MAX_UNIX_TIME = time.time()  # Minimum and maximum Unix time
+    MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
+    MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
+    MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
+    MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
+
+    @classmethod
+    def random_point(cls):
+        """ Return a random (time, magnitude, snr) tuple """
+        unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
+        magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
+        snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
+        return unix_time, magnitude, snr
+
+    @classmethod
+    def random_data(cls):
+        """ Return the args needed to instantiate a random LightCurve"""
+        pfilter = passband.Passband.random()
+        size = random.randint(MIN_NSTARS, MAX_NSTARS)
+        cstars = [random.randint(cls.MIN_ID, cls.MAX_ID) for x in xrange(size)]
+        cweights = Weights.random(size)
+        return pfilter, cstars, cweights
+
+    @classmethod
+    def random(cls):
+        """ Return a random, empty LightCurve"""
+        args = cls.random_data()
+        return LightCurve(*args)
+
+    def test_init(self):
+        for _ in xrange(NITERS):
+            pfilter, cstars, cweights = args = self.random_data()
+            curve = LightCurve(*args)
+            self.assertEqual(curve.pfilter, pfilter)
+            self.assertEqual(curve.cstars, cstars)
+            self.assertTrue(numpy.all(numpy.equal(curve.cweights, cweights)))
+
+        # ValueError raised if number of weigts != number of comparison stars
+        pfilter, cstars, cweights = self.random_data()
+        rindex = random.choice(range(len(cweights)))
+        cweights = cweights.rescale(rindex) # remove rindex-th coefficient
+        assert len(cstars) != len(cweights)
+        self.assertRaises(ValueError, LightCurve, pfilter, cstars, cweights)
+
+        # Same exception also raised if there are no comparison stars
+        cstars = cweights = []
+        self.assertRaises(ValueError, LightCurve, pfilter, cstars, cweights)
+
+    def test_add_len_and_getitem(self):
+        for _ in xrange(NITERS):
+            curve = self.random()
+            size = random.randint(MIN_NSTARS, MAX_NSTARS)
+            for index in xrange(size):
+                point = self.random_point()
+                curve.add(*point)
+                self.assertEqual(len(curve), index + 1)
+                self.assertEqual(curve[index], point)
+
+    def test_iter(self):
+
+        # A specific, non-random test case...
+        curve = self.random()
+        point1 = (25000, 21.1, 115)
+        point2 = (23000, 19.2, 125)
+        point3 = (24000, 19.9, 110)
+        point4 = (19000, 20.3, 105)
+        for index in xrange(1, 5):
+            curve.add(*eval('point%d' % index))
+        points = iter(curve)
+        self.assertEqual(points.next(), point4)
+        self.assertEqual(points.next(), point2)
+        self.assertEqual(points.next(), point3)
+        self.assertEqual(points.next(), point1)
+        self.assertRaises(StopIteration, lambda: points.next())
+
+        # ... and the random test cases
+        for _ in xrange(NITERS):
+            curve = self.random()
+            size = random.randint(MIN_NSTARS, MAX_NSTARS)
+            curve_points = [self.random_point() for x in xrange(size)]
+            for point in curve_points:
+                curve.add(*point)
+
+            # __iter__ returns the tuples *sorted chronologically*
+            curve_points.sort(key = operator.itemgetter(0))
+            self.assertEqual(list(curve), curve_points)
+
+    def test_stdev(self):
+
+        curve = self.random()
+        assert not len(curve)
+        curve.add(15000, 14.5, 100)
+        curve.add(16000, 15.6, 125)
+        curve.add(21000, 13.1, 200)
+        self.assertAlmostEqual(curve.stdev, 1.0230672835481871)
+
+        for _ in xrange(NITERS):
+            curve = self.random()
+            size = random.randint(MIN_NSTARS, MAX_NSTARS)
+            magnitudes = []
+            for x in xrange(size):
+                unix_time, mag, snr = point = self.random_point()
+                curve.add(*point)
+                magnitudes.append(mag)
+            self.assertAlmostEqual(curve.stdev, numpy.std(magnitudes))
+
+        # ValueError is raised if the LightCuve is empty
+        curve = self.random()
+        assert not len(curve)
+        self.assertRaises(ValueError, lambda: curve.stdev)
+
+    def test_weights(self):
+        for _ in xrange(NITERS):
+            pfilter, cstars, cweights = self.random_data()
+            curve = LightCurve(pfilter, cstars, cweights)
+            for index, (cstar_id, cweight) in enumerate(curve.weights()):
+                self.assertEqual(cstar_id, cstars[index])
+                self.assertEqual(cweight, cweights[index])
 
