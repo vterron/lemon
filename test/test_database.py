@@ -358,8 +358,7 @@ class PhotometricParametersTest(unittest.TestCase):
 
     def test_init_(self):
         for _ in xrange(NITERS):
-            cls = self.__class__
-            aperture, annulus, dannulus = cls.random_data()
+            aperture, annulus, dannulus = self.random_data()
             pparams = PhotometricParameters(aperture, annulus, dannulus)
             self.assertEqual(pparams.aperture, aperture)
             self.assertEqual(pparams.annulus, annulus)
@@ -408,8 +407,7 @@ class ImageTest(unittest.TestCase):
 
     def test_init_(self):
         for _ in xrange(NITERS):
-            cls = self.__class__
-            args = cls.random_data()
+            args = self.random_data()
             img = Image(*args)
             self.assertEqual(img.path, args[0])
             self.assertEqual(img.pfilter, args[1])
@@ -437,8 +435,7 @@ class ReferenceImageTest(unittest.TestCase):
 
     def test_init_(self):
         for _ in xrange(NITERS):
-            cls = self.__class__
-            args = cls.random_data()
+            args = self.random_data()
             path, pfilter, unix_time, airmass, gain = args
             rimage = ReferenceImage(*args)
             self.assertEqual(rimage.path, path)
