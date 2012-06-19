@@ -329,19 +329,29 @@ class PhotometricParametersTest(unittest.TestCase):
     MIN_DANNULUS = 0.1
     MAX_DANNULUS = 20
 
+    @staticmethod
+    def random_data(cls):
+        """ Return the information needed to instantiate a random DBStar """
+
+        # These values may be unrealistic, as the inner radius of the sky
+        # annulus ('annulus') may be smaller than the aperture radius, but
+        # it does not matter here. We only need to verify that the values
+        # are correctly set at instantiation time, and the class must work
+        # for all numbers anyway, whether realistic or not.
+        aperture = random.uniform(cls.MIN_APERTURE, cls.MAX_APERTURE)
+        annulus = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
+        dannulus = random.uniform(cls.MIN_DANNULUS, cls.MAX_DANNULUS)
+
+    @classmethod
+    def random(cls):
+        """ Return a random PhotometricParameters """
+        args = cls.random_data()
+        return cls(*args)
+
     def test_init_(self):
         for _ in xrange(NITERS):
             cls = self.__class__
-
-            # These values may be unrealistic, as the inner radius of the sky
-            # annulus ('annulus') may be smaller than the aperture radius, but
-            # it does not matter here. We only need to verify that the values
-            # are correctly set at instantiation time, and the class must work
-            # for all numbers anyway, whether realistic or not.
-            aperture = random.uniform(cls.MIN_APERTURE, cls.MAX_APERTURE)
-            annulus = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
-            dannulus = random.uniform(cls.MIN_DANNULUS, cls.MAX_DANNULUS)
-
+            aperture, annulus, dannulus = cls.random_data()
             pparams = PhotometricParameters(aperture, annulus, dannulus)
             self.assertEqual(pparams.aperture, aperture)
             self.assertEqual(pparams.annulus, annulus)
