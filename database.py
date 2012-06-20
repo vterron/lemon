@@ -32,6 +32,7 @@ import math
 import numpy
 import operator
 import sqlite3
+import time
 
 # LEMON modules
 import passband
@@ -455,7 +456,7 @@ class LEMONdB(object):
 
     @property
     def rimage(self):
-        """ Returns a ReferenceImage instance, or None if there isn't any"""
+        """ Return a ReferenceImage instance, or None if there isn't any"""
         self._execute("SELECT r.path, p.name, r.unix_time, r.airmass, r.gain "
                       "FROM rimage AS r, photometric_filters AS p "
                       "ON r.wavelength = p.wavelength")
@@ -478,14 +479,38 @@ class LEMONdB(object):
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?)", t)
 
     def add_image(self, image):
-        """ Store an image to the database. The primary key of the images is
-        the Unix time of the observation """
+        """ Store an image into the database """
         self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
         t = (image.unix_time, image.path, image.pfilter.wavelength, pparams_id,
              image.airmass, image.gain, image.xoffset, image.xoverlap,
              image.yoffset, image.yoverlap)
         self._execute("INSERT INTO images VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+
+    def get_image(self, unix_time):
+        """ Return the Image observed at a Unix time. Raises
+        KeyError if there is no image for this observation date."""
+
+        self._execute("SELECT i.path, p.name, i.unix_time, i.airmass, i.gain, "
+                      "       i.xoffset, i.yoffset, i.xoverlap, i.yoverlap, "
+                      "       i.pparams_id "
+                      "FROM images AS i, photometric_filters AS p "
+                      "ON i.wavelength = p.wavelength "
+                      "WHERE i.unix_time = ?", (unix_time,))
+        rows = list(self._rows)
+        if not rows:
+            raise KeyError("%.4f (%s)" % (unix_time, time.ctime(unix_time)))
+        else:
+            assert len(rows) == 1
+            row = rows[0]
+
+            pparams_id = row[-1]
+            pparams = self._get_pparams(pparams_id)
+
+            args = list(row[:-1])
+            args[1] = passband.Passband(args[1])
+            args.insert(2, pparams)
+            return Image(*args)
 
     def add_star(self, star_id, x, y, ra, dec, imag):
         """ Adds the image and astrometric information of the star in
