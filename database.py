@@ -440,11 +440,25 @@ class LEMONdB(object):
 
     def set_rimage(self, rimage):
         """ Set the reference image that was used to compute the offsets """
-        self._add_pfilter(pfilter)
+        self._add_pfilter(rimage.pfilter)
         t = (rimage.path, rimage.pfilter.wavelength, rimage.unix_time,
              rimage.airmass, rimage.gain)
         self._execute("DELETE FROM rimage")
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?)", t)
+
+    def get_rimage(self):
+        """ Returns a ReferenceImage instance, or None if there isn't any"""
+        self._execute("SELECT r.path, p.name, r.unix_time, r.airmass, r.gain "
+                      "FROM rimage AS r, photometric_filters AS p "
+                      "ON r.wavelength = p.wavelength")
+        rows = list(self._rows)
+        if not rows:
+            return None
+        else:
+            assert len(rows) == 1
+            args = list(rows[0])
+            args[1] = passband.Passband(args[1])
+            return ReferenceImage(*args)
 
     def add_image(self, image):
         """ Store an image to the database. The primary key of the images is
