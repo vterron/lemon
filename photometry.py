@@ -886,7 +886,6 @@ def main(arguments = None):
     pfilter = passband.Passband(rimage_filter)
     unix_time = reference_img.date(options.datek, options.exptimek)
     airmass  = reference_img.read_keyword(options.airmassk)
-    output_db.add_pfilter(pfilter)
     output_db.set_rimage(reference_img.path, pfilter, unix_time, airmass)
 
     # Determine how many different filters there are among the images contained
@@ -1011,7 +1010,6 @@ def main(arguments = None):
         print "%sStoring photometric information in the database..." % style.prefix
         methods.show_progress(0)
         photometric_results = (queue.get() for x in xrange(queue.qsize()))
-        output_db.add_pfilter(pfilter)
         for index, (pimage, img_offset, qphot_result) in enumerate(photometric_results):
 
             logging.debug("Storing image %s in database" % pimage.path)

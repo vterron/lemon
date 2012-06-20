@@ -412,7 +412,7 @@ class LEMONdB(object):
         assert len(rows) == 1
         return rows[0][0]
 
-    def add_pfilter(self, pfilter):
+    def _add_pfilter(self, pfilter):
         """ Store a photometric filter in the database. The primary
         key of the filters in their table is their wavelength """
 
@@ -438,6 +438,7 @@ class LEMONdB(object):
 
     def set_rimage(self, path, pfilter, unix_time, airmass):
         """ Set the reference image that was used to compute the offsets """
+        self._add_pfilter(pfilter)
         t = (path, pfilter.wavelength, unix_time, airmass)
         self._execute("DELETE FROM rimage")
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?)", t)
@@ -445,6 +446,7 @@ class LEMONdB(object):
     def add_image(self, image):
         """ Store an image to the database. The primary key of the images is
         the Unix time of the observation """
+        self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
         t = (image.unix_time, image.path, image.pfilter.wavelength, pparams_id,
              image.airmass, image.xoffset, image.xoverlap, image.yoffset, image.yoverlap)
