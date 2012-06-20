@@ -421,6 +421,21 @@ class LEMONdB(object):
         t = (pfilter.wavelength, pfilter.name)
         self._execute("INSERT OR IGNORE INTO photometric_filters VALUES (?, ?)", t)
 
+    def _get_pparams(self, id_):
+        """ Return the PhotometricParamaters with this ID.
+        Raises KeyError if the database has nothing for this ID """
+
+        self._execute("SELECT aperture, annulus, dannulus "
+                      "FROM photometric_parameters "
+                      "WHERE id = ?", (id_,))
+        rows = list(self._rows)
+        if not rows:
+            raise KeyError('%d' % id_)
+        else:
+            assert len(rows) == 1
+            args = rows[0]
+            return PhotometricParameters(*args)
+
     def _add_pparams(self, pparams):
         """ Add a PhotometricParameters instance and return its ID or do
         nothing and simply return the ID if already present in the database"""
