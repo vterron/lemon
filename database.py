@@ -321,6 +321,7 @@ class LEMONdB(object):
            wavelength INTEGER NOT NULL,
            unix_time  REAL NOT NULL,
            airmass    REAL NOT NULL,
+           gain       REAL NOT NULL,
            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength))
         ''')
 
@@ -331,6 +332,7 @@ class LEMONdB(object):
             wavelength INTEGER NOT NULL,
             pparams_id INTEGER NOT NULL,
             airmass    REAL NOT NULL,
+            gain       REAL NOT NULL,
             xoffset    REAL NOT NULL,
             xoverlap   INTEGER NOT NULL,
             yoffset    REAL NOT NULL,
@@ -436,12 +438,12 @@ class LEMONdB(object):
             self._execute("INSERT INTO photometric_parameters VALUES (?, ?, ?, ?)", t)
             return self._cursor.lastrowid
 
-    def set_rimage(self, path, pfilter, unix_time, airmass):
+    def set_rimage(self, path, pfilter, unix_time, airmass, gain):
         """ Set the reference image that was used to compute the offsets """
         self._add_pfilter(pfilter)
-        t = (path, pfilter.wavelength, unix_time, airmass)
+        t = (path, pfilter.wavelength, unix_time, airmass, gain)
         self._execute("DELETE FROM rimage")
-        self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?)", t)
+        self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?)", t)
 
     def add_image(self, image):
         """ Store an image to the database. The primary key of the images is
@@ -449,8 +451,9 @@ class LEMONdB(object):
         self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
         t = (image.unix_time, image.path, image.pfilter.wavelength, pparams_id,
-             image.airmass, image.xoffset, image.xoverlap, image.yoffset, image.yoverlap)
-        self._execute("INSERT INTO images VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+             image.airmass, image.gain, image.xoffset, image.xoverlap,
+             image.yoffset, image.yoverlap)
+        self._execute("INSERT INTO images VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
 
     def add_star(self, star_id, x, y, ra, dec, imag):
         """ Adds the image and astrometric information of the star in
