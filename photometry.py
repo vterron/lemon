@@ -1056,7 +1056,7 @@ def main(arguments = None):
                                   (pimage.path, star_id, magnitude))
 
                 # Stars with a signal-to-noise ratio less than or equal to one
-                # are ignored -- not only because these measures is anything
+                # are ignored -- not only because these measures are anything
                 # but reliable, but also because such values are outside of the
                 # domain function that converts SNRs to errors in magnitudes.
                 snr = star_photometry.snr(pimage.gain)
