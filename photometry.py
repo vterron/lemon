@@ -887,9 +887,8 @@ def main(arguments = None):
     unix_time = reference_img.date(options.datek, options.exptimek)
     airmass  = reference_img.read_keyword(options.airmassk)
     gain = options.gain or reference_img.read_keyword(options.gaink)
-    rimage = database.ReferenceImage(reference_img.path, pfilter,
-                                     unix_time, airmass, gain)
-    output_db.set_rimage(rimage)
+    output_db = database.ReferenceImage(reference_img.path, pfilter,
+                                        unix_time, airmass, gain)
 
     # Determine how many different filters there are among the images contained
     # in the list of offsets. Then, sort the filters by their wavelength, so
