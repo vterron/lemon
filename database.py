@@ -438,10 +438,11 @@ class LEMONdB(object):
             self._execute("INSERT INTO photometric_parameters VALUES (?, ?, ?, ?)", t)
             return self._cursor.lastrowid
 
-    def set_rimage(self, path, pfilter, unix_time, airmass, gain):
+    def set_rimage(self, rimage):
         """ Set the reference image that was used to compute the offsets """
         self._add_pfilter(pfilter)
-        t = (path, pfilter.wavelength, unix_time, airmass, gain)
+        t = (rimage.path, rimage.pfilter.wavelength, rimage.unix_time,
+             rimage.airmass, rimage.gain)
         self._execute("DELETE FROM rimage")
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?)", t)
 
