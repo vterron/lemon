@@ -636,17 +636,24 @@ class LEMONdB(object):
                       times_indexes, dtype = self.dtype)
 
     def get_star_info(self, star_id):
-        """ Return the coordinates and magnitude of the star.
+        """ Return the coordinates and magnitude of a star.
 
-        The method returns a five-element tuple with, in this order, the x- and
+        The method returns a five-element tuple with, in this order: the x- and
         y- coordinates of the star in the reference image, the right ascension
-        and declination, in decimal degrees, and its instrumental magnitude in
-        the reference image."""
+        and declination and its instrumental magnitude in the reference image.
+        Raises KeyError is no star in the database has this ID.
+
+        """
+
         t = (star_id, )
         self._execute("SELECT x, y, ra, dec, imag "
                       "FROM stars "
                       "WHERE id = ?", t)
-        return list(self._rows)[0]
+        try:
+            return self._rows.next()
+        except StopIteration:
+            msg = "star with ID = %d not in database" % star_id
+            raise KeyError(msg)
 
     def __len__(self):
         """Return the number of stars in the database """
