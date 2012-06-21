@@ -595,12 +595,32 @@ class LEMONdB(object):
             msg = "star with ID = %d already in database" % star_id
             raise DuplicateStarError(msg)
 
+    def get_star(self, star_id):
+        """ Return the coordinates and magnitude of a star.
+
+        The method returns a five-element tuple with, in this order: the x- and
+        y- coordinates of the star in the reference image, the right ascension
+        and declination and its instrumental magnitude in the reference image.
+        Raises KeyError is no star in the database has this ID.
+
+        """
+
+        t = (star_id, )
+        self._execute("SELECT x, y, ra, dec, imag "
+                      "FROM stars "
+                      "WHERE id = ?", t)
+        try:
+            return self._rows.next()
+        except StopIteration:
+            msg = "star with ID = %d not in database" % star_id
+            raise KeyError(msg)
+
     def add_photometry(self, star_id, unix_time, magnitude, snr):
         """ Store a photometric record for an star at a given time """
         t = (None, star_id, unix_time, magnitude, snr)
         self._execute("INSERT INTO photometry VALUES (?, ?, ?, ?, ?)", t)
 
-    def get_star(self, star_id, pfilter):
+    def get_photometry(self, star_id, pfilter):
         """ Return the photometric information of the star in a photometric
         filter, encapsulated as a DBStar instance """
 
@@ -634,26 +654,6 @@ class LEMONdB(object):
             times_indexes[unix_time] = index
         return DBStar(star_id, pfilter, phot_info,
                       times_indexes, dtype = self.dtype)
-
-    def get_star_info(self, star_id):
-        """ Return the coordinates and magnitude of a star.
-
-        The method returns a five-element tuple with, in this order: the x- and
-        y- coordinates of the star in the reference image, the right ascension
-        and declination and its instrumental magnitude in the reference image.
-        Raises KeyError is no star in the database has this ID.
-
-        """
-
-        t = (star_id, )
-        self._execute("SELECT x, y, ra, dec, imag "
-                      "FROM stars "
-                      "WHERE id = ?", t)
-        try:
-            return self._rows.next()
-        except StopIteration:
-            msg = "star with ID = %d not in database" % star_id
-            raise KeyError(msg)
 
     def __len__(self):
         """Return the number of stars in the database """

@@ -437,11 +437,11 @@ def main(arguments = None):
             pixels_fd, pixels_files[pfilter] = \
                  tempfile.mkstemp(prefix = prefix, suffix = '.pixels')
 
-            # LEMONdBMiner.get_star_info returns a five-element tuple with
+            # LEMONdBMiner.get_star returns a five-element tuple with
             # the x and y coordinates, right ascension, declination and
             # instrumental magnitude of the star in the reference image.
             for star_id, stdev in cstars:
-                star_x, star_y = miner.get_star_info(star_id)[:2]
+                star_x, star_y = miner.get_star(star_id)[:2]
                 os.write(pixels_fd, "%f\t%f\n" % (star_x, star_y))
             os.close(pixels_fd)
 

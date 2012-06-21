@@ -826,7 +826,7 @@ def main(arguments = None):
               (style.prefix, pfilter)
         print "%sLoading photometric information..." % style.prefix ,
         sys.stdout.flush()
-        all_stars = [db.get_star(star_id, pfilter) for star_id in db.star_ids]
+        all_stars = [db.get_photometry(star_id, pfilter) for star_id in db.star_ids]
         print 'done.'
 
         # The generation of each light curve is a task independent from the
