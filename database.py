@@ -442,6 +442,14 @@ class LEMONdB(object):
         t = (pfilter.wavelength, pfilter.name)
         self._execute("INSERT OR IGNORE INTO photometric_filters VALUES (?, ?)", t)
 
+    @property
+    def _pparams_ids(self):
+        """ Return the ID of the photometric parameters, in ascending order"""
+        self._execute("SELECT id "
+                      "FROM photometric_parameters "
+                      "ORDER BY id ASC")
+        return list(x[0] for x in self._rows)
+
     def _get_pparams(self, id_):
         """ Return the PhotometricParamaters with this ID.
         Raises KeyError if the database has nothing for this ID """
