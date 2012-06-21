@@ -31,6 +31,8 @@ relative to the campaign that may be needed for the data analysis process.
 import math
 import numpy
 import operator
+import random
+import string
 import sqlite3
 import time
 
@@ -288,6 +290,24 @@ class LEMONdB(object):
         Automatically starts a new transaction """
         self._end()
         self._start()
+
+    def _savepoint(self, name = None):
+        """ Start a new savepoint, use a random name if not given any.
+        Returns the name of the savepoint that was started. """
+
+        if not name:
+            name = ''.join(random.sample(string.letters, 12))
+        self._execute("SAVEPOINT %s" % name)
+        return name
+
+    def _rollback_to(self, name):
+        """ Revert the state of the database to a savepoint """
+        self._execute("ROLLBACK TO %s" % name)
+
+    def _release(self, name):
+        """ Remove from the transaction stack all savepoints back to and
+        including the most recent savepoint with this name """
+        self._execute("RELEASE %s" % name)
 
     def _create_tables(self):
         """ Create, if needed, the tables used by the database """
