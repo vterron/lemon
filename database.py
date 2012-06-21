@@ -244,6 +244,11 @@ class LightCurve(object):
             yield cstar_id, cweight
 
 
+class DuplicateImageError(KeyError):
+    """ Raised if two Images with the same Unix time are added to a LEMONdB """
+    pass
+
+
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
@@ -507,13 +512,37 @@ class LEMONdB(object):
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?)", t)
 
     def add_image(self, image):
-        """ Store an image into the database """
+        """ Store an image into the database.
+
+        Raises DuplicateImageError if the Image has the same Unix time than
+        another instance already stored in the database (as the primary key
+        of the table of images is the date of observation).
+
+        """
+
+        # Use a SAVEPOINT to, if the insertion of the Image fails, be able to
+        # roll back the insertion of the filter and photometric parameters
+
+        mark = self._savepoint()
         self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
         t = (image.unix_time, image.path, image.pfilter.wavelength, pparams_id,
              image.airmass, image.gain, image.xoffset, image.xoverlap,
              image.yoffset, image.yoverlap)
-        self._execute("INSERT INTO images VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+        try:
+            self._execute("INSERT INTO images "
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+            self._release(mark)
+
+        except sqlite3.IntegrityError:
+            self._rollback_to(mark)
+            unix_time = image.unix_time
+            if __debug__:
+                self._execute("SELECT unix_time FROM images")
+                assert (unix_time,) in self._rows
+            msg = "Unix time %.4f (%s) already in database" % \
+                  (unix_time, time.ctime(unix_time))
+            raise DuplicateImageError(msg)
 
     def get_image(self, unix_time):
         """ Return the Image observed at a Unix time. Raises
