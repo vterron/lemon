@@ -248,6 +248,10 @@ class DuplicateImageError(KeyError):
     """ Raised if two Images with the same Unix time are added to a LEMONdB """
     pass
 
+class DuplicateStarError(KeyError):
+    """ Raised if tho stars with the same ID are added to a LEMONdB """
+    pass
+
 
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
@@ -570,10 +574,26 @@ class LEMONdB(object):
             return Image(*args)
 
     def add_star(self, star_id, x, y, ra, dec, imag):
-        """ Adds the image and astrometric information of the star in
-        the database; for the photometric records, use add_photometry """
+        """ Add an star to th database.
+
+        This method only stores the 'description' of the star, that is, its
+        image and celestial coordinates, as well as its instrumental magnitude
+        in the reference image. To add the photometric records and the light
+        curves, use LEMONdB.add_photometry and add_light_curve, respectively.
+        Raises DuplicateStarError if the specified ID was already used for
+        another star in the database.
+
+        """
+
         t = (star_id, x, y, ra, dec, imag)
-        self._execute("INSERT INTO stars VALUES (?, ?, ?, ?, ?, ?)", t)
+        try:
+            self._execute("INSERT INTO stars VALUES (?, ?, ?, ?, ?, ?)", t)
+        except sqlite3.IntegrityError:
+            if __debug__:
+                self._execute("SELECT id FROM stars")
+                assert (star_id,) in self._rows
+            msg = "star with ID = %d already in database" % star_id
+            raise DuplicateStarError(msg)
 
     def add_photometry(self, star_id, unix_time, magnitude, snr):
         """ Store a photometric record for an star at a given time """
