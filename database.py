@@ -615,6 +615,16 @@ class LEMONdB(object):
             msg = "star with ID = %d not in database" % star_id
             raise KeyError(msg)
 
+    def __len__(self):
+        """ Return the number of stars in the database """
+        return self._table_count('STARS')
+
+    @property
+    def star_ids(self):
+        """ Return a list with the ID of the stars, in ascending order """
+        self._execute("SELECT id FROM stars ORDER BY id ASC")
+        return list(x[0] for x in self._rows)
+
     def add_photometry(self, star_id, unix_time, magnitude, snr):
         """ Store a photometric record for an star at a given time """
         t = (None, star_id, unix_time, magnitude, snr)
@@ -654,16 +664,6 @@ class LEMONdB(object):
             times_indexes[unix_time] = index
         return DBStar(star_id, pfilter, phot_info,
                       times_indexes, dtype = self.dtype)
-
-    def __len__(self):
-        """Return the number of stars in the database """
-        return self._table_count('STARS')
-
-    @property
-    def star_ids(self):
-        """ Return a list with the ID of the stars, in ascending order """
-        self._execute("SELECT id FROM stars ORDER BY id ASC")
-        return list(x[0] for x in self._rows)
 
     @property
     def pfilters(self):
