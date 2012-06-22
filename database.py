@@ -252,6 +252,17 @@ class DuplicateStarError(KeyError):
     """ Raised if tho stars with the same ID are added to a LEMONdB """
     pass
 
+class UnknownStarError(sqlite3.IntegrityError):
+    """ Raised when a star foreign key constraint fails """
+    pass
+
+class UnknownImageError(sqlite3.IntegrityError):
+    """ Raised when an image foreign key constraint fails """
+    pass
+
+class DuplicatePhotometryError(sqlite3.IntegrityError):
+    """ Raised of more than one record for the same star and image is added"""
+    pass
 
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
@@ -626,9 +637,34 @@ class LEMONdB(object):
         return list(x[0] for x in self._rows)
 
     def add_photometry(self, star_id, unix_time, magnitude, snr):
-        """ Store a photometric record for an star at a given time """
-        t = (None, star_id, unix_time, magnitude, snr)
-        self._execute("INSERT INTO photometry VALUES (?, ?, ?, ?, ?)", t)
+        """ Store the photometric record for a star at a given time.
+
+        Raises UnknownStarError if 'star_id' does not match the ID of any of
+        the stars in the database, while UnknownImageError is raised if the
+        Unix time does not match that of any of the images previously added.
+        At most one photometric record can be stored for each star and image,
+        so the addition of a second record for the same star ID and Unix time
+        causes DuplicatePhotometryError to be raised.
+
+        """
+
+        try:
+            t = (None, star_id, unix_time, magnitude, snr)
+            self._execute("INSERT INTO photometry VALUES (?, ?, ?, ?, ?)", t)
+
+        except sqlite3.IntegrityError:
+            if not star_id in self.star_ids:
+                msg = "star with ID = %d not in database" % star_id
+                raise UnknownStarError(msg)
+
+            self._execute("SELECT unix_time FROM images")
+            if not (unix_time,) in self._rows:
+                msg = "image with Unix time = %.4f not in database" % unix_time
+                raise UnknownImageError(msg)
+
+            msg = "photometry for star ID = %d and Unix time = %4.f " \
+                  "already in database" % (star_id, unix_time)
+            raise DuplicatePhotometryError(msg)
 
     def get_photometry(self, star_id, pfilter):
         """ Return the photometric information of the star in a photometric
