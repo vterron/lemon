@@ -152,6 +152,38 @@ class DBStar(object):
                 complete_stars.append(star._trim_to(self))
         return complete_stars
 
+    @staticmethod
+    def make_star(id_, pfilter, rows, dtype = numpy.float128):
+        """ Construct a DBstar instance for some photometric data.
+
+        Feeding the class constructor with NumPy arrays and dictionaries is not
+        particularly practical, so most of the time you may want to use instead
+        this convenience function. It also receives the star ID and the filter
+        of the star, but the photometric records are given as a sequence of
+        three-element tuples (Unix time, magnitude and SNR).
+
+        """
+
+        # NumPy arrays are stored in contiguous blocks of memory, so adding
+        # rows or columns to an existing one would require to copy the entire
+        # array to a new block of memory. It is much better to first create an
+        # array as big as will be needed -- numpy.empty(), unlike zeros, does
+        # not initializes its entries and may therefore be marginally faster
+
+        phot_info = numpy.empty((3, len(rows)), dtype = dtype)
+
+        # A cache, mapping each Unix time to its index in phot_info; passed
+        # to the constructor of DBStar for O(1) lookups of Unix times
+        times_indexes = {}
+
+        for index, row in enumerate(rows):
+            unix_time, magnitude, snr = row
+            phot_info[0][index] = unix_time
+            phot_info[1][index] = magnitude
+            phot_info[2][index] = snr
+            times_indexes[unix_time] = index
+        return DBStar(id_, pfilter, phot_info, times_indexes, dtype = dtype)
+
 
 class PhotometricParameters(object):
     """ Encapsulates the parameters used for photometry """
@@ -677,29 +709,7 @@ class LEMONdB(object):
                       "WHERE phot.star_id = ? "
                       "  AND img.wavelength = ? "
                       "ORDER BY phot.unix_time ASC", t)
-
-        # NumPy arrays are stored in contiguous blocks of memory, so
-        # adding rows or columns to an existing one would require to
-        # copy the entire array to a new block of memory. It is much
-        # better to first create an array as big as will be needed --
-        # numpy.empty(), unlike zeros, does not initializes its
-        # entries and may therefore be marginally faster
-
-        rows = list(self._rows)
-        phot_info = numpy.empty((3, len(rows)), dtype = self.dtype)
-
-        # A cache, mapping each Unix time to its index in phot_info; passed
-        # to the constructor of DBStar for O(1) lookups of Unix times
-        times_indexes = {}
-
-        for index, row in enumerate(rows):
-            unix_time, magnitude, snr = row
-            phot_info[0][index] = unix_time
-            phot_info[1][index] = magnitude
-            phot_info[2][index] = snr
-            times_indexes[unix_time] = index
-        return DBStar(star_id, pfilter, phot_info,
-                      times_indexes, dtype = self.dtype)
+        return DBStar.make_star(star_id, pfilter, list(self._rows), dtype = self.dtype)
 
     @property
     def pfilters(self):

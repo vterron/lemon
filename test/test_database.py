@@ -240,14 +240,7 @@ class DBStarTest(unittest.TestCase):
             raise ValueError("'records' cannot be empty")
         id_ = random.randint(cls.MIN_ID, cls.MAX_ID)
         pfilter = passband.Passband.random()
-        size = len(records)
-        phot_info = numpy.empty((3, size))
-        times_indexes = {}
-        for index, row in enumerate(records):
-            unix_time, magnitude, snr = row
-            phot_info[:, index] = unix_time, magnitude, snr
-            times_indexes[unix_time] = index
-        return DBStar(id_, pfilter, phot_info, times_indexes)
+        return DBStar.make_star(id_, pfilter, records)
 
     def test_trim_to(self):
 
@@ -325,6 +318,49 @@ class DBStarTest(unittest.TestCase):
             self.assertEqual(sorted(complete_ids), sorted(super_ids))
             for cstar in complete:
                 self.assertTrue(original.issubset(cstar))
+
+    def test_make_star(self):
+
+        id_ = 1
+        pfilter = passband.Passband('V')
+
+        row0 = (13000, 15.6, 100)
+        row1 = (14000, 14.5, 230)
+        row2 = (13100, 13.4, 200)
+        records = [row0, row1, row2]
+
+        # Note how rows are not given sorted by their Unix time -- make_star
+        # does not pay attention to it; it just saves them in the internal
+        # NumPy array in the order in which they are in 'records'
+        star = DBStar.make_star(id_, pfilter, records)
+        self.assertEqual(star.id, id_)
+        self.assertEqual(star.pfilter, pfilter)
+
+        self.assertEqual(star.time(0), row0[0])
+        self.assertEqual(star.mag(0),  row0[1])
+        self.assertEqual(star.snr(0),  row0[2])
+
+        self.assertEqual(star.time(1), row1[0])
+        self.assertEqual(star.mag(1),  row1[1])
+        self.assertEqual(star.snr(1),  row1[2])
+
+        self.assertEqual(star.time(2), row2[0])
+        self.assertEqual(star.mag(2),  row2[1])
+        self.assertEqual(star.snr(2),  row2[2])
+
+        # Now random test cases
+        cls = self.__class__
+        for _ in xrange(NITERS):
+            id_, pfilter, phot_info, times_indexes = cls.random_data()
+            # Construct the row of three-element tuples, out of this random
+            # NumPy array, and then check that the array in the DBStar returned
+            # by DBStar.make_star is equal than this input, original array.
+            rows = [phot_info[:, index] for index in xrange(phot_info.shape[1])]
+            star = DBStar.make_star(id_, pfilter, rows)
+            self.assertEqual(star.id, id_)
+            self.assertEqual(star.pfilter, pfilter)
+            self.assertTrue(numpy.all(numpy.equal(star._phot_info, phot_info)))
+            self.assertEqual(star._time_indexes, times_indexes)
 
 
 class PhotometricParametersTest(unittest.TestCase):
