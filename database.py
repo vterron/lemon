@@ -681,7 +681,10 @@ class LEMONdB(object):
         """
 
         try:
-            t = (None, star_id, unix_time, magnitude, snr)
+            # Note the casts to Python's built-in float. Otherwise, if the
+            # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
+            # Error binding parameter - probably unsupported type"
+            t = (None, star_id, float(unix_time), float(magnitude), float(snr))
             self._execute("INSERT INTO photometry VALUES (?, ?, ?, ?, ?)", t)
 
         except sqlite3.IntegrityError:
@@ -732,8 +735,8 @@ class LEMONdB(object):
     def _add_curve_point(self, star_id, unix_time, magnitude, snr):
         """ Store a point of the light curve of a star """
 
-        # Note the casts to Python's built-in float otherwise, if the method
-        # receives a NumPy float, SQLite will raise "sqlite3.InterfaceError:
+        # Note the casts to Python's built-in float. Otherwise, if the method
+        # received a NumPy float, SQLite would raise "sqlite3.InterfaceError:
         # Error binding parameter - probably unsupported type"
         t = (None, star_id, float(unix_time), float(magnitude), float(snr))
         self._execute("INSERT INTO light_curves "
@@ -748,8 +751,9 @@ class LEMONdB(object):
 
         """
 
-        # Note the cast to Python's built-in float otherwise, if the method
-        # receives a NumPy float, SQLite will raise "sqlite3.InterfaceError:
+
+        # Note the cast to Python's built-in float. Otherwise, if the method
+        # received a NumPy float, SQLite would raise "sqlite3.InterfaceError:
         # Error binding parameter - probably unsupported type"
         t = (None, star_id, pfilter.wavelength, cstar_id, float(cweight))
         self._execute("INSERT INTO cmp_stars "
