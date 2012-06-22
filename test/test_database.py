@@ -41,6 +41,17 @@ from diffphot import Weights
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 10   # Minimum number of items for random collections of DBStars
 MAX_NSTARS = 100  # Maximum number of items for random collections of DBStars
+MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
+MAX_UNIX_TIME = time.time()  # Minimum and maximum random Unix times
+
+def runix_times(size):
+    """ Return a list of 'size' random, different Unix times """
+    rtimes = []
+    while len(rtimes) < size:
+        utime = random.uniform(MIN_UNIX_TIME, MAX_UNIX_TIME)
+        if utime not in rtimes:
+            rtimes.append(utime)
+    return rtimes
 
 class DBStarTest(unittest.TestCase):
 
@@ -48,8 +59,6 @@ class DBStarTest(unittest.TestCase):
     MAX_ID = 9999  # Maximum ID for random DBStars
     MIN_SIZE = 1   # Minimum number of photometric records
     MAX_SIZE = 250 # Maximum number of photometric records
-    MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
-    MAX_UNIX_TIME = time.time()  # Minimum and maximum Unix time
     MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
     MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
     MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
@@ -64,8 +73,7 @@ class DBStarTest(unittest.TestCase):
         size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         phot_info = numpy.empty((3, size))
         times_indexes = {}
-        for index in xrange(size):
-            unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
+        for index, unix_time in enumerate(runix_times(size)):
             magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
             snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
             phot_info[:,index] = unix_time, magnitude, snr
@@ -168,8 +176,7 @@ class DBStarTest(unittest.TestCase):
         sphot_info = numpy.copy(star._phot_info)
         stimes_indexes = star._time_indexes.copy()
 
-        for index in xrange(to_add):
-            unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
+        for unix_time in runix_times(to_add):
             magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
             snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
             row = [unix_time, magnitude, snr]
@@ -403,8 +410,6 @@ class PhotometricParametersTest(unittest.TestCase):
 
 class ImageTest(unittest.TestCase):
 
-    MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
-    MAX_UNIX_TIME = time.time()  # Minimum and maximum Unix time
     MIN_AIRMASS = 1     # Minimum value for random airmasses (zenith)
     MAX_AIRMASS = 2.92  # Maximum value for random airmasses (~70 dec)
     MIN_GAIN = 1   # Minimum value for random CCD gains
@@ -424,7 +429,7 @@ class ImageTest(unittest.TestCase):
 
         pfilter = passband.Passband.random()
         pparams = PhotometricParametersTest.random()
-        unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
+        unix_time = runix_times(1)[0]
         airmass = random.uniform(cls.MIN_AIRMASS, cls.MAX_AIRMASS)
         gain = random.uniform(cls.MIN_GAIN, cls.MAX_GAIN)
         xoffset = random.uniform(cls.MIN_XOFFSET, cls.MAX_XOFFSET)
@@ -485,8 +490,6 @@ class LightCurveTest(unittest.TestCase):
 
     MIN_ID = 1     # Minimum value for random DBStar IDs
     MAX_ID = 9999  # Maximum value for random DBStar IDs
-    MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
-    MAX_UNIX_TIME = time.time()  # Minimum and maximum Unix time
     MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
     MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
     MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
@@ -495,7 +498,7 @@ class LightCurveTest(unittest.TestCase):
     @classmethod
     def random_point(cls):
         """ Return a random (time, magnitude, snr) tuple """
-        unix_time = random.uniform(cls.MIN_UNIX_TIME, cls.MAX_UNIX_TIME)
+        unix_time = runix_times(1)[0]
         magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
         snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
         return unix_time, magnitude, snr
