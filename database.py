@@ -296,6 +296,10 @@ class DuplicatePhotometryError(sqlite3.IntegrityError):
     """ Raised of more than one record for the same star and image is added"""
     pass
 
+class DuplicateLightCurvePointError(sqlite3.IntegrityError):
+    """ If more than one curve point for the same star and image is added"""
+    pass
+
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
@@ -754,14 +758,38 @@ class LEMONdB(object):
         return [passband.Passband(x[0]) for x in self._rows]
 
     def _add_curve_point(self, star_id, unix_time, magnitude, snr):
-        """ Store a point of the light curve of a star """
+        """ Store a point of the light curve of a star.
 
-        # Note the casts to Python's built-in float. Otherwise, if the method
-        # received a NumPy float, SQLite would raise "sqlite3.InterfaceError:
-        # Error binding parameter - probably unsupported type"
-        t = (None, star_id, float(unix_time), float(magnitude), float(snr))
-        self._execute("INSERT INTO light_curves "
-                      "VALUES (?, ?, ?, ?, ?)", t)
+        Raises UnknownStarError if 'star_id' does not match the ID of any of
+        the stars in the database, while UnknownImageError is raised if the
+        Unix time does not match that of any of the images previously added.
+        At most one light curve point can be stored for each star and image,
+        so the addition of a second point for the same star ID and Unix time
+        causes DuplicateLightCurvePointError to be raised.
+
+        """
+
+        try:
+            # Note the casts to Python's built-in float. Otherwise, if the
+            # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
+            # Error binding parameter - probably unsupported type"
+            t = (None, star_id, float(unix_time), float(magnitude), float(snr))
+            self._execute("INSERT INTO light_curves "
+                          "VALUES (?, ?, ?, ?, ?)", t)
+
+        except sqlite3.IntegrityError:
+            if not star_id in self.star_ids:
+                msg = "star with ID = %d not in database" % star_id
+                raise UnknownStarError(msg)
+
+            self._execute("SELECT unix_time FROM images")
+            if not (unix_time,) in self._rows:
+                msg = "image with Unix time = %.4f not in database" % unix_time
+                raise UnknownImageError(msg)
+
+            msg = "light curve point for star ID = %d and Unix time = %4.f " \
+                  "already in database" % (star_id, unix_time)
+            raise DuplicateLightCurvePointError(msg)
 
     def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight):
         """ Add a comparison star to the light curve of a star.
