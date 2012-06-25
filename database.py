@@ -292,6 +292,10 @@ class UnknownImageError(sqlite3.IntegrityError):
     """ Raised when an image foreign key constraint fails """
     pass
 
+class UnknownFilterError(sqlite3.IntegrityError):
+    """ Raised when a reference to a non-existent filter is made """
+    pass
+
 class DuplicatePhotometryError(sqlite3.IntegrityError):
     """ Raised of more than one record for the same star and image is added"""
     pass
@@ -824,15 +828,48 @@ class LEMONdB(object):
         with a weight of 'cweight', that were used to compute the light curve
         of the star with ID 'star_id' in the 'pfilter' photometric filter.
 
+        Raises KeyError if either 'star_id' or 'cstar_id' do not match the ID
+        of any of the stars in the database. Since a star cannot use itself as
+        a comparison star, ValueError is thrown in case the value of 'star_id'
+        is equal to 'cstar_id'.
+
+        More subtle is the fact that UnkownFilterError is raised if there are
+        no photometric records in the database for any of the stars involved.
+        You may have computed the light curve elsewhere, yes, but we want our
+        databases to be consistent. Thus, in order to save a light curve in the
+        Johnson V filter, for example, the photometric records of both stars in
+        Johnson V will have to be added (using LEMONdB.add_photometry) first.
+        So there.
+
         """
 
+        if star_id == cstar_id:
+            msg = "star with ID = %d cannot use itself as comparison" % star_id
+            raise ValueError(msg)
 
-        # Note the cast to Python's built-in float. Otherwise, if the method
-        # received a NumPy float, SQLite would raise "sqlite3.InterfaceError:
-        # Error binding parameter - probably unsupported type"
-        t = (None, star_id, pfilter.wavelength, cstar_id, float(cweight))
-        self._execute("INSERT INTO cmp_stars "
-                      "VALUES (?, ?, ?, ?, ?)", t)
+        if pfilter not in self._star_pfilters(star_id):
+            msg = "star with ID = %d has no photometry in filter %s"
+            raise UnknownFilterError(msg % (star_id, pfilter))
+
+        if pfilter not in self._star_pfilters(cstar_id):
+            msg = "comparison star with ID = %d has no photometry in filter %s"
+            raise UnknownFilterError(msg % (cstar_id, pfilter))
+
+        try:
+            # Note the cast to Python's built-in float. Otherwise, if the
+            # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
+            # Error binding parameter - probably unsupported type"
+            t = (None, star_id, pfilter.wavelength, cstar_id, float(cweight))
+            self._execute("INSERT INTO cmp_stars "
+                          "VALUES (?, ?, ?, ?, ?)", t)
+
+        except sqlite3.IntegrityError:
+            if star_id not in self.star_ids:
+                msg = "star with ID = %d not in database" % star_id
+                raise UnknownStarError(msg)
+            else:
+                msg = "comparison star with ID = %d not in database" % cstar_id
+                raise UnknownStarError(msg)
 
     def add_light_curve(self, star_id, light_curve):
         """ Store a light curve in the database """
