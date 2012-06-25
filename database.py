@@ -730,15 +730,41 @@ class LEMONdB(object):
         args = star_id, pfilter, list(self._rows)
         return DBStar.make_star(*args, dtype = self.dtype)
 
+    def _star_pfilters(self, star_id):
+        """ Return the photometric filters for which the star has data.
+
+        The method returns a list, sorted by wavelength, of the photometric
+        filters (encapsulated as Passband instances) of the images on which the
+        star with this ID had photometry done. Raises KeyError is no star in
+        the database has the specified ID.
+
+        """
+
+        if star_id not in self.star_ids:
+            msg = "star with ID = %d not in database" % star_id
+            raise KeyError(msg)
+
+        t = (star_id, )
+        self._execute("""SELECT DISTINCT f.name
+                         FROM photometry AS phot
+                         INNER JOIN images AS img
+                         ON phot.unix_time = img.unix_time
+                         INNER JOIN photometric_filters AS f
+                         ON img.wavelength = f.wavelength
+                         WHERE phot.star_id = ?
+                         ORDER BY f.wavelength ASC """, t)
+
+        return [passband.Passband(x[0]) for x in self._rows]
+
     @property
     def pfilters(self):
         """ Return the photometric filters for which there is data.
 
         The method returns a list, sorted by wavelength, of the photometric
-        filters (encapsulated as Passband instances) for which the database has
-        photometric records. Note that this means that a filter for which there
-        are images (LEMONdB.add_image) but no photometric records (those added
-        with LEMONdB.add_photometry) will not be included in the returned list.
+        filters for which the database has photometric records. Note that this
+        means that a filter for which there are images (LEMONdB.add_image) but
+        no photometric records (those added with LEMONdB.add_photometry) will
+        not be included in the returned list.
 
         The photometric filter of the reference image is ignored. This
         means that if, say, it was observed in the Johnson I filter while the
