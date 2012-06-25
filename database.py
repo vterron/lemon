@@ -702,8 +702,18 @@ class LEMONdB(object):
             raise DuplicatePhotometryError(msg)
 
     def get_photometry(self, star_id, pfilter):
-        """ Return the photometric information of the star in a photometric
-        filter, encapsulated as a DBStar instance """
+        """ Return the photometric information of the star.
+
+        The method returns a DBStar instance with the photometric information
+        of the star in a given filter. The records are sorted by their date of
+        observation. Raises KeyError if 'star_id' does not match the ID of any
+        of the stars in the database.
+
+        """
+
+        if star_id not in self.star_ids:
+            msg = "star with ID = %d not in database" % star_id
+            raise KeyError(msg)
 
         t = (star_id, pfilter.wavelength)
         self._execute("SELECT phot.unix_time, phot.magnitude, phot.snr "
@@ -712,7 +722,9 @@ class LEMONdB(object):
                       "WHERE phot.star_id = ? "
                       "  AND img.wavelength = ? "
                       "ORDER BY phot.unix_time ASC", t)
-        return DBStar.make_star(star_id, pfilter, list(self._rows), dtype = self.dtype)
+
+        args = star_id, pfilter, list(self._rows)
+        return DBStar.make_star(*args, dtype = self.dtype)
 
     @property
     def pfilters(self):
