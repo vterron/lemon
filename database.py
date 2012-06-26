@@ -824,10 +824,10 @@ class LEMONdB(object):
         with a weight of 'cweight', that were used to compute the light curve
         of the star with ID 'star_id' in the 'pfilter' photometric filter.
 
-        Raises KeyError if either 'star_id' or 'cstar_id' do not match the ID
-        of any of the stars in the database. Since a star cannot use itself as
-        a comparison star, ValueError is thrown in case the value of 'star_id'
-        is equal to 'cstar_id'.
+        Raises UnknownStarError if either 'star_id' or 'cstar_id' do not match
+        the ID of any of the stars in the database. Since a star cannot use
+        itself as a comparison star, ValueError is thrown in case the value of
+        'star_id' is equal to 'cstar_id'.
 
         """
 
