@@ -621,7 +621,7 @@ class LEMONdB(object):
             return Image(*args)
 
     def add_star(self, star_id, x, y, ra, dec, imag):
-        """ Add an star to th database.
+        """ Add a star to the database.
 
         This method only stores the 'description' of the star, that is, its
         image and celestial coordinates, as well as its instrumental magnitude
