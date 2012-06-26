@@ -292,10 +292,6 @@ class UnknownImageError(sqlite3.IntegrityError):
     """ Raised when an image foreign key constraint fails """
     pass
 
-class UnknownFilterError(sqlite3.IntegrityError):
-    """ Raised when a reference to a non-existent filter is made """
-    pass
-
 class DuplicatePhotometryError(sqlite3.IntegrityError):
     """ Raised of more than one record for the same star and image is added"""
     pass
@@ -833,37 +829,25 @@ class LEMONdB(object):
         a comparison star, ValueError is thrown in case the value of 'star_id'
         is equal to 'cstar_id'.
 
-        More subtle is the fact that UnkownFilterError is raised if there are
-        no photometric records in the database for any of the stars involved.
-        You may have computed the light curve elsewhere, yes, but we want our
-        databases to be consistent. Thus, in order to save a light curve in the
-        Johnson V filter, for example, the photometric records of both stars in
-        Johnson V will have to be added (using LEMONdB.add_photometry) first.
-        So there.
-
         """
 
         if star_id == cstar_id:
             msg = "star with ID = %d cannot use itself as comparison" % star_id
             raise ValueError(msg)
 
-        if pfilter not in self._star_pfilters(star_id):
-            msg = "star with ID = %d has no photometry in filter %s"
-            raise UnknownFilterError(msg % (star_id, pfilter))
-
-        if pfilter not in self._star_pfilters(cstar_id):
-            msg = "comparison star with ID = %d has no photometry in filter %s"
-            raise UnknownFilterError(msg % (cstar_id, pfilter))
-
+        mark = self._savepoint()
         try:
+            self._add_pfilter(pfilter)
             # Note the cast to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
             t = (None, star_id, pfilter.wavelength, cstar_id, float(cweight))
             self._execute("INSERT INTO cmp_stars "
                           "VALUES (?, ?, ?, ?, ?)", t)
+            self._release(mark)
 
         except sqlite3.IntegrityError:
+            self._rollback_to(mark)
             if star_id not in self.star_ids:
                 msg = "star with ID = %d not in database" % star_id
                 raise UnknownStarError(msg)
@@ -876,7 +860,7 @@ class LEMONdB(object):
         for point in light_curve:
             self._add_curve_point(star_id, *point)
         for cstar_id, cweight in light_curve.weights():
-            self._add_cmp_star(star_id, light_curve.pfilter, cstar_id, cweight)
+           self._add_cmp_star(star_id, light_curve.pfilter, cstar_id, cweight)
 
     def get_light_curve(self, star_id, pfilter):
         """ Return the light curve of a star in a filter.
