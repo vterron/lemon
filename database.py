@@ -856,11 +856,42 @@ class LEMONdB(object):
                 raise UnknownStarError(msg)
 
     def add_light_curve(self, star_id, light_curve):
-        """ Store a light curve in the database """
-        for point in light_curve:
-            self._add_curve_point(star_id, *point)
-        for cstar_id, cweight in light_curve.weights():
-           self._add_cmp_star(star_id, light_curve.pfilter, cstar_id, cweight)
+        """ Store the light curve of a star.
+
+        The database is modified atomically, so in case an error is encountered
+        it is left untouched. There are four different exceptions, propagated
+        from the LEMONdB._add_curve_point and LEMONdB._add_cmp_star methods,
+        that may be raised:
+
+        (1) UnknownStarError if either the star or any of its comparison stars
+        are not stored in the database. Thus, LEMONdB.add_star must have been
+        used in advance to store the stars with these IDs.
+
+        (2) UnknownImageError if any of the Unix times in the light curve does
+        not match that of any of the images in the database. Therefore, before
+        a light curve is stored, the Images to which its points refer must have
+        been added with LEMONdB.add_image.
+
+        (3) DuplicateLightCurvePointError if the light curve has more than one
+        point for the same Unix time, or if the light curve of a star is added
+        more than once.
+
+        (4) ValueError if the star uses itself as one of its comparison stars.
+        This means, in other words, that in no case can 'star_id' be among the
+        IDs listed in the 'cstars' attribute of the light curve.
+
+        """
+
+        mark = self._savepoint()
+        try:
+            for point in light_curve:
+                self._add_curve_point(star_id, *point)
+            for weight in light_curve.weights():
+                self._add_cmp_star(star_id, light_curve.pfilter, *weight)
+            self._release(mark)
+        except:
+            self._rollback_to(mark)
+            raise
 
     def get_light_curve(self, star_id, pfilter):
         """ Return the light curve of a star in a filter.
