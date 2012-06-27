@@ -415,7 +415,7 @@ def main(arguments = None):
                 continue
 
             logging.debug("Storing period for star %d in database" % star_id)
-            db.add_period(star_id, pfilter, options.exhaustive_step, star_period)
+            db.add_period(star_id, pfilter, star_period, options.exhaustive_step)
             logging.debug("Period for star %d successfully stored" % star_id)
 
             methods.show_progress(100 * (index + 1) / len(db))

@@ -952,7 +952,7 @@ class LEMONdB(object):
             curve.add(*point)
         return curve
 
-    def add_period(self, star_id, pfilter, step, period):
+    def add_period(self, star_id, pfilter, period, step):
         """ Store the string-length period of a star """
         t = (None, star_id, pfilter.wavelength, step, float(period))
         self._execute("INSERT INTO periods "
