@@ -894,45 +894,63 @@ class LEMONdB(object):
             raise
 
     def get_light_curve(self, star_id, pfilter):
-        """ Return the light curve of a star in a filter.
+        """ Return the light curve of a star.
 
-        None is returned if for this star and filter the database has no
-        information about the comparison stars or points of the light curve.
-        Both cases mean, assuming there were no errors during the database
-        population, that there is no light curve for this star"""
+        The method returns a LightCurve instance which encapsulates the
+        differential photometry of the star in a photometric filter. Raises
+        KeyError is no star in the database has the specified ID, while, if
+        the star exists but has no light curve in this photometric filter,
+        None is returned.
 
-        # The instantiation method of the LightCurve class receives the two
-        # sequences with the IDs of the comparison stars and their weights
+        Although you should never come across it, sqlite3.IntegrityError is
+        raised in case of data corruption, namely if the curve does not have
+        any comparison stars. As you might remember, each curve (and this is
+        enforced by the LightCurve class) requires of at least one comparison
+        star; otherwise they could have never been stored in the database.
+
+        """
+
+        # String common across all error messages
+        err_msg = "star with ID = %d " % star_id
+
+        # Extract the points of the light curve ...
         t = (star_id, pfilter.wavelength)
-        self._execute("SELECT cstar_id, weight "
-                      "FROM cmp_stars "
-                      "WHERE star_id = ? "
-                      "  AND wavelength = ? ", t)
-        cstars   = []
-        cweights = []
-        for cstar, cweight in self._rows:
-            cstars.append(cstar)
-            cweights.append(cweight)
-
-        if not cstars:
-            assert not cweights
-            return None
-
-        assert len(cstars) == len(cweights)
-        curve = LightCurve(pfilter, cstars, cweights, dtype = self.dtype)
         self._execute("SELECT curve.unix_time, curve.magnitude, curve.snr "
                       "FROM light_curves AS curve, images AS img "
                       "ON curve.unix_time = img.unix_time "
                       "WHERE curve.star_id = ? "
-                      "  AND img.wavelength = ?", t)
+                      "  AND img.wavelength = ? "
+                      "ORDER BY curve.unix_time ASC", t)
+        curve_points = list(self._rows)
 
-        for row in self._rows:
-            curve.add(*row)
+        if curve_points:
+            # ... as well as the comparison stars.
+            self._execute("SELECT cstar_id, weight "
+                          "FROM cmp_stars "
+                          "WHERE star_id = ? "
+                          "  AND wavelength = ? "
+                          "ORDER BY cstar_id", t)
 
-        if not curve:
-            return None
+            rows = list(self._rows)
+            if not rows:
+                # This should never happen -- see docstring
+                msg = err_msg + "has no comparison stars (?) in %s" % pfilter
+                raise sqlite3.IntegrityError(msg)
+            else:
+                cstars, cweights = zip(*rows)
+
         else:
-            return curve
+            if star_id not in self.star_ids:
+                msg = err_msg + "not in database"
+                raise KeyError(msg)
+
+            # No curve in the database for this star and filter
+            return None
+
+        curve = LightCurve(pfilter, cstars, cweights, dtype = self.dtype)
+        for point in curve_points:
+            curve.add(*point)
+        return curve
 
     def add_period(self, star_id, pfilter, step, period):
         """ Store the string-length period of a star """
