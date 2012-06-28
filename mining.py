@@ -248,7 +248,15 @@ class LEMONdBMiner(database.LEMONdB):
         for star_id, star_stdev in most_similar:
             column = [star_id, star_stdev]
             for pfilter in self.pfilters:
-                period_secs, step_secs = self.get_period(star_id, pfilter)
+
+                # LEMONdB.get_period returns a two-element tuple (period,
+                # step), but a single None if the star period is unknown
+                star_period = self.get_period(star_id, pfilter)
+                if star_period is None:
+                    period_secs = step_secs = None
+                else:
+                    period_secs, step_secs = star_period
+
                 column.append(period_secs)
             table_columns.append(column)
 

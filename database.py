@@ -993,9 +993,15 @@ class LEMONdB(object):
             raise DuplicatePeriodError(msg)
 
     def get_period(self, star_id, pfilter):
-        """ Return a two-element tuple with the string-length period of a star
-        and the step that was used when the candidate periods where evaluated
-        (in other words, the precision with which the period was determined) """
+        """ Return the period of a star.
+
+        The method returns a two-element tuple with the string-length period of
+        the star in a photometric filter and the step that was used to find it.
+        Both values are expressed in seconds. Raises KeyError is no star has
+        the specified ID, while, if the star exists but its period in this
+        photometric filter is not stored in the database, None is returned.
+
+        """
 
         t = (star_id, pfilter.wavelength)
         self._execute("SELECT period, step "
@@ -1003,9 +1009,13 @@ class LEMONdB(object):
                       "WHERE star_id = ? "
                       "  AND wavelength = ?", t)
         try:
-            return list(self._rows)[0]
+            return self._rows.fetchone()
         except IndexError:
-            return None, None
+            if star_id not in self.star_ids:
+                msg = "star with ID = %d not in database" % star_id
+                raise KeyError(msg)
+            else:
+                return None
 
     def get_periods(self, star_id):
         """ Return a NumPy array with the periods, in the different filters, of
