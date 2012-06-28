@@ -1046,10 +1046,17 @@ class LEMONdB(object):
             return numpy.array(periods)
 
     def airmasses(self, pfilter):
-        """ Return a dictionary which maps each Unix time for which there
-        is information in this filter to the corresponding airmass"""
+        """ Return the airmasses of the images in a photometric filter.
 
-        t = (pfilter.wavelength,)
+        The method returns a dictionary which maps the Unix time of each of the
+        images in this photometric filter to their airmasses. The airmass of
+        the reference image is irrelevant, as photometry is not done on it, so
+        it is not considered and never included in the returned dictionary. If
+        no images were taken in this filter, an empty dictionary is returned.
+
+        """
+
+        t = (pfilter.wavelength, )
         self._execute("SELECT unix_time, airmass "
                       "FROM images "
                       "WHERE wavelength = ? ", t)
