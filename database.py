@@ -1009,7 +1009,8 @@ class LEMONdB(object):
                       "WHERE star_id = ? "
                       "  AND wavelength = ?", t)
         try:
-            return self._rows.fetchone()
+            rows = tuple(self._rows)
+            return rows[0]
         except IndexError:
             if star_id not in self.star_ids:
                 msg = "star with ID = %d not in database" % star_id
@@ -1018,18 +1019,31 @@ class LEMONdB(object):
                 return None
 
     def get_periods(self, star_id):
-        """ Return a NumPy array with the periods, in the different filters, of
-        the star. This is only a convenience function to retrieve all the
-        periods of the star -- if, for example, we need to examine how similar
-        they are. Note that they may be returned in any order, so there is no
-        way of knowing to which photometric filter each one belongs. For that,
-        use the LEMONdB.get_period method instead."""
+        """ Return all the periods of a star.
+
+        Return a NumPy array with the string-length periods of the star in all
+        the photometric filters for which they are known. This is a convenience
+        function to retrieve the periods of the star (in order to, for example,
+        examine how similar they are) without having to call LEMONdB.get_period
+        star multiple times. Raises KeyError is no star has the specified ID
+
+        In case no period of the star is known, an empty array is returned. The
+        periods may be returned in any order, so there is no way of knowing to
+        which photometric filter each one correspond. Use LEMONdB.get_period
+        instead if you need to know what the period is in a specific filter.
+
+        """
 
         t = (star_id,)
         self._execute("SELECT period "
                       "FROM periods "
                       "WHERE star_id = ? ", t)
-        return numpy.array(list(x[0] for x in self._rows))
+        periods = tuple(x[0] for x in self._rows)
+        if not periods and star_id not in self.star_ids:
+            msg = "star with ID = %d not in database" % star_id
+            raise KeyError(msg)
+        else:
+            return numpy.array(periods)
 
     def airmasses(self, pfilter):
         """ Return a dictionary which maps each Unix time for which there
