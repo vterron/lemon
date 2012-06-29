@@ -1079,6 +1079,10 @@ class LEMONdB(object):
         period is. A 'phased Unix time' of 0,05, for example, becomes 1.05 the
         first time the phase diagram is repeated, 2.05 the second time, etc.
 
+        Raises KeyError is no star in the database has the specified ID, while,
+        if the star exists but has no light curve in this photometric filter,
+        None is returned.
+
         """
 
         curve = self.get_light_curve(star_id, pfilter)
