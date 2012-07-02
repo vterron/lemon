@@ -47,8 +47,8 @@ import seeing
 import style
 import xmlparse
 
-def offset(reference_path, shifted_path, margin, per,
-           filter_keyword, date_keyword, exp_keyword):
+def offset(reference_path, shifted_path, maximum, margin, per,
+           filter_keyword, date_keyword, exp_keyword, coadd_keyword):
     """ Calculate the offset between two FITS images.
 
     The method returns an instance of xmlparse.XMLOffset, which encapsulates
@@ -78,6 +78,9 @@ def offset(reference_path, shifted_path, margin, per,
     Arguments:
     reference_path - the path to the reference FITS image.
     shifted_path - the path to the shifted ('moved') FITS image.
+    maximum - level at which arises saturation, in ADUs. For coadded
+              observations, the effective saturation level is obtained by
+              multiplying this value by the number of coadded images.
     margin - the width, in pixels, of the areas adjacent to the borders
              that will not be considered for the matrix representation of
              the images. Stars whose whose center is fewer than 'margin'
@@ -102,11 +105,16 @@ def offset(reference_path, shifted_path, margin, per,
                   'exposure time' is mission dependent and may, for example,
                   include corrections for shutter open and close duration,
                   detector dead time, vignetting, or other effects.
+    coaddk_keyword - FITS keyword that stores the number of effective coadds.
+                     If the keyword is missing, we assume a value of one (that
+                     is, that the observation consisted in a single exposure).
 
     """
 
-    reference = seeing.FITSeeingImage(reference_path, margin)
-    shifted   = seeing.FITSeeingImage(shifted_path, margin)
+    reference = seeing.FITSeeingImage(reference_path, maximum,
+                                      margin, coaddk = coadd_keyword)
+    shifted = seeing.FITSeeingImage(shifted_path, maximum,
+                                    margin, coaddk = coadd_keyword)
 
     # Get the filter in which the shifted image was taken and the date of the
     # observation. Raise KeyError if it could not be found in the FITS header.
@@ -149,9 +157,9 @@ def parallel_offset(args):
     except (IOError, fitsimage.NonFITSFile, fitsimage.NonStandardFITS):
         return
 
-    img_offset = offset(reference.path, shifted_path, options.margin,
-                        options.percentile, options.filterk,
-                        options.datek, options.exptimek)
+    img_offset = offset(reference.path, shifted_path, options.maximum,
+                        options.margin, options.percentile, options.filterk,
+                        options.datek, options.exptimek, options.coaddk)
     queue.put(img_offset)
 
 
@@ -183,6 +191,20 @@ mask_group = optparse.OptionGroup(parser, "Single-point-masks",
              "exact value. Instead, centers will most likely be something "
              "like (311.046, 887.279), so they have to be rounded to the "
              "nearest integer.")
+
+# Note for developers: this value is not per se needed to compute the offsets,
+# but it is required by the instantiation method of the FITSeeingImage class.
+# Although we could pass any other value, using the same saturation level as in
+# other stages of the pipeline allows us to reuse the on-disk cached SExtractor
+# catalog.
+mask_group.add_option('-m', action = 'store', type = 'float',
+                      dest = 'maximum', default = 50000,
+                      help = "level at which arises saturation, in ADUs. If "
+                      "one or more pixels in the aperture of the star are above "
+                      "this value, it will be considered to be saturated. Note "
+                      "that, for coadded observations, the effective saturation "
+                      "level is obtained by multiplying this value by the number "
+                      "of coadds (see --coaddk option) [default: %default]")
 
 mask_group.add_option('--margin', action = 'store', type = 'int',
                       dest = 'margin', default = 500,
@@ -221,6 +243,11 @@ key_group.add_option('--datek', action = 'store', type = 'str',
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
+
+key_group.add_option('--coaddk', action = 'store', type = 'str',
+                     dest = 'coaddk', default = keywords.coaddk,
+                     help = keywords.desc['coaddk'])
+
 parser.add_option_group(key_group)
 
 def main(arguments = None):
@@ -277,7 +304,8 @@ def main(arguments = None):
 
     print "%sDetecting sources on %s..." % (style.prefix, reference_path) ,
     sys.stdout.flush()
-    reference_img = seeing.FITSeeingImage(reference_path, options.margin)
+    reference_img = seeing.FITSeeingImage(reference_path, options.maximum,
+                                          options.margin, options.coaddk)
     print 'done.'
 
     # The original code used the FITSeeingSet.fitsimage_cast() to convert at

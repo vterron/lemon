@@ -65,7 +65,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     """
 
-    def __init__(self, path, margin):
+    def __init__(self, path, maximum, margin, coaddk = keywords.coaddk):
         """ Instantiation method for the FITSeeingImage class.
 
         The path to the SExtractor catalog is read from the FITS header: if the
@@ -73,6 +73,14 @@ class FITSeeingImage(fitsimage.FITSImage):
         file, SExtractor has to be executed again. Even if the catalog exists,
         however, the MD5 of the SExtractor configuration files that were used
         when the catalog was created must be the same.
+
+        The 'maximum' parameter determines the pixel value above which it is
+        considered saturated. This value depends not only on the CCD, but also
+        on the number of coadded images. If three images were coadded, for
+        example, the effective saturation level equals three times the value of
+        'saturation'. The number of effective coadds is read from the 'coaddk'
+        parameter. If the keyword is missing, a value of one (that is, that the
+        image consisted in a single exposure) is assumed.
 
         The 'margin' argument gives the width, in pixels, of the areas adjacent
         to the edges of the image that are to be ignored when detecting sources
@@ -84,18 +92,68 @@ class FITSeeingImage(fitsimage.FITSImage):
         super(FITSeeingImage, self).__init__(path)
         self.margin = margin
 
-        # Compute the MD5 hash of the SExtractor configuration files
-        sex_md5sum = astromatic.sextractor_md5sum()
+        # Determine the effective saturation level, which depends on the number
+        # of coadded images. If the keyword is missing, assume a value of one.
+        try:
+            ncoadds = self.read_keyword(coaddk)
+            assert isinstance(ncoadds, int)
+            if ncoadds < 1:
+                msg = "%s: value of %s keyword must be a positive integer"
+                raise ValueError(msg % (self.path, coaddk))
+
+            msg = "%s: number of effective coadds (%s keyword) = %d"
+            logging.debug(msg % (self.path, coaddk, ncoadds))
+
+            self.saturation = maximum * ncoadds
+            msg = "%s: saturation level = %d x %d = %d"
+            logging.debug(msg % (self.path, maximum, ncoadds, self.saturation))
+
+            # To be used when the saturation level is saved in the FITS header
+            satur_comment = "ADUs (%s x %d '%s')" % (maximum, ncoadds, coaddk)
+
+        except KeyError:
+            msg = "%s: keyword '%s' not in header, assuming value of one"
+            logging.debug(msg % (self.path, coaddk))
+
+            self.saturation = maximum
+            msg = "%s: saturation level = %d"
+            logging.debug(msg % (self.path, self.saturation))
+
+            satur_comment = "ADUs (missing '%s' keyword)" % coaddk
+
+        # Compute the MD5 hash of the SExtractor configuration files and this
+        # saturation level, which overrides the definition of SATUR_LEVEL.
+        options = ['-SATUR_LEVEL', '%d' % self.saturation]
+        sex_md5sum = astromatic.sextractor_md5sum(options)
+        msg = "%s: SExtractor MD5 hash: %s" % (self.path, sex_md5sum)
+        logging.debug(msg)
 
         try:
 
+            try:
+                self.catalog_path = self.read_keyword(keywords.sex_catalog)
+            except KeyError:
+                msg = "%s: keyword '%s' not found"
+                logging.debug(msg % (self.path, keywords.sex_catalog))
+                raise
+
             # The path not only must be stored: the catalog must also exist
-            self.catalog_path = self.read_keyword(keywords.sex_catalog)
             if not os.path.exists(self.catalog_path):
+                msg = "%s: on-disk catalog %s does not exist"
+                logging.debug(msg % (self.path, self.catalog_path))
                 raise IOError
 
-            # If MD5s do not match it's an outdated catalog, no longer needed
-            elif self.read_keyword(keywords.sex_md5sum) != sex_md5sum:
+            try:
+                img_sex_md5sum = self.read_keyword(keywords.sex_md5sum)
+            except KeyError:
+                msg = "%s: keyword '%s' not found"
+                logging.debug(msg % (self.path, keywords.sex_md5sum))
+                raise
+
+            # If MD5s don't match it's an outdated catalog, not needed anymore
+            if img_sex_md5sum != sex_md5sum:
+                msg = "%s: header SExtractor MD5 hash does not match"
+                logging.debug(msg % self.path)
                 try:
                     os.unlink(self.catalog_path)
                 except (IOError, OSError):
@@ -103,21 +161,30 @@ class FITSeeingImage(fitsimage.FITSImage):
                 finally:
                     raise ValueError
 
+            # This point only reached in on-disk catalog can be reused
+            msg = "%s: on-disk catalog exists and MD5 hash matches. Yay!"
+            logging.debug(msg % self.path)
+
         except (KeyError, IOError, ValueError):
+             # Redirect standard and error outputs to null device
             with open(os.devnull, 'wt') as fd:
                 logging.info("%s: running SExtractor" % self.path)
 
-                # Redirect the standard and error outputs to the null device
                 self.catalog_path = \
-                    astromatic.sextractor(self.path, stdout = fd, stderr = fd)
+                    astromatic.sextractor(self.path, options = options,
+                                          stdout = fd, stderr = fd)
 
-                logging.debug("%s: SExtractor OK")
+                logging.debug("%s: SExtractor OK" % self.path)
 
                 try:
                     # Update the FITS header with the path and MD5; give up
-                    # silently in case we don't have permissions to do it.
-                    self.update_keyword(keywords.sex_catalog, self.catalog_path)
+                    # silently in case we don't have permissions to do it. The
+                    # cast to str is needed as PyFITS has complained sometimes
+                    # about "illegal values" if it receives an Unicode string.
+                    self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
+                    self.update_keyword('SATURATION LEVEL', self.saturation,
+                                        comment = satur_comment)
                 except IOError:
                     pass
 
@@ -133,7 +200,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         As parsing the catalog file and constructing the astromatic.Catalog
         instance requires a disk access, the catalog is memoized in order to
-        speed up our code. Note that this means that in-disk modifications of
+        speed up our code. Note that this means that on-disk modifications of
         the catalog (although this is something you should not be doing,
         anyway) will not be reflected after the first call to this method.
 
@@ -599,6 +666,15 @@ parser.add_option('-f', action = 'store', type = 'str',
                   "full width at half-maximum (FWHM) will be saved to "
                   "OUTPUT_DIR [default: %default]")
 
+parser.add_option('-m', action = 'store', type = 'int',
+                  dest = 'maximum', default = 50000,
+                  help = "level at which arises saturation, in ADUs. If one "
+                  "or more pixels in the aperture of the star are above this "
+                  "value, it will be considered to be saturated. Note that, "
+                  "for coadded observations, the effective saturation level "
+                  "is obtained by multiplying this value by the number of "
+                  "coadds (see --coaddk option) [default: %default]")
+
 parser.add_option('--margin', action = 'store', type = 'int',
                   dest = 'margin', default = 500,
                   help = "the width, in pixels, of the areas adjacent to the "
@@ -702,6 +778,10 @@ parser.add_option_group(elong_group)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
+key_group.add_option('--coaddk', action = 'store', type = 'str',
+                     dest = 'coaddk', default = keywords.coaddk,
+                     help = keywords.desc['coaddk'])
+
 key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = "keyword to which to write the estimated FWHM "
@@ -730,7 +810,8 @@ def parallel_sextractor(args):
     mode = options.mean and 'mean' or 'median'
 
     try:
-        image = FITSeeingImage(path, options.margin)
+        image = FITSeeingImage(path, options.maximum,
+                               options.margin, coaddk = options.coaddk)
         fwhm = image.fwhm(per = options.per, mode = mode)
         logging.debug("%s: FWHM = %.3f" % (path, fwhm))
         elong = image.elongation(per = options.per, mode = mode)

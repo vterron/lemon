@@ -342,14 +342,23 @@ class Catalog(list):
         """
         return [star.img_coords for star in self]
 
-def sextractor_md5sum():
-    """ Return the MD5 hash of the SExtractor configuration files.
+def sextractor_md5sum(options):
+    """ Return the MD5 hash of the SExtractor configuration.
 
     This method returns the MD5 hash of the concatenation of the four
-    configuration files (.sex, .param, .conv and .nnw) used by SExtractor. The
-    contents of these files are read line by line, concatenated and finally the
-    RSA's MD5 algorithm of the resulting line is computed. The hash is returned
-    expressed as a 32-digit hexadecimal number.
+    configuration files (.sex, .param, .conv and .nnw) used by SExtractor, as
+    well as the command-line configuration parameters (given in 'options' as
+    a sequence of strings) that override the corresponding definition in the
+    configuration files or any default value.  The hash is returned expressed
+    as a 32-digit hexadecimal number.
+
+    Note that the returned MD5 hash is just that of the input SExtractor
+    configuration files and the overriding command-line options, not those
+    values that were used in the end by SExtractor. This means that, for
+    example, a SATUR_LEVEL of 50000 in the configuration file overridden by a
+    -SATUR_LEVEL option with a value of 45000 returns a different hash than a
+    SATUR_LEVEL of 45000 in the configuration file and no command-line option,
+    although in practical terms they are the same configuration.
 
     Although we could use an even more secure hash function, that would be
     overkill. The possibility of a colision is already rather small: a MD5 hash
@@ -367,6 +376,10 @@ def sextractor_md5sum():
         with open(path, 'rt') as fd:
             for line in fd:
                 md5.update(line)
+
+    for opt in options:
+        md5.update(opt)
+
     return md5.hexdigest()
 
 def sextractor(path, options = None, stdout = None, stderr = None):

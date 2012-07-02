@@ -82,33 +82,16 @@ def parallel_photometry(args):
     img_offset, reference_pixels, qphot_params, options = args
     aperture, annulus, dannulus = qphot_params
 
-    photometry_image = fitsimage.FITSImage(img_offset.shifted)
+    photometry_image = \
+        seeing.FITSeeingImage(img_offset.shifted, options.maximum,
+                                 options.margin, coaddk = options.coaddk)
     img_path = photometry_image.path
     logging.debug("Doing photometry on image %s" % img_path)
 
-    try:
-        ncoadds = photometry_image.read_keyword(options.coaddk)
-        logging.debug("%s: number of effective coadds (%s keyword) = %d" %
-                      (img_path, options.coaddk, ncoadds))
-    except KeyError:
-        ncoadds = 1
-        logging.debug("%s: keyword '%s' not in header, assuming value of "
-                      "one" % (img_path, options.coaddk))
-
-    # Determine the saturation level, given the number of coadds
-    assert isinstance(ncoadds, int)
-    if ncoadds < 1:
-        raise ValueError("%s: value of %s keyword must be a positive "
-                         "integer" % (img_path, options.coaddk))
-
-    saturation_level = options.maximum * ncoadds
-    logging.debug("%s: saturation level = %d x %d = %d" %
-                  (img_path, options.maximum, ncoadds, saturation_level))
-
-    qphot_result = qphot.run(img_offset, options.margin,
-                             aperture, annulus, dannulus,
+    saturation_level = photometry_image.saturation
+    qphot_result = qphot.run(img_offset, aperture, annulus, dannulus,
                              saturation_level, options.exptimek,
-                             options.uncimgk, pixels = reference_pixels)
+                             options.uncimgk, reference_pixels)
     logging.info("Done photometry on image %s " % img_path)
     logging.debug("%s: photometry returned %d records (expected = %d)" % \
                  (img_path, len(qphot_result), len(reference_pixels)))
@@ -173,7 +156,7 @@ parser.add_option('--passband', action = 'store', type = str,
                   "those whose passband (i.e., the filter with which they were "
                   "observed) matches the value specified by this option")
 
-parser.add_option('-m', action = 'store', type = 'float',
+parser.add_option('-m', action = 'store', type = 'int',
                   dest = 'maximum', default = 50000,
                   help = "level at which arises saturation, in ADUs. If one "
                   "or more pixels in the aperture of the star are above this "
@@ -689,7 +672,8 @@ def main(arguments = None):
         print "%sDetecting sources on the reference image..." % style.prefix ,
         sys.stdout.flush()
         reference_img = \
-             seeing.FITSeeingImage(str(reference_img.path), options.margin)
+             seeing.FITSeeingImage(str(reference_img.path), options.maximum,
+                                   options.margin, coaddk = options.coaddk)
         print 'done.'
 
         # Get the list of coordinates (Pixels) for the valid detections
@@ -783,10 +767,10 @@ def main(arguments = None):
     # type. It is not the largest integer supported by Python, but being at
     # least 2**31-1, as a saturation level it is quite close to infinity.
 
-    qphot_result = qphot.run(null_offset, options.margin, reference_aperture,
+    qphot_result = qphot.run(null_offset, reference_aperture,
                              reference_annulus, reference_dannulus,
-                             sys.maxint, options.exptimek,
-                             None, pixels = list_of_pixels)
+                             sys.maxint, options.exptimek, None,
+                             list_of_pixels)
 
     # From the reference catalog, ignore those stars which are INDEF (None)
     #
@@ -887,8 +871,8 @@ def main(arguments = None):
     unix_time = reference_img.date(options.datek, options.exptimek)
     airmass  = reference_img.read_keyword(options.airmassk)
     gain = options.gain or reference_img.read_keyword(options.gaink)
-    output_db = database.ReferenceImage(reference_img.path, pfilter,
-                                        unix_time, airmass, gain)
+    output_db.rimage = database.ReferenceImage(reference_img.path, pfilter,
+                                               unix_time, airmass, gain)
 
     # Determine how many different filters there are among the images contained
     # in the list of offsets. Then, sort the filters by their wavelength, so

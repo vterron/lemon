@@ -180,7 +180,7 @@ class QPhot(list):
         """ Remove from the instance the photometry of all the stars. """
         del self[:]
 
-    def run(self, margin, annulus, dannulus, aperture, exptimek, pixels = None):
+    def run(self, annulus, dannulus, aperture, exptimek, pixels):
         """ Run IRAF's qphot on the image.
 
         This method is a wrapper, equivalent to (1) running 'qphot' on an image
@@ -196,18 +196,10 @@ class QPhot(list):
         in this very module. That, and not this one, is the routine you are
         expected to use to do photometry on your images.
 
-        In the first step, photometry will be calculated for all the objects in
-        the image. This means that, when calling 'qphot', it is not necessary
-        to pass a file to which the x and y coordinates of the objects to be
-        measured have been saved. Instead, SExtractor will be run on the image
-        and the catalog parsed in order to extract the coordinates of all the
-        objects that were detected and save them to a temporary file (a).
-
-        It it possible, however, not to execute SExtractor on the image in
-        order to extract the coordinates of the objects whose photometry is to
-        be done. If the keyword parameter 'pixels' is neither None nor empty,
-        only the photometry of the coordinates specified by the two-element
-        tuples (x and y coords) contained in the list will be done.
+        In the first step, photometry will be done for the objects whose
+        coordinates are listed in 'pixels', a sequence of two-element tuples
+        (x- and y- values). These coordinates are saved to a temporary file,
+        which is given as input to 'qphot' to do photometry on these pixels.
 
         The output of 'qphot' is saved to a second temporary file (b), on which
         'txdump' is run to extract the fields from the APPHOT text database
@@ -222,19 +214,12 @@ class QPhot(list):
         the number of stars whose photometry has been done.
 
         Arguments:
-        margin - the width, in pixels, of the areas adjacent to the edges that
-                 will be ignored when detecting sources on the reference image.
-                 Stars whose center is fewer than 'margin' pixels from any
-                 border (horizontal or vertical) of the FITS image are not
-                 considered.
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
         aperture - the single aperture radius, in pixels.
         exptimek - the image header keyword containing the exposure time. Needed
                    by qphot in order to normalize the computed magnitudes to an
                    exposure time of one time unit.
-
-        Keyword arguments:
         pixels - list of instances of Pixel which encapsulate the image
                  coordinates that will be passed to IRAF's qphot. It set to None
                  (the default value) or left empty, these coordinates will be
@@ -245,12 +230,6 @@ class QPhot(list):
         self.clear() # empty the current instance
 
         try:
-            # If no coordinates were specified, extract the stars of the image
-            # using SExtractor and save them, as instances of the Pixel class
-            if not pixels:
-                image_instance = seeing.FITSeeingImage(self.path, margin)
-                pixels = image_instance.coordinates()
-
             # The task qphot will receive a text file with the coordinates for
             # the objects to be measured. We need, then, to create a temporary
             # file, with the coordinates of the stars, one per line.
@@ -333,8 +312,8 @@ class QPhot(list):
                         assert mag_str == 'INDEF'
                         mag = None
 
-                    sum_      = float(splitted_line[3])
-                    flux      = float(splitted_line[4])
+                    sum_ = float(splitted_line[3])
+                    flux = float(splitted_line[4])
 
                     try:
                         stdev_str = splitted_line[5]
@@ -375,14 +354,13 @@ class QPhot(list):
 
         return len(self)
 
-def run(xml_offset, margin, aperture, annulus, dannulus,
-        maximum, exptimek, uncimgk, pixels = None):
+def run(xml_offset, aperture, annulus, dannulus,
+        maximum, exptimek, uncimgk, pixels):
     """ Do photometry on an image.
 
-    The method receives a xmlparse.XMLOffset instance and runs IRAF's qphot on
-    the shifted image for all the stars of the reference image or, if given, on
-    those those stars whose coordinates are listed in the 'pixels' keyword
-    argument. In both cases, where the stars are in the shifted image is
+    The method receives a xmlparse.XMLOffset instance and runs IRAF's qphot in
+    the shifted image on those those stars whose coordinates are listed in the
+    'pixels' keyword argument. Where the stars are in the shifted image is
     determined by applying to their cooredinates the translation offset given
     by the XMLOffset instance, thus aligning both images and 'correcting' the
     star coordinates.
@@ -394,54 +372,39 @@ def run(xml_offset, margin, aperture, annulus, dannulus,
     Arguments:
     xml_offset - a XMLOffset instance, encapsulating the translation offset
                  between the reference and the shifted FITS images.
-    margin - the width, in pixels, of the areas adjacent to the edges that will
-             be ignored when detecting sources on the reference image. Stars
-             whose center is fewer than 'margin' pixels from any border
-             (horizontal or vertical) of the FITS image are not considered.
     aperture - the single aperture radius, in pixels.
     annulus - the inner radius of the sky annulus, in pixels.
     dannulus - the width of the sky annulus, in pixels.
     maximum - level at which arises saturation in the shifted image, in
               ADUs. If one or more pixels in the aperture of the star are above
-              this value, it will be considered to be saturated.
-    exptimek - the image header keyword containing the exposure time. Needed by
-               qphot in order to normalize the computed magnitudes to an
+              this value, it will be considered to be saturated. For coadded
+              observations, the effective saturation level is obtained by
+              multiplying this value by the number of coadded images.
+    exptimek - the image header keyword containing the exposure time. Needed
+               by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
     uncimgk - keyword for the relative path to the uncalibrated shifted image;
               which will be one used to check whether pixels are saturated.
               This value may be set to an empty string or None if saturation is
               to be checked for on the same image in which photometry is done.
-
-    Keyword arguments:
-    pixels - list of instances of Pixel which encapsulate the image coordinates
-             that will be passed to IRAF's qphot. It set to None (the default
-             value) or left empty, these coordinates will be obtained by
-             running SExtractor on the image.
+    pixels - sequence of instances of Pixel which encapsulate the image
+             coordinates that will be passed to IRAF's qphot.
 
     """
 
-    # The instantiation methods of FITSImage and FITSeeingImage (which is a
-    # subclass of the former) make sure that both FITS files do exist and are
-    # standard-conforming. A FITSeeingImage is required in case objects have to
-    # be automatically detected if no list of coordinates is given.
-    reference_image = seeing.FITSeeingImage(xml_offset.reference, margin)
+    # The instantiation method of FITSImage makes sure that the image on which
+    # photometry will be done does exist and its standard-conforming.
     shifted_image = fitsimage.FITSImage(xml_offset.shifted)
 
-    # If no specific pixels to do photometry on were given, extract the
-    # coordinates (returned as a list of Pixels) of the stars detected by
-    # SExtractor in the reference image.
-    reference_pixels = pixels or reference_image.coordinates
-
     # Apply the offset to the coordinates of each star.
-    list_of_shifted_pixels = copy.deepcopy(reference_pixels)
-    for shifted_pixel in list_of_shifted_pixels:
-        shifted_pixel.x = shifted_pixel.x + xml_offset.x
-        shifted_pixel.y = shifted_pixel.y + xml_offset.y
+    shifted_pixels = copy.deepcopy(pixels)
+    for pixel in shifted_pixels:
+        pixel.x += xml_offset.x
+        pixel.y += xml_offset.y
 
     # And, finally, do photometry on the shifted image
     img_qphot = QPhot(shifted_image.path)
-    img_qphot.run(margin, annulus, dannulus, aperture, exptimek,
-                  pixels = list_of_shifted_pixels)
+    img_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
 
     # How do we know whether one or more pixels in the aperture are above a
     # saturation threshold? As suggested by Frank Valdes at the IRAF.net
@@ -503,8 +466,7 @@ def run(xml_offset, margin, aperture, annulus, dannulus,
         # the saturation mask. Those stars for which we get a non-zero flux
         # will be known to be saturated and their magnitude set to infinity.
         mask_qphot = QPhot(satur_mask_path)
-        mask_qphot.run(margin, annulus, dannulus, aperture, exptimek,
-                       pixels = list_of_shifted_pixels)
+        mask_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
 
         assert len(img_qphot) == len(mask_qphot)
         for star_phot, star_mask in zip(img_qphot, mask_qphot):
