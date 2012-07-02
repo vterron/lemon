@@ -22,6 +22,7 @@
 from __future__ import division
 
 import atexit
+import logging
 import optparse
 import os
 import shutil
@@ -128,6 +129,13 @@ parser.add_option('-a', action = 'store', type = 'str',
                   dest = 'radecsys', default = 'ICRS',
                   help = "WCS astrometric system [default: %default]")
 
+parser.add_option('-v', '--verbose', action = 'count',
+                  dest = 'verbose', default = 0,
+                  help = "increase the amount of information given during "
+                  "the execution. A single -v tracks INFO events, while two "
+                  "or more enable DEBUG messages. These should only be used "
+                  "when debugging the module.")
+
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
@@ -198,6 +206,15 @@ def main(arguments = None):
         arguments = sys.argv[1:] # ignore argv[0], the script name
     (options, args) = parser.parse_args(args = arguments)
 
+    # Adjust the logger level to WARNING, INFO or DEBUG, depending on the
+    # given number of -v options (none, one or two or more, respectively)
+    logging_level = logging.WARNING
+    if options.verbose == 1:
+        logging_level = logging.INFO
+    elif options.verbose >= 2:
+        logging_level = logging.DEBUG
+    logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
+
     if len(args) != 1:
         parser.print_help()
         return 2 # used for command line syntax errors
@@ -262,7 +279,8 @@ def main(arguments = None):
             astrometry(img_path, options.scale, options.equinox,
                        options.radecsys, copy_keywords = propagated,
                        ra_keyword = options.rak, dec_keyword = options.deck,
-                       stdout = fd, stderr = fd)
+                       stdout = None if options.verbose else fd,
+                       stderr = None if options.verbose else fd)
         try:
             shutil.move(output_path, options.output_path)
         except (IOError, OSError):
