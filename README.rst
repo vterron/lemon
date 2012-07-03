@@ -36,6 +36,7 @@ These are the steps to install LEMON on a clean GNU/Debian machine:
 #. Install the `CDSClient <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_ package
 #. Install `SCAMP <http://www.astromatic.net/software/scamp>`_ and `SWarp <http://www.astromatic.net/software/swarp>`_
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
+#. ``python ~/lemon/setup.py``
 
 Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation in GNU/Linux systems in the near future, which would enormously simplify the process of installing LEMON. Until then, please bear with us.
 
