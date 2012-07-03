@@ -276,37 +276,27 @@ class FITSeeingImage(fitsimage.FITSImage):
         return self.catalog.get_image_coordinates()
 
     def snr_percentile(self, per):
-        """ Return the score at the given percentile of the SNR of the stars
-            detected by SExtractor in the image.
+        """ Return the score at the given percentile of the SNR of the stars.
 
         This methods answers the question of what is the lowest SNR among a
-        given fraction of the stars with the best signal-to-noise ration. If
-        the desired quantile lies between two data points, we interpolate
-        between them. Note that the score at per = 50 is, by definition,
-        the median.
+        given fraction of the stars with the best signal-to-noise ratio. Those
+        stars whose ADU counts are above the effective saturation level are
+        excluded from the computation. If the desired quantile lies between two
+        data points, we interpolate between them. Note that the score at
+        per = 50 is, by definition, the median.
 
         The ValueError exception is raised in case no star can be used to
-        compute the percentile of SNR. This usually happens with sparsely
-        populated fields, for which the value of the margin may cause all the
-        stars to be ignored. In that happens, try with a lower value.
-
-        The first versions of this method excluded from the computation those
-        objects whose ADU counts were above the saturation level. The problem
-        was that whether a star had saturated was determined by looking at the
-        corresponding SExtractor flag, but this means that the saturation level
-        must be known beforehand. This is not always possible as, for example,
-        it depends on the number of images that were co-added when working with
-        dithered data. This is not to mean that SExtractor catalogs are not
-        reliable -- only that what is has to say about the saturation depends
-        on a value fixed when sources are detected -- so we better do not pay
-        attention to it.
+        compute the percentile of the signal-to-noise ratio. This is usually
+        caused by a too low saturation level, although it may also happen with
+        small images of sparsely populated fields, for which the value of the
+        margin may cause all the stars to be ignored.
 
         Arguments:
         per - percentile at which to extract the score
 
         """
 
-        snrs = [star.snr for star in self]
+        snrs = [star.snr for star in self if not star.saturated]
         if not snrs:
             raise ValueError("no stars available to compute the percentile SNR of '%s'" % self.path)
 
@@ -317,17 +307,17 @@ class FITSeeingImage(fitsimage.FITSImage):
         """ Return the median (or mean) FWHM of the stars in the image.
 
         The method returns the median (or mean) of the full width at half
-        maximum of the stars detected by SExtractor in the image. Not all the
-        stars are used to compute this value: stars too close to the image
-        borders or with too low a SNR (see the 'per' keyword argument) are
-        excluded to prevent false detections and faint objets from negatively
-        affecting the result.
+        maximum of the stars detected by SExtractor in the image. Those stars
+        whose ADU counts are above the effective saturation level are excluded
+        from the computation. Also are excluded stars with too low a SNR (see
+        the 'per' keyword argument), in order to prevent false detections and
+        faint objets from distorting the reliability of the result.
 
         The ValueError exception is raised in case no star can be used to
-        compute the FWHM. This usually happens with sparsely populated fields,
-        for which the value of the margin may cause all the stars to be
-        ignored. If that happens, try with a lower value; although checking
-        that there really are stars in the image never hurts.
+        compute the FWHM. This is usually caused by a too low saturation level,
+        although it may also happen with small images of sparsely populated
+        fields, for which the value of the margin may cause all the stars to
+        be ignored.
 
         The FWHM is computed thanks to the FLUX_RADIUS parameter, which
         estimates the radius of the circle centered on the barycenter of the
@@ -335,17 +325,6 @@ class FITSeeingImage(fitsimage.FITSImage):
         this is equal to 1/2 FWHM, although, according to the author of
         SExtractor, for most astronomical images it will be slightly higher.
         [URL] http://www.astromatic.net/forum/showthread.php?tid=318
-
-        The first versions of this method excluded from the computation those
-        objects whose ADU counts were above the saturation level. The problem
-        was that whether a star had saturated was determined by looking at the
-        corresponding SExtractor flag, but this means that the saturation level
-        must be known beforehand. This is not always possible as, for example,
-        it depends on the number of images that were co-added when working with
-        dithered data. This is not to mean that SExtractor catalogs are not
-        reliable -- only that what is has to say about the saturation depends
-        on a value fixed when sources are detected -- so we better do not pay
-        attention to it.
 
         Keyword arguments:
         per - the score at the given percentile of the signal-to-noise ratio of
@@ -371,8 +350,8 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         fwhms = []
         for star in self:
-            # Ignore noisy stars
-            if star.snr < snr:
+            # Ignore saturated and noisy stars
+            if star.saturated or star.snr < snr:
                 continue
             else:
                 fwhms.append(star.fwhm)
@@ -391,10 +370,17 @@ class FITSeeingImage(fitsimage.FITSImage):
         """ Return the median (or mean) elongation of the stars in the image.
 
         The method returns the median (or mean) of the elongation of the stars
-        detected by SEXtractor in the image. Not all the stars are used to
-        compute this value: stars too close to the image borders or with too
-        low a SNR are excluded (see the 'per' keyword argument) to prevent
-        false detections and faint objets from negatively affecting the result.
+        detected by SEXtractor in the image. Those stars whose ADU counts are
+        above the effective saturation level are excluded from the computation.
+        Also are excluded stars with too low a SNR (see the 'per' keyword
+        argument), in order to prevent false detections and faint objets from
+        distorting the reliability of the result.
+
+        The ValueError exception is raised in case no star can be used to
+        compute the elongation. This is usually caused by a too low saturation
+        level, although it may also happen with small images of sparsely
+        populated fields, for which the value of the margin may cause all
+        the stars to be ignored.
 
         The elongation of an object is given in the SExtractor catalogs by the
         ELONGATION parameter, and is defined as A/B, where A and B are its
@@ -402,23 +388,6 @@ class FITSeeingImage(fitsimage.FITSImage):
         A and B represent the maximum and minimum spatial rms of the object
         profile along any direction. Therefore, the average elongation is
         always >= 1.0, as A is known to be greater or equal than B.
-
-        The ValueError exception is raised in case no star can be used to
-        compute the elongation. This usually happens with sparsely populated
-        fields, for which the value of the margin may cause all the stars to be
-        ignored.  In that happens, try with a lower value; although checking
-        that there really are stars in the image never hurts.
-
-        The first versions of this method excluded from the computation those
-        objects whose ADU counts were above the saturation level. The problem
-        was that whether a star had saturated was determined by looking at the
-        corresponding SExtractor flag, but this means that the saturation level
-        must be known beforehand. This is not always possible as, for example,
-        it depends on the number of images that were co-added when working with
-        dithered data. This is not to mean that SExtractor catalogs are not
-        reliable -- only that what is has to say about the saturation depends
-        on a value fixed when sources are detected -- so we better do not pay
-        attention to it.
 
         Keyword arguments:
         per - the score at the given percentile of the signal-to-noise ratio of
@@ -442,8 +411,8 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         elongations = []
         for star in self:
-            # Ignore noisy stars
-            if star.snr < snr:
+            # Ignore saturated and noisy stars
+            if star.saturated or star.snr < snr:
                 continue
             else:
                 elongations.append(star.elongation)
