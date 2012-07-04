@@ -157,10 +157,10 @@ class Star(object):
         # Formula: cos(A) = sin(d1)sin(d2) + cos(d1)cos(d2)cos(ra1-ra2)
         # http://www.astronomycafe.net/qadir/q1890.html
 
-        ra1  = math.radians(self.x)
-        dec1 = math.radians(self.y)
-        ra2  = math.radians(another.x)
-        dec2 = math.radians(another.y)
+        ra1  = math.radians(self.alpha)
+        dec1 = math.radians(self.delta)
+        ra2  = math.radians(another.alpha)
+        dec2 = math.radians(another.delta)
         return math.degrees(math.acos(math.sin(dec1) * math.sin(dec2) +
                                       math.cos(dec1) * math.cos(dec2) *
                                       math.cos(ra1-ra2)))
