@@ -35,6 +35,7 @@ import astromatic
 import keywords
 import fitsimage
 import methods
+import seeing
 import style
 
 description = """
@@ -47,9 +48,9 @@ SWarp, thus updating it with the astrometric information.
 
 """
 
-def astrometry(img_path, scale, equinox, radecsys, copy_keywords = None,
-               ra_keyword = 'RA', dec_keyword = 'DEC',
-               stdout = None, stderr = None):
+def astrometry(img_path, scale, equinox, radecsys, saturation,
+               copy_keywords = None, ra_keyword = 'RA',
+               dec_keyword = 'DEC', stdout = None, stderr = None):
     """ Do astrometry on a FITS image.
 
     This method chains the execution of SExtractor, SCAMP and SWarp, as
@@ -61,6 +62,11 @@ def astrometry(img_path, scale, equinox, radecsys, copy_keywords = None,
     scale - scale of the image, in degrees per pixel
     equinox - equinox in years (e.g., 2000)
     radecsys - reference system (e.g., ICRS)
+    saturation - number of ADUs at which arises saturation. Note that for
+                 coadded images this value is the result of multiplying the CCD
+                 saturation level by the number of images that were coadded.
+
+    Keyword arguments:
     copy_keywords - FITS keywords, and their values, to propagate from the
                     input image header to the resampled and coadded image
                     header produced by SWarp.  Needed since not all FITS
@@ -83,8 +89,8 @@ def astrometry(img_path, scale, equinox, radecsys, copy_keywords = None,
 
     # This does astrometry on the image and returns the path to the
     # temporary file to which the '.head' file has been saved
-    head_path = astromatic.scamp(img_path, scale,
-                                 equinox, radecsys,
+    head_path = astromatic.scamp(img_path, scale, equinox,
+                                 radecsys, saturation,
                                  ra_keyword = ra_keyword,
                                  dec_keyword = dec_keyword,
                                  stdout = stdout, stderr = stderr)
@@ -128,6 +134,27 @@ parser.add_option('-e', action = 'store', type = 'int',
 parser.add_option('-a', action = 'store', type = 'str',
                   dest = 'radecsys', default = 'ICRS',
                   help = "WCS astrometric system [default: %default]")
+
+parser.add_option('-m', action = 'store', type = 'int',
+                  dest = 'maximum', default = 50000,
+                  help = "level at which arises saturation, in ADUs. If one "
+                  "or more pixels in the aperture of the star are above this "
+                  "value, it will be considered to be saturated. Note that, "
+                  "for coadded observations, the effective saturation level "
+                  "is obtained by multiplying this value by the number of "
+                  "coadds (see --coaddk option) [default: %default]")
+
+# Note for developers: we are not doing anything with the stars of the image,
+# so the width of the margin is irrelevant here. However, it is required by the
+# __init__ method of the FITSeeingImage class. We could use any value, but we
+# prefer to use the same as in other stages of the pipeline.
+parser.add_option('--margin', action = 'store', type = 'int',
+                  dest = 'margin', default = '250',
+                  help = "the width, in pixels, of the areas adjacent to the "
+                  "edges that will be ignored when detecting sources on the "
+                  "reference image. Stars whose center is fewer than 'margin' "
+                  "pixels from any border (horizontal or vertical) of the "
+                  "FITS image are not considered. [default: %default]")
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = 0,
@@ -249,7 +276,7 @@ def main(arguments = None):
         return 1
 
     print "%sReading WCS information from the FITS header..." % style.prefix,
-    img = fitsimage.FITSImage(img_path)
+    img = seeing.FITSeeingImage(img_path, options.maximum, options.margin)
     ra  = img.read_keyword(options.rak)
     dec = img.read_keyword(options.deck)
     print 'done.'
@@ -262,6 +289,8 @@ def main(arguments = None):
 
     print "%sMean equinox: %d" % (style.prefix, options.equinox)
     print "%sScale: %.3f arcsec/pixel" % (style.prefix, options.scale)
+    msg = "%sImage saturation level: %d x %d = %d ADUs"
+    print msg % (style.prefix, options.maximum, img.ncoadds, img.saturation)
 
     # All these keywords have to be propagated to the resulting FITS
     # image, as subsequent modules of the pipeline need access to them.
@@ -277,7 +306,8 @@ def main(arguments = None):
     with open(os.devnull, 'wt') as fd:
         output_path = \
             astrometry(img_path, options.scale, options.equinox,
-                       options.radecsys, copy_keywords = propagated,
+                       options.radecsys, img.saturation,
+                       copy_keywords = propagated,
                        ra_keyword = options.rak, dec_keyword = options.deck,
                        stdout = None if options.verbose else fd,
                        stderr = None if options.verbose else fd)

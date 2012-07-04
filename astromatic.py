@@ -434,7 +434,7 @@ def sextractor(path, options = None, stdout = None, stderr = None):
     except subprocess.CalledProcessError, e:
         raise SExtractorError(e.returncode, e.cmd)
 
-def scamp(path, scale, equinox, radecsys, ra_keyword = 'RA',
+def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
           dec_keyword = 'DEC', stdout = None, stderr = None):
     """ Run SCAMP to create a FITS-like image header that SWarp can read.
 
@@ -449,6 +449,7 @@ def scamp(path, scale, equinox, radecsys, ra_keyword = 'RA',
     scale - scale of the image, in degrees per pixel
     equinox - equinox in years (e.g., 2000)
     radecsys - reference system (e.g., ICRS)
+    saturation - the number of ADUs at which arises saturation.
 
     Keyword arguments:
     ra_keyword - FITS keyword for the right ascension, in decimal degrees.
@@ -484,8 +485,9 @@ def scamp(path, scale, equinox, radecsys, ra_keyword = 'RA',
         ahead_path = '%s.ahead' % tmp_path
         marged_path = '%s.cat' % tmp_path
 
-        # Ensure the FITS LDAC' format is used
-        options = ['-CATALOG_TYPE', 'FITS_LDAC']
+        # Use the FITS LDAC' format and image saturation level
+        options = ['-CATALOG_TYPE', 'FITS_LDAC',
+                   '-SATUR_LEVEL', '%d' % saturation]
 
         # The SExtractor catalog is saved to a temporary file, which
         # we have to move to our temporary, working directory.
