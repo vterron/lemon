@@ -13,11 +13,15 @@ ERRAWIN_IMAGE         # parameter needed by SCAMP, do _not_ comment!
 ERRBWIN_IMAGE         # parameter needed by SCAMP, do _not_ comment!
 ERRTHETAWIN_IMAGE     # parameter needed by SCAMP, do _not_ comment!
 
-# SCAMP advises (but it is not mandatory) to include optional SExtractor
-# catalogue fields: 
-#FLAGS
-#IMAFLAGS_ISO	# ... to filter out blended and corrupted detections
-FLUX_RADIUS	    # to identify small glitches or extended objects
+# SCAMP advises (but it is not mandatory) to include these fields
+# in the catalog. They are used to filter out blended and corrupted
+# detections, and also in order to identify small glitches or
+# extended objects.
+
+FLAGS
+#FLAGS_WEIGHT  # "WARNING: FLAGS_WEIGHT catalog parameter unknown" ?
+#IMAFLAGS_ISO  # This one needed to use weight-maps (from flag.fits)
+FLUX_RADIUS
 
 
 FLUX_ISO        # SNR is defined as FLUX_ISO divided by FLUXERR_APER
@@ -30,7 +34,7 @@ FLUXERR_ISO     # # (that is, the signal divided by the noise ;-)
 #MAG_ISOCOR
 #MAGERR_ISOCOR
 
-#FLUX_APER(1)       
+#FLUX_APER(1)
 #FLUXERR_APER(1)
 #MAG_APER(1)
 #MAGERR_APER(1)
@@ -138,8 +142,6 @@ ELONGATION
 #ISO6
 #ISO7
 
-FLAGS
-#IMAFLAGS_ISO(1)
 #NIMAFLAGS_ISO(1)
 
 #CLASS_STAR
