@@ -95,23 +95,24 @@ class FITSeeingImage(fitsimage.FITSImage):
         # Determine the effective saturation level, which depends on the number
         # of coadded images. If the keyword is missing, assume a value of one.
         try:
-            ncoadds = self.read_keyword(coaddk)
-            assert isinstance(ncoadds, int)
-            if ncoadds < 1:
+            self.ncoadds = self.read_keyword(coaddk)
+            assert isinstance(self.ncoadds, int)
+            if self.ncoadds < 1:
                 msg = "%s: value of %s keyword must be a positive integer"
                 raise ValueError(msg % (self.path, coaddk))
 
             msg = "%s: number of effective coadds (%s keyword) = %d"
-            logging.debug(msg % (self.path, coaddk, ncoadds))
+            logging.debug(msg % (self.path, coaddk, self.ncoadds))
 
-            self.saturation = maximum * ncoadds
+            self.saturation = maximum * self.ncoadds
             msg = "%s: saturation level = %d x %d = %d"
-            logging.debug(msg % (self.path, maximum, ncoadds, self.saturation))
+            logging.debug(msg % (self.path, maximum, self.ncoadds, self.saturation))
 
             # To be used when the saturation level is saved in the FITS header
-            satur_comment = "ADUs (%s x %d '%s')" % (maximum, ncoadds, coaddk)
+            satur_comment = "ADUs (%s x %d '%s')" % (maximum, self.ncoadds, coaddk)
 
         except KeyError:
+            self.ncoadds = 1
             msg = "%s: keyword '%s' not in header, assuming value of one"
             logging.debug(msg % (self.path, coaddk))
 
