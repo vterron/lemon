@@ -680,11 +680,8 @@ parser.add_option('--cores', action = 'store', type = 'int',
                   help = defaults.desc['ncores'])
 
 parser.add_option('-v', '--verbose', action = 'count',
-                  dest = 'verbose', default = 0,
-                  help = "increase the amount of information given during "
-                  "the execution. A single -v tracks INFO events, while two "
-                  "or more enable DEBUG messages. These should only be used "
-                  "when debugging the module.")
+                  dest = 'verbose', default = defaults.verbosity,
+                  help = defaults.desc['verbosity'])
 
 fwhm_group = optparse.OptionGroup(parser, "Full width at half maximum",
              "After SExtractor is run on the FITS files, the FWHM of each "

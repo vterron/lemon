@@ -43,3 +43,10 @@ desc['margin'] = \
 "ignored when detecting sources on the reference image. Stars whose center " \
 "is fewer than 'margin' pixels from any border (horizontal or vertical) of " \
 "the FITS image are not considered. [default: %default]"
+
+verbosity = 0
+desc['verbosity'] = \
+"increase the amount of information given during the execution. A single " \
+"-v tracks INFO events, while two or more enable DEBUG messages. These " \
+"are probably only useful when debugging the module."
+

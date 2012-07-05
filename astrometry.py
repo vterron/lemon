@@ -149,11 +149,8 @@ parser.add_option('--margin', action = 'store', type = 'int',
                   help = defaults.desc['margin'])
 
 parser.add_option('-v', '--verbose', action = 'count',
-                  dest = 'verbose', default = 0,
-                  help = "increase the amount of information given during "
-                  "the execution. A single -v tracks INFO events, while two "
-                  "or more enable DEBUG messages. These should only be used "
-                  "when debugging the module.")
+                  dest = 'verbose', default = defaults.verbosity,
+                  help = defaults.desc['verbosity'])
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
