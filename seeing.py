@@ -47,6 +47,7 @@ import time
 
 # LEMON modules
 import astromatic
+import defaults
 import fitsimage
 import keywords
 import methods
@@ -637,13 +638,8 @@ parser.add_option('-f', action = 'store', type = 'str',
                   "OUTPUT_DIR [default: %default]")
 
 parser.add_option('-m', action = 'store', type = 'int',
-                  dest = 'maximum', default = 50000,
-                  help = "level at which arises saturation, in ADUs. If one "
-                  "or more pixels in the aperture of the star are above this "
-                  "value, it will be considered to be saturated. Note that, "
-                  "for coadded observations, the effective saturation level "
-                  "is obtained by multiplying this value by the number of "
-                  "coadds (see --coaddk option) [default: %default]")
+                  dest = 'maximum', default = defaults.maximum,
+                  help = defaults.desc['maximum'])
 
 parser.add_option('--margin', action = 'store', type = 'int',
                   dest = 'margin', default = 500,

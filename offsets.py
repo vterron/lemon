@@ -39,6 +39,7 @@ import sys
 import time
 
 # LEMON modules
+import defaults
 import keywords
 import fitsimage
 import optparse
@@ -197,14 +198,9 @@ mask_group = optparse.OptionGroup(parser, "Single-point-masks",
 # Although we could pass any other value, using the same saturation level as in
 # other stages of the pipeline allows us to reuse the on-disk cached SExtractor
 # catalog.
-mask_group.add_option('-m', action = 'store', type = 'float',
-                      dest = 'maximum', default = 50000,
-                      help = "level at which arises saturation, in ADUs. If "
-                      "one or more pixels in the aperture of the star are above "
-                      "this value, it will be considered to be saturated. Note "
-                      "that, for coadded observations, the effective saturation "
-                      "level is obtained by multiplying this value by the number "
-                      "of coadds (see --coaddk option) [default: %default]")
+parser.add_option('-m', action = 'store', type = 'int',
+                  dest = 'maximum', default = defaults.maximum,
+                  help = defaults.desc['maximum'])
 
 mask_group.add_option('--margin', action = 'store', type = 'int',
                       dest = 'margin', default = 500,
