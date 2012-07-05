@@ -676,11 +676,8 @@ parser.add_option('-s', action = 'store', type = 'str',
                   "the file extension, of course [default: %default]")
 
 parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = multiprocessing.cpu_count(),
-                  help = "the maximum number of cores available to the "
-                  "module. This option defaults to the number of CPUs in "
-                  "the system, which are automatically detected "
-                  "[default: %default]")
+                  dest = 'ncores', default = defaults.ncores,
+                  help = defaults.desc['ncores'])
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = 0,

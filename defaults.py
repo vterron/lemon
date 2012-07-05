@@ -20,7 +20,16 @@
 
 """ Definition of the default options used by the different modules """
 
+import multiprocessing
+
 desc = {} # option descriptions (for optparse)
+
+ncores = multiprocessing.cpu_count()
+desc['ncores'] = \
+"the maximum number of cores available to the module. This option " \
+"defaults to the number of CPUs in the system, which are automatically " \
+"detected [default: %default]"
+
 maximum = 50000
 desc['maximum'] = \
 "the CCD saturation level, in ADUs. Those star which have one or more " \

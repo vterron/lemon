@@ -176,11 +176,8 @@ parser.add_option('-w', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output XML file if it already exists")
 
 parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = multiprocessing.cpu_count(),
-                  help = "the maximum number of cores available to the "
-                  "module. This option defaults to the number of CPUs in "
-                  "the system, which are automatically detected "
-                  "[default: %default]")
+                  dest = 'ncores', default = defaults.ncores,
+                  help = defaults.desc['ncores'])
 
 mask_group = optparse.OptionGroup(parser, "Single-point-masks",
              "The offsets between the FITS images are not computed using them "
