@@ -28,3 +28,9 @@ desc['maximum'] = \
 "coadded images, the effective saturation level is obtained by multiplying " \
 "this value by the number of coadds (see --coaddk option) [default: %default]"
 
+margin = 250
+desc['margin'] = \
+"the width, in pixels, of the areas adjacent to the edges that will be " \
+"ignored when detecting sources on the reference image. Stars whose center " \
+"is fewer than 'margin' pixels from any border (horizontal or vertical) of " \
+"the FITS image are not considered. [default: %default]"

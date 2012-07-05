@@ -145,12 +145,8 @@ parser.add_option('-m', action = 'store', type = 'int',
 # __init__ method of the FITSeeingImage class. We could use any value, but we
 # prefer to use the same as in other stages of the pipeline.
 parser.add_option('--margin', action = 'store', type = 'int',
-                  dest = 'margin', default = '250',
-                  help = "the width, in pixels, of the areas adjacent to the "
-                  "edges that will be ignored when detecting sources on the "
-                  "reference image. Stars whose center is fewer than 'margin' "
-                  "pixels from any border (horizontal or vertical) of the "
-                  "FITS image are not considered. [default: %default]")
+                  dest = 'margin', default = defaults.margin,
+                  help = defaults.desc['margin'])
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = 0,

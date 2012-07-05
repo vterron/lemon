@@ -642,14 +642,8 @@ parser.add_option('-m', action = 'store', type = 'int',
                   help = defaults.desc['maximum'])
 
 parser.add_option('--margin', action = 'store', type = 'int',
-                  dest = 'margin', default = 500,
-                  help = "the width, in pixels, of the areas adjacent to the "
-                  "borders that will not be considered when sources are "
-                  "detected on an image, and therefore also excluded for the "
-                  "calculation of the FWHM and elongation of its stars. "
-                  "Sources whose center is fewer than this number of pixels "
-                  "from any edge (horizontal or vertical) of the FITS image "
-                  "are not considered. [default: %default]")
+                  dest = 'margin', default = defaults.margin,
+                  help = defaults.desc['margin'])
 
 parser.add_option('--per', action = 'store', type = 'float',
                   dest = 'per', default = 25,

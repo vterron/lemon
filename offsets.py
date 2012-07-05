@@ -202,15 +202,9 @@ parser.add_option('-m', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
                   help = defaults.desc['maximum'])
 
-mask_group.add_option('--margin', action = 'store', type = 'int',
-                      dest = 'margin', default = 500,
-                      help = "the width, in pixels, of the areas adjacent to "
-                      "the edges that will not be considered for the matrix "
-                      "representation of the images. Stars whose whose center "
-                      "is fewer than this number of pixels from any border "
-                      "(either horizontal or vertical) of the FITS image are "
-                      "not included in the matrix representation "
-                      "[default: %default]")
+parser.add_option('--margin', action = 'store', type = 'int',
+                  dest = 'margin', default = defaults.margin,
+                  help = defaults.desc['margin'])
 
 mask_group.add_option('--per', action = 'store', type = 'int',
                       dest = 'percentile', default = 50,

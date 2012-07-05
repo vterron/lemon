@@ -162,12 +162,8 @@ parser.add_option('-m', action = 'store', type = 'int',
                   help = defaults.desc['maximum'])
 
 parser.add_option('--margin', action = 'store', type = 'int',
-                  dest = 'margin', default = '250',
-                  help = "the width, in pixels, of the areas adjacent to the "
-                  "edges that will be ignored when detecting sources on the "
-                  "reference image. Stars whose center is fewer than 'margin' "
-                  "pixels from any border (horizontal or vertical) of the "
-                  "FITS image are not considered. [default: %default]")
+                  dest = 'margin', default = defaults.margin,
+                  help = defaults.desc['margin'])
 
 parser.add_option('-g', action = 'store', type = 'float',
                   dest = 'gain', default = None,
