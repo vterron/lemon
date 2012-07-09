@@ -20,29 +20,58 @@
 
 from __future__ import division
 
+import collections
+import copy
 import itertools
 import numpy
 import operator
 import os
 import random
+import sqlite3
 import tempfile
 import time
 import unittest
 
 import passband
-from database import DBStar
-from database import Image
-from database import LightCurve
-from database import PhotometricParameters
-from database import ReferenceImage
+from database import \
+  (DBStar,
+   DuplicateLightCurvePointError,
+   DuplicateImageError,
+   DuplicatePeriodError,
+   DuplicatePhotometryError,
+   DuplicateStarError,
+   Image,
+   LEMONdB,
+   LightCurve,
+   PhotometricParameters,
+   ReferenceImage,
+   UnknownImageError,
+   UnknownStarError)
 
 from diffphot import Weights
 
 NITERS = 100      # How many times each test case is run with random data
-MIN_NSTARS = 10   # Minimum number of items for random collections of DBStars
+MIN_NSTARS = 25   # Minimum number of items for random collections of DBStars
 MAX_NSTARS = 100  # Maximum number of items for random collections of DBStars
 MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
 MAX_UNIX_TIME = time.time()  # Minimum and maximum random Unix times
+
+def assertSequenceOfTuplesAlmostEqual(cls, first, second):
+    """ Test that the elements of the two sequences are almost equal.
+
+    The first parameter, 'cls', must be the subclass of unittest.TestCase
+    instance in which this test is done. Values are considered to be almost
+    equal according to the rules of the TestCase.assertAlmostEqual method.
+
+    """
+
+    if len(first) != len(second):
+        cls.fail("sequences must be of the same size")
+    for tuple1, tuple2 in zip(first, second):
+        if len(tuple1) != len(tuple2):
+            cls.fail("tuples must be of the same size")
+        for values in zip(tuple1, tuple2):
+            cls.assertAlmostEqual(*values)
 
 def runix_times(size):
     """ Return a list of 'size' random, different Unix times """
@@ -356,9 +385,8 @@ class DBStarTest(unittest.TestCase):
         self.assertEqual(star.snr(2),  row2[2])
 
         # Now random test cases
-        cls = self.__class__
         for _ in xrange(NITERS):
-            id_, pfilter, phot_info, times_indexes = cls.random_data()
+            id_, pfilter, phot_info, times_indexes = self.random_data()
             # Construct the row of three-element tuples, out of this random
             # NumPy array, and then check that the array in the DBStar returned
             # by DBStar.make_star is equal than this input, original array.
@@ -407,6 +435,13 @@ class PhotometricParametersTest(unittest.TestCase):
             self.assertEqual(pparams.annulus, annulus)
             self.assertEqual(pparams.dannulus, dannulus)
 
+    @staticmethod
+    def equal(first, second):
+        """ Check whether two PhotometricParameters are equal """
+        return (first.aperture == second.aperture and
+                first.annulus == second.annulus and
+                first.dannulus == second.dannulus)
+
 
 class ImageTest(unittest.TestCase):
 
@@ -441,10 +476,34 @@ class ImageTest(unittest.TestCase):
                 gain, xoffset, yoffset, xoverlap, yoverlap)
 
     @classmethod
-    def random(cls):
-        """ Return a random Image """
-        args = cls.random_data()
-        return Image(*args)
+    def nrandom(cls, size, pfilter = None):
+        """ Return a generator which steps through 'size' random Images.
+
+        The random Image instances are guaranteed to have different Unix
+        times. If 'pfilter' is given, it is used as the photometric filter,
+        instead of a random one -- though it could be argued then that they
+        are not completely 'random'.
+
+        """
+
+        for unix_time in runix_times(size):
+            args = list(cls.random_data())
+            args[3] = unix_time
+            if pfilter:
+                args[1] = pfilter
+            yield Image(*args)
+
+    @classmethod
+    def random(cls, pfilter = None):
+        """ Return a random Image.
+
+        If 'pfilter' is given, it is used as the photometric filter, instead
+        of a random one -- though it could be argued then that the Image is
+        not completely 'random'.
+
+        """
+
+        return cls.nrandom(1, pfilter = pfilter).next()
 
     def test_init_(self):
         for _ in xrange(NITERS):
@@ -464,6 +523,22 @@ class ImageTest(unittest.TestCase):
             self.assertEqual(img.xoverlap, args[8])
             self.assertEqual(img.yoverlap, args[9])
 
+    @staticmethod
+    def equal(first, second):
+        """ Check whether two Images are equal """
+
+        pparams = first.pparams, second.pparams
+        return first.path == second.path and \
+               first.pfilter == second.pfilter and \
+               PhotometricParametersTest.equal(*pparams) and \
+               first.unix_time == second.unix_time and \
+               first.airmass == second.airmass and \
+               first.gain == second.gain and \
+               first.xoffset == second.xoffset and \
+               first.yoffset == second.yoffset and \
+               first.xoverlap == second.xoverlap and \
+               first.yoverlap == second.yoverlap
+
 
 class ReferenceImageTest(unittest.TestCase):
 
@@ -473,6 +548,12 @@ class ReferenceImageTest(unittest.TestCase):
         args = ImageTest.random_data()
         # Return the first six elements, except for 'pparams'
         return args[:2] + args[3:6]
+
+    @classmethod
+    def random(cls):
+        """ Return a random ReferenceImage """
+        args = cls.random_data()
+        return ReferenceImage(*args)
 
     def test_init_(self):
         for _ in xrange(NITERS):
@@ -485,6 +566,16 @@ class ReferenceImageTest(unittest.TestCase):
             self.assertEqual(rimage.airmass, airmass)
             self.assertEqual(rimage.gain, gain)
 
+    @staticmethod
+    def equal(first, second):
+        """ Check whether two Images are equal """
+
+        return (first.path == second.path and
+                first.pfilter == second.pfilter and
+                first.unix_time == second.unix_time and
+                first.airmass == second.airmass and
+                first.gain == second.gain)
+
 
 class LightCurveTest(unittest.TestCase):
 
@@ -496,27 +587,66 @@ class LightCurveTest(unittest.TestCase):
     MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
 
     @classmethod
-    def random_point(cls):
-        """ Return a random (time, magnitude, snr) tuple """
-        unix_time = runix_times(1)[0]
-        magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
-        snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
-        return unix_time, magnitude, snr
+    def random_points(cls, size):
+        """ Return a generator which steps through 'size' random (Unix
+        time, magnitude, snr) tuples, guaranteed to have different times.
+
+        """
+
+        already_used = set()
+        while len(already_used) != size:
+            unix_time = runix_times(1)[0]
+            if unix_time not in already_used:
+                already_used.add(unix_time)
+                magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
+                snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
+                yield unix_time, magnitude, snr
 
     @classmethod
-    def random_data(cls):
-        """ Return the args needed to instantiate a random LightCurve"""
-        pfilter = passband.Passband.random()
-        size = random.randint(MIN_NSTARS, MAX_NSTARS)
-        cstars = [random.randint(cls.MIN_ID, cls.MAX_ID) for x in xrange(size)]
+    def random_point(cls):
+        """ Return a random (Unix time, magnitude, snr) tuple """
+        return cls.random_points(1).next()
+
+    @classmethod
+    def random_data(cls, pfilter = None, cstars = None):
+        """ Return the args needed to instantiate a random LightCurve.
+
+        If given, the photometric filter and comparison star IDs are not
+        random. Instead, the passed values (a Passband instance and a
+        sequence of integers, respectively) are used.
+
+        """
+
+        if not pfilter:
+            pfilter = passband.Passband.random()
+        if cstars:
+            size = len(cstars)
+        else:
+            size = random.randint(MIN_NSTARS, MAX_NSTARS)
+            cstars = [random.randint(cls.MIN_ID, cls.MAX_ID) for x in xrange(size)]
         cweights = Weights.random(size)
         return pfilter, cstars, cweights
 
     @classmethod
-    def random(cls):
-        """ Return a random, empty LightCurve"""
-        args = cls.random_data()
+    def random(cls, pfilter = None, cstars = None):
+        """ Return a random, empty LightCurve.
+
+        If given, the photometric filter and comparison star IDs are not
+        random. Instead, the passed values (a Passband instance and a
+        sequence of integers, respectively) are used.
+
+        """
+
+        args = cls.random_data(pfilter = pfilter, cstars = cstars)
         return LightCurve(*args)
+
+    @classmethod
+    def populate(cls, curve, images):
+        """ Populate a curve with a random point for each of the Images """
+        for img in images:
+            magnitude, snr = cls.random_point()[1:]
+            curve.add(img.unix_time, magnitude, snr)
+        return curve
 
     def test_init(self):
         for _ in xrange(NITERS):
@@ -541,8 +671,7 @@ class LightCurveTest(unittest.TestCase):
         for _ in xrange(NITERS):
             curve = self.random()
             size = random.randint(MIN_NSTARS, MAX_NSTARS)
-            for index in xrange(size):
-                point = self.random_point()
+            for index, point in enumerate(self.random_points(size)):
                 curve.add(*point)
                 self.assertEqual(len(curve), index + 1)
                 self.assertEqual(curve[index], point)
@@ -568,7 +697,7 @@ class LightCurveTest(unittest.TestCase):
         for _ in xrange(NITERS):
             curve = self.random()
             size = random.randint(MIN_NSTARS, MAX_NSTARS)
-            curve_points = [self.random_point() for x in xrange(size)]
+            curve_points = list(self.random_points(size))
             for point in curve_points:
                 curve.add(*point)
 
@@ -589,8 +718,8 @@ class LightCurveTest(unittest.TestCase):
             curve = self.random()
             size = random.randint(MIN_NSTARS, MAX_NSTARS)
             magnitudes = []
-            for x in xrange(size):
-                unix_time, mag, snr = point = self.random_point()
+            for point in self.random_points(size):
+                unix_time, mag, snr = point
                 curve.add(*point)
                 magnitudes.append(mag)
             self.assertAlmostEqual(curve.stdev, numpy.std(magnitudes))
@@ -607,4 +736,893 @@ class LightCurveTest(unittest.TestCase):
             for index, (cstar_id, cweight) in enumerate(curve.weights()):
                 self.assertEqual(cstar_id, cstars[index])
                 self.assertEqual(cweight, cweights[index])
+
+    @staticmethod
+    def assertThatAreEqual(cls, first, second):
+        """ Assert that two LightCurves are equal.
+
+        Two LightCurve are instances if they have the same photometric filter
+        and number of points, with the same values. Furthermore, the comparison
+        stars that they use and the corresponding weights must also be equal.
+        Except for the photometric filter and the star IDs, values are
+        considered to be equal according to the rules of the
+        TestCase.assertAlmostEqual method.
+
+        The first parameter, 'cls', must be the subclass of unittest.TestCase
+        instance in which this test is done. And we need to make the method
+        static so that it does not receives an implicit first argument.
+        This is kind of an ugly hack, yes.
+
+        """
+
+        cls.assertEqual(first.pfilter, second.pfilter)
+        cls.assertEqual(len(first), len(second))
+        for point1, point2 in zip(first, second):
+            # Three-element tuples: time, mag and SNR (floats)
+            cls.assertAlmostEqual(point1[0], point2[0])
+            cls.assertAlmostEqual(point1[1], point2[1])
+            cls.assertAlmostEqual(point1[2], point2[2])
+
+        for weight1, weight2 in zip(sorted(first.weights()),
+                                    sorted(first.weights())):
+            # Two-element tuples: ID and the weight
+            cls.assertEqual(weight1[0], weight2[0])
+            cls.assertAlmostEqual(weight1[1], weight2[1])
+
+
+class LEMONdBTest(unittest.TestCase):
+
+    MIN_NIMAGES = 100  # Minimum number of images for random databases
+    MAX_NIMAGES = 250  # Maximum number of images for random databases
+    MIN_ID = 1     # Minimum value for random star IDs
+    MAX_ID = 9999  # Maximum value for random star IDs
+    XSIZE = 2000 # Dimensions in pixels of the imaginary reference image on
+    YSIZE = 2000 # which random stars were detected. Thus, the values of their
+                 # x- and y-coordinates will be in the range [0, X/YSIZE]
+    MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
+    MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
+    MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
+    MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
+
+    OBSERVED_PROB = 0.50  # Probability of a star being observed in each image,
+                          # needed some test cases which use random sets of data
+
+    # Minimum and maximum number of photometrics filters in which a
+    # random star may have been observed in some of the test cases
+    MIN_NFILTERS = 1
+    MAX_NFILTERS = len(passband.Passband.all())
+
+    # Minimum and maximum values (in seconds) for random periods
+    MIN_PERIOD = 1
+    MAX_PERIOD = 3600 * 24 * 365 # a year
+
+    # Minimum and maximum random steps (used with the string-length method)
+    MIN_STEP = 1
+    MAX_STEP = 3600 # one hour
+
+    PERIOD_PROB = 0.50  # Probability of a star having a period in a filter;
+                        # using in test test_and_get_period_and_get_periods
+
+    @staticmethod
+    def random_path():
+        """ Return to path to a temporary file, without creating it """
+        fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+        os.close(fd)
+        os.unlink(path)
+        return path
+
+    def test_init(self):
+        for _ in xrange(NITERS):
+            path = self.random_path()
+            try:
+                db = LEMONdB(path)
+                self.assertEqual(db.path, path)
+                self.assertTrue(os.path.exists(path))
+            finally:
+                os.unlink(path)
+
+    def test_rimage(self):
+        db = LEMONdB(':memory:')
+        self.assertEqual(db.rimage, None)
+        for index in xrange(NITERS):
+            img = ReferenceImageTest.random()
+            db.rimage = img
+            self.assertTrue(ReferenceImageTest.equal(db.rimage, img))
+
+    def test_add_and_get_image(self):
+        db = LEMONdB(':memory:')
+        size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
+
+        # Add the random Images to the database. Use a dictionary to map each
+        # Unix time to its image, in order to be able to fetch them later
+        images = {}
+        for img in ImageTest.nrandom(size):
+            images[img.unix_time] = img
+            db.add_image(img)
+        assert len(images) == size
+
+        items = images.items()
+        # Do not fetch them in the same order in which they were added
+        random.shuffle(items)
+        for unix_time, input_img in items:
+            output_img = db.get_image(unix_time)
+            self.assertTrue(ImageTest.equal(input_img, output_img))
+
+        # LEMONdB.get_image raises KeyError if there is no Image for a
+        # Unix time. We need to generate one not already in the database.
+        while True:
+            unix_time = ImageTest.random().unix_time
+            if unix_time not in images.iterkeys():
+                self.assertRaises(KeyError, db.get_image, unix_time)
+                break
+
+        # LEMONdB.add_image raises DuplicateImageError if we add an image with
+        # the same date of observation than another image that was previously
+        # added. We also need to verify that the insertions of the filter and
+        # photometric parameters of the image which raises the Exception are
+        # rolled back, so that the database is not modified in case of error.
+        db = LEMONdB(':memory:')
+        img1 = ImageTest.random()
+        db.add_image(img1)
+
+        def tables_status(db):
+            """ Return three sorted tuples with all the information stored in
+            the IMAGES, PHOTOMETRIC_FILTERS and PHOTOMETRIC_PARAMETERS tables
+            of the 'db' LEMONdB """
+
+            query_images  = "SELECT * FROM images ORDER BY unix_time"
+            query_filters = "SELECT * FROM photometric_filters ORDER BY wavelength"
+            query_pparams = "SELECT * FROM photometric_parameters ORDER BY id"
+            db._execute(query_images)
+            images = tuple(db._rows)
+            db._execute(query_filters)
+            filters = tuple(db._rows)
+            db._execute(query_pparams)
+            pparams = tuple(db._rows)
+            return images, filters, pparams
+
+        # Get another random Image with the same Unix time but different filter
+        # and photometric parameters. If everything went well, the insertion of
+        # the image would also store them (adding new rows) in the database. We
+        # need them to be different as otherwise, since the database is not
+        # modified when an already-existing filter of photometric parameter is
+        # added, we would have no way of knowing whether their insertion was
+        # effectively rolled back.
+        img2 = ImageTest.random(pfilter = img1.pfilter.different())
+        img2.unix_time = img1.unix_time
+        while True:
+            img2.pparams = PhotometricParametersTest.random()
+            _eq_ = PhotometricParametersTest.equal
+            if not _eq_(img1.pparams, img2.pparams):
+                break
+
+        assert img1.pfilter != img2.pfilter
+        assert img1.pparams != img2.pparams
+
+        before_tables = tables_status(db)
+        self.assertRaises(DuplicateImageError, db.add_image, img2)
+        self.assertEqual(tables_status(db), before_tables)
+
+    @classmethod
+    def random_stars_info(cls, size):
+        """ Return a generator which steps through 'size' random six-element
+        tuples (the x- and y- coordinates of the star in the reference image,
+        the right ascension and declination and the instrumental magnitude,
+        in this very order), guaranteed to have different IDs.
+
+        """
+
+        stars_ids = range(cls.MIN_ID, cls.MAX_ID + 1)
+        if size > len(stars_ids):
+            msg = "cannot ask for more stars than available IDs"
+            raise ValueError(msg)
+
+        for star_id in random.sample(stars_ids, size):
+            x = random.uniform(0, cls.XSIZE)
+            y = random.uniform(0, cls.YSIZE)
+            alpha = random.uniform(0, 360)
+            delta = random.uniform(-90, 90)
+            imag = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
+            yield star_id, x, y, alpha, delta, imag
+
+    @classmethod
+    def random_star_info(cls, id_ = None):
+        """ Return a six-element tuple with the information of a random star.
+
+        The method returns a the ID, x- and y-coordinates, right ascension,
+        declination and instrumental magnitude of a random star. The ID is
+        random unless a value for it is given in the 'id_' parameter.
+
+        """
+
+        star_info = list(cls.random_stars_info(1).next())
+        if id_ is not None:
+            star_info[0] = id_
+        return star_info
+
+    def test_add_and_get_star(self):
+        db = LEMONdB(':memory:')
+        size = random.randint(MIN_NSTARS, MAX_NSTARS)
+        stars = {} # map each ID to the rest of the star info
+        for star_info in self.random_stars_info(size):
+            id_ = star_info[0]
+            stars[id_] = star_info[1:]
+            db.add_star(*star_info)
+        self.assertEqual(len(stars), size)
+
+        items = stars.items()
+        random.shuffle(items)
+        for id_, input_info in items:
+            output_info = db.get_star(id_)
+            self.assertEqual(input_info, output_info)
+
+        # DuplicateStarError must be raised if the specified ID was
+        # already used for another star in the database.
+        star_info = list(self.random_star_info())
+        star_info[0] = random.choice(stars.keys()) # reuse an ID
+        self.assertRaises(DuplicateStarError, db.add_star, *star_info)
+
+        # KeyError must be raised if there is no star for the given
+        # ID. We need to generate one not already in the database
+        while True:
+            id_ = random.randint(self.MIN_ID, self.MAX_ID)
+            if id_ not in stars.iterkeys():
+                self.assertRaises(KeyError, db.get_star, id_)
+                break
+
+    def test_len(self):
+        db = LEMONdB(':memory:')
+        size = random.randint(MIN_NSTARS, MAX_NSTARS)
+        for index, star_info in enumerate(self.random_stars_info(size)):
+            self.assertEqual(len(db), index)
+            db.add_star(*star_info)
+            self.assertEqual(len(db), index + 1)
+
+    def test_star_ids(self):
+        db = LEMONdB(':memory:')
+        size = random.randint(MIN_NSTARS, MAX_NSTARS)
+        stars_ids = [] # keep track of inserted IDs
+        self.assertEqual([], db.star_ids)
+        for star_info in self.random_stars_info(size):
+            id_ = star_info[0]
+            stars_ids.append(id_)
+            db.add_star(*star_info)
+            self.assertEqual(sorted(stars_ids), db.star_ids)
+
+    @classmethod
+    def random_stars(cls, size, unix_times):
+        """ Return a generator which steps through 'size' random DBstars.
+
+        The returned stars are observed in the dates given in the sequence
+        'unix_times': a random number of unique elements will be chosen among
+        these Unix times for each star. In other words: each of the random
+        stars may be observed, potentially, in all the Unix times. The
+        returned stars are guaranteed to have different IDs.
+
+        """
+
+        stars_ids = range(cls.MIN_ID, cls.MAX_ID + 1)
+        if size > len(stars_ids):
+            msg = "cannot ask for more stars than available IDs"
+            raise ValueError(msg)
+
+        for star_id in random.sample(stars_ids, size):
+            pfilter = passband.Passband.random()
+            rows = []
+            for unix_time in unix_times:
+                if random.random() < cls.OBSERVED_PROB:
+                    magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
+                    snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
+                    rows.append((unix_time, magnitude, snr))
+            yield DBStar.make_star(star_id, pfilter, rows)
+
+    def test_add_and_get_photometry(self):
+
+        # A specific, non-random test case...
+        db = LEMONdB(':memory:')
+        johnson_B = passband.Passband('B')
+        johnson_V = passband.Passband('V')
+
+        star1_id = 1
+        star2_id = 2
+
+        star1_info = self.random_star_info(id_ = star1_id)
+        star2_info = self.random_star_info(id_ = star2_id)
+
+        db.add_star(*star1_info)
+        db.add_star(*star2_info)
+
+        # Note that img2 precedes img1 in time
+        img1 = ImageTest.random(johnson_B)
+        img1.unix_time = 100000
+        img2 = ImageTest.random(johnson_B)
+        img2.unix_time = 90000
+        img3 = ImageTest.random(johnson_V)
+        img3.unix_time = 15400
+
+        db.add_image(img1)
+        db.add_image(img2)
+        db.add_image(img3)
+
+        db.add_photometry(star1_id, img1.unix_time, 10.1, 150)
+        db.add_photometry(star1_id, img2.unix_time, 10.8, 125)
+        db.add_photometry(star1_id, img3.unix_time, 9.5, 175)
+
+        db.add_photometry(star2_id, img1.unix_time, 7.1, 350)
+        db.add_photometry(star2_id, img2.unix_time, 7.9, 315)
+        db.add_photometry(star2_id, img3.unix_time, 5.8, 550)
+
+        # Records in the DBStars are returned sorted by their Unix time
+        star1_B = db.get_photometry(star1_id, johnson_B)
+        self.assertEqual(len(star1_B), 2)
+        self.assertEqual(star1_B.time(0), img2.unix_time)
+        self.assertEqual(star1_B.mag(0), 10.8)
+        self.assertEqual(star1_B.snr(0), 125)
+        self.assertEqual(star1_B.time(1), img1.unix_time)
+        self.assertEqual(star1_B.mag(1), 10.1)
+        self.assertEqual(star1_B.snr(1), 150)
+
+        star1_V = db.get_photometry(star1_id, johnson_V)
+        self.assertEqual(len(star1_V), 1)
+        self.assertEqual(star1_V.time(0), img3.unix_time)
+        self.assertEqual(star1_V.mag(0), 9.5)
+        self.assertEqual(star1_V.snr(0), 175)
+
+        star2_B = db.get_photometry(star2_id, johnson_B)
+        self.assertEqual(len(star2_B), 2)
+        self.assertEqual(star2_B.time(0), img2.unix_time)
+        self.assertEqual(star2_B.mag(0), 7.9)
+        self.assertEqual(star2_B.snr(0), 315)
+        self.assertEqual(star2_B.time(1), img1.unix_time)
+        self.assertEqual(star2_B.mag(1), 7.1)
+        self.assertEqual(star2_B.snr(1), 350)
+
+        star2_V = db.get_photometry(star2_id, johnson_V)
+        self.assertEqual(star2_V.time(0), img3.unix_time)
+        self.assertEqual(star2_V.mag(0), 5.8)
+        self.assertEqual(star2_V.snr(0), 550)
+
+        # ... and the random test case
+        db = LEMONdB(':memory:')
+        nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
+        nimages = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
+        images = list(ImageTest.nrandom(nimages))
+
+        # Add 'nimages' random Images to the database. Use a dictionary
+        # to reserve map each Unix image to its Image instance.
+        utime_to_img = {}  # map each Unix time to its image
+        for img in images:
+            utime_to_img[img.unix_time] = img
+            db.add_image(img)
+
+        # Three-level dictionary: map each star ID to a photometric filter
+        # to a dictionary which maps each Unix time to a two-element tuple
+        # with the magnitude and SNR of the star at that time and filter.
+        observations = \
+            collections.defaultdict(lambda: collections.defaultdict(dict))
+
+        unix_times = [img.unix_time for img in images]
+        assert sorted(unix_times) == sorted(utime_to_img.keys())
+
+        # Reminder: the probability of a star being observed in each image is
+        # OBSERVED_PROB. We do not know for which images this will happen.
+        for star in self.random_stars(nstars, unix_times):
+
+            # Save the coordinates and magnitude of this star
+            star_info = self.random_star_info(id_ = star.id)
+            db.add_star(*star_info)
+
+            for index in xrange(len(star)):
+                utime = star.time(index)
+                mag = star.mag(index)
+                snr = star.snr(index)
+
+                # Keep track of the photometric record to be added
+                pfilter = utime_to_img[utime].pfilter
+                observations[star.id][pfilter][utime] = (mag, snr)
+
+                db.add_photometry(star.id, utime, mag, snr)
+
+            obs_items = observations.items()
+            random.shuffle(obs_items)
+            for star_id, star_pfilters in obs_items:
+
+                pfilter_items = star_pfilters.items()
+                random.shuffle(pfilter_items)
+                for pfilter, unix_times in pfilter_items:
+
+                    star = db.get_photometry(star_id, pfilter)
+
+                    # The DBStar must have the expected number of records...
+                    self.assertEqual(len(star), len(unix_times))
+
+                    # ... which must be sorted by their date of observation.
+                    for index in xrange(len(star) - 1):
+                        self.assertTrue(star.time(index) < star.time(index + 1))
+
+                    for index in xrange(len(star)):
+                        utime = star.time(index)
+                        self.assertTrue(utime in unix_times)
+
+                        imag, isnr = observations[star_id][pfilter][utime]
+                        omag, osnr = star.mag(index), star.snr(index)
+                        self.assertAlmostEqual(imag, omag)
+                        self.assertAlmostEqual(isnr, isnr)
+
+        # LEMONdB.add_photometry raises UnknownStarError if 'star_id'
+        # does not match the ID of any of the stars in the database
+        db = LEMONdB(':memory:')
+        johnson_V = passband.Passband('V')
+
+        star_info = self.random_star_info()
+        star_id = star_info[0]
+
+        img = ImageTest.random(pfilter = johnson_V)
+        db.add_image(img)
+
+        args = [star_id, img.unix_time, 14.5, 100]
+        self.assertRaises(UnknownStarError, db.add_photometry, *args)
+        # Let's add the star and see how it now works
+        db.add_star(*star_info)
+        db.add_photometry(*args)
+
+        # UnknownImageError is raised if the given Unix time is
+        # not that of any of the images stored in the database.
+        args[1] += 1000 # get a different Unix time
+        self.assertRaises(UnknownImageError, db.add_photometry, *args)
+
+        # DuplicatePhotometryError is raised if we attempt to add a second
+        # photometric record for the same star and image (Unix time)
+        args = [star_id, img.unix_time, 13.2, 125]
+        self.assertRaises(DuplicatePhotometryError, db.add_photometry, *args)
+
+        # LEMONdB.get_photometry raises KeyError if the star ID does not
+        # match that of any of the stars already stored in the database
+        db = LEMONdB(':memory:')
+        johnson_R = passband.Passband('R')
+        johnson_I = passband.Passband('I')
+        star_info = self.random_star_info()
+        star_id = star_info[0]
+        db.add_star(*star_info)
+
+        img = ImageTest.random(pfilter = johnson_R)
+        db.add_image(img)
+        db.add_photometry(star_id, img.unix_time, 14.5, 150)
+        did = star_id + 1 # get a different star ID, not in the database
+        self.assertRaises(KeyError, db.get_photometry, did, johnson_R)
+
+        # If the star has no records, an empty DBStar is returned
+        empty_star = db.get_photometry(star_id, johnson_I)
+        self.assertEqual(len(empty_star), 0)
+
+
+    def test_pfilters_and_star_pfilters(self):
+        db = LEMONdB(':memory:')
+
+        db.rimage = ImageTest.random()
+        self.assertEqual([], db.pfilters)
+
+        nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
+        # Add the information of the stars in the database.
+        # Use a list to store the IDs of the stars that are added.
+        stars_ids = []
+        for star_info in self.random_stars_info(nstars):
+            star_id = star_info[0]
+            stars_ids.append(star_id)
+            db.add_star(*star_info)
+
+        # Add some random images to the database. For each one of them, the
+        # probability of each star being observed is OBSERVED_PROB. We want to
+        # see how the list of filters in which each star (and also the database
+        # as a whole) has been observed is correctly updated as images with
+        # different filters are added.
+        nimages = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
+        images = list(ImageTest.nrandom(nimages))
+        for img in images:
+            db.add_image(img)
+
+        # No photometric record has yet been added
+        self.assertEqual([], db.pfilters)
+
+        # Map each star ID to the filters in which it was observed
+        stars_pfilters = collections.defaultdict(set)
+
+        seen_pfilters = set()
+        for star_id in stars_ids:
+            for img in images:
+                if random.random() < self.OBSERVED_PROB:
+                    mag = random.uniform(self.MIN_MAG, self.MAX_MAG)
+                    snr = random.uniform(self.MIN_SNR, self.MAX_SNR)
+                    db.add_photometry(star_id, img.unix_time, mag, snr)
+                    stars_pfilters[star_id].add(img.pfilter)
+                    seen_pfilters.add(img.pfilter)
+
+                    star_pfilters = set(db._star_pfilters(star_id))
+                    self.assertTrue(star_pfilters, stars_pfilters[star_id])
+                    self.assertTrue(set(db.pfilters), seen_pfilters)
+
+        # LEMONdB._star_pfilters raises KeyError if the star is not in the
+        # database. To test this we need to generate a random, new star ID
+        while True:
+            star_id = random.randint(self.MIN_ID, self.MAX_ID)
+            if star_id not in stars_ids:
+                self.assertRaises(KeyError, db._star_pfilters, star_id)
+                break
+
+    def test_add_and_get_light_curve(self):
+
+        db = LEMONdB(':memory:')
+        curve = LightCurveTest.random()
+        nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
+        for star_info in LEMONdBTest.random_stars_info(nstars):
+            db.add_star(*star_info)
+
+        # Add random images to the database, and use a dictionary to map
+        # each photometric filter to the Images that in it were observed.
+        images = collections.defaultdict(list)
+        size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
+        for img in ImageTest.nrandom(size):
+            images[img.pfilter].append(img)
+            db.add_image(img)
+
+        # Two level dictionary: map each photometric filter to a star ID to the
+        # light curve which was added to the database. Needed to check that the
+        # curves read from the database are exactly equal to the input ones.
+        light_curves = collections.defaultdict(dict)
+        for pfilter in images.iterkeys():
+            for star_id in db.star_ids:
+
+                # Select a random number of the other stars as comparison
+                candidate_cstars = set(db.star_ids) - set([star_id])
+                assert star_id not in candidate_cstars
+                ncstars = random.randint(1, len(candidate_cstars))
+                cstars = random.sample(candidate_cstars, ncstars)
+                curve = LightCurveTest.random(pfilter = pfilter, cstars = cstars)
+                curve = LightCurveTest.populate(curve, images[pfilter])
+                assert len(curve) == len(images[pfilter])
+
+                light_curves[pfilter][star_id] = curve
+                db.add_light_curve(star_id, curve)
+
+        # Now read all the curves, and check that they are equal
+        images_keys = images.keys()
+        random.shuffle(images_keys)
+        for pfilter in images_keys:
+
+            star_ids = db.star_ids
+            random.shuffle(star_ids)
+            for star_id in star_ids:
+                icurve = light_curves[pfilter][star_id]
+                ocurve = db.get_light_curve(star_id, pfilter)
+                LightCurveTest.assertThatAreEqual(self, icurve, ocurve)
+
+        # Finally, check that the proper exceptions are raised when
+        # needed. Again, we need to ensure that when an error occurs
+        # none of the tables of the database is modified.
+
+        star_id = 1
+        cstar1_id = 2
+        cstar2_id = 3
+        cstars = [cstar1_id, cstar2_id]
+        pfilter = passband.Passband.random()
+        images = list(ImageTest.nrandom(2, pfilter = pfilter))
+        curve = LightCurveTest.random(cstars = cstars)
+        curve = LightCurveTest.populate(curve, images)
+
+        def tables_status(db):
+            """ Return three sorted tuples with all the information stored in
+            the LIGHT_CURVES, CMP_STARS and PHOTOMETRIC_FILTERS tables of the
+            'db' LEMONdB """
+
+            query_curves = "SELECT * FROM light_curves ORDER BY id"
+            query_cmp_stars = "SELECT * FROM cmp_stars ORDER BY id"
+            query_filters = "SELECT * FROM photometric_filters ORDER BY wavelength"
+
+            db._execute(query_curves)
+            curves = tuple(db._rows)
+            db._execute(query_cmp_stars)
+            cmp_stars = tuple(db._rows)
+            db._execute(query_filters)
+            filters = tuple(db._rows)
+            return curves, cmp_stars, filters
+
+        def add_test_star(db, *ids):
+            """ Add to 'db' LEMONdB random information for the stars whose IDs
+            are given as arguments """
+            for id_ in ids:
+                db.add_star(*LEMONdBTest.random_star_info(id_ = id_))
+
+        def add_test_img(db, *images):
+            """ Add to 'db' LEMONdB the Image instances given as arguments """
+            for img in images:
+                db.add_image(img)
+
+        # Raises UnknownStarError ('star_id' not in database)
+        db = LEMONdB(':memory:')
+        args = star_id, curve
+        before_tables = tables_status(db)
+        self.assertRaises(UnknownStarError, db.add_light_curve, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        # Let's add two of the stars, as well as all the images
+        add_test_star(db, star_id, cstar1_id)
+        add_test_img(db, *images)
+
+        # Still fails (one of the comparison stars, 'cstar2_id' is still
+        # missing); once we add it, the curve can finally be added to the
+        # database
+
+        before_tables = tables_status(db)
+        self.assertRaises(UnknownStarError, db.add_light_curve, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        add_test_star(db, cstar2_id)
+        db.add_light_curve(*args) # works!
+
+        # UnknownImageError raised if the stars are in the LEMONdB but
+        # not one (or more) of the images to which the light curve refers
+        db = LEMONdB(':memory:')
+        add_test_star(db, star_id, *cstars)
+        add_test_img(db, images[0]) # second Image is not added
+
+        before_tables = tables_status(db)
+        self.assertRaises(UnknownImageError, db.add_light_curve, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        add_test_img(db, images[1])
+        db.add_light_curve(*args) # works!
+
+        # DuplicateLightCurvePointError raised if the light curve has more than
+        # one point for the same Unix time, or if the light curve of a star is
+        # added more than once.
+
+        # Attempt to insert it again... (and fail)
+        before_tables = tables_status(db)
+        self.assertRaises(DuplicateLightCurvePointError, db.add_light_curve, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        db = LEMONdB(':memory:')
+        add_test_star(db, star_id, *cstars)
+        add_test_img(db, *images)
+
+        # Reuse the Unix time of the last point
+        point = list(LightCurveTest.random_point())
+        point[0] = curve[-1][0]
+        duplicate_curve = copy.deepcopy(curve)
+        duplicate_curve.add(*point)
+
+        dargs = star_id, duplicate_curve
+        before_tables = tables_status(db)
+        self.assertRaises(DuplicateLightCurvePointError, db.add_light_curve, *dargs)
+        self.assertEqual(tables_status(db), before_tables)
+
+        db.add_light_curve(*args) # the good one works, of course!
+
+        # ValueError if the star uses itself as one of its comparison stars.
+        db = LEMONdB(':memory:')
+        add_test_star(db, star_id, *cstars)
+        add_test_img(db, *images)
+        curve.cstars[-1] = star_id
+
+        before_tables = tables_status(db)
+        self.assertRaises(ValueError, db.add_light_curve, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        # LEMONdB.get_light_curve, on the other hand, raises
+        # KeyError if the star does not exist in the database...
+        nstar_id = 17 # any other new value would work
+        assert nstar_id not in db.star_ids
+        self.assertRaises(KeyError, db.get_light_curve, nstar_id, pfilter)
+
+        # ... and returns None if the star exists but there is no curve
+        add_test_star(db, nstar_id)
+        self.assertEqual(None, db.get_light_curve(nstar_id, pfilter))
+
+        # Finally, let's corrupt the database manually: insert a point for the
+        # light curve of the star (using the private method _add_curve_point)
+        # and leave the database without information on the comparison stars.
+        db._add_curve_point(nstar_id, images[0].unix_time, 7.4, 100)
+        args = db.get_light_curve, nstar_id, pfilter
+        self.assertRaises(sqlite3.IntegrityError, *args)
+
+    def test_add_and_get_period_and_get_periods(self):
+        db = LEMONdB(':memory:')
+        nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
+        for star_info in LEMONdBTest.random_stars_info(nstars):
+            db.add_star(*star_info)
+
+        # Add random periods to the database, with the probability of each star
+        # having had its period calculated being PERIOD_PROB. Use a two-level
+        # dictionary to map each star ID to a photometric filter to a
+        # two-element tuple with the period and string-length step that was
+        # used. None is used, instead of a tuple, when the period is missing.
+
+        periods = collections.defaultdict(dict)
+        nfilters = random.randint(self.MIN_NFILTERS, self.MAX_NFILTERS)
+        spfilters = random.sample(passband.Passband.all(), nfilters)
+        for pfilter in spfilters:
+            for star_id in db.star_ids:
+                if random.random() < self.PERIOD_PROB:
+                    period = random.uniform(self.MIN_PERIOD, self.MAX_PERIOD)
+                    step = random.uniform(self.MIN_STEP, self.MAX_STEP)
+                    args = (period, step)
+                    db.add_period(star_id, pfilter, *args)
+                else:
+                    args = None
+                periods[star_id][pfilter] = args
+
+        # Now read all the periods, and check that they are equal
+        star_ids = db.star_ids
+        random.shuffle(star_ids)
+        random.shuffle(spfilters)
+        for star_id in star_ids:
+            for pfilter in spfilters:
+                istar_period = periods[star_id][pfilter]
+                ostar_period = db.get_period(star_id, pfilter)
+                if ostar_period is None:
+                    self.assertEqual(istar_period, ostar_period)
+                else:
+                    iperiod, istep = istar_period
+                    operiod, ostep = ostar_period
+                    self.assertAlmostEqual(iperiod, operiod)
+                    self.assertAlmostEqual(istep, ostep)
+
+            # The LEMONdB.get_periods method returns a NumPy
+            # array with all the periods of the star.
+            expected_periods = []
+            for pfilter in periods[star_id].iterkeys():
+                period = periods[star_id][pfilter]
+                if period is not None:
+                    expected_periods.append(period[0])
+
+            returned_periods = list(db.get_periods(star_id))
+
+            expected_periods.sort()
+            returned_periods.sort()
+
+            self.assertEqual(len(expected_periods), len(returned_periods))
+            if len(expected_periods):
+                for iperiod, operiod in zip(expected_periods, returned_periods):
+                    self.assertAlmostEqual(iperiod, operiod)
+
+        # LEMONdB.get_periods returns an empty array if there are no periods
+        db = LEMONdB(':memory:')
+        star_id = random.randint(self.MIN_ID, self.MAX_ID)
+        db.add_star(*LEMONdBTest.random_star_info(id_ = star_id))
+        self.assertEqual([], list(db.get_periods(star_id)))
+
+        # Finally, check that the proper exceptions are raised when
+        # needed. Again, we need to ensure that when an error occurs
+        # none of the tables of the database is modified.
+
+        # LEMONdB.add_period raises UnknownStarError if the star ID does
+        # not match that of any of the stars already stored in the database
+        db = LEMONdB(':memory:')
+        star_id = 1
+        pfilter = passband.Passband.random()
+        period, step = 1400, 15
+
+        def tables_status(db):
+            """ Return three sorted tuples with all the information stored in
+            the PHOTOMETRIC_FILTERS and PERIODS tables of the 'db' LEMONdB """
+
+            query_filters = "SELECT * FROM photometric_filters ORDER BY wavelength"
+            query_periods = "SELECT * FROM periods ORDER BY id"
+            db._execute(query_filters)
+            filters = tuple(db._rows)
+            db._execute(query_periods)
+            periods = tuple(db._rows)
+            return filters, periods
+
+        args = star_id, pfilter, period, step
+        before_tables = tables_status(db)
+        self.assertRaises(UnknownStarError, db.add_period, *args)
+        self.assertEqual(tables_status(db), before_tables)
+        # If the star is added, the ID is no longer unknown
+        db.add_star(*LEMONdBTest.random_star_info(id_ = star_id))
+        db.add_period(*args) # it works!
+
+        # DuplicatePeriodError is raised if the same is added twice
+        before_tables = tables_status(db)
+        self.assertRaises(DuplicatePeriodError, db.add_period, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        # A period is considered duplicate even if we use a different value;
+        # which must be unique is the (star ID, photometric filter) pair
+        args = star_id, pfilter, 3755, 13
+        before_tables = tables_status(db)
+        self.assertRaises(DuplicatePeriodError, db.add_period, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        # Both LEMONdB.get_period and LEMONdB.get_periods must raise KeyError
+        # id the star with the specified ID is not stored in the database
+        star2_id = 89
+        assert star2_id not in db.star_ids
+        self.assertRaises(KeyError, db.get_period, star2_id, pfilter)
+        self.assertRaises(KeyError, db.get_periods, star2_id)
+
+    def test_airmasses(self):
+        db = LEMONdB(':memory:')
+
+        # Make sure the reference image is ignored
+        rimg = ReferenceImageTest.random()
+        pfilter = rimg.pfilter
+        db.rimage = rimg
+        self.assertEqual(db.airmasses(pfilter), {})
+
+        # Two-level dictionary: map each photometric filter to a dictionary
+        # which in turns maps each Unix time to its airmass (we're building
+        # here the dictionary LEMONdB.airmasses is expected to return)
+        airmasses = collections.defaultdict(dict)
+        size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
+        for img in ImageTest.nrandom(size):
+            airmasses[img.pfilter][img.unix_time] = img.airmass
+            db.add_image(img)
+
+        for pfilter, airmasses in airmasses.iteritems():
+            self.assertEqual(db.airmasses(pfilter), airmasses)
+
+    def test_get_phase_diagram(self):
+
+        db = LEMONdB(':memory:')
+        star_id = 1
+        pfilter = passband.Passband.random()
+        cstars = [2, 3]
+        cweights = Weights.random(2)
+        curve = LightCurve(pfilter, cstars, cweights)
+
+        all_ids = [star_id] + cstars
+        [db.add_star(*LEMONdBTest.random_star_info(id_ = x)) for x in all_ids]
+        images = list(ImageTest.nrandom(3, pfilter = pfilter))
+        # Note that img2 precedes img1 in time
+        img1, img2, img3 = images
+        img1.unix_time = 500
+        img2.unix_time = 100
+        img3.unix_time = 785
+
+        for img in images:
+            db.add_image(img)
+
+        point1 = (img1.unix_time, 14.5, 100)
+        point2 = (img2.unix_time, 10.1, 200)
+        point3 = (img3.unix_time, 12.2, 140)
+
+        curve.add(*point1)
+        curve.add(*point2)
+        curve.add(*point3)
+
+        db.add_light_curve(star_id, curve)
+
+        phase = sorted(db.get_phase_diagram(star_id, pfilter, 55))
+
+        epoint1 = (0.272727272727273, 14.5, 100)
+        epoint2 = (0, 10.1, 200)
+        epoint3 = (0.454545454545455, 12.2, 140)
+        expected_phase = sorted((epoint1, epoint2, epoint3))
+
+        assertSequenceOfTuplesAlmostEqual(self, phase, expected_phase)
+
+        # Try now with another value and a different repeat value
+        phase = sorted(db.get_phase_diagram(star_id, pfilter, 175, repeat = 2))
+
+        epoint1 = (0.2857142857142856, 14.5, 100)
+        epoint2 = (0, 10.1, 200)
+        epoint3 = (0.9142857142857141, 12.2, 140)
+        epoint4 = (epoint1[0] + 1, 14.5, 100)
+        epoint5 = (epoint2[0] + 1, 10.1, 200)
+        epoint6 = (epoint3[0] + 1, 12.2, 140)
+        expected_phase = [locals()['epoint%d' % x] for x in xrange(1, 7)]
+        expected_phase.sort()
+
+        assertSequenceOfTuplesAlmostEqual(self, phase, expected_phase)
+
+        # None returned if the star has no light curve in the filter
+        phase = db.get_phase_diagram(star_id, pfilter.different(), 125)
+        self.assertEqual(None, phase)
+
+        # KeyError must be raised if the star ID does not match
+        # that of any of the stars already stored in the database
+        nstar_id = 13
+        assert nstar_id not in db.star_ids
+        self.assertRaises(KeyError, db.get_phase_diagram, nstar_id, pfilter, 65)
 
