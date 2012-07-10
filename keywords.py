@@ -61,9 +61,9 @@ desc['gaink'] = \
 "keyword for the gain of the CCD, in e-/ADU. Needed in order to " \
 "accurately calculate the SNR of each measurement [default: %default]"
 
-uncimgk = "LEMON UNCALIBRATED IMAGE"
+uncimgk = 'UNCIMG'
 desc['uncimgk'] = \
-"keyword for the relative path to the uncalibrated image. This will be one " \
+"keyword for the path to the uncalibrated image. This will be one " \
 "used to check whether pixels are saturated -- as the overscan, bias and " \
 "(particularly) flat-fielding steps may make a pixel be below the " \
 "saturation threshold, when in actuality, before the calibration was " \
