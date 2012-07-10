@@ -403,19 +403,18 @@ def main(arguments = None):
         # Add some information to the FITS header...
         if not options.exact:
 
-            # Store the relative path (absolute paths may be, unfortunately,
-            # too long for a FITS header) to the image. This value propagates
-            # across the pipeline stages and may be accessed by later modules
-            # in case some analysis must be done on the original image, before
-            # any calibration step.
+            # Store the absolute path to the image of which we made a copy.
+            # This value propagates across the pipeline stages and may be
+            # accessed by later modules in case some analysis must be done
+            # on the original image, before any calibration step.
 
             comment = "before any calibration task"
             dest_img.update_keyword(options.uncimgk,
-                                    os.path.relpath(dest_img.path),
+                                    os.path.abspath(dest_img.path),
                                     comment = comment)
 
             msg1 = "File imported by LEMON on %s UTC" % time.asctime(time.gmtime())
-            msg2 = "[Import] Original image: %s" % os.path.relpath(fits_file.path)
+            msg2 = "[Import] Original image: %s" % os.path.abspath(fits_file.path)
             dest_img.add_history(msg1)
             dest_img.add_history(msg2)
 
