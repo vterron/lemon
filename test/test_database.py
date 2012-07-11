@@ -94,11 +94,17 @@ class DBStarTest(unittest.TestCase):
     MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
 
     @classmethod
-    def random_data(cls):
-        """ Return the information needed to instantiate a random DBStar """
+    def random_data(cls, pfilter = None):
+        """ Return the information needed to instantiate a random DBStar.
+
+        If 'pfilter' is given, it is used as the photometric filter in the
+        returned tuple (the second element), instead of a random one.
+
+        """
 
         id_ = random.randint(cls.MIN_ID, cls.MAX_ID)
-        pfilter = passband.Passband.random()
+        if not pfilter:
+            pfilter = passband.Passband.random()
         size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         phot_info = numpy.empty((3, size))
         times_indexes = {}
@@ -110,9 +116,14 @@ class DBStarTest(unittest.TestCase):
         return id_, pfilter, phot_info, times_indexes
 
     @classmethod
-    def random(cls):
-        """ Return a random DBStar """
-        args = cls.random_data()
+    def random(cls, pfilter = None):
+        """ Return a random DBStar.
+
+        If 'pfilter' is given, it is used as the photometric filter of the
+        DBStar, instead of a random one.
+
+        """
+        args = cls.random_data(pfilter = pfilter)
         return DBStar(*args)
 
     def test_init(self):
