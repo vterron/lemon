@@ -153,7 +153,7 @@ class StarSet(object):
 
         """
 
-        # We cannot do time-series photometry with stars for which no have
+        # We cannot do time-series photometry with stars which have no
         # information at all. It makes no sense, so don't even allow it.
         if not len(star):
             raise ValueError("star cannot be empty")
