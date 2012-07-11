@@ -190,8 +190,8 @@ class StarSet(object):
 
         else:
             if star.pfilter != self.pfilter:
-                raise ValueError("star has filter '%s', expected '%s'" % \
-                                 (star.pfilter, self.pfilter))
+                msg = "star with ID = %d has filter '%s', expected '%s'"
+                raise ValueError(msg % (star.id, star.pfilter, self.pfilter))
 
             if star.id in self.star_ids:
                 raise ValueError("star with ID = %d already in the set" % star.id)
