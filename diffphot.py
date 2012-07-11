@@ -151,6 +151,18 @@ class StarSet(object):
         instances are parsed and their photometric information stored in the
         three-dimensional, low-level internal array.
 
+        The ValueError exception is raised in the following cases:
+        (1) If the DBStar has no photometric records (i.e., is empty)
+        (2) If the photometric filter of the DBStar does not match that of
+            the StarSet, which was defined when the class was instantiated.
+        (3) If the ID of the DBStar matches that of any of the DBStars
+            already stored in the set, if any. This means, thus, that the
+            DBStars stored in a StarSet are guaranteed to have different IDs.
+        (4) If the Unix times of the photometric records of the DBStar are
+            not equal to those of the DBStars already stored in the StarSet,
+            if any. In other words: the DBStars stored in a StarSet are
+            guaranteed to have photometric records for the same Unix times.
+
         """
 
         # We cannot do time-series photometry with stars which have no
