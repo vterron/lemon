@@ -408,6 +408,23 @@ class DBStarTest(unittest.TestCase):
             self.assertTrue(numpy.all(numpy.equal(star._phot_info, phot_info)))
             self.assertEqual(star._time_indexes, times_indexes)
 
+    @staticmethod
+    def equal(first, second):
+        """ Check whether two DBStars are equal """
+
+        if (first.id != second.id or
+            first.pfilter != second.pfilter or
+            len(first) != len(second)):
+              return False
+
+        for index in xrange(len(first)):
+            if (first.time(index) != second.time(index) or
+                first.mag(index) != second.mag(index) or
+                first.snr(index) != second.snr(index)):
+                  return False
+
+        return True
+
 
 class PhotometricParametersTest(unittest.TestCase):
 
