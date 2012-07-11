@@ -231,13 +231,7 @@ class StarSet(object):
 
     @property
     def star_ids(self):
-        """ Return a list with the IDs of the stars.
-
-        Note that this value is updated as the .phot_info attribute of each
-        star is copied (see DBStar.add) at instantiation time; so you should
-        use it with caution until the instantation of the class finishes
-
-        """
+        """ Return a list with the IDs of the stars contained in the set """
         return self._star_ids
 
     def __len__(self):
