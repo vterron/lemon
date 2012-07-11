@@ -206,9 +206,16 @@ class StarSet(object):
     def __init__(self, stars, dtype = numpy.float128):
         """ Instantiation method for the StarSet class.
 
-        The 'stars' argument must be a sequence of DBStars, all of which will
-        belong to the set must be given at instantiation time. In other words:
-        you are expected not to call StarSet._add by yourself.
+        The DBStars that belong to the StarSet must be given in a sequence (the
+        'stars' parameter) at instantiation time. You are not expected, and
+        should never, ever need to call the StarSet._add method by yourself.
+
+        The method propagates the exceptions raised by StarSet._add, to which
+        you should refer for in-depth information. The rules, anyway, can be
+        summarized as follows: at least one DBStar, which cannot be empty, is
+        needed, and they must have the same filter and Unix times, as well as
+        different IDs. If one of these conditions is not met, ValueError is
+        raised.
 
         """
 
