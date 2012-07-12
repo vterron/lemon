@@ -267,27 +267,39 @@ class StarSet(object):
                                self._times_indexes, self.dtype)
 
     def flux_proportional_weights(self):
-        """ Returns the Weights which are proportional to the median of the
-        normalized flux of each star. The logic behind this is that the
-        brightest star in the field, for example, should always be the
-        brightest, no matter what the atmospheric conditions are. This only
-        applies, of course, for non-variable stars, which are assumed to be the
-        great majority of the objects in the field. This approach means that
-        all the instrumental magnitudes of all the stars are taken into account
-        in order to calculate the weights, which is more robust than relying on
-        a single image, as we did before, even if it was that with the best
-        seeing.
+        """ Return the Weights proportional to the flux of each star.
 
-        Note that we work with fluxes: if the instrumental magnitude of A is
-        one magnitude greater than that of B, it means that A is 2.512x fainter
-        than B, so its weight must be 2.512 times smaller than that of B."""
+        The method returns a Weights instance with as many coefficients as
+        stars there are in the set, and where each one is assigned a value
+        directly proportional to the median of its normalized flux. Note that,
+        although the DBStars store instrumental magnitudes, we work here with
+        fluxes: thus, if the instrumental magnitude of A is one magnitude
+        greater than that of B, for example, it means that A is 2.512 times
+        fainter and its weight must be 2.512 times smaller than that of B.
 
-        # bi-dimensional matrix (as many rows as stars, as many columns as
+        The first versions of this algorithm used a single image (such as that
+        with the best seeing) to determine the flux-proportional weights. The
+        logic behind the current implementation, considerably more robust as
+        all the images are used, is that, for example, the brightest star in
+        the field should always be the brightest, no matter what the
+        atmospheric conditions are. Therefore, instrumental magnitudes are
+        normalized by dividing them by the maximum of each image, and then
+        the median of the normalized magnitudes of each star used to compute
+        the weights, directly proportional to these values.
+
+        Note that, of course, the 'brightest star will always be the brightest'
+        line of reasoning only applies to non-variable stars, which are assumed
+        to be the great majority of the objects in the field. Otherwise, to
+        what exactly do you intend to compare their instrumental magnitudes?
+
+        """
+
+        # Bi-dimensional matrix (as many rows as stars, as many columns as
         # images) in which the normalized magnitude of the stars are stored
         norm_mags = numpy.empty((len(self), self.nimages), dtype = self.dtype)
 
-        # For each image (third dimension of self.phot_info), normalize the
-        # magnitudes (second dimension, x = 0) of each star (firstdimension).
+        # For each image (third dimension of self._phot_info), normalize the
+        # magnitudes (second dimension, x = 0) of each star (first dimension).
         # That is: the magnitudes for all the stars in the image are divided
         # by the maximum magnitude.
         for image_index in xrange(self.nimages):
@@ -301,7 +313,6 @@ class StarSet(object):
 
         pogsonr = 100 ** 0.2  # fifth root of 100 (Pogson's Ratio)
         return Weights.inversely_proportional(pogsonr ** mag_medians)
-
 
     def light_curve(self, weights, star, no_snr = False, _exclude_index = None):
         """ Compute the light curve of 'star' using the stars in the set as the
