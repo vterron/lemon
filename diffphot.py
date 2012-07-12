@@ -266,7 +266,7 @@ class StarSet(object):
         return database.DBStar(id_, self.pfilter, sphot_info,
                                self._times_indexes, self.dtype)
 
-    def magnitude_inversely_proportional_weights(self):
+    def flux_proportional_weights(self):
         """ Returns the Weights which are proportional to the median of the
         normalized flux of each star. The logic behind this is that the
         brightest star in the field, for example, should always be the
@@ -432,7 +432,7 @@ class StarSet(object):
         # weights for each star. We stop when the absolute percent change
         # between the old weights and the new one is below the threshold
 
-        weights = [self.magnitude_inversely_proportional_weights()]
+        weights = [self.flux_proportional_weights()]
         curves_stdevs = numpy.empty(len(self), dtype = self.dtype)
         for iteration in xrange(max_iters or sys.getrecursionlimit()):
             for star_index in xrange(len(self)):
