@@ -315,69 +315,72 @@ class StarSet(object):
         return Weights.inversely_proportional(pogsonr ** mag_medians)
 
     def light_curve(self, weights, star, no_snr = False, _exclude_index = None):
-        """ Compute the light curve of 'star' using the stars in the set as the
-        comparison star and these weights. For each point in time, subtracts
-        the magnitude of the comparison star from that of 'star'.
+        """ Generate the light curve of a DBStar.
 
-        Note that it is mandatory that 'star' has photometric information for
-        the same Unix times for which the stars in 'self' have info.
+        Use the stars in the set to compute an artificial comparison star,
+        using the weighted average of their instrumental magnitudes as the
+        photometric reference level: for each point in time, subtract the
+        instrumental magnitude of the comparison star from that of the star.
+
+        Note that it is mandatory that the DBStar has photometric information
+        for exactly the same Unix times for which the stars in the set have
+        photometric records. In practice, this means that they will be those
+        returned by the DBStar.complete_for method, which identifies precisely
+        the DBStars that can be used as the artificial comparison star.
 
         The calculation of the signal-to-noise ratio of each differential
-        magnitude is currently, being written in pure Python, extremely
+        magnitude is, being currently written in pure Python, considerably
         slow. It is barely noticeable when a few conversions from SNR to error
         in magnitudes (or vice versa) are done, but when invoked thousands of
         times it causes an unbearable performance hit. Until the 'snr' module
-        is rewritten, 'no_snr', if set to True, will make the method skip the
-        calculation of the resulting SNRs, using None instead. This is probably
-        only needed by StarSet.broeg_weights(), which does not care about the
-        signal-to-noise rations, but only the standard deviation of the light
-        curves, and can therefore skip their computation.
+        is rewritten in C, the 'no_snr' keyword argument, if set to True, will
+        make the method skip the calculation of the differential SNRs, using
+        None instead. This is probably only needed by StarSet.broeg_weights,
+        which does not care about the signal-to-noise ratios, but only the
+        standard deviation of the light curves, and can therefore avoid
+        computing them.
 
-        If given, '_exclude_index' determines the index of the star in the set
-        that will not be used as comparison star. Note that, if that is the
-        case, there must be as many weights as the number of stars in the set
-        minus one. This parameter is here (and probably only needed because of)
-        the StarSet.broeg_weights method, which needs to compute the light
-        curve of each star in the set using as comparison all the others.
+        If specified, the '_exclude_index' argument determines the index of the
+        star in the set that will not be used as comparison star, regardless of
+        its weight. It is equivalent to setting the index-th coefficient to
+        zero and then rescaling the weights. This parameter is here (and most
+        probably only needed) because of the method StarSet.broeg_weights,
+        which computes the light curve of each one of the stars in the set
+        using all the others as comparison.
 
         """
 
-        if len(weights) != len(self) - (1 if _exclude_index is not None else 0):
+        if len(weights) != len(self):
             msg = "number of weights must match that of comparison stars"
             raise ValueError(msg)
 
-        if _exclude_index is not None and \
-            (_exclude_index < 0 or _exclude_index >= len(self)):
-              raise IndexError("_exclude_index out of range")
+        if _exclude_index is not None and not 0 <= _exclude_index < len(self):
+            msg = "_exclude_index out of range"
+            raise IndexError(msg)
 
         if not numpy.all(numpy.equal(star._unix_times, self._unix_times)):
-            raise ValueError("the star must have photometric records for "
-                             "the same Unix times for which StarSet has")
+            msg = "Unix times of StarSet and DBStar do not match"
+            raise ValueError(msg)
 
-        cstars = self.star_ids[:]
-        if _exclude_index is not None:
-            del cstars[_exclude_index]
+        if _exclude_index is None:
+            rweights = weights
+        else:
+            rweights = weights.rescale(_exclude_index)
+            rweights = numpy.insert(rweights, _exclude_index, 0.0)
+        assert len(rweights) == len(self)
 
-        len(weights) == len(weights)
-        curve = database.LightCurve(self.pfilter, cstars, weights,
-                                    dtype = self.dtype)
+        args = self.pfilter, self.star_ids, rweights
+        curve = database.LightCurve(*args, dtype = self.dtype)
 
-        # Instead of, for each image, taking the list of magnitudes and
-        # removing that of the star to be ignored, it is simpler and
-        # faster to assign to it a weight of zero and proceed as usual.
-        if _exclude_index is not None:
-            weights = numpy.insert(weights, _exclude_index, 0.0)
-
-        assert len(weights) == len(self)
         for index, unix_time in enumerate(self._unix_times):
             # The magnitude and SNR of the comparison star
             cmags = self._phot_info[:, 0, index]
             csnrs = self._phot_info[:, 1, index]
-            cmag = numpy.average(cmags, weights = weights)
-            csnr = None if no_snr else snr.mean_snr(csnrs, weights = weights)
+            cmag = numpy.average(cmags, weights = rweights)
+            csnr = None if no_snr else snr.mean_snr(csnrs, weights = rweights)
 
-            smag  = star.mag(index)
-            ssnr  = star.snr(index)
+            smag = star.mag(index)
+            ssnr = star.snr(index)
 
             dmag = smag - cmag
             dsnr = None if no_snr else snr.difference_snr(ssnr, csnr)
@@ -447,8 +450,7 @@ class StarSet(object):
         curves_stdevs = numpy.empty(len(self), dtype = self.dtype)
         for iteration in xrange(max_iters or sys.getrecursionlimit()):
             for star_index in xrange(len(self)):
-                rweights = weights[-1].rescale(star_index)
-                star_curve = self.light_curve(rweights, self[star_index],
+                star_curve = self.light_curve(weights[-1], self[star_index],
                                               _exclude_index = star_index,
                                               no_snr = True)
                 curves_stdevs[star_index] = star_curve.stdev
