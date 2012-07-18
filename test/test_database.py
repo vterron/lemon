@@ -57,7 +57,7 @@ MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
 MAX_UNIX_TIME = time.time()  # Minimum and maximum random Unix times
 
 def assertSequenceOfTuplesAlmostEqual(cls, first, second):
-    """ Test that the elements of the two sequences are almost equal.
+    """ Assert that the tuples of the two sequences are almost equal.
 
     The first parameter, 'cls', must be the subclass of unittest.TestCase
     instance in which this test is done. Values are considered to be almost
