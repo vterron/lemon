@@ -496,31 +496,32 @@ class StarSet(object):
         return weights[-1]
 
     def worst(self, fraction, pct = 0.01, max_iters = None, minimum = None):
-        """ Return the indexes of the 'fraction' (range (0, 1]) of the less
-        constant stars among those in the set. This is done by taking the Broeg
-        weights and identifying the n stars with the lowest ones (identified
-        thus as those with the less constant light curves). n is obtained by
-        multiplying 'fraction' by the number of stars in the set, rounded to
-        the closest integer and having always a minimum value of one. The order
-        of the indexes is not casual: instead, they are order by the
-        'unconstantness' of the stars -- the index of the most variable star is
-        returned first, after it that of the second most variable star, and so
-        on.
+        """ Return the indexes of the less constant stars.
 
-        Keyword arguments:
-        - pct: the convergence threshold, given as a percentage change. The
-               optimum weights will be considered to have been found when the
-               percentage change (see Weights.absolute_percent_change) between
-               the weights computed in the last two iterations is less than or
-               equal to this value.
-        - max_iters: the maximum number of iterations of the algorithm. Any
-                     value which evaluates to False (such as zero or None) will
-                     be interpreted as to mean 'use the current value of the
-                     recursion limit' - as returned by sys.getrecursionlimit().
-        - minimum: the minimum value for a coefficient to be taken into account
-                   when calculating the percentage change between two Weights;
-                   used in order to prevent scientifically-insignificant values
-                   from making the algorithm stop or iterate more than needed.
+        The method returns the indexes of the 'fraction' less constant (that
+        is, the most variable) stars in the set, and consequently the less
+        ideal stars to be used as comparison when a light curve is computed.
+        This is done by calculating the Broeg weights (StarSet.broeg_weights)
+        of the stars in the set and identifying those with the lowest values;
+        since these weights are inversely proportional to the standard
+        deviation of the light curves, this effectively finds those stars
+        with the highest variability when their differential magnitudes are
+        calculated with respect to the others.
+
+        The order of the returned indexes is not casual: they are sorted by
+        increasing variability, that is, by the unconstantness of the stars.
+        This means that the i-th index corresponds to a star whose variability
+        is higher than or equal to that of the star of the i+1-th index.
+
+        Fractional numbers of indexes to be returned are rounded to the nearest
+        integer, although at least one star is always returned, independently
+        of the value of the 'fraction' argument. The ValueError exception is
+        raised, however, if it is not in the range (0, 1], as it makes no sense
+        to ask for either zero or more stars than there are in the set.
+
+        The three keyword parameters are not used by this method itself, but
+        just passed down to StarSet.broeg_weights. See the documentation of
+        that method for details.
 
         """
 
@@ -536,10 +537,12 @@ class StarSet(object):
         if not nstars:
             nstars = 1
 
-        # Get the indexes of the n minimum values among the Weights, as these
-        # will correspond to the stars with the maximum standard deviation - the
-        # 'worst'. Code courtesy of 'aix' at: http://stackoverflow.com/q/6910672
-        bweights = self.broeg_weights(pct = pct, max_iters = max_iters, minimum = minimum)
+        # Find the indexes of the 'nstars' coefficients of the Broeg weights
+        # with the lowest values. These will correspond to the stars with the
+        # maximum standard deviation, which we consider to be the worst. Code
+        # courtesy of user 'aix' at: http://stackoverflow.com/q/6910672
+        kwargs = dict(pct = pct, max_iters = max_iters, minimum = minimum)
+        bweights = self.broeg_weights(**kwargs)
         return list(bweights.argsort()[:nstars])
 
     def best(self, n, fraction = 0.1, pct = 0.01, max_iters = None, minimum = None):
