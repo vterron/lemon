@@ -546,33 +546,33 @@ class StarSet(object):
         return list(bweights.argsort()[:nstars])
 
     def best(self, n, fraction = 0.1, pct = 0.01, max_iters = None, minimum = None):
-        """ Return the n most constant stars in the set, found by iteratively
-        identifying the 'fraction' times the len(self) less constant stars,
-        discarding them and recomputing all the light curves until only n stars
-        are left.  Ideally stars would be discarded one by one until only n
-        remained, but this would be terribly CPU-expensive for large data sets,
-        so we have to consider and discard several of them at once.
+        """ Find the most constant stars in the set.
 
-        ValueError is raised if the method is invoked on a StarSet with fewer
-        than three stars, as that is the minimum number of stars needed in
-        order to be able to determine their variability reliably, or if the
-        number of stars in the set is smaller than the number of best stars
-        requested.
+        The method returns a StarSet with the 'n' most constant (that is, the
+        less variable) stars in the set, and therefore the optimal to be used
+        as comparison when a light curve is computed. In order to achieve this,
+        the method iterates by identifying the 'fraction' less constant stars
+        (StarSet.worst), discarding them and recomputing the light curves of
+        the remaining stars. The process continues until there are only 'n'
+        stars left, which are returned. The original StarSet is not modified.
 
-        Keyword arguments:
-        - pct: the convergence threshold, given as a percentage change. The
-               optimum weights will be considered to have been found when the
-               percentage change (see Weights.absolute_percent_change) between
-               the weights computed in the last two iterations is less than or
-               equal to this value.
-        - max_iters: the maximum number of iterations of the algorithm. Any
-                     value which evaluates to False (such as zero or None) will
-                     be interpreted as to mean 'use the current value of the
-                     recursion limit' - as returned by sys.getrecursionlimit().
-        - minimum: the minimum value for a coefficient to be taken into account
-                   when calculating the percentage change between two Weights;
-                   used in order to prevent scientifically-insignificant values
-                   from making the algorithm stop or iterate more than needed.
+        Ideally, stars would be discarded one by one, but this is terribly
+        CPU-expensive for medium and large data sets, so in practice we are
+        required to discard several stars at each step. The default fraction
+        value is 0.1, which means that at each iteration 10% of the stars in
+        the set, those with a highest standard deviation, are discarded.
+
+        The ValueError exception is raised if the StarSet has fewer than three
+        stars, as that is the lowest number which which their variability can
+        be determined reliably. The same exception is raised if less than one
+        star or more than the size of the set are requested, or if the value of
+        the 'fraction' argument is not in the range (0, 1], as it makes no
+        sense to, at each iteration, discard either zero or more stars than
+        there are in the set.
+
+        The three keyword parameters are not used by this method itself, but
+        just passed down to StarSet.broeg_weights. See the documentation of
+        that method for details.
 
         """
 
@@ -582,52 +582,54 @@ class StarSet(object):
         if len(self) < 3:
             raise ValueError("at least three stars are needed")
 
-        if len(self) < n:
-            msg = "'n' is greater than the number of stars in the set"
+        if not 1 <= n <= len(self):
+            msg = ("must ask for at least one star, at most for as many "
+                   "as there are in the set")
             raise ValueError(msg)
 
-        stars = copy.deepcopy(self)
+        set_ = copy.deepcopy(self)
 
         # We do not discard stars here until only 'n' stars are left, as at
         # least three stars are needed in order to determine their variability
         # reliably. This means that, once we are left with fewer than tree
-        # stars (that is, two), we cannot iterate more. The solution, thus, is
-        # to discard stars until n or three stars are left, whatever happens
-        # first. After that, in we stopped at three when n was lower, we can
-        # discard the last batch of stars until only n are left.
-        while len(stars) > max(n, 3):
-            worst_indexes = \
-                stars.worst(fraction, pct = pct,
-                            max_iters = max_iters, minimum = minimum)
+        # stars (that is, two), we cannot iterate any further. The solution,
+        # thus, is to discard stars until 'n' or three stars are left, whatever
+        # happens first. After that, if we stopped at three but 'n' is smaller,
+        # we can discard the last batch of stars until only 'n' are left.
 
-            # The stars whose indexes have been returned cannot be blindly
-            # deleted, as the difference between the number of indexes returned
-            # and the number of stars left in 'stars' may be higher than the
+        kwargs = dict(pct = pct, max_iters = max_iters, minimum = minimum)
+        while len(set_) > max(n, 3):
+
+            worst_indexes = set_.worst(fraction, **kwargs)
+
+            # The stars whose indexes have been returned by StarSet.worst
+            # cannot be blindly deleted, as the difference between the number
+            # of them and that of stars left in 'set_' may be higher than the
             # number of stars that have to be deleted in order to get 'n' stars
             # left. For example, assume there are 100 stars and we want the
             # best 30, with a fraction of 0.5. 50 stars would be deleted in the
-            # first loop, while 25 more would be removed in the second.  There
-            # would then be 100-50-25 = 25 stars left, when we wanted 30!
+            # first loop, while 25 more would be removed in the second. There
+            # would then be 100 - 50 - 25 = 25 stars left, when we wanted 30!
 
-            del worst_indexes[(len(stars) - max(n, 3)):]
+            del worst_indexes[(len(set_) - max(n, 3)):]
             # Remove the stars going backwards, from highest to lowest index
             for index in sorted(worst_indexes, reverse = True):
-                del stars[index]
+                del set_[index]
 
         # If there are only three stars left but there are still stars to
         # discard we must identify them all at once, independently of the value
         # of 'fraction'. The reason for this is that a minimum of three stars
         # in needed to realibly determine their variability.
 
-        assert len(stars) >= n
-        if len(stars) != n:
-            worst_indexes = stars.worst(1.0, pct = pct, max_iters = max_iters)
-            del worst_indexes[(len(stars) - n):]
+        assert len(set_) >= n
+        if len(set_) != n:
+            worst_indexes = set_.worst(1.0, pct = pct, max_iters = max_iters)
+            del worst_indexes[(len(set_) - n):]
             for index in sorted(worst_indexes, reverse = True):
-                del stars[index]
+                del set_[index]
 
-        assert len(stars) == n
-        return stars
+        assert len(set_) == n
+        return set_
 
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
