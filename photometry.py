@@ -521,7 +521,7 @@ def main(arguments = None):
     # from which we extract all the XMLOffsets and save them in a list.
     print "%sLoading input XML file into memory..." % style.prefix,
     sys.stdout.flush()
-    xml_offsets = xmlparse.XMLOffsetFile(xml_path)
+    xml_offsets = list(xmlparse.XMLOffsetFile(xml_path))
 
     # Also, make sure that all of them pertain to the same reference frame.
     # Otherwise, whiningly complain and abort the execution. Note the cast to
@@ -598,44 +598,66 @@ def main(arguments = None):
     # error is encountered.
     reference_img = fitsimage.FITSImage(reference_img_path)
 
-    # Added Tue 01 Feb 2011 01:24:57 PM CET. We must take into account an
-    # unlikely, but which may happen anyway, possibility: the user might have
-    # done a copy of an image in the working directory, which would mean that
-    # photometry would be done twice on the same image, duplicating that
-    # information in the resulting database. In our case, we came across this
-    # problem because the image with the best astronomical seeing, when found,
-    # was copied and renamed (something like 'best-seeing.fits') in the same
-    # directory where all the images being reduced were stored. Later, the
-    # offsets calculated were those between the just-generated reference image
-    # and *all* the images in the working directory. This, exactly, included,
-    # although with diferent filenames, the same image *twice*!
+    # Light curves, which are our ultimate goal, can only have one differential
+    # magnitude for each point in time. Therefore, we cannot have two or more
+    # images with the same observation date. When this happens, all the images
+    # with the duplicate date must be discarded. This may seem unlikely to
+    # happen, but astronomical instruments also have software errors, and we
+    # have already encountered this while reducing images taken with Omega2000,
+    # a wide-field camera for the 3.5m telescope at Calar Alto.
     #
-    # Thus, and simply in order to anticipate this scenario, we make sure here
-    # that there are no duplicate observation dates in 'xml_offsets'. We use a
-    # dictionary to count the number of occurrences of each date.
+    # We may be tempted to keep one of them, such as, for example, that which
+    # the highest number of sources, or the one with the best full width at
+    # half maximum. However, as Matilde Fernandez thoughtfully pointed out, the
+    # safest bet is to discard them all: how do we know which of the images has
+    # the right observation date, and which have it wrong? We have no way of
+    # finding it out; the only certain thing is that an error occurred. Thus,
+    # we better forget about all these images.
 
-    print "%sMaking sure that there are no duplicate images..." % style.prefix,
+    msg = "%sMaking sure there are no images with the same observation date..."
+    print msg % style.prefix ,
     sys.stdout.flush()
 
-    dates_counter = collections.defaultdict(int) # defaults to zero
-    for xml_offset in xml_offsets:
-        dates_counter[xml_offset.date] += 1
+    # Use a defaultdict, defaulting to an empty list, to map each Unix time to
+    # the list of XMLOffsets (and the corresponding FITS images) that have it
+    # as the observation date. If there are no duplicate dates, all the values
+    # of the dictionary will have a length of one.
+    dates_counter = collections.defaultdict(list)
+    for offset in xml_offsets:
+        dates_counter[offset.date].append(offset)
 
-    if max(dates_counter.itervalues()) > 1:
-        # Identify the offending images and let the user know
-        duplicate_date = sorted(dates_counter, key = dates_counter.get)[-1]
-        duplicate_imgs = [str(offset.shifted) for offset in xml_offsets
-                          if offset.date == duplicate_date]
-        assert len(duplicate_imgs) >= 2
-        print style.prefix
-        print "%sError. There are multiple images with the same date (%s)" % \
-              (style.prefix, time.ctime(duplicate_date))
-        print "%s%s" % (style.prefix, duplicate_imgs)
-        print style.error_exit_message
-        return 1
+    if max([len(offsets) for offsets in dates_counter.itervalues()]) == 1:
+        print 'done.'
 
     else:
-        print 'done.'
+        # Find the Unix times for which there is more than one XMLOffset
+        # (and therefore a FITS image) and remove them all from the list.
+        discarded = 0
+        for unix_time, utime_offsets in dates_counter.iteritems():
+            ntimes = len(utime_offsets)
+            if ntimes > 1:
+
+                # Newline needed only the first time, since the "Making sure
+                # there are no images..." printed above did not include it.
+                if not discarded:
+                    print
+
+                msg = "%sWarning! Multiple images have date %s"
+                warnings.warn(msg % (style.prefix, time.ctime(unix_time)))
+                for offset in utime_offsets:
+                    xml_offsets.remove(offset)
+                    discarded += 1
+                    msg = "%sImage %s excluded"
+                    warnings.warn(msg % (style.prefix, offset.shifted))
+
+        # There should be no duplicate observation dates anymore, and at least
+        # two offsets should have been discarded -- otherwise, how did we get
+        # into the 'else' clause in the first place?
+        assert len(set(x.date for x in xml_offsets)) == len(xml_offsets)
+        assert discarded >= 2
+
+        msg = "%s%d images had duplicate dates and were discarded, %d remain"
+        print msg % (style.prefix, discarded, len(xml_offsets))
 
     # Just a reminder of which the reference image (i.e., the image on which
     # sources are detected and to which the offsets in the XML file refer) and
