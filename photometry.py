@@ -144,8 +144,8 @@ parser = optparse.OptionParser(description = description,
 
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('-o', action = 'store', type = 'str',
-                  dest = 'output_db', default = 'photometry.db',
-                  help = "path to the output LEMON database [default: %default]")
+                  dest = 'output_db', default = 'photometry.LEMONdB',
+                  help = "path to output database [default: %default]")
 
 parser.add_option('-w', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
