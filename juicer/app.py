@@ -99,6 +99,20 @@ class LEMONJuicerGUI(object):
         overview = self._builder.get_object('database-overview')
         view = self._builder.get_object('table-view')
 
+        # Display a dialog with a progress bar which is updated as all the
+        # stars are loaded into memory, as this may take a while. A 'Cancel'
+        # button allows the process to be interrupted at any time.
+        self._builder.add_from_file(glade.LOADING_DIALOG)
+        dialog = self._builder.get_object('loading-dialog')
+        dialog.set_transient_for(self._main_window)
+        progressbar = self._builder.get_object('loading-progressbar')
+
+        self._aborted = False
+        def cancel(*args):
+            self._aborted = True
+        dialog.connect('response', cancel)
+        dialog.show()
+
         try:
 
             self.db = database.LEMONdB(path)
@@ -124,8 +138,12 @@ class LEMONJuicerGUI(object):
                 column.props.resizable = False
                 view.append_column(column)
 
-            # Add a new row for each star
-            for star_id in self.db.star_ids:
+            nstars = len(self.db)
+            for star_index, star_id in enumerate(self.db.star_ids):
+
+                # Has the user pressed 'Cancel'?
+                if self._aborted:
+                    break
 
                 x, y, ra, dec, imag = self.db.get_star(star_id)
                 ra_str  = methods.ra_str(ra)
@@ -146,16 +164,23 @@ class LEMONJuicerGUI(object):
 
                 store.append(row)
 
-            label = gtk.Label(os.path.basename(path))
-            self._notebook.append_page(overview, label)
-            self._notebook.set_tab_reorderable(overview, False)
-            self._notebook.set_current_page(-1)
+                fraction = star_index / nstars
+                progressbar.set_fraction(fraction)
+                # Ensure the progress bar is immediately rendered
+                while gtk.events_pending():
+                    gtk.main_iteration()
 
-            view.set_model(store)
+            if not self._aborted:
+                label = gtk.Label(os.path.basename(path))
+                self._notebook.append_page(overview, label)
+                self._notebook.set_tab_reorderable(overview, False)
+                self._notebook.set_current_page(-1)
 
-            title = 'Success'
-            msg = "%s stars loaded" % len(self.db)
-            util.show_message_dialog(self._main_window, title, msg)
+                view.set_model(store)
+
+                title = 'Success'
+                msg = "%s stars loaded" % nstars
+                util.show_message_dialog(self._main_window, title, msg)
 
         except Exception, err:
 
@@ -164,3 +189,5 @@ class LEMONJuicerGUI(object):
             msg = "File '%s' could not be loaded: %s" % (path, str(err))
             util.show_error_dialog(self._main_window, title, msg)
 
+        finally:
+            dialog.destroy()
