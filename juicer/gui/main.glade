@@ -74,6 +74,7 @@
                                 <property name="label" translatable="yes">Sexagesimal</property>
                                 <property name="use_underline">True</property>
                                 <property name="active">True</property>
+                                <signal name="toggled" handler="handle_toggle_view_sexagesimal"/>
                               </object>
                             </child>
                             <child>
@@ -81,6 +82,7 @@
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Decimal</property>
                                 <property name="use_underline">True</property>
+                                <signal name="toggled" handler="handle_toggle_view_decimal"/>
                               </object>
                             </child>
                           </object>

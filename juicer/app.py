@@ -72,6 +72,25 @@ class LEMONJuicerGUI(object):
     def handle_destroy(self, win):
         gtk.main_quit()
 
+    def handle_toggle_view_sexagesimal(self, *args):
+        button = self._builder.get_object('radio-view-sexagesimal')
+        active = button.get_active()
+        try:
+            self.view.get_column( self.ra_sex_index).set_visible(active)
+            self.view.get_column(self.dec_sex_index).set_visible(active)
+        # Raised if no LEMONdB has yet been loaded
+        except AttributeError:
+            pass
+
+    def handle_toggle_view_decimal(self, *args):
+        button = self._builder.get_object('radio-view-decimal')
+        active = button.get_active()
+        try:
+            self.view.get_column( self.ra_dec_index).set_visible(active)
+            self.view.get_column(self.dec_dec_index).set_visible(active)
+        except AttributeError:
+            pass
+
     def handle_open(self, window):
         kwargs = dict(title = None,
                       action = gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -97,7 +116,7 @@ class LEMONJuicerGUI(object):
 
         self._builder.add_from_file(glade.GUI_OVERVIEW)
         overview = self._builder.get_object('database-overview')
-        view = self._builder.get_object('table-view')
+        self.view = self._builder.get_object('table-view')
 
         # Display a dialog with a progress bar which is updated as all the
         # stars are loaded into memory, as this may take a while. A 'Cancel'
@@ -128,16 +147,16 @@ class LEMONJuicerGUI(object):
 
             assert star_attrs.count('α') == 2
             assert star_attrs.count('δ') == 2
-            ra_sex_index = star_attrs.index('α')
-            ra_dec_index = ra_sex_index + 1
-            dec_sex_index = star_attrs.index('δ')
-            dec_dec_index = dec_sex_index + 1
+            self.ra_sex_index = star_attrs.index('α')
+            self.ra_dec_index = self.ra_sex_index + 1
+            self.dec_sex_index = star_attrs.index('δ')
+            self.dec_dec_index = self.dec_sex_index + 1
 
             for pfilter in db_pfilters:
                 star_attrs.append("Period %s" % pfilter.letter)
 
             args = [str] * len(self.db.pfilters)
-            store = gtk.ListStore(int, str, float, str, float, float, *args)
+            self.store = gtk.ListStore(int, str, float, str, float, float, *args)
 
             for index, attribute in enumerate(star_attrs):
                 render = gtk.CellRendererText()
@@ -145,15 +164,15 @@ class LEMONJuicerGUI(object):
                 column.props.resizable = False
 
                 # Set the current sort comparison function of the column
-                if index == ra_sex_index:
-                    sort_index = ra_dec_index
-                elif index == dec_sex_index:
-                    sort_index = dec_dec_index
+                if index == self.ra_sex_index:
+                    sort_index = self.ra_dec_index
+                elif index == self.dec_sex_index:
+                    sort_index = self.dec_dec_index
                 else:
                     sort_index = index
                 column.set_sort_column_id(sort_index)
 
-                view.append_column(column)
+                self.view.append_column(column)
 
             nstars = len(self.db)
             for star_index, star_id in enumerate(self.db.star_ids):
@@ -179,7 +198,7 @@ class LEMONJuicerGUI(object):
                         period_str = datetime.timedelta(seconds = period)
                     row.append(period_str)
 
-                store.append(row)
+                self.store.append(row)
 
                 fraction = star_index / nstars
                 progressbar.set_fraction(fraction)
@@ -188,12 +207,17 @@ class LEMONJuicerGUI(object):
                     gtk.main_iteration()
 
             if not self._aborted:
+
+                # Show sexagesimal, decimal coordinates or both
+                self.handle_toggle_view_sexagesimal()
+                self.handle_toggle_view_decimal()
+
                 label = gtk.Label(os.path.basename(path))
                 self._notebook.append_page(overview, label)
                 self._notebook.set_tab_reorderable(overview, False)
                 self._notebook.set_current_page(-1)
 
-                view.set_model(store)
+                self.view.set_model(self.store)
 
                 title = 'Success'
                 msg = "%s stars loaded" % nstars
