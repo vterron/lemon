@@ -18,9 +18,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
+import contextlib
+import functools
+import gtk
 
-GLADE_DIR = './gui/'
-GUI_MAIN  = os.path.join(GLADE_DIR, 'main.glade')
-GUI_ABOUT = os.path.join(GLADE_DIR, 'about.glade')
-GUI_OVERVIEW = os.path.join(GLADE_DIR, 'overview.glade')
+@contextlib.contextmanager
+def destroying(thing):
+    try:
+        yield thing
+    finally:
+        thing.destroy()
+
+def show_message_dialog(parent_window, title, msg, msg_type = gtk.MESSAGE_INFO):
+
+    kwargs = dict(type = msg_type,
+                  buttons = gtk.BUTTONS_CLOSE,
+                  message_format = msg)
+    msg_dlg = gtk.MessageDialog(**kwargs)
+    msg_dlg.set_title(title)
+    msg_dlg.set_transient_for(parent_window)
+    msg_dlg.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+    res = msg_dlg.run()
+    msg_dlg.destroy()
+    return res
+
+show_error_dialog = functools.partial(show_message_dialog,
+                                      msg_type = gtk.MESSAGE_ERROR)

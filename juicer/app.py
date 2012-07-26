@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# encoding:UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -20,12 +21,22 @@
 
 from __future__ import division
 
+import datetime
 import pygtk
 pygtk.require ('2.0')
 import gtk
+import os.path
+import sys
+
+# http://stackoverflow.com/a/1054293/184363
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(path)
 
 # LEMON modules
+import database
 import glade
+import methods
+import util
 
 class LEMONJuicerGUI(object):
 
@@ -42,6 +53,8 @@ class LEMONJuicerGUI(object):
         self._status_bar  = builder.get_object('status-bar')
 
         self._main_window.show()
+        self._builder = builder
+
 
     def run(self):
         gtk.main()
@@ -50,13 +63,104 @@ class LEMONJuicerGUI(object):
         self._main_window.destroy()
 
     def handle_show_about(self, obj):
-        builder = gtk.Builder()
-        builder.add_from_file(glade.GUI_ABOUT)
-        about = builder.get_object('about-dialog')
+        self._builder.add_from_file(glade.GUI_ABOUT)
+        about = self._builder.get_object('about-dialog')
         about.set_transient_for(self._main_window)
         about.run()
         about.destroy()
 
     def handle_destroy(self, win):
         gtk.main_quit()
+
+    def handle_open(self, window):
+        kwargs = dict(title = None,
+                      action = gtk.FILE_CHOOSER_ACTION_OPEN,
+                      buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+
+        with util.destroying(gtk.FileChooserDialog(**kwargs)) as dialog:
+
+            filt = gtk.FileFilter()
+            pattern = '*.LEMONdB'
+            filt.set_name('LEMON Database (%s)' % pattern)
+            filt.add_mime_type('application/octet-stream; charset=binary')
+            filt.add_pattern(pattern)
+            dialog.add_filter(filt)
+
+            response = dialog.run()
+            if response == gtk.RESPONSE_OK:
+                path = dialog.get_filename()
+                dialog.destroy()
+                self.open_db(path)
+
+    def open_db(self, path):
+
+        self._builder.add_from_file(glade.GUI_OVERVIEW)
+        overview = self._builder.get_object('database-overview')
+        view = self._builder.get_object('table-view')
+
+        try:
+
+            self.db = database.LEMONdB(path)
+            db_pfilters = self.db.pfilters
+
+            # Two columns are used for the right ascension and declination of
+            # the stars, with the sexagesimal and decimal coordinates. They
+            # will be shown depending on the radio button selected at View -
+            # Coordinates, but the decimal coordinates are always needed, as
+            # sexagesimal ones are sorted by them, not lexicographically.
+
+            star_attrs = ['ID', 'α', 'α', 'δ', 'δ', 'm']
+
+            for pfilter in db_pfilters:
+                star_attrs.append("Period %s" % pfilter.letter)
+
+            args = [str] * len(self.db.pfilters)
+            store = gtk.ListStore(int, str, float, str, float, float, *args)
+
+            for index, attribute in enumerate(star_attrs):
+                render = gtk.CellRendererText()
+                column = gtk.TreeViewColumn(attribute, render, text = index)
+                column.props.resizable = False
+                view.append_column(column)
+
+            # Add a new row for each star
+            for star_id in self.db.star_ids:
+
+                x, y, ra, dec, imag = self.db.get_star(star_id)
+                ra_str  = methods.ra_str(ra)
+                dec_str = methods.dec_str(dec)
+                row = [star_id, ra_str, ra, dec_str, dec, imag]
+
+                for pfilter in db_pfilters:
+                    # Returns a two-element tuple, with the period of the star,
+                    # in seconds, and the step that the string-length method
+                    # used. In case the period is unknown, None is returned.
+                    star_period = self.db.get_period(star_id, pfilter)
+                    if star_period is None:
+                        period_str = ''
+                    else:
+                        period, step = star_period
+                        period_str = datetime.timedelta(seconds = period)
+                    row.append(period_str)
+
+                store.append(row)
+
+            label = gtk.Label(os.path.basename(path))
+            self._notebook.append_page(overview, label)
+            self._notebook.set_tab_reorderable(overview, False)
+            self._notebook.set_current_page(-1)
+
+            view.set_model(store)
+
+            title = 'Success'
+            msg = "%s stars loaded" % len(self.db)
+            util.show_message_dialog(self._main_window, title, msg)
+
+        except Exception, err:
+
+            path = os.path.basename(path)
+            title = "Error while loading LEMON database"
+            msg = "File '%s' could not be loaded: %s" % (path, str(err))
+            util.show_error_dialog(self._main_window, title, msg)
 
