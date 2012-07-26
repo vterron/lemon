@@ -20,7 +20,7 @@
 
 import os.path
 
-GLADE_DIR = './gui/'
+GLADE_DIR = os.path.join(os.path.dirname(__file__), './gui/')
 GUI_MAIN  = os.path.join(GLADE_DIR, 'main.glade')
 GUI_ABOUT = os.path.join(GLADE_DIR, 'about.glade')
 GUI_OVERVIEW = os.path.join(GLADE_DIR, 'overview.glade')
