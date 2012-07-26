@@ -126,6 +126,13 @@ class LEMONJuicerGUI(object):
 
             star_attrs = ['ID', 'α', 'α', 'δ', 'δ', 'm']
 
+            assert star_attrs.count('α') == 2
+            assert star_attrs.count('δ') == 2
+            ra_sex_index = star_attrs.index('α')
+            ra_dec_index = ra_sex_index + 1
+            dec_sex_index = star_attrs.index('δ')
+            dec_dec_index = dec_sex_index + 1
+
             for pfilter in db_pfilters:
                 star_attrs.append("Period %s" % pfilter.letter)
 
@@ -136,6 +143,16 @@ class LEMONJuicerGUI(object):
                 render = gtk.CellRendererText()
                 column = gtk.TreeViewColumn(attribute, render, text = index)
                 column.props.resizable = False
+
+                # Set the current sort comparison function of the column
+                if index == ra_sex_index:
+                    sort_index = ra_dec_index
+                elif index == dec_sex_index:
+                    sort_index = dec_dec_index
+                else:
+                    sort_index = index
+                column.set_sort_column_id(sort_index)
+
                 view.append_column(column)
 
             nstars = len(self.db)
@@ -183,7 +200,6 @@ class LEMONJuicerGUI(object):
                 util.show_message_dialog(self._main_window, title, msg)
 
         except Exception, err:
-
             path = os.path.basename(path)
             title = "Error while loading LEMON database"
             msg = "File '%s' could not be loaded: %s" % (path, str(err))
