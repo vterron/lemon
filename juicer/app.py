@@ -55,6 +55,8 @@ class LEMONJuicerGUI(object):
         self._main_window.show()
         self._builder = builder
 
+        self.db = None  # instance of the LEMONdB class
+
     def run(self):
         gtk.main()
 
@@ -139,6 +141,26 @@ class LEMONJuicerGUI(object):
 
     def open_db(self, path):
 
+        # If this is not the first LEMONdB that is opened, warn the user that
+        # the current one will be closed, unless the operation is aborted.
+        if self.db is not None:
+            title = "Are you done with this database?"
+            msg = ("Unfortunately, data analysis must be done on one LEMONdB "
+                   "at a time, so opening a new one will close all your "
+                   "current tabs. Do you really want to proceed?")
+            args = self._main_window, title, msg
+            kwargs = dict(msg_type = gtk.MESSAGE_QUESTION,
+                          buttons = gtk.BUTTONS_OK_CANCEL)
+            response = util.show_message_dialog(*args, **kwargs)
+
+            # If the user presses OK, close all the tabs of the notebook.
+            # Otherwise, the load is cancelled and nothing is modified.
+            if response == gtk.RESPONSE_OK:
+                while self._notebook.get_n_pages():
+                    self._notebook.remove_page(-1)
+            else:
+                return
+
         self._builder.add_from_file(glade.GUI_OVERVIEW)
         overview = self._builder.get_object('database-overview')
         self.view = self._builder.get_object('table-view')
@@ -159,8 +181,8 @@ class LEMONJuicerGUI(object):
 
         try:
 
-            self.db = database.LEMONdB(path)
-            db_pfilters = self.db.pfilters
+            db = database.LEMONdB(path)
+            db_pfilters = db.pfilters
 
             # Two columns are used for the right ascension and declination of
             # the stars, with the sexagesimal and decimal coordinates. They
@@ -196,7 +218,7 @@ class LEMONJuicerGUI(object):
                 self.period_hhmmss_indexes.append(length - 2)
                 self.period_seconds_indexes.append(length - 1)
 
-            args = [float, str, int] * len(self.db.pfilters)
+            args = [float, str, int] * len(db.pfilters)
             self.store = gtk.ListStore(int, str, float, str, float, float, *args)
 
             for index, attribute in enumerate(star_attrs):
@@ -221,14 +243,14 @@ class LEMONJuicerGUI(object):
 
                 self.view.append_column(column)
 
-            nstars = len(self.db)
-            for star_index, star_id in enumerate(self.db.star_ids):
+            nstars = len(db)
+            for star_index, star_id in enumerate(db.star_ids):
 
                 # Has the user pressed 'Cancel'?
                 if self._aborted:
                     break
 
-                x, y, ra, dec, imag = self.db.get_star(star_id)
+                x, y, ra, dec, imag = db.get_star(star_id)
                 ra_str  = methods.ra_str(ra)
                 dec_str = methods.dec_str(dec)
                 row = [star_id, ra_str, ra, dec_str, dec, imag]
@@ -237,7 +259,7 @@ class LEMONJuicerGUI(object):
                     # Returns a two-element tuple, with the period of the star,
                     # in seconds, and the step that the string-length method
                     # used. In case the period is unknown, None is returned.
-                    star_period = self.db.get_period(star_id, pfilter)
+                    star_period = db.get_period(star_id, pfilter)
                     if star_period is None:
                         # Use -1 for unknown values
                         row += [-1, '-1', -1]
@@ -256,6 +278,11 @@ class LEMONJuicerGUI(object):
                     gtk.main_iteration()
 
             if not self._aborted:
+
+                # Save the LEMONdB for later use now that the load has been
+                # completed; we could not do it earlier as it could have been
+                # aborted
+                self.db = db
 
                 # Show sexagesimal, decimal coordinates or both
                 self.handle_toggle_view_sexagesimal()

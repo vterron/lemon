@@ -29,10 +29,12 @@ def destroying(thing):
     finally:
         thing.destroy()
 
-def show_message_dialog(parent_window, title, msg, msg_type = gtk.MESSAGE_INFO):
+def show_message_dialog(parent_window, title, msg,
+                        msg_type = gtk.MESSAGE_INFO,
+                        buttons = gtk.BUTTONS_CLOSE):
 
     kwargs = dict(type = msg_type,
-                  buttons = gtk.BUTTONS_CLOSE,
+                  buttons = buttons,
                   message_format = msg)
     msg_dlg = gtk.MessageDialog(**kwargs)
     msg_dlg.set_title(title)
