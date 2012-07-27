@@ -98,30 +98,33 @@
                           <object class="GtkMenu" id="view-periods">
                             <property name="visible">True</property>
                             <child>
-                              <object class="GtkRadioMenuItem" id="view-period-julian">
+                              <object class="GtkRadioMenuItem" id="radio-view-period-days">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">Julian days</property>
+                                <property name="label" translatable="yes">Days</property>
                                 <property name="use_underline">True</property>
                                 <property name="draw_as_radio">True</property>
+                                <signal name="toggled" handler="handle_select_period_units"/>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkRadioMenuItem" id="view-period-natural">
+                              <object class="GtkRadioMenuItem" id="radio-view-period-hhmmss">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">Natural days</property>
+                                <property name="label" translatable="yes">hh:mm:ss</property>
                                 <property name="use_underline">True</property>
                                 <property name="active">True</property>
                                 <property name="draw_as_radio">True</property>
-                                <property name="group">view-period-julian</property>
+                                <property name="group">radio-view-period-days</property>
+                                <signal name="toggled" handler="handle_select_period_units"/>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkRadioMenuItem" id="view-period-seconds">
+                              <object class="GtkRadioMenuItem" id="radio-view-period-seconds">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Seconds</property>
                                 <property name="use_underline">True</property>
                                 <property name="draw_as_radio">True</property>
-                                <property name="group">view-period-julian</property>
+                                <property name="group">radio-view-period-days</property>
+                                <signal name="toggled" handler="handle_select_period_units"/>
                               </object>
                             </child>
                           </object>

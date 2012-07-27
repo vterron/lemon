@@ -55,7 +55,6 @@ class LEMONJuicerGUI(object):
         self._main_window.show()
         self._builder = builder
 
-
     def run(self):
         gtk.main()
 
@@ -88,6 +87,32 @@ class LEMONJuicerGUI(object):
         try:
             self.view.get_column( self.ra_dec_index).set_visible(active)
             self.view.get_column(self.dec_dec_index).set_visible(active)
+        except AttributeError:
+            pass
+
+    def handle_select_period_units(self, button):
+
+        def set_column(index):
+            """ Set the visibility of the index-th column of the GtkTreeView,
+            depending on whether the button is active or not"""
+            self.view.get_column(index).set_visible(button.get_active())
+
+        try:
+            if button.get_label() == 'Days':
+                for index in self.period_days_indexes:
+                    set_column(index)
+
+            elif button.get_label() == 'hh:mm:ss':
+                for index in self.period_hhmmss_indexes:
+                    set_column(index)
+
+            elif button.get_label() == 'Seconds':
+                for index in self.period_seconds_indexes:
+                    set_column(index)
+            else:
+                msg = "unknown button label"
+                raise ValueError(msg)
+
         except AttributeError:
             pass
 
@@ -152,10 +177,26 @@ class LEMONJuicerGUI(object):
             self.dec_sex_index = star_attrs.index('δ')
             self.dec_dec_index = self.dec_sex_index + 1
 
-            for pfilter in db_pfilters:
-                star_attrs.append("Period %s" % pfilter.letter)
+            # Three columns are used for each period, to show it in days (a
+            # real number), hh:mm:ss (str) or seconds (int). Periods will be
+            # sorted always by their value in seconds. We need to keep an
+            # internal list with the indexes of each type of column, to make
+            # them visible or not depending on the option selected at View -
+            # Periods.
 
-            args = [str] * len(self.db.pfilters)
+            self.period_days_indexes = []
+            self.period_hhmmss_indexes = []
+            self.period_seconds_indexes = []
+
+            for pfilter in db_pfilters:
+                label = "Period %s" % pfilter.letter
+                star_attrs += [label] * 3
+                length = len(star_attrs)
+                self.period_days_indexes.append(length - 3)
+                self.period_hhmmss_indexes.append(length - 2)
+                self.period_seconds_indexes.append(length - 1)
+
+            args = [float, str, int] * len(self.db.pfilters)
             self.store = gtk.ListStore(int, str, float, str, float, float, *args)
 
             for index, attribute in enumerate(star_attrs):
@@ -168,6 +209,12 @@ class LEMONJuicerGUI(object):
                     sort_index = self.ra_dec_index
                 elif index == self.dec_sex_index:
                     sort_index = self.dec_dec_index
+
+                # Periods are in the following order: days, hh:mm:ss, seconds.
+                # We want to sort hh:mm:ss periods not lexicographically, but
+                # by the value of the third column, which stores seconds.
+                elif index in self.period_hhmmss_indexes:
+                    sort_index = index + 1
                 else:
                     sort_index = index
                 column.set_sort_column_id(sort_index)
@@ -192,11 +239,13 @@ class LEMONJuicerGUI(object):
                     # used. In case the period is unknown, None is returned.
                     star_period = self.db.get_period(star_id, pfilter)
                     if star_period is None:
-                        period_str = ''
+                        # Use -1 for unknown values
+                        row += [-1, '-1', -1]
                     else:
                         period, step = star_period
-                        period_str = datetime.timedelta(seconds = period)
-                    row.append(period_str)
+                        row.append(period / 3600 / 24) # hours
+                        row.append(str(datetime.timedelta(seconds = period)))
+                        row.append(period) # seconds
 
                 self.store.append(row)
 
@@ -211,6 +260,14 @@ class LEMONJuicerGUI(object):
                 # Show sexagesimal, decimal coordinates or both
                 self.handle_toggle_view_sexagesimal()
                 self.handle_toggle_view_decimal()
+
+                # Hide all the period columns but one
+                buttons = [self._builder.get_object('radio-view-period-days'),
+                           self._builder.get_object('radio-view-period-hhmmss'),
+                           self._builder.get_object('radio-view-period-seconds')]
+                for button in buttons:
+                    self.handle_select_period_units(button)
+
 
                 label = gtk.Label(os.path.basename(path))
                 self._notebook.append_page(overview, label)
