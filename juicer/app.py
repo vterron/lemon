@@ -38,9 +38,60 @@ import glade
 import methods
 import util
 
+class StarDetailsGUI(object):
+    """ A tabs of the notebook with all the details of a star """
+
+    def show_pfilter(self, widget, pfilter):
+        """ Display the information of the star in this photometric filter """
+
+        if self.shown != pfilter:
+            self.shown = pfilter
+
+            print self.id, "updates to", pfilter
+
+            # TODO: Show light curve
+            # TODO: Update list of reference stars
+            # TODO: Update list of photometric records
+
+
+    def __init__(self, db, star_id):
+
+        builder = gtk.Builder()
+        builder.add_from_file(glade.STAR_DETAILS)
+        self.vbox = builder.get_object('star-details')
+        builder.connect_signals(self.vbox)
+
+        self.shown = None  # pfilter currently shown
+        self.db = db
+        self.id = star_id
+
+        x, y, ra, dec, imag = db.get_star(star_id)
+        # TODO: Display star information
+
+        self.buttons = {}  # map each pfilter to its button
+        self.HButtonBox = builder.get_object('filter-buttons')
+        group = None
+        for index, pfilter in enumerate(db.pfilters):
+            button = gtk.RadioButton(group, label = str(pfilter))
+            if not index: group = button
+
+            # Make the radio button look like a normal button
+            button.set_mode(draw_indicator = False)
+            button.connect('clicked', self.show_pfilter, pfilter)
+
+            self.buttons[pfilter] = button
+            self.HButtonBox.pack_end(button)
+            button.show()
+
+        # Activate the button of the first filter
+        pfilter = min(self.buttons.keys())
+        self.buttons[pfilter].clicked()
+        self.shown = pfilter
+
+
 class LEMONJuicerGUI(object):
 
-    def __init__ (self, *args, **kwds):
+    def __init__(self, *args, **kwds):
         super(LEMONJuicerGUI, self).__init__(*args, **kwds)
 
         builder = gtk.Builder()
@@ -56,6 +107,7 @@ class LEMONJuicerGUI(object):
         self._builder = builder
 
         self.db = None  # instance of the LEMONdB class
+        self.open_stars = set() # IDs of the stars already open
 
     def run(self):
         gtk.main()
@@ -164,6 +216,7 @@ class LEMONJuicerGUI(object):
         self._builder.add_from_file(glade.GUI_OVERVIEW)
         overview = self._builder.get_object('database-overview')
         self.view = self._builder.get_object('table-view')
+        self.view.connect('row-activated', self.handle_row_activated)
 
         # Display a dialog with a progress bar which is updated as all the
         # stars are loaded into memory, as this may take a while. A 'Cancel'
@@ -192,8 +245,10 @@ class LEMONJuicerGUI(object):
 
             star_attrs = ['ID', 'α', 'α', 'δ', 'δ', 'm']
 
+            assert star_attrs.count('ID') == 1
             assert star_attrs.count('α') == 2
             assert star_attrs.count('δ') == 2
+            self.id_index = star_attrs.index('ID')
             self.ra_sex_index = star_attrs.index('α')
             self.ra_dec_index = self.ra_sex_index + 1
             self.dec_sex_index = star_attrs.index('δ')
@@ -285,8 +340,9 @@ class LEMONJuicerGUI(object):
 
                 # Save the LEMONdB for later use now that the load has been
                 # completed; we could not do it earlier as it could have been
-                # aborted
+                # aborted. Also clear the set of IDs of open stars.
                 self.db = db
+                self.open_stars.clear()
 
                 # Show sexagesimal, decimal coordinates or both
                 self.handle_toggle_view_sexagesimal()
@@ -319,3 +375,31 @@ class LEMONJuicerGUI(object):
 
         finally:
             dialog.destroy()
+
+    def show_star(self, star_id):
+        """ Append a page with the star whose ID is 'star_id' """
+
+        view = StarDetailsGUI(self.db, star_id)
+        tab_label = gtk.Label('Star %d' % star_id)
+        self._notebook.append_page(view.vbox, tab_label)
+        self._notebook.set_tab_reorderable(view.vbox, False)
+        self._notebook.set_current_page(-1)
+
+    def switch_to_tab(self, star_id):
+        """ Switch to the page with the star whose ID is 'star_id' """
+        # TODO: find and switch to the tab with information of the star
+        print "switch to %d" % star_id
+
+    def handle_row_activated(self, view, row, column):
+        """ Open the details of the star, or switch to them if already open """
+
+        # determine the ID of the star on which the user has clicked
+        star_id = view.get_model()[row][self.id_index]
+
+        if star_id in self.open_stars:
+            self.switch_to_tab(star_id)
+
+        else:
+            self.open_stars.add(star_id)
+            self.show_star(star_id)
+
