@@ -368,10 +368,6 @@ class LEMONJuicerGUI(object):
 
                 self.view.set_model(self.store)
 
-                title = 'Success'
-                msg = "%s stars loaded" % nstars
-                util.show_message_dialog(self._main_window, title, msg)
-
         except Exception, err:
             path = os.path.basename(path)
             title = "Error while loading LEMON database"
