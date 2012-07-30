@@ -271,11 +271,15 @@ class LEMONJuicerGUI(object):
 
                 self.store.append(row)
 
-                fraction = star_index / nstars
-                progressbar.set_fraction(fraction)
-                # Ensure the progress bar is immediately rendered
-                while gtk.events_pending():
-                    gtk.main_iteration()
+                # Update the progress bar only when the percentage varies; if,
+                # e.g., it is 0.971 (97%), setting the fraction to 0.972 (still
+                # 97%) would only unnecessarily slow down the execution.
+                fraction = round(star_index / nstars, 2)
+                if fraction != progressbar.get_fraction():
+                    progressbar.set_fraction(fraction)
+                    # Ensure rendering is done immediately
+                    while gtk.events_pending():
+                        gtk.main_iteration()
 
             if not self._aborted:
 
