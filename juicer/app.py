@@ -44,7 +44,9 @@ class StarDetailsGUI(object):
     def show_pfilter(self, widget, pfilter):
         """ Display the information of the star in this photometric filter """
 
-        if self.shown != pfilter:
+        # 'show' is initialized to NoneType; so this method will
+        # be always executed the first time it is called
+        if not self.shown or self.shown != pfilter:
             self.shown = pfilter
 
             print self.id, "updates to", pfilter
