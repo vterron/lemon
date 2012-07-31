@@ -27,6 +27,7 @@ pygtk.require ('2.0')
 import gtk
 import os.path
 import sys
+import time
 
 # http://stackoverflow.com/a/1054293/184363
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -36,10 +37,33 @@ sys.path.append(path)
 import database
 import glade
 import methods
+import snr
 import util
 
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
+
+    def update_light_curve_points(self, curve):
+        """ Update the list of points of the light curve """
+
+        self.curve_store.clear()
+        for unix_time, magnitude, noise in curve:
+            row = []
+            row.append(time.ctime(unix_time))
+            row.append(unix_time)
+            row.append(magnitude)
+            row.append(noise)
+            # Returns two errors in mags, positive and negative
+            nmerr, pmerr = snr.snr_to_error(noise)
+            row.append(pmerr)
+            row.append(nmerr)
+            self.curve_store.append(row)
+
+        # Automatically change the order after showing the model (without
+        # the user having to click on the column header), unless the user
+        # has selected a diferent column or order.
+        if self.curve_store.get_sort_column_id() == (None, None):
+            self.curve_store.set_sort_column_id(1, gtk.SORT_ASCENDING)
 
     def update_reference_stars(self, curve):
         """ Update the list of reference stars """
@@ -48,9 +72,7 @@ class StarDetailsGUI(object):
         for weight in curve.weights():
             self.refstars_store.append(weight)
 
-        # Automatically change the order after showing the model (without
-        # the user having to click on the column header), unless the user
-        # has selected a diferent column or order.
+        # Sort automatically, but respect the user preferences
         if self.refstars_store.get_sort_column_id() == (None, None):
             self.refstars_store.set_sort_column_id(1, gtk.SORT_DESCENDING)
 
@@ -65,8 +87,8 @@ class StarDetailsGUI(object):
             print self.id, "updates to", pfilter
 
             # TODO: Show light curve
-            # TODO: Update list of photometric records
             curve = self.db.get_light_curve(self.id, pfilter)
+            self.update_light_curve_points(curve)
             self.update_reference_stars(curve)
 
     def __init__(self, db, star_id):
@@ -80,6 +102,26 @@ class StarDetailsGUI(object):
         self.vbox.id = star_id
         builder.connect_signals(self.vbox)
 
+        # GTKTreeView used to display the list of points of the curve; dates
+        # are plotted twice: hh:mm:ss and also in Unix time, the latter of
+        # which is used to sort the columns by their date.
+        attrs = ('Date', 'Date', 'Mag', 'SNR', 'merr (+)', 'merr (-)')
+        self.curve_store = gtk.ListStore(str, float, float, float, float, float)
+        self.curve_view = builder.get_object('curve-points-view')
+        for index, title in enumerate(attrs):
+            render = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(title, render, text = index)
+            column.props.resizable = False
+            # The first column (index = 0) is sorted by the second
+            column.set_sort_column_id(1 if not index else index)
+
+            # The column with dates in Unix time is not shown
+            if index == 1:
+                column.set_visible(False)
+
+            self.curve_view.append_column(column)
+        self.curve_view.set_model(self.curve_store)
+
         # GTKTreeView used to display the reference stars and their weight
         self.refstars_store = gtk.ListStore(int, float)
         self.refstars_view = builder.get_object('refstars-view')
@@ -89,7 +131,6 @@ class StarDetailsGUI(object):
             column.props.resizable = False
             column.set_sort_column_id(index)
             self.refstars_view.append_column(column)
-
         self.refstars_view.set_model(self.refstars_store)
 
         self.shown = None  # pfilter currently shown
