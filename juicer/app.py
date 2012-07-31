@@ -41,6 +41,19 @@ import util
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
+    def update_reference_stars(self, curve):
+        """ Update the list of reference stars """
+
+        self.refstars_store.clear()
+        for weight in curve.weights():
+            self.refstars_store.append(weight)
+
+        # Automatically change the order after showing the model (without
+        # the user having to click on the column header), unless the user
+        # has selected a diferent column or order.
+        if self.refstars_store.get_sort_column_id() == (None, None):
+            self.refstars_store.set_sort_column_id(1, gtk.SORT_DESCENDING)
+
     def show_pfilter(self, widget, pfilter):
         """ Display the information of the star in this photometric filter """
 
@@ -52,8 +65,9 @@ class StarDetailsGUI(object):
             print self.id, "updates to", pfilter
 
             # TODO: Show light curve
-            # TODO: Update list of reference stars
             # TODO: Update list of photometric records
+            curve = self.db.get_light_curve(self.id, pfilter)
+            self.update_reference_stars(curve)
 
     def __init__(self, db, star_id):
 
@@ -65,6 +79,18 @@ class StarDetailsGUI(object):
         # star each tabs corresponds.
         self.vbox.id = star_id
         builder.connect_signals(self.vbox)
+
+        # GTKTreeView used to display the reference stars and their weight
+        self.refstars_store = gtk.ListStore(int, float)
+        self.refstars_view = builder.get_object('refstars-view')
+        for index, title in enumerate(('Star', 'Weight')):
+            render = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(title, render, text = index)
+            column.props.resizable = False
+            column.set_sort_column_id(index)
+            self.refstars_view.append_column(column)
+
+        self.refstars_view.set_model(self.refstars_store)
 
         self.shown = None  # pfilter currently shown
         self.db = db
