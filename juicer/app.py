@@ -452,6 +452,7 @@ class LEMONJuicerGUI(object):
         informacion of the star"""
 
         details = StarDetailsGUI(self.db, star_id)
+        details.refstars_view.connect('row-activated', self.handle_row_activated)
         tab_label = gtk.Label('Star %d' % star_id)
         self._notebook.append_page(details.vbox, tab_label)
         self._notebook.set_tab_reorderable(details.vbox, False)
@@ -473,11 +474,18 @@ class LEMONJuicerGUI(object):
             msg = "star %d is not being shown" % star_id
             raise ValueError(msg)
 
-    def handle_row_activated(self, view, row, column):
-        """ Open the details of the star, or switch to them if already open """
+    def handle_row_activated(self, view, row, column, id_index = 0):
+        """ Open the details of the star, or switch to them if already open.
+
+        Keyword arguments:
+
+        id_index - the column of the model to which the view is associated
+        which contains the ID of the star.
+
+        """
 
         # determine the ID of the star on which the user has clicked
-        star_id = view.get_model()[row][self.id_index]
+        star_id = view.get_model()[row][id_index]
 
         if star_id in self.open_stars.iterkeys():
             self.switch_to_tab(star_id)
