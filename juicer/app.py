@@ -51,9 +51,16 @@ import util
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
-    def update_curve(self, curve):
+    def update_curve(self, curve, show_airmasses):
 
-        plot.curve_plot(self.figure, curve)
+        if show_airmasses:
+            airmasses = self.db.airmasses(curve.pfilter)
+        else:
+            airmasses = None
+
+        delta = 3600 * 3  # TODO: let the user specify the value
+        kwargs = dict(airmasses = airmasses, delta = delta)
+        plot.curve_plot(self.figure, curve, **kwargs)
         self.figure.canvas.draw()
 
     def update_light_curve_points(self, curve):
@@ -89,6 +96,12 @@ class StarDetailsGUI(object):
         if self.refstars_store.get_sort_column_id() == (None, None):
             self.refstars_store.set_sort_column_id(1, gtk.SORT_DESCENDING)
 
+    def handle_toggle_airmasses_checkbox(self, checkbox):
+
+        # Replot the light curve again, with or without airmasses
+        curve = self.db.get_light_curve(self.id, self.shown)
+        self.update_curve(curve, self.airmasses_visible())
+
     def show_pfilter(self, widget, pfilter):
         """ Display the information of the star in this photometric filter """
 
@@ -98,9 +111,13 @@ class StarDetailsGUI(object):
 
             self.shown = pfilter
             curve = self.db.get_light_curve(self.id, pfilter)
-            self.update_curve(curve)
+            self.update_curve(curve, self.airmasses_visible())
             self.update_light_curve_points(curve)
             self.update_reference_stars(curve)
+
+    def airmasses_visible(self):
+        """ Return the state (active or not) of the airmasses checkbox """
+        return self.airmasses_checkbox.get_active()
 
     def __init__(self, db, star_id):
 
@@ -176,6 +193,11 @@ class StarDetailsGUI(object):
             self.buttons[pfilter] = button
             self.HButtonBox.pack_end(button)
             button.show()
+
+        # The checkbox to enable-disable airmasses in the plots
+        self.airmasses_checkbox = builder.get_object('show-airmasses-checkbox')
+        args = 'toggled', self.handle_toggle_airmasses_checkbox
+        self.airmasses_checkbox.connect(*args)
 
         # Activate the button of the first filter
         pfilter = min(self.buttons.keys())

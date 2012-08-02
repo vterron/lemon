@@ -21,9 +21,11 @@
 import datetime
 
 # LEMON modules
+import methods
 import snr
 
-def curve_plot(figure, curve, marker = 'o', color = ''):
+def curve_plot(figure, curve, marker = 'o', color = '',
+               airmasses = None, delta = 3600 * 3):
     """ Plot the light curve as a subplot of the matplotlib Figure.
 
     The method removes from 'figure' all the existing axes and adds a new one,
@@ -40,6 +42,16 @@ def curve_plot(figure, curve, marker = 'o', color = ''):
             such as 'g', full names ('green') and hexadecimal strings
             ('#008000'), among others, can be given. With an empty string,
             the first element of the matplotlib cycle of colors is used.
+    airmasses - a dictionary mapping each Unix time of the light curve to its
+                airmass. In case one or more of the Unix times of the curve
+                cannot be found among the keys of the dictionary, the KeyError
+                exception will be raised. If None is used, the airmasses of
+                the light curve will not be plotted.
+    delta - the maximum difference, in seconds, between consecutive points of
+            the light curve if their airmasses are to be connected with blue
+            dashed lines. This argument prevents the airmasses from different
+            nights to be connected by the same line, which does not add any
+            information and only clutters the plot unnecessarily.
 
     """
 
@@ -82,4 +94,30 @@ def curve_plot(figure, curve, marker = 'o', color = ''):
     margin_seconds = elapsed_seconds * 0.05
     margin_delta = datetime.timedelta(seconds = margin_seconds)
     ax1.set_xlim(datetimes[0] - margin_delta, datetimes[-1] + margin_delta)
+
+    # Now (optionally) plot the airmasses
+    if airmasses:
+
+        ax2 = ax1.twinx()
+        ax2.set_ylabel('Airmass', rotation = 270)
+        periods = methods.split_by_diff(unix_times, delta = delta)
+        for period_unix_times in periods:
+            func = datetime.datetime.utcfromtimestamp
+            period_datetimes = [func(x) for x in period_unix_times]
+            period_airmasses = [airmasses[x] for x in period_unix_times]
+            ax2.plot(period_datetimes, period_airmasses, 'b--')
+
+        # Let the airmasses have a little margin too. We cannot find the
+        # maximum and minimum values directly among the keys of the dictionary
+        # of airmasses as it may have information for more Unix times than
+        # those in the light curve.
+        plotted_airmasses = [airmasses[x] for x in unix_times]
+        max_airmass = max(plotted_airmasses)
+        min_airmass = min(plotted_airmasses)
+        margin_airmass = (max_airmass - min_airmass) * 0.05
+        ax2.set_ylim(min_airmass - margin_airmass, max_airmass + margin_airmass)
+
+        # Margins on the x-axis must be set again after plotting the right
+        # y-axis; otherwise, the margins we set for ax1 will be ignored.
+        ax2.set_xlim(datetimes[0] - margin_delta, datetimes[-1] + margin_delta)
 
