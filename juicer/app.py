@@ -21,13 +21,20 @@
 
 from __future__ import division
 
-import datetime
 import pygtk
 pygtk.require ('2.0')
 import gtk
+
+import datetime
 import os.path
 import sys
 import time
+
+import matplotlib.figure
+from matplotlib.backends.backend_gtkagg \
+     import FigureCanvasGTKAgg as FigureCanvas
+from matplotlib.backends.backend_gtkagg \
+     import NavigationToolbar2GTKAgg as NavigationToolbar
 
 # http://stackoverflow.com/a/1054293/184363
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -37,11 +44,17 @@ sys.path.append(path)
 import database
 import glade
 import methods
+import plot
 import snr
 import util
 
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
+
+    def update_curve(self, curve):
+
+        plot.curve_plot(self.figure, curve)
+        self.figure.canvas.draw()
 
     def update_light_curve_points(self, curve):
         """ Update the list of points of the light curve """
@@ -82,12 +95,10 @@ class StarDetailsGUI(object):
         # 'show' is initialized to NoneType; so this method will
         # be always executed the first time it is called
         if not self.shown or self.shown != pfilter:
+
             self.shown = pfilter
-
-            print self.id, "updates to", pfilter
-
-            # TODO: Show light curve
             curve = self.db.get_light_curve(self.id, pfilter)
+            self.update_curve(curve)
             self.update_light_curve_points(curve)
             self.update_reference_stars(curve)
 
@@ -101,6 +112,16 @@ class StarDetailsGUI(object):
         # star each tabs corresponds.
         self.vbox.id = star_id
         builder.connect_signals(self.vbox)
+
+        # Use Matplotlib to plot the light curve(s) of the star
+        container = builder.get_object('image-container')
+        self.figure = matplotlib.figure.Figure()
+        canvas = FigureCanvas(self.figure)
+        navig = NavigationToolbar(canvas, container)
+
+        container.pack_start(canvas)
+        container.pack_start(navig, False)
+        container.show_all()
 
         # GTKTreeView used to display the list of points of the curve; dates
         # are plotted twice: hh:mm:ss and also in Unix time, the latter of
