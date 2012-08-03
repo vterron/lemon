@@ -70,6 +70,41 @@
                   </packing>
                 </child>
                 <child>
+                  <object class="GtkHBox" id="hbox3">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkSpinButton" id="airmass-interval-spinbutton">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">&#x25CF;</property>
+                        <property name="width_chars">4</property>
+                        <property name="adjustment">airmass-interval-adjustment</property>
+                        <property name="digits">1</property>
+                        <property name="numeric">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label3">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">h intervals</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
                   <placeholder/>
                 </child>
               </object>
@@ -192,5 +227,13 @@
         <property name="position">0</property>
       </packing>
     </child>
+  </object>
+  <object class="GtkAdjustment" id="airmass-interval-adjustment">
+    <property name="value">3</property>
+    <property name="lower">0.5</property>
+    <property name="upper">99.5</property>
+    <property name="step_increment">0.5</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
   </object>
 </interface>
