@@ -257,7 +257,7 @@ class LEMONJuicerGUI(object):
     def run(self):
         gtk.main()
 
-    def handle_close(self, obj):
+    def handle_quit(self, obj):
         self._main_window.destroy()
 
     def handle_show_about(self, obj):

@@ -45,7 +45,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                        <signal name="activate" handler="handle_close"/>
+                        <signal name="activate" handler="handle_quit"/>
                       </object>
                     </child>
                   </object>
