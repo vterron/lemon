@@ -43,6 +43,11 @@ os.environ['PYRAF_NO_DISPLAY'] = '1'
 import pyraf.iraf
 from pyraf.iraf import digiphot, apphot  # 'digiphot.apphot' package
 
+# Turn PyRAF process caching off; otherwise, if we spawn multiple processes
+# and run them in parallel, each one of them would use the same IRAF running
+# executable, which could sometimes result in the most arcane of errors.
+pyraf.iraf.prcacheOff()
+
 import copy
 import logging
 import math

@@ -490,32 +490,6 @@ def main(arguments = None):
     xmlparse.validate_dtd(xml_path)
     print 'done.'
 
-    # The pool of workers must be created *before* qphot.run() is called the
-    # first time. It's taken me almost two days to figure this out. Although I
-    # cannot yet grasp why this is happening, I suspect it is caused by PyRAF
-    # messing with the multiprocessing module.
-    #
-    # The reason why I think so is because two consecutive calls to qphot.run()
-    # work fine, as well as using it as the function passed to map_async. But
-    # calling qphot.run() and then map_async, with the instantiation of the
-    # pool of workers done in-between, makes the scripts fail with the most
-    # arcane of errors, such as (yes, this is a real example):
-    #
-    # "Exception Exception OSErrorOSError: : ((1010, , ''NNoo cchhiilldd
-    # pprroocceesssseess'')) in in <bound method Subprocess.__del__ of
-    # <Subprocess '/iraf/iraf/noao/bin.linux/x_apphot.e -c', at 3c8c2d8>><bound
-    # method Subprocess.__del__ of <Subprocess
-    # '/iraf/iraf/noao/bin.linux/x_apphot.e -c', at 3c8c2d8>> ignored"
-    #
-    # However, and as said above, everything goes as expected is the pool is
-    # created before qphot.run() is ever used, directly or indirectly, in the
-    # script. It seems the first execution of PyRAF's qphot is affecting how
-    # the multiprocessing module works. That's why we need to create the pool
-    # before PyRAF runs, so that we use the original, 'unmodified' code.
-
-    pool = multiprocessing.Pool(options.ncores) # do not move this! (read above)
-
-
     # Load all the offsets, saving them as a list of XMLOffset instances.
     # Note that the XML file is initially read as a XMLOffsetsFile instance,
     # from which we extract all the XMLOffsets and save them in a list.
@@ -986,6 +960,7 @@ def main(arguments = None):
 
         # The task of doing photometry on a series of images is inherently
         # parallelizable; use a pool of workers to which assign the images.
+        pool = multiprocessing.Pool(options.ncores)
         map_async_args = \
             ((offset, reference_pixels, qphot_params, options)
              for offset in band_offsets)
