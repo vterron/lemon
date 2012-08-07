@@ -227,6 +227,9 @@ class StarDetailsGUI(object):
 
 class LEMONJuicerGUI(object):
 
+    # The label on the tab for those pages with the details of a star
+    TABS_LABEL = "Star %d"
+
     def __init__(self, *args, **kwds):
         super(LEMONJuicerGUI, self).__init__(*args, **kwds)
 
@@ -245,6 +248,11 @@ class LEMONJuicerGUI(object):
         self.db = None  # instance of the LEMONdB class
         # Map the ID of each open star to its StarDetailsGUI instance
         self.open_stars = {}
+
+        # The length, in characters, that all the tabs will have. It cannot be
+        # determined until the database is loaded and the number of stars that
+        # it has is known.
+        self.tabs_length = -1
 
     def run(self):
         gtk.main()
@@ -481,6 +489,13 @@ class LEMONJuicerGUI(object):
                 self.db = db
                 self.open_stars.clear()
 
+                # Find the maximum number of characters needed for the label on
+                # the tabs; that is, find the length of the tab for the star in
+                # the database with the highest ID (these are assumed to be
+                # positive integers, because of the AUTOINCREMENT keyword, so
+                # this ID must be also that with the maximum number of digits).
+                self.tabs_length = len(self.TABS_LABEL % max(db.star_ids))
+
                 # Show sexagesimal, decimal coordinates or both
                 self.handle_toggle_view_sexagesimal()
                 self.handle_toggle_view_decimal()
@@ -516,7 +531,10 @@ class LEMONJuicerGUI(object):
 
         details = StarDetailsGUI(self.db, star_id)
         details.refstars_view.connect('row-activated', self.handle_row_activated)
-        tab_label = gtk.Label('Star %d' % star_id)
+
+        tab_label = gtk.Label(self.TABS_LABEL % star_id)
+        tab_label.set_width_chars(self.tabs_length)
+
         self._notebook.append_page(details.vbox, tab_label)
         self._notebook.set_tab_reorderable(details.vbox, False)
         self._notebook.set_current_page(-1)
