@@ -19,6 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import matplotlib
 
 # LEMON modules
 import methods
@@ -95,10 +96,16 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     margin_delta = datetime.timedelta(seconds = margin_seconds)
     ax1.set_xlim(datetimes[0] - margin_delta, datetimes[-1] + margin_delta)
 
+    # In interactive navigation, show the full date of the x-locations instead
+    # of formatting them the same way the tick labels are (e.g., "Jan 04 2012")
+    xdata_formatter = matplotlib.dates.DateFormatter("%a %b %d %H:%M:%S %Y")
+    ax1.fmt_xdata = xdata_formatter
+
     # Now (optionally) plot the airmasses
     if airmasses:
 
         ax2 = ax1.twinx()
+        ax2.fmt_xdata = xdata_formatter
         ax2.set_ylabel('Airmass', rotation = 270)
         periods = methods.split_by_diff(unix_times, delta = delta)
         for period_unix_times in periods:
