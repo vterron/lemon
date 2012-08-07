@@ -257,6 +257,35 @@ class LEMONJuicerGUI(object):
     def run(self):
         gtk.main()
 
+    def handle_close(self, obj):
+        # If the notebook has no pages, -1 is returned
+        index = self._notebook.get_current_page()
+
+        # We're closing the list of stars!
+        if index == 0:
+
+            really_close = True
+
+            # Warn the user that all open tabs, if any, will be lost
+            if self._notebook.get_n_pages() > 1:
+                title = "Are you done with this database?"
+                msg = ("If you close the LEMONdB all the open tabs will "
+                       "also be closed. Do you really want to proceed?")
+
+                args = self._main_window, title, msg
+                kwargs = dict(msg_type = gtk.MESSAGE_QUESTION,
+                              buttons = gtk.BUTTONS_OK_CANCEL)
+                response = util.show_message_dialog(*args, **kwargs)
+                really_close = response == gtk.RESPONSE_OK
+
+            if really_close:
+                self.db = None # forget about this LEMONdB
+                while self._notebook.get_n_pages():
+                    self._notebook.remove_page(-1)
+
+        elif index >= 1:
+            self._notebook.remove_page(index)
+
     def handle_quit(self, obj):
         self._main_window.destroy()
 

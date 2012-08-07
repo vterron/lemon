@@ -39,6 +39,15 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkImageMenuItem" id="close-menu-item">
+                        <property name="label">gtk-close</property>
+                        <property name="visible">True</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="handle_close"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkImageMenuItem" id="quit-menu-item">
                         <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
