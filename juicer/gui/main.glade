@@ -42,6 +42,7 @@
                       <object class="GtkImageMenuItem" id="close-menu-item">
                         <property name="label">gtk-close</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="handle_close"/>
@@ -194,6 +195,7 @@
                 <child>
                   <object class="GtkToolButton" id="close-button">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="is_important">True</property>
                     <property name="label" translatable="yes">Close</property>
                     <property name="use_underline">True</property>

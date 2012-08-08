@@ -241,6 +241,8 @@ class LEMONJuicerGUI(object):
         self._notebook    = builder.get_object('main-notebook')
         self._box_toolbar = builder.get_object('box-toolbar')
         self._status_bar  = builder.get_object('status-bar')
+        self.close_button = builder.get_object('close-button')
+        self.close_menu_item = builder.get_object('close-menu-item')
 
         self._main_window.show()
         self._builder = builder
@@ -285,6 +287,11 @@ class LEMONJuicerGUI(object):
 
         elif index >= 1:
             self._notebook.remove_page(index)
+
+        # Disable the close button / menu item if the notebook becomes empty
+        npages_left = self._notebook.get_n_pages()
+        self.close_button.set_sensitive(npages_left)
+        self.close_menu_item.set_sensitive(npages_left)
 
     def handle_quit(self, obj):
         self._main_window.destroy()
@@ -536,13 +543,18 @@ class LEMONJuicerGUI(object):
                 for button in buttons:
                     self.handle_select_period_units(button)
 
+                self.view.set_model(self.store)
 
                 label = gtk.Label(os.path.basename(path))
                 self._notebook.append_page(overview, label)
                 self._notebook.set_tab_reorderable(overview, False)
                 self._notebook.set_current_page(-1)
 
-                self.view.set_model(self.store)
+                # Now that there is at least one page in the notebook, make the
+                # 'Close' button and menu items sensitive, so that the user can
+                # interact with them.
+                self.close_button.set_sensitive(True)
+                self.close_menu_item.set_sensitive(True)
 
         except Exception, err:
             path = os.path.basename(path)
