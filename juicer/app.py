@@ -227,6 +227,9 @@ class StarDetailsGUI(object):
 
 class LEMONJuicerGUI(object):
 
+    # The minimum size (width, height) of the GUI, in pixels
+    MIN_SIZE = (1024, 768)
+
     # The label on the tab for those pages with the details of a star
     TABS_LABEL = "Star %d"
 
@@ -244,6 +247,7 @@ class LEMONJuicerGUI(object):
         self.close_button = builder.get_object('close-button')
         self.close_menu_item = builder.get_object('close-menu-item')
 
+        self._main_window.set_size_request(*self.MIN_SIZE)
         self._main_window.show()
         self._builder = builder
 
