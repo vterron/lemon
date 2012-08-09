@@ -20,6 +20,7 @@
 
 import datetime
 import matplotlib
+import matplotlib.dates
 
 # LEMON modules
 import methods
@@ -101,11 +102,28 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     xdata_formatter = matplotlib.dates.DateFormatter("%a %b %d %H:%M:%S %Y")
     ax1.fmt_xdata = xdata_formatter
 
+    # Datetime instances are often squashed together when used for the x-axis
+    # tick labels. Until matplotlib can handle this better, we can fix this by
+    # setting the maximum number of ticks desired (AutoDateLocator, 'maxticks'
+    # keyword argument, which by default is None; seven seems to work fine with
+    # our minimum width of 768 pixels). This keyword was not available until
+    # matplotlib version 1.0.0.
+    if matplotlib.__version__ >= '1.0.0':
+        xticks_locator = matplotlib.dates.AutoDateLocator(maxticks = 8)
+        xticks_formatter = matplotlib.dates.AutoDateFormatter(xticks_locator)
+        ax1.xaxis.set_major_locator(xticks_locator)
+        ax1.xaxis.set_major_formatter(xticks_formatter)
+
     # Now (optionally) plot the airmasses
     if airmasses:
 
         ax2 = ax1.twinx()
         ax2.fmt_xdata = xdata_formatter
+
+        if matplotlib.__version__ >= '1.0.0':
+            ax2.xaxis.set_major_locator(xticks_locator)
+            ax2.xaxis.set_major_formatter(xticks_formatter)
+
         ax2.set_ylabel('Airmass', rotation = 270)
         periods = methods.split_by_diff(unix_times, delta = delta)
         for period_unix_times in periods:
