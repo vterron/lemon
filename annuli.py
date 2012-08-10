@@ -249,6 +249,22 @@ key_group.add_option(photometry.parser.get_option('--uik'))
 key_group.add_option(photometry.parser.get_option('--fwhmk'))
 parser.add_option_group(key_group)
 
+def check_run(function, *args):
+    """ Run the function and raise CalledProcessError for non-zero retcodes.
+
+    This is a very simple convenience function to feed a function with some
+    data, check the returned value and raise subprocess.CalledProcressError in
+    case it is other than zero, i.e., if the execution of the function was
+    unsuccessful. Note that the function may raise its own errors, so a
+    different exception may be raised if something goes wrong.
+
+    """
+
+    retcode = function(*args)
+    if retcode:
+        cmd = '%s%s' % (function.__name__, args)
+        raise subprocess.CalledProcessError(retcode, cmd)
+
 def main(arguments = None):
     """ main() function, encapsulated in a method to allow for easy invokation.
 
@@ -317,16 +333,7 @@ def main(arguments = None):
         tempfile.mkstemp(prefix = 'photometry_', suffix = '.LEMONdB')
     os.close(phot_db_handle)
 
-    # Achtung! Although encapsulated in a function precisely for this purpose,
-    # we cannot call photometry.main()! As explained there, PyRAF is messing
-    # with the multiprocessing module, causing our script to fail if run more
-    # than once. A workaround for this bug is to execute it with subprocess, so
-    # that, run separately, it does not 'corrupt' our Python namespace. Note
-    # that, although not necessary, we are also using subprocess with the
-    # diffphot.py module, if only to use a uniform pattern.
-
-    args = ['photometry.py',
-            offsets_xml_path,
+    args = [offsets_xml_path,
             '-o', phot_db_path, '-w',
             '-m', options.maximum,
             '--margin', options.margin,
@@ -361,7 +368,7 @@ def main(arguments = None):
 
     try:
         # Non-zero return codes raise subprocess.CalledProcessError
-        subprocess.check_call([str(a) for a in args])
+        check_run(photometry.main, [str(a) for a in args])
 
         # Now we need to compute the light curves and find those that are most
         # constant. This, of course, has to be done for each filter, as a star
@@ -374,8 +381,7 @@ def main(arguments = None):
             tempfile.mkstemp(prefix = 'diffphot_', suffix = '.LEMONdB')
         os.close(diffphot_db_handle)
 
-        args = ['diffphot.py',
-                phot_db_path,
+        args = [phot_db_path,
                 '-o', diffphot_db_path, '-w',
                 '--cores', options.ncores,
                 '--mimages', options.min_images,
@@ -391,7 +397,7 @@ def main(arguments = None):
         print style.prefix
         print "%sGenerating light curves for initial photometry." % style.prefix
         print style.prefix
-        subprocess.check_call([str(a) for a in args])
+        check_run(diffphot.main, [str(a) for a in args])
         print style.prefix
 
         # Map each photometric filter to the path of the temporary file where
@@ -530,8 +536,7 @@ def main(arguments = None):
                     tempfile.mkstemp(prefix = 'photometry_', suffix = '.LEMONdB')
                 os.close(aper_phot_db_handle)
 
-                args = ['photometry.py',
-                        offsets_xml_path,
+                args = [offsets_xml_path,
                         '-o', aper_phot_db_path, '-w',
                         '--passband', pfilter.letter,
                         '--pixels', pixels_files[pfilter],
@@ -560,14 +565,13 @@ def main(arguments = None):
 
                 try:
                     print style.prefix
-                    subprocess.check_call([str(a) for a in args])
+                    check_run(photometry.main, [str(a) for a in args])
 
                     aper_diff_db_handle, aper_diff_db_path = \
                         tempfile.mkstemp(prefix = 'diffphot_', suffix = '.LEMONdB')
                     os.close(aper_diff_db_handle)
 
-                    args = ['diffphot.py',
-                            aper_phot_db_path,
+                    args = [aper_phot_db_path,
                             '-o', aper_diff_db_path, '-w',
                             '--cores', options.ncores,
                             '--mimages', options.min_images,
@@ -580,7 +584,7 @@ def main(arguments = None):
 
                     [args.append('-v') for x in xrange(options.verbose)]
 
-                    subprocess.check_call([str(a) for a in args])
+                    check_run(diffphot.main, [str(a) for a in args])
 
                     # Extract the standard deviations and compute their median.
                     miner = mining.LEMONdBMiner(aper_diff_db_path)
