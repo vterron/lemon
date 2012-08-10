@@ -180,12 +180,41 @@ class StarDetailsGUI(object):
             self.refstars_view.append_column(column)
         self.refstars_view.set_model(self.refstars_store)
 
+        # GTKTreeView which displays the information for the star
+        self.starinfo_store = gtk.ListStore(str, str)
+        self.starinfo_view = builder.get_object('star-info-view')
+        self.starinfo_view.set_headers_visible(False)
+        # Column titles not visible; used only for internal reference
+        for index, title in enumerate(('Attribute', 'Value')):
+            render = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(title, render, text = index)
+            column.props.resizable = False
+            self.starinfo_view.append_column(column)
+
+        store = self.starinfo_store
+        x, y, ra, dec, imag = db.get_star(star_id)
+        store.append(('Right ascension', '%s' % methods.ra_str(ra)))
+        store.append(('Right ascension', '%.4f' % ra))
+        store.append(('Declination', '%s' % methods.dec_str(dec)))
+        store.append(('Declination', '%.4f' % dec))
+        store.append(('Magnitude', '%.3f' % imag))
+        store.append(('x-coordinate', '%.2f' % x))
+        store.append(('y-coordinate', '%.2f' % y))
+
+        for pfilter in db.pfilters:
+            star_period = db.get_period(star_id, pfilter)
+            if star_period is not None:
+                period, step = star_period
+                name = 'Period %s' % pfilter.letter
+                store.append((name, period / 3600 / 24)) # hours
+                store.append((name, str(datetime.timedelta(seconds = period))))
+                store.append((name, period)) # seconds
+
+        self.starinfo_view.set_model(self.starinfo_store)
+
         self.shown = None  # pfilter currently shown
         self.db = db
         self.id = star_id
-
-        x, y, ra, dec, imag = db.get_star(star_id)
-        # TODO: Display star information
 
         self.buttons = {}  # map each pfilter to its button
         self.HButtonBox = builder.get_object('filter-buttons')
