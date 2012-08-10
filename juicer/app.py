@@ -119,6 +119,32 @@ class StarDetailsGUI(object):
             self.update_light_curve_points(curve)
             self.update_reference_stars(curve)
 
+    def handle_select_period_units(self, button):
+
+        def set_row(index):
+            """ Set the visibility of the index-th column of the GtkTreeView,
+            depending on whether the button is active or not"""
+            self.starinfo_store[index][-1] = button.get_active()
+
+        try:
+            if button.get_label() == 'Days':
+                for index in self.period_days_indexes:
+                    set_row(index)
+
+            elif button.get_label() == 'hh:mm:ss':
+                for index in self.period_hhmmss_indexes:
+                    set_row(index)
+
+            elif button.get_label() == 'Seconds':
+                for index in self.period_seconds_indexes:
+                    set_row(index)
+            else:
+                msg = "unknown button label"
+                raise ValueError(msg)
+
+        except AttributeError:
+            pass
+
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
@@ -128,9 +154,8 @@ class StarDetailsGUI(object):
         # Hours to seconds conversion
         return 3600 * self.airmasses_interval_spinbutton.get_value()
 
-    def __init__(self, db, star_id):
+    def __init__(self, builder, db, star_id):
 
-        builder = gtk.Builder()
         builder.add_from_file(glade.STAR_DETAILS)
         self.vbox = builder.get_object('star-details')
         # Also store the ID of the star in the VBox object; so that we can
@@ -181,36 +206,72 @@ class StarDetailsGUI(object):
         self.refstars_view.set_model(self.refstars_store)
 
         # GTKTreeView which displays the information for the star
-        self.starinfo_store = gtk.ListStore(str, str)
+        self.starinfo_store = gtk.ListStore(str, str, bool)
         self.starinfo_view = builder.get_object('star-info-view')
         self.starinfo_view.set_headers_visible(False)
         # Column titles not visible; used only for internal reference
-        for index, title in enumerate(('Attribute', 'Value')):
+        for index, title in enumerate(('Attribute', 'Value', 'Visible')):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
             column.props.resizable = False
+
+            # The third column is only used to determine whether the row
+            # is displayed or not, and thus does not need be shown
+            if index == 2:
+                column.set_visible(False)
             self.starinfo_view.append_column(column)
 
         store = self.starinfo_store
         x, y, ra, dec, imag = db.get_star(star_id)
-        store.append(('Right ascension', '%s' % methods.ra_str(ra)))
-        store.append(('Right ascension', '%.4f' % ra))
-        store.append(('Declination', '%s' % methods.dec_str(dec)))
-        store.append(('Declination', '%.4f' % dec))
-        store.append(('Magnitude', '%.3f' % imag))
-        store.append(('x-coordinate', '%.2f' % x))
-        store.append(('y-coordinate', '%.2f' % y))
+        store.append(('Right ascension', '%s' % methods.ra_str(ra), True))
+        store.append(('Right ascension', '%.4f deg' % ra, True))
+        store.append(('Declination', '%s' % methods.dec_str(dec), True))
+        store.append(('Declination', '%.4f deg' % dec, True))
+        store.append(('Magnitude', '%.3f' % imag, True))
+        store.append(('x-coordinate', '%.2f' % x, True))
+        store.append(('y-coordinate', '%.2f' % y, True))
+
+        # Two rows (sexagesimal and decimal) are used for the coordinates, and
+        # three for each period (days, hh:mm:ss and seconds), but only one will
+        # be shown at a time. To hide some of the rows of a TreeView, we need
+        # to use a TreeModelFilter, which acts as a wrapper for the TreeModel,
+        # allowing you to choose which rows are displayed based on the value of
+        # a gobject.TYPE_BOOLEAN column, or based on the output of a certain
+        # function. [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
+
+        self.period_days_indexes = []
+        self.period_hhmmss_indexes = []
+        self.period_seconds_indexes = []
 
         for pfilter in db.pfilters:
             star_period = db.get_period(star_id, pfilter)
             if star_period is not None:
                 period, step = star_period
                 name = 'Period %s' % pfilter.letter
-                store.append((name, period / 3600 / 24)) # hours
-                store.append((name, str(datetime.timedelta(seconds = period))))
-                store.append((name, period)) # seconds
 
-        self.starinfo_view.set_model(self.starinfo_store)
+                store.append((name, "%.4f days" % (period / 3600 / 24), True))
+                hhmmss = str(datetime.timedelta(seconds = period))
+                store.append((name, "%s hours" % hhmmss, True))
+                store.append((name, "%d secs" % period, True))
+
+                length = len(store)
+                self.period_days_indexes.append(length - 3)
+                self.period_hhmmss_indexes.append(length - 2)
+                self.period_seconds_indexes.append(length - 1)
+
+        # Creation of the filter, from the model
+        self.starinfo_filter = self.starinfo_store.filter_new()
+        self.starinfo_filter.set_visible_column(2)
+        self.starinfo_view.set_model(self.starinfo_filter)
+
+        # Hide all the period rows but one
+        buttons = [builder.get_object('radio-view-period-days'),
+                   builder.get_object('radio-view-period-hhmmss'),
+                   builder.get_object('radio-view-period-seconds')]
+        args = 'toggled', self.handle_select_period_units
+        for button in buttons:
+            button.connect(*args)
+            self.handle_select_period_units(button)
 
         self.shown = None  # pfilter currently shown
         self.db = db
@@ -534,7 +595,7 @@ class LEMONJuicerGUI(object):
                         row += [-1, '-1', -1]
                     else:
                         period, step = star_period
-                        row.append(period / 3600 / 24) # hours
+                        row.append(period / 3600 / 24) # days
                         row.append(str(datetime.timedelta(seconds = period)))
                         row.append(period) # seconds
 
@@ -603,7 +664,7 @@ class LEMONJuicerGUI(object):
         Returns the StarDetailsGUI instance which encapsulates all the
         informacion of the star"""
 
-        details = StarDetailsGUI(self.db, star_id)
+        details = StarDetailsGUI(self._builder, self.db, star_id)
         details.refstars_view.connect('row-activated', self.handle_row_activated)
 
         tab_label = gtk.Label(self.TABS_LABEL % star_id)
