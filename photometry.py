@@ -461,7 +461,7 @@ def main(arguments = None):
             # methods.load_file_list(path) returns a list of two-element tuples
             # which we cast to astromatic.Pixel instances for later convenience
             list_of_pixels = [astromatic.Pixel(*coords) for coords \
-                              in methods.load_file_list(options.list, warnings = True)]
+                              in methods.load_file_list(options.list, warn = True)]
             if not list_of_pixels:
                 print "%sError. The pixels list '%s' is empty." % \
                       (style.prefix, options.list)
