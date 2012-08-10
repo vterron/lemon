@@ -119,6 +119,16 @@ class StarDetailsGUI(object):
             self.update_light_curve_points(curve)
             self.update_reference_stars(curve)
 
+    def handle_toggle_view_sexagesimal(self, *args):
+        button = self._builder.get_object('radio-view-sexagesimal')
+        for index in self.sex_indexes:
+            self.starinfo_store[index][-1] = button.get_active()
+
+    def handle_toggle_view_decimal(self, *args):
+        button = self._builder.get_object('radio-view-decimal')
+        for index in self.dec_indexes:
+            self.starinfo_store[index][-1] = button.get_active()
+
     def handle_select_period_units(self, button):
 
         def set_row(index):
@@ -156,6 +166,7 @@ class StarDetailsGUI(object):
 
     def __init__(self, builder, db, star_id):
 
+        self._builder = builder
         builder.add_from_file(glade.STAR_DETAILS)
         self.vbox = builder.get_object('star-details')
         # Also store the ID of the star in the VBox object; so that we can
@@ -239,6 +250,8 @@ class StarDetailsGUI(object):
         # a gobject.TYPE_BOOLEAN column, or based on the output of a certain
         # function. [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
 
+        self.sex_indexes = [0, 2]
+        self.dec_indexes = [1, 3]
         self.period_days_indexes = []
         self.period_hhmmss_indexes = []
         self.period_seconds_indexes = []
@@ -263,6 +276,15 @@ class StarDetailsGUI(object):
         self.starinfo_filter = self.starinfo_store.filter_new()
         self.starinfo_filter.set_visible_column(2)
         self.starinfo_view.set_model(self.starinfo_filter)
+
+        # Show sexagesimal, decimal coordinates or both, depending on
+        # what is selected in the View - Coordinates submenu
+        args = 'toggled', self.handle_toggle_view_sexagesimal
+        builder.get_object('radio-view-sexagesimal').connect(*args)
+        args = 'toggled', self.handle_toggle_view_decimal
+        builder.get_object('radio-view-decimal').connect(*args)
+        self.handle_toggle_view_sexagesimal()
+        self.handle_toggle_view_decimal()
 
         # Hide all the period rows but one
         buttons = [builder.get_object('radio-view-period-days'),
