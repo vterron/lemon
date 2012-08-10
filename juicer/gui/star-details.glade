@@ -248,6 +248,5 @@
     <property name="upper">99.5</property>
     <property name="step_increment">0.5</property>
     <property name="page_increment">10</property>
-    <property name="page_size">10</property>
   </object>
 </interface>
