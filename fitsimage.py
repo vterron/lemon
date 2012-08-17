@@ -440,14 +440,11 @@ class FITSImage(object):
         else:
             basename_woprefix = self.basename
 
-        str_numbers = ''
-        for character in basename_woprefix:
-            try:
-                int(character)  # if no exception is raised, it's an integer
-                str_numbers += character
-            except ValueError:
-                return str_numbers
-        return str_numbers
+        characters = basename_woprefix
+        for index in xrange(len(characters) - 1):
+            if not characters[:index+1].isdigit():
+                break
+        return characters[:index]
 
     @property
     def x_size(self):
