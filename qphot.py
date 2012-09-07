@@ -43,6 +43,17 @@ os.environ['PYRAF_NO_DISPLAY'] = '1'
 import pyraf.iraf
 from pyraf.iraf import digiphot, apphot  # 'digiphot.apphot' package
 
+# PyRAF versions older than 2.0 caused IRAF's imexpr to raise an obscure
+# exception ("Error in parameter 'a' for task imexpr\n'Key a not found") from
+# time to time. This only happened, at least on our machines, when the work was
+# divided up between multiple processes using the multiprocessing module, and
+# it did not seem to occur with pools of only one worker.
+
+# This line converts a string like '2.0-r1785' to the tuple (2, 0)
+pyraf_version = tuple(int(x) for x in pyraf.__version__[:3].split('.'))
+if pyraf_version < (2, 0):
+    raise ImportError("PyRAF version 2.0 or newer is required")
+
 # Turn PyRAF process caching off; otherwise, if we spawn multiple processes
 # and run them in parallel, each one of them would use the same IRAF running
 # executable, which could sometimes result in the most arcane of errors.
