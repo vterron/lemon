@@ -845,6 +845,11 @@ def main(arguments = None):
     while not result.ready():
         time.sleep(1)
         methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        # Do not update the progress bar when debugging; instead, print it
+        # on a new line each time. This prevents the next logging message,
+        # if any, from being printed on the same line that the bar.
+        if logging_level < logging.WARNING:
+            print
 
     result.get()      # reraise exceptions of the remote call, if any
     methods.show_progress(100) # in case the queue was ready too soon

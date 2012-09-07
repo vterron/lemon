@@ -391,6 +391,11 @@ def main(arguments = None):
         while not result.ready():
             time.sleep(1)
             methods.show_progress(queue.qsize() / len(all_light_curves) * 100)
+            # Do not update the progress bar when debugging; instead, print it
+            # on a new line each time. This prevents the next logging message,
+            # if any, from being printed on the same line that the bar.
+            if logging_level < logging.WARNING:
+                print
 
         result.get() # reraise exceptions of the remote call, if any
         methods.show_progress(100) # in case the queue was ready too soon
@@ -414,6 +419,9 @@ def main(arguments = None):
             logging.debug("Period for star %d successfully stored" % star_id)
 
             methods.show_progress(100 * (index + 1) / len(db))
+            if logging_level < logging.WARNING:
+                print
+
         else:
             logging.info("Periods for %s calculated" % pfilter)
             logging.debug("Committing database transaction")
