@@ -323,7 +323,7 @@ def main(arguments = None):
     # Sort the FITS files by their date of observation, according to the header
     print style.prefix
     print "%sSorting the FITS files by their date of observation " \
-          "[keyword: %s]..." % (style.prefix, options.datek)
+          "[keyword: %s]..." % (style.prefix, options.datek) ,
 
     sorted_set = object_set.date_sort(date_keyword = options.datek,
                                       exp_keyword = options.exptimek)
@@ -334,6 +334,7 @@ def main(arguments = None):
     difference = len(object_set) - len(sorted_set)
     assert difference >= 0
     if difference:
+        print
         print "%s%d files were discarded as the observation date keyword " \
               "was not found or the " % (style.prefix, difference)
         print "%sdate in it represented did not conform to the FITS " \
@@ -343,6 +344,8 @@ def main(arguments = None):
         if not sorted_set:
             print "%sThere are no FITS files left. Exiting." % style.prefix
             return 1
+    else:
+        print 'done.'
 
     # If no filename for the output images was specified, attempt to
     # automatically detect the most common basename among the FITS files.
