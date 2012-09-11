@@ -88,8 +88,11 @@ class StarDetailsGUI(object):
         """ Update the list of reference stars """
 
         self.refstars_store.clear()
-        for weight in curve.weights():
-            self.refstars_store.append(weight)
+        for star_id, weight in curve.weights():
+            imag = self.db.get_star(star_id)[-1]
+            stdev = self.db.get_light_curve(star_id, curve.pfilter).stdev
+            args = (star_id, weight, imag, stdev)
+            self.refstars_store.append(args)
 
         # Sort automatically, but respect the user preferences
         if self.refstars_store.get_sort_column_id() == (None, None):
@@ -195,10 +198,11 @@ class StarDetailsGUI(object):
             self.curve_view.append_column(column)
         self.curve_view.set_model(self.curve_store)
 
-        # GTKTreeView used to display the reference stars and their weight
-        self.refstars_store = gtk.ListStore(int, float)
+        # GTKTreeView used to display the reference stars and their weight,
+        # instrumental magnitude and the standard deviation of their curve
+        self.refstars_store = gtk.ListStore(int, float, float, float)
         self.refstars_view = builder.get_object('refstars-view')
-        for index, title in enumerate(('Star', 'Weight')):
+        for index, title in enumerate(('Star', 'Weight', 'Mag', 'Stdev')):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
             column.props.resizable = False
