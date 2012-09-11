@@ -58,8 +58,7 @@ class StarDetailsGUI(object):
         else:
             airmasses = None
 
-        kwargs = dict(airmasses = airmasses,
-                      delta = self.airmasses_interval())
+        kwargs = dict(airmasses = airmasses, delta = 3 * 3600)
         plot.curve_plot(self.figure, curve, **kwargs)
         self.figure.canvas.draw()
 
@@ -97,10 +96,6 @@ class StarDetailsGUI(object):
             self.refstars_store.set_sort_column_id(1, gtk.SORT_DESCENDING)
 
     def handle_toggle_airmasses_checkbox(self, widget):
-
-        # Disable (gray out) the spin button, and therefore don't let the user
-        # interact with it, if airmasses are unchecked and won't be plotted
-        self.airmasses_interval_spinbutton.set_sensitive(self.airmasses_visible())
 
         # Replot the light curve again, with or without airmasses
         curve = self.db.get_light_curve(self.id, self.shown)
@@ -158,11 +153,6 @@ class StarDetailsGUI(object):
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
-
-    def airmasses_interval(self):
-        """ Return the value of the airmasses spin button, in seconds """
-        # Hours to seconds conversion
-        return 3600 * self.airmasses_interval_spinbutton.get_value()
 
     def __init__(self, builder, db, star_id):
 
@@ -316,20 +306,9 @@ class StarDetailsGUI(object):
             button.show()
 
         # The checkbox to enable-disable airmasses in the plots...
-        self.airmasses_checkbox = builder.get_object('show-airmasses-checkbox')
+        self.airmasses_checkbox = builder.get_object('plot-airmasses-checkbox')
         args = 'toggled', self.handle_toggle_airmasses_checkbox
         self.airmasses_checkbox.connect(*args)
-
-        # ... and the spin button which allows us to navigate through a range
-        # of values in order to select the maximum distance between points in
-        # the light curve if their airmasses are to be plotted connected.
-        arg = 'airmass-interval-spinbutton'
-        self.airmasses_interval_spinbutton = builder.get_object(arg)
-        # https://mail.gnome.org/archives/gtk-app-devel-list/2010-April/msg00127.html
-        self.airmasses_interval_spinbutton.set_value(3)
-        args = 'output', self.handle_toggle_airmasses_checkbox
-        self.airmasses_interval_spinbutton.connect(*args)
-
 
         # Activate the button of the first filter
         pfilter = min(self.buttons.keys())

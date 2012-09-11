@@ -141,6 +141,14 @@
                         </child>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="plot-airmasses-checkbox">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Plot airmasses</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
