@@ -611,11 +611,19 @@ def main(arguments = None):
                         print "%sAperture = %.3f, median stdev (%d stars) = %.4f" % \
                               (style.prefix, aperture, len(cstars), stdevs_median)
 
-                    percentage = (index + 1) / len(band_apertures) * 100
-                    print "%s%s progress: %.2f %%" % \
-                          (style.prefix, pfilter, percentage)
+                # Raised by miner.sort_by_curve_stdev if no stars are found.
+                # In other words: for this aperture not even a single star has
+                # a light curve with at least options.min_images points; thus,
+                # much to our sorrow, we cannot evaluate it.
+                except mining.NoStarsSelectedError:
+                    msg = "%sNo constant stars for this aperture. Ignoring it..."
+                    print style.prefix % style.prefix
 
                 finally:
+
+                    percentage = (index + 1) / len(band_apertures) * 100
+                    msg = "%s%s progress: %.2f %%"
+                    print msg % (style.prefix, pfilter, percentage)
 
                     # Temporary databases no longer needed; ignore errors in
                     # case the file cannot be removed or if something went
