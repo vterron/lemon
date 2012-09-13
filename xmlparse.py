@@ -24,7 +24,6 @@ import lxml.etree
 import operator
 import os.path
 import time
-import xml.dom.minidom
 
 # LEMON modules
 import passband
@@ -41,37 +40,6 @@ def validate_dtd(path):
     dtd_parser = lxml.etree.XMLParser(dtd_validation = True)
     lxml.etree.parse(path, dtd_parser)
 
-def xml_header(version = 1.0, encoding = 'utf-8', standalone = True):
-    """ Return a XML declaration.
-
-    Return a stromg with a XML declaration, the processing instruction that
-    identifies the document as being XML and with which all XML documents
-    should begin, situated at the first position of the first line. The
-    declaration includes the 'version', 'encoding' and 'standalone'
-    attributes. The returned string includes the newline character.
-
-    """
-    return """<?xml version="%.1f" encoding="%s" standalone="%s" ?>\n""" % \
-           (version, encoding, standalone and 'yes' or 'no')
-
-def toreallyprettyxml(xml_code):
-    """ Fix minidom.toprettyxml's silly whitespace.
-
-    This is a not-very-Pythonic hack to solve the problem that toprettyxml adds
-    an extra white space when printing the contents of text nodes, which is not
-    only ugly but also problematic in case we need to re-parse the 'pretty' XML
-    code. This fix uses a regular expression to match a newline character
-    followed by tabs characters if they come between '>' and other text, or
-    between text and '>'. In other words: it allows us to strip out the
-    unwanted whitespace added by toprettyxml().
-
-    The credit goes to BrendanM, who posted it at:
-    http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
-
-    """
-
-    fix = re.compile(r'((?<=>)(\n[\t]*)(?=[^<\t]))|(?<=[^>\t])(\n[\t]*)(?=<)')
-    return re.sub(fix, '', xml_code)
 
 class XMLOffset(object):
     """ The translation offset between two FITS images.
@@ -279,6 +247,27 @@ class CandidateAnnuli(object):
 
     """
 
+    XML_DTD = [
+    "",
+    "<!DOCTYPE annuli [",
+    "<!ELEMENT annuli (band*)>",
+    "",
+    "<!ELEMENT band (candidate*)>",
+    "<!ATTLIST band name     CDATA #REQUIRED>",
+    "<!ATTLIST band aperture CDATA #REQUIRED>",
+    "<!ATTLIST band annulus  CDATA #REQUIRED>",
+    "<!ATTLIST band dannulus CDATA #REQUIRED>",
+    "<!ATTLIST band stdev    CDATA #REQUIRED>",
+    "",
+    "<!ELEMENT candidate EMPTY>",
+    "<!ATTLIST candidate aperture CDATA #REQUIRED>",
+    "<!ATTLIST candidate annulus  CDATA #REQUIRED>",
+    "<!ATTLIST candidate dannulus CDATA #REQUIRED>",
+    "<!ATTLIST candidate stdev    CDATA #REQUIRED>",
+    "]>",
+    ""]
+
+
     def __init__(self, aperture, annulus, dannulus, stdev):
         """ Instantiation method.
 
@@ -301,8 +290,8 @@ class CandidateAnnuli(object):
         return "%s(%f, %f, %f, %f)" % (self.__class__.__name__, self.aperture,
                                        self.annulus, self.dannulus, self.stdev)
 
-    @staticmethod
-    def xml_dump(xml_path, annuli):
+    @classmethod
+    def xml_dump(cls, xml_path, annuli, encoding = 'utf-8'):
         """ Save multiple CadidateAnnuli instances to a XML file.
 
         This method dumps to a file the XML representation of a dictionary
@@ -321,38 +310,11 @@ class CandidateAnnuli(object):
         annuli - a dictionary mapping each photometric filter to a list of
                  CandidateInstances, encapsulating the quality of a set of
                  photometric parameters.
+        encoding - the character encoding system to use.
 
         """
 
-        header = xml_header(standalone = True)
-
-        xml_dtd = [
-        "",
-        "<!DOCTYPE annuli [",
-        "<!ELEMENT annuli (band*)>",
-        "",
-        "<!ELEMENT band (candidate*)>",
-        "<!ATTLIST band name     CDATA #REQUIRED>",
-        "<!ATTLIST band aperture CDATA #REQUIRED>",
-        "<!ATTLIST band annulus  CDATA #REQUIRED>",
-        "<!ATTLIST band dannulus CDATA #REQUIRED>",
-        "<!ATTLIST band stdev    CDATA #REQUIRED>",
-        "",
-        "<!ELEMENT candidate EMPTY>",
-        "<!ATTLIST candidate aperture CDATA #REQUIRED>",
-        "<!ATTLIST candidate annulus  CDATA #REQUIRED>",
-        "<!ATTLIST candidate dannulus CDATA #REQUIRED>",
-        "<!ATTLIST candidate stdev    CDATA #REQUIRED>",
-        "]>",
-        ""]
-
-        # This approach is more elegant than having to manually add the
-        # trailing newline to each line of the XML Document Type Definition.
-        xml_dtd = '\n'.join(xml_dtd)
-
-        impl = xml.dom.minidom.getDOMImplementation()
-        dom  = impl.createDocument(None, 'annuli', None)
-        root = dom.documentElement
+        root = lxml.etree.Element('annuli')
 
         for pfilter in sorted(annuli.iterkeys()):
 
@@ -369,12 +331,12 @@ class CandidateAnnuli(object):
             # photometry was done in order to evaluate these parameters
             # is also stored for debugging purposes.
 
-            band_element = dom.createElement('band')
-            band_element.setAttribute('name', pfilter.name)
-            band_element.setAttribute('aperture', '%.5f' % best.aperture)
-            band_element.setAttribute('annulus',  '%.5f' % best.annulus)
-            band_element.setAttribute('dannulus', '%.5f' % best.dannulus)
-            band_element.setAttribute('stdev',    '%.8f' % best.stdev)
+            kwargs = {'name' : pfilter.name,
+                      'aperture' : '%.5f' % best.aperture,
+                      'annulus' : '%.5f' % best.annulus,
+                      'dannulus' : '%.5f' % best.dannulus,
+                      'stdev' : '%.8f' % best.stdev}
+            band_element = lxml.etree.Element('band', **kwargs)
 
             # Although most of the time only the optimal photometric parameters
             # will be of interest, it is also worth saving all the aperture and
@@ -388,25 +350,30 @@ class CandidateAnnuli(object):
 
             annuli[pfilter].sort(key = operator.attrgetter('annulus', 'aperture'))
             for candidate in annuli[pfilter]:
-                cand_element = dom.createElement('candidate')
-                cand_element.setAttribute('aperture', '%.5f' % candidate.aperture)
-                cand_element.setAttribute('annulus',  '%.5f' % candidate.annulus)
-                cand_element.setAttribute('dannulus', '%.5f' % candidate.dannulus)
-                cand_element.setAttribute('stdev',    '%.8f' % candidate.stdev)
-                band_element.appendChild(cand_element)
+                kwargs = {'aperture' : '%.5f' % candidate.aperture,
+                          'annulus' : '%.5f' % candidate.annulus,
+                          'dannulus' : '%.5f' % candidate.dannulus,
+                          'stdev' : '%.8f' % candidate.stdev}
+                cand_element = lxml.etree.Element('candidate', **kwargs)
+                band_element.append(cand_element)
 
-            root.appendChild(band_element)
+            root.append(band_element)
 
-        fout = open(xml_path, 'wt')
-        fout.write(header)
-        fout.write("<!-- File generated by LEMON on %s UTC -->\n" % \
-                   time.asctime(time.gmtime()))
-        fout.write(xml_dtd + '\n')
-        fout.write(toreallyprettyxml(root.toprettyxml()))
-        fout.close()
+        kwargs = {'encoding' : encoding, 'xml_declaration': True,
+                  'pretty_print' : True, 'standalone' : True}
+        xml_content = lxml.etree.tostring(root, **kwargs)
 
-        # Make sure that the written XML is valid
+        # Insert between the XML header and the content a comment with the
+        # creation time of the file and the XML Document Type Definition.
+        lines = xml_content.split('\n')
+        comment = "<!-- File generated by LEMON on %s UTC -->"
+        lines.insert(1, comment % time.asctime(time.gmtime()))
+        lines = lines[:2] + cls.XML_DTD + lines[2:]
+
+        with open(xml_path, 'wt') as fd:
+            fd.write('\n'.join(lines))
         validate_dtd(xml_path)
+
 
     @staticmethod
     def xml_load(xml_path, best_only = False):
@@ -437,15 +404,8 @@ class CandidateAnnuli(object):
 
         """
 
-        # validate_dtd() will also return False (instead of an IOError
-        # exception) if the file does not exists, so we raise it manually
-        if not os.path.exists(xml_path):
-            raise IOError("'%s' does not exist" % xml_path)
-
-        validate_dtd(xml_path)
-
-        dom = xml.dom.minidom.parse(xml_path)
-        root = dom.getElementsByTagName('annuli')[0]
+        with open(xml_path, 'r') as _: pass
+        root = lxml.etree.parse(xml_path).getroot()
 
         # For each passband, the optimal aperture and sky annuli are stored
         # as attributes of the <band> entity, so that they can be directly
@@ -456,22 +416,16 @@ class CandidateAnnuli(object):
         # photometric passband.
 
         annuli = collections.defaultdict(list)
-        for band in root.getElementsByTagName('band'):
-            pfilter = passband.Passband(band.getAttribute('name'))
+        for band in root:
+            pfilter = passband.Passband(band.get('name'))
+            attrs = 'aperture', 'annulus', 'dannulus', 'stdev'
             if best_only:
-                annuli[pfilter].append(
-                    CandidateAnnuli(
-                        *[float(x) for x in band.getAttribute('aperture'),
-                                            band.getAttribute('annulus'),
-                                            band.getAttribute('dannulus'),
-                                            band.getAttribute('stdev')]))
-            else:
-                for candidate in band.getElementsByTagName('candidate'):
-                    annuli[pfilter].append(
-                        CandidateAnnuli(
-                            *[float(x) for x in candidate.getAttribute('aperture'),
-                                                candidate.getAttribute('annulus'),
-                                                candidate.getAttribute('dannulus'),
-                                                candidate.getAttribute('stdev')]))
-        return annuli
+                best = CandidateAnnuli(*[float(band.get(x)) for x in attrs])
+                annuli[pfilter].append(best)
 
+            else:
+                for candidate in band:
+                    cand = CandidateAnnuli(*[float(candidate.get(x)) for x in attrs])
+                    annuli[pfilter].append(cand)
+
+        return annuli
