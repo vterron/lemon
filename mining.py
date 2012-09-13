@@ -39,6 +39,11 @@ import scipy.stats
 # LEMON modules
 import database
 
+class NoStarsSelectedError(ValueError):
+    """ Raised when no stars can be returned by the LEMONdBMiner """
+    pass
+
+
 class LEMONdBMiner(database.LEMONdB):
     """ Interface to identify potentially interesting stars in a LEMONdB """
 
@@ -160,9 +165,9 @@ class LEMONdBMiner(database.LEMONdB):
         standard deviation, respectively, is returned, sorted in increasing
         order by the latter.
 
-        The ValueError exception is raised in case no stars can be returned,
-        either because 'minimum' is set to a too high value or because the
-        database has no information in the star periods.
+        The NoStarsSelectedError exception is raised in case no stars can be
+        returned, either because 'minimum' is set to a too high value or
+        because the database has no information about the star periods.
 
         Keyword arguments:
         minimum - ignore stars whose periods have been calculated in fewer than
@@ -202,7 +207,9 @@ class LEMONdBMiner(database.LEMONdB):
             periods_stdevs.append((star_id, periods_stdev))
 
         if not periods_stdevs:
-            raise ValueError("no stars were selected")
+            msg = "no stars with at least %d known periods"
+            raise NoStarsSelectedError(msg % minimum)
+
         return sorted(periods_stdevs, key = operator.itemgetter(1))
 
     def period_similarity(self, how_many, minimum = 2,
@@ -344,9 +351,9 @@ class LEMONdBMiner(database.LEMONdB):
         has the stars sorted in decreasing order by the correlation coefficient
         of the 'sort_index'-th combination of photometric filters.
 
-        The ValueError exception is raised in case no stars can be returned,
-        either because 'min_matches' is set to a too high value or because the
-        database has no information in the light curves of the stars.
+        The NoStarsSelectedError exception is raised in case no stars can be
+        returned, either because 'min_matches' is set to a too high value or
+        because the database has no information on the curves of the stars.
 
         """
 
@@ -363,14 +370,14 @@ class LEMONdBMiner(database.LEMONdB):
         main_correlation = []
 
         for star_id in self. star_ids:
-            star_corr = self.star_correlation(star_id, *main_combination,
-                                              min_matches = min_matches,
-                                              delta = delta)
+            kwargs = {'min_matches' : min_matches, 'delta' : delta}
+            star_corr = self.star_correlation(star_id, *main_combination, **kwargs)
             if star_corr:
                 main_correlation.append(star_corr)
 
         if not main_correlation:
-            raise ValueError("no stars were selected")
+            msg = "no stars with at least %d correlated points in %s-%s"
+            raise NoStarsSelectedError(msg % ((min_matches,) + main_combination))
 
         # Sort the stars by the correlation between these two photometric
         # filters, decreasing order, and take the best 'how-many' stars. The
@@ -456,9 +463,9 @@ class LEMONdBMiner(database.LEMONdB):
         respectively, sorted in increasing order by the latter. Those stars
         with fewer than 'minimum' points in their light curve are ignored.
 
-        The ValueError exception is raised in case no stars can be returned,
-        either because 'minimum' is set to a too high value or because the
-        database has no information in the light curves of the stars.
+        The NoStarsSelectedError exception is raised in case no stars can be
+        returned, either because 'minimum' is set to a too high value or
+        because the database has no information on the curves of the stars.
 
         """
 
@@ -471,7 +478,8 @@ class LEMONdBMiner(database.LEMONdB):
             curves_stdevs.append((star_id, star_curve.stdev))
 
         if not curves_stdevs:
-            raise ValueError("no stars were selected")
+            msg = "no light curves with at least %d points in %s"
+            raise NoStarsSelectedError(msg % (minimum, pfilter))
         return sorted(curves_stdevs, key = operator.itemgetter(1))
 
     def curve_stdev(self, how_many, sort_index = 0,
