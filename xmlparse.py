@@ -23,7 +23,6 @@ import collections
 import lxml.etree
 import operator
 import os.path
-import re
 import time
 import xml.dom.minidom
 
