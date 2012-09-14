@@ -1,2 +1,5 @@
 *.py[cod]
 *~
+
+# PyRAF cache directory
+pyraf
