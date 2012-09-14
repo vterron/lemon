@@ -3,3 +3,6 @@
 
 # PyRAF cache directory
 pyraf
+
+# User login file for IRAF
+login.cl
