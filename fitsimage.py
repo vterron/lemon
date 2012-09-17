@@ -36,6 +36,7 @@ from pyraf.iraf import noao, artdata  # 'noao.artdata' package
 import calendar
 import fnmatch
 import hashlib
+import logging
 import os.path
 import pyfits
 import re
@@ -199,9 +200,17 @@ class FITSImage(object):
         # header.update() method, it is necessary to prepend 'hierarch'.
 
         if len(keyword) > 8:
-            keyword = 'HIERARCH' + keyword
+            msg = "%s: keyword '%s' is longer than eight characters"
+            logging.debug(msg % (self.path, keyword))
+            hierarch_keyword = 'HIERARCH ' + keyword
+            msg = "%s: keyword '%s' became '%s'"
+            logging.debug(msg % (self.path, keyword, hierarch_keyword))
+            keyword = hierarch_keyword
 
         handler = pyfits.open(self.path, mode = 'update')
+        msg = "%s: file opened to update '%s' keyword" % (self.path, keyword)
+        logging.debug(msg)
+
         try:
             header = handler[0].header
 
@@ -210,11 +219,25 @@ class FITSImage(object):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
                 header.update(keyword, value, comment = comment)
+                args = self.path, keyword, value
+                msg = "%s: keyword '%s' updated to '%s'" % args
+                if comment:
+                    msg += " with comment '%s'" % comment
+                logging.debug(msg)
 
             # Update in-memory copy of the FITS header
             self.header = header
+
+        except Exception, e:
+            msg = "%s: keyword '%s' could not be updated (%s)"
+            args = self.path, keyword, e
+            logging.warning(msg % args)
+            raise
+
         finally:
             handler.close(output_verify = 'ignore')
+            msg = "%s: file closed" % self.path
+            logging.debug(msg)
 
     def delete_keyword(self, keyword):
         """ Delete a keyword from the header of the FITS image.

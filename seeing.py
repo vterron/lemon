@@ -92,6 +92,11 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         super(FITSeeingImage, self).__init__(path)
         self.margin = margin
+        msg = "%s: width of margin: %d pixels" % (self.path, self.margin)
+        logging.debug(msg)
+
+        msg = "%s: saturation level of a single image: %d ADUs"
+        logging.debug(msg % (self.path, maximum))
 
         # Determine the effective saturation level, which depends on the number
         # of coadded images. If the keyword is missing, assume a value of one.
@@ -106,7 +111,7 @@ class FITSeeingImage(fitsimage.FITSImage):
             logging.debug(msg % (self.path, coaddk, self.ncoadds))
 
             self.saturation = maximum * self.ncoadds
-            msg = "%s: saturation level = %d x %d = %d"
+            msg = "%s: effective saturation level = %d x %d = %d"
             logging.debug(msg % (self.path, maximum, self.ncoadds, self.saturation))
 
             # To be used when the saturation level is saved in the FITS header
@@ -140,34 +145,48 @@ class FITSeeingImage(fitsimage.FITSImage):
                 raise
 
             # The path not only must be stored: the catalog must also exist
+            msg = "%s: on-disk catalog %s" % (self.path, self.catalog_path)
             if not os.path.exists(self.catalog_path):
-                msg = "%s: on-disk catalog %s does not exist"
-                logging.debug(msg % (self.path, self.catalog_path))
+                logging.debug(msg + " does not exist")
                 raise IOError
+            else:
+                logging.debug(msg)
 
             try:
                 img_sex_md5sum = self.read_keyword(keywords.sex_md5sum)
+                msg = "%s: on-disk catalog SExtractor MD5 hash (%s): %s"
+                args = self.path, keywords.sex_md5sum, img_sex_md5sum
+                logging.debug(msg % args)
             except KeyError:
                 msg = "%s: keyword '%s' not found"
                 logging.debug(msg % (self.path, keywords.sex_md5sum))
                 raise
 
-            # If MD5s don't match it's an outdated catalog, not needed anymore
             if img_sex_md5sum != sex_md5sum:
-                msg = "%s: header SExtractor MD5 hash does not match"
+                msg = "%s: outdated catalog (SExtractor hashes do not match)"
                 logging.debug(msg % self.path)
                 try:
                     os.unlink(self.catalog_path)
-                except (IOError, OSError):
-                    pass
+                    msg = "%s: outdated catalog removed from disk" % self.path
+                    logging.debug(msg)
+
+                except (IOError, OSError), e:
+                    msg = "%s: could not remove outdated catalog (%s)"
+                    logging.warning(msg % (self.path, e))
+
                 finally:
                     raise ValueError
 
-            # This point only reached in on-disk catalog can be reused
-            msg = "%s: on-disk catalog exists and MD5 hash matches. Yay!"
+            # This point only reached if on-disk catalog can be reused
+            msg = "%s: on-disk catalog exists and MD5 hashes match. Yay!"
             logging.debug(msg % self.path)
 
         except (KeyError, IOError, ValueError):
+
+            msg = ("%s: could not reuse an existing, on-disk cached catalog; "
+                   "SExtractor must be run") % self.path
+            logging.debug(msg)
+
              # Redirect standard and error outputs to null device
             with open(os.devnull, 'wt') as fd:
                 logging.info("%s: running SExtractor" % self.path)
@@ -182,13 +201,14 @@ class FITSeeingImage(fitsimage.FITSImage):
                     # Update the FITS header with the path and MD5; give up
                     # silently in case we don't have permissions to do it. The
                     # cast to str is needed as PyFITS has complained sometimes
-                    # about "illegal values" if it receives an Unicode string.
+                    # about "illegal values" if it receives a Unicode string.
                     self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
                     self.update_keyword('SATURATION LEVEL', self.saturation,
                                         comment = satur_comment)
                 except IOError:
                     pass
+
 
     @property
     @methods.memoize
