@@ -408,12 +408,22 @@ def sextractor(path, options = None, stdout = None, stderr = None):
 
     """
 
+    for executable in ['sextractor', 'sex']:
+        if methods.check_command(executable):
+            break
+    else:
+        msg = "SExtractor not found in the current environment"
+        raise SExtractorNotInstalled(msg)
+
+    # If the loop did not break (and thus SExtractorNotInstalled was not
+    # raised), 'executable' contains the first command that was found
+
     root, ext = os.path.splitext(os.path.basename(path))
     catalog_fd, catalog_path = \
         tempfile.mkstemp(prefix = '%s_' % root, suffix = '.cat')
     os.close(catalog_fd)
 
-    args = ['sextractor', path,
+    args = [executable, path,
             '-c', SEXTRACTOR_CONFIG,
             '-PARAMETERS_NAME', SEXTRACTOR_PARAMS,
             '-FILTER_NAME', SEXTRACTOR_FILTER,
@@ -422,11 +432,6 @@ def sextractor(path, options = None, stdout = None, stderr = None):
 
     if options:
         args += options
-
-    command = args[0]
-    if not methods.check_command(command):
-        msg = "'%s' not found in the current environment" % command
-        raise SExtractorNotInstalled(msg)
 
     try:
         subprocess.check_call(args, stdout = stdout, stderr = stderr)
