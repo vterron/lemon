@@ -83,7 +83,7 @@ desc['typek'] = \
 "keyword that identifies the type of image, with values such as 'dark', " \
 "'flat' or 'object', to cite some of the most common [default: %default]"
 
-# Used by seeing.py to 'cache' the SExtractor catalog
+# Used by seeing.FITSeeingImage to 'cache' the SExtractor catalog
 sex_catalog = 'SEX CATALOG'
 sex_md5sum  = 'SEX MD5SUM'
 
@@ -93,3 +93,9 @@ desc['coaddk'] = \
 "determine the number of counts at which arises saturation in coadded " \
 "observations. If the keyword is missing, we assume a value of one (that " \
 "is, that the observation consisted in a single exposure) [default: %default]"
+
+# Also used by seeing.FITSeeingImage, this keyword stores the effective
+# saturation level, i.e, the result of multiplying the number of ADUs at which
+# a single image would saturate by the number of frames that were co-added.
+saturation_level = 'SATURATION LEVEL'
+
