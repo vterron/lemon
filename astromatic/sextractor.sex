@@ -40,6 +40,8 @@ PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
 
 SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation
+SATUR_KEY        DUMMY123PI	# keyword for the saturation level (in ADUs); this will never be
+		 		# read from the header, so we need here a 'dummy' value here.
 
 MAG_ZEROPOINT    25.0           # the zero point of the magnitude scale (IRAF qphot's zmag)
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
