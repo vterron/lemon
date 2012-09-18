@@ -437,6 +437,8 @@ def sextractor(path, options = None, stdout = None, stderr = None):
         subprocess.check_call(args, stdout = stdout, stderr = stderr)
         return catalog_path
     except subprocess.CalledProcessError, e:
+        try: os.unlink(catalog_path)
+        except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
 
 def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
