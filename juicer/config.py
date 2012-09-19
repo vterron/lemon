@@ -21,7 +21,8 @@
 import ConfigParser
 import os.path
 
-CONFIG_PATH = 'juicerc'
+CONFIG_FILENAME = '.juicerc'
+CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
 
 VIEW_SECTION = 'view'
 VIEW_SEXAGESIMAL = 'sexagesimal'
