@@ -114,6 +114,7 @@
                                 <property name="use_underline">True</property>
                                 <property name="draw_as_radio">True</property>
                                 <signal name="toggled" handler="handle_select_period_units"/>
+                                <signal name="toggled" handler="save_periods_unit_radio_item"/>
                               </object>
                             </child>
                             <child>
@@ -125,6 +126,7 @@
                                 <property name="draw_as_radio">True</property>
                                 <property name="group">radio-view-period-days</property>
                                 <signal name="toggled" handler="handle_select_period_units"/>
+                                <signal name="toggled" handler="save_periods_unit_radio_item"/>
                               </object>
                             </child>
                             <child>
@@ -135,6 +137,7 @@
                                 <property name="draw_as_radio">True</property>
                                 <property name="group">radio-view-period-days</property>
                                 <signal name="toggled" handler="handle_select_period_units"/>
+                                <signal name="toggled" handler="save_periods_unit_radio_item"/>
                               </object>
                             </child>
                           </object>
@@ -147,6 +150,7 @@
                         <property name="label" translatable="yes">Plot airmasses</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
+                        <signal name="toggled" handler="save_plot_airmasses_checkbox"/>
                       </object>
                     </child>
                   </object>

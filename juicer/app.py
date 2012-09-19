@@ -25,7 +25,9 @@ import pygtk
 pygtk.require ('2.0')
 import gtk
 
+import ConfigParser
 import datetime
+import functools
 import os.path
 import sys
 import time
@@ -41,6 +43,7 @@ path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(path)
 
 # LEMON modules
+import config
 import database
 import glade
 import methods
@@ -335,6 +338,11 @@ class LEMONJuicerGUI(object):
         builder.add_from_file(glade.GUI_MAIN)
         builder.connect_signals(self)
 
+        # The configuration file parser, so that the options selected by the
+        # user (such as whether coordinates should be shown in sexagesimal,
+        # decimal or both) are persistent.
+        self.config = config.Configuration(config.CONFIG_PATH)
+
         self._main_window = builder.get_object('main-window')
         self._notebook    = builder.get_object('main-notebook')
         self._box_toolbar = builder.get_object('box-toolbar')
@@ -354,6 +362,48 @@ class LEMONJuicerGUI(object):
         # determined until the database is loaded and the number of stars that
         # it has is known.
         self.tabs_length = -1
+
+        # Override the Glade definitions, and set the buttons to the values
+        # defined in the configuration file:
+
+        # ================== View submenu ==================
+        args = self.config.getboolean, config.VIEW_SECTION
+        get_view_booloption = functools.partial(*args)
+
+        checkbox = builder.get_object('radio-view-sexagesimal')
+        checkbox.set_active(get_view_booloption(config.VIEW_SEXAGESIMAL))
+
+        checkbox = builder.get_object('radio-view-decimal')
+        checkbox.set_active(get_view_booloption(config.VIEW_DECIMAL))
+
+        checkbox = builder.get_object('plot-airmasses-checkbox')
+        checkbox.set_active(get_view_booloption(config.PLOT_AIRMASSES))
+
+        # Activate one of the radio buttons (periods expressed in days,
+        # hh:mm:ss or seconds) depending on the integer value of the option
+        args = config.VIEW_SECTION, config.PERIODS_UNIT
+        periods_unit = self.config.getint(*args)
+        if periods_unit == config.PERIODS_DAYS:
+            name = 'radio-view-period-days'
+        elif periods_unit == config.PERIODS_HHMMSS:
+            name = 'radio-view-period-hhmmss'
+        elif periods_unit == config.PERIODS_SECONDS:
+            name = 'radio-view-period-seconds'
+        else:
+            msg = "invalid value for option '%s'" % periods_unit
+            raise ConfigParser.ParsingError(msg)
+        builder.get_object(name).set_active(True)
+
+    def save_plot_airmasses_checkbox(self, widget):
+        """ Airmasses are not plotted here (that is done StarDetailsGUI), but
+        we need to update the configuration file with the new value of the
+        option every time this checkbox is toggled """
+
+        checkbox = self._builder.get_object('plot-airmasses-checkbox')
+        active = checkbox.get_active()
+        value = '1' if active else '0'
+        args = config.VIEW_SECTION, config.PLOT_AIRMASSES, value
+        self.config.set(*args)
 
     def run(self):
         gtk.main()
@@ -408,6 +458,12 @@ class LEMONJuicerGUI(object):
     def handle_toggle_view_sexagesimal(self, *args):
         button = self._builder.get_object('radio-view-sexagesimal')
         active = button.get_active()
+
+        # Update the configuration file with the new value of the option (not
+        # actually written to disk until the execution of the program finishes)
+        args = config.VIEW_SECTION, config.VIEW_SEXAGESIMAL, str(active and 1 or 0)
+        self.config.set(*args)
+
         try:
             self.view.get_column( self.ra_sex_index).set_visible(active)
             self.view.get_column(self.dec_sex_index).set_visible(active)
@@ -418,6 +474,11 @@ class LEMONJuicerGUI(object):
     def handle_toggle_view_decimal(self, *args):
         button = self._builder.get_object('radio-view-decimal')
         active = button.get_active()
+
+        # Update the configuration file with the new value of the option
+        args = config.VIEW_SECTION, config.VIEW_DECIMAL, str(active and 1 or 0)
+        self.config.set(*args)
+
         try:
             self.view.get_column( self.ra_dec_index).set_visible(active)
             self.view.get_column(self.dec_dec_index).set_visible(active)
@@ -449,6 +510,33 @@ class LEMONJuicerGUI(object):
 
         except AttributeError:
             pass
+
+    def save_periods_unit_radio_item(self, button):
+        """ Update the configuration file with the new value of the option
+         every time a radio item with the unit of the periods is selected"""
+
+        # This function gets called twice every time a new option is selected,
+        # as two different buttons are being toggled. We are only interesed in
+        # the one which has been activated, though.
+        if not button.get_active():
+            return
+
+        if button.get_label() == 'Days':
+            option = config.PERIODS_DAYS
+
+        elif button.get_label() == 'hh:mm:ss':
+            option = config.PERIODS_HHMMSS
+
+        elif button.get_label() == 'Seconds':
+            option = config.PERIODS_SECONDS
+
+        else:
+            msg = "unknown button label"
+            raise ValueError(msg)
+
+        # Update the configuration file with the new value of the option
+        args = config.VIEW_SECTION, config.PERIODS_UNIT, str(option)
+        self.config.set(*args)
 
     def handle_open(self, window):
         kwargs = dict(title = None,
