@@ -36,11 +36,11 @@ class Configuration(ConfigParser.SafeConfigParser):
     file loaded at instantiation and written to disk on deletion"""
 
     DEFAULT_CONFIG = '\n'.join(
-    ["[view]",
-     "sexagesimal = 1",
-     "periods = 1",
-     "decimal = 0",
-     "airmasses = 1"])
+    ["[%s]" % VIEW_SECTION,
+     "%s = 1" % VIEW_SEXAGESIMAL,
+     "%s = 1" % PERIODS_UNIT,
+     "%s = 0" % VIEW_DECIMAL,
+     "%s = 1" % PLOT_AIRMASSES])
 
     def __init__(self, path, update = True):
         """ Parse a configuration file, creating and populating it with
