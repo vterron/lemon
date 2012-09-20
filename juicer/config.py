@@ -31,16 +31,21 @@ PERIODS_UNIT = 'periods'
 PERIODS_DAYS, PERIODS_HHMMSS, PERIODS_SECONDS = range(3)
 PLOT_AIRMASSES = 'airmasses'
 
+DEFAULT_VIEW_SEXAGESIMAL = True
+DEFAULT_VIEW_DECIMAL = False
+DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
+DEFAULT_PLOT_AIRMASSES = True
+
 class Configuration(ConfigParser.SafeConfigParser):
     """ Just a quite simple wrapper to automatically have the configuration
     file loaded at instantiation and written to disk on deletion"""
 
     DEFAULT_CONFIG = '\n'.join(
     ["[%s]" % VIEW_SECTION,
-     "%s = 1" % VIEW_SEXAGESIMAL,
-     "%s = 1" % PERIODS_UNIT,
-     "%s = 0" % VIEW_DECIMAL,
-     "%s = 1" % PLOT_AIRMASSES])
+     "%s = %d" % (VIEW_SEXAGESIMAL, (1 if DEFAULT_VIEW_SEXAGESIMAL else 0)),
+     "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
+     "%s = %d" % (VIEW_DECIMAL, (1 if DEFAULT_VIEW_DECIMAL else 0)),
+     "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0))])
 
     def __init__(self, path, update = True):
         """ Parse a configuration file, creating and populating it with
