@@ -61,7 +61,9 @@ class StarDetailsGUI(object):
         else:
             airmasses = None
 
-        kwargs = dict(airmasses = airmasses, delta = 3 * 3600)
+        kwargs = dict(airmasses = airmasses, delta = 3 * 3600,
+                      color = self.config.color(curve.pfilter.letter))
+
         plot.curve_plot(self.figure, curve, **kwargs)
         self.figure.canvas.draw()
 
@@ -160,9 +162,11 @@ class StarDetailsGUI(object):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
 
-    def __init__(self, builder, db, star_id):
+    def __init__(self, builder, config, db, star_id):
 
         self._builder = builder
+        self.config = config
+
         builder.add_from_file(glade.STAR_DETAILS)
         self.vbox = builder.get_object('star-details')
         # Also store the ID of the star in the VBox object; so that we can
@@ -757,7 +761,7 @@ class LEMONJuicerGUI(object):
         Returns the StarDetailsGUI instance which encapsulates all the
         informacion of the star"""
 
-        details = StarDetailsGUI(self._builder, self.db, star_id)
+        details = StarDetailsGUI(self._builder, self.config, self.db, star_id)
         details.refstars_view.connect('row-activated', self.handle_row_activated)
 
         tab_label = gtk.Label(self.TABS_LABEL % star_id)

@@ -36,6 +36,26 @@ DEFAULT_VIEW_DECIMAL = False
 DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
 DEFAULT_PLOT_AIRMASSES = True
 
+# The color codes can use any of the following formats supported by matplotlib:
+# abbreviations ('g'), full names ('green'), hexadecimal strings ('#008000') or
+# a string encoding float on the 0-1 range ('0.75') for gray shades.
+
+COLOR_SECTION = 'colors'
+DEFAULT_COLORS = dict(
+  U = 'violet',
+  B = 'blue',
+  V = 'green',
+  R = '#ff4246', # light red
+  I = '#e81818', # dark red
+  Z = 'cyan',
+  Y = 'brown',
+  J = 'yellow',
+  H = 'pink',
+  KS = 'orange',
+  K = 'orange',
+  L = '0.75', # light gray
+  M = '0.50' ) # dark gray
+
 class Configuration(ConfigParser.SafeConfigParser):
     """ Just a quite simple wrapper to automatically have the configuration
     file loaded at instantiation and written to disk on deletion"""
@@ -45,7 +65,10 @@ class Configuration(ConfigParser.SafeConfigParser):
      "%s = %d" % (VIEW_SEXAGESIMAL, (1 if DEFAULT_VIEW_SEXAGESIMAL else 0)),
      "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
      "%s = %d" % (VIEW_DECIMAL, (1 if DEFAULT_VIEW_DECIMAL else 0)),
-     "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0))])
+     "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0)),
+     '',
+     "[%s]" % COLOR_SECTION] +
+    ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()])
 
     def __init__(self, path, update = True):
         """ Parse a configuration file, creating and populating it with
@@ -59,6 +82,10 @@ class Configuration(ConfigParser.SafeConfigParser):
 
         self.read([path])
         self.path = path
+
+    def color(self, letter):
+        """ Return the color code to be used for a photometric filter """
+        return self.get(COLOR_SECTION, letter.upper())
 
     def __del__(self):
         with open(self.path, 'wt') as fd:

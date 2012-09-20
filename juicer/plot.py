@@ -76,8 +76,8 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         positive_errors.append(max_error)
 
     ax1 = figure.add_subplot(111)
-    ax1.errorbar(datetimes, magnitudes, fmt = color + marker,
-                  yerr = (negative_errors, positive_errors))
+    ax1.errorbar(datetimes, magnitudes, color = color, marker = marker,
+                 fmt = 's', yerr = (negative_errors, positive_errors))
     ax1.set_ylabel("Magnitude (diff)")
     ax1.grid(True)
 
