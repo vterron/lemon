@@ -130,7 +130,8 @@ def curve_plot(figure, curve, marker = 'o', color = '',
             func = datetime.datetime.utcfromtimestamp
             period_datetimes = [func(x) for x in period_unix_times]
             period_airmasses = [airmasses[x] for x in period_unix_times]
-            ax2.plot(period_datetimes, period_airmasses, 'b--')
+            ax2.plot(period_datetimes, period_airmasses,
+                     color = color, linestyle = '--')
 
         # Let the airmasses have a little margin too. We cannot find the
         # maximum and minimum values directly among the keys of the dictionary
