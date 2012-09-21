@@ -645,7 +645,13 @@ class LEMONJuicerGUI(object):
                 self.period_hhmmss_indexes.append(length - 2)
                 self.period_seconds_indexes.append(length - 1)
 
-            args = [float, str, int] * len(db.pfilters)
+            # Another column for each photometric filter, with the standard
+            # deviation of the points of each light curve.
+            for pfilter in db_pfilters:
+                label = "Stdev %s" % pfilter.letter
+                star_attrs.append(label)
+
+            args = [float, str, int] * len(db.pfilters) + [float] * len(db.pfilters)
             self.store = gtk.ListStore(int, str, float, str, float, float, *args)
 
             for index, attribute in enumerate(star_attrs):
@@ -695,6 +701,12 @@ class LEMONJuicerGUI(object):
                         row.append(period / 3600 / 24) # days
                         row.append(str(datetime.timedelta(seconds = period)))
                         row.append(period) # seconds
+
+                for pfilter in db_pfilters:
+                    # None returned if the star doesn't have this light curve;
+                    # if that is the case, we (temporarily) use -1 as the stdev
+                    curve = db.get_light_curve(star_id, pfilter)
+                    row.append(curve.stdev if curve else -1)
 
                 self.store.append(row)
 
