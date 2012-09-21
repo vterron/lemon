@@ -73,7 +73,7 @@ class StarDetailsGUI(object):
         self.curve_store.clear()
         for unix_time, magnitude, noise in curve:
             row = []
-            row.append(time.ctime(unix_time))
+            row.append(datetime.datetime.utcfromtimestamp(unix_time).ctime())
             row.append(unix_time)
             row.append(magnitude)
             row.append(noise)
