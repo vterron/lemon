@@ -162,21 +162,24 @@ class StarDetailsGUI(object):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
 
-    def __init__(self, builder, config, db, star_id):
+    def __init__(self, parent, star_id):
 
-        self._builder = builder
-        self.config = config
+        # Keep reference to parent LEMONJuicerGUI
+        self.parent = parent
+        self._builder = parent._builder
+        self.config = parent.config
+        self.db = parent.db
 
-        builder.add_from_file(glade.STAR_DETAILS)
-        self.vbox = builder.get_object('star-details')
+        self._builder.add_from_file(glade.STAR_DETAILS)
+        self.vbox = self._builder.get_object('star-details')
         # Also store the ID of the star in the VBox object; so that we can
         # later loop over the tabs of the notebook and determine to which
         # star each tabs corresponds.
         self.vbox.id = star_id
-        builder.connect_signals(self.vbox)
+        self._builder.connect_signals(self.vbox)
 
         # Use Matplotlib to plot the light curve(s) of the star
-        container = builder.get_object('image-container')
+        container = self._builder.get_object('image-container')
         self.figure = matplotlib.figure.Figure()
         canvas = FigureCanvas(self.figure)
         navig = NavigationToolbar(canvas, container)
@@ -190,7 +193,7 @@ class StarDetailsGUI(object):
         # which is used to sort the columns by their date.
         attrs = ('Date', 'Date', 'Mag', 'SNR', 'merr (+)', 'merr (-)')
         self.curve_store = gtk.ListStore(str, float, float, float, float, float)
-        self.curve_view = builder.get_object('curve-points-view')
+        self.curve_view = self._builder.get_object('curve-points-view')
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
@@ -208,7 +211,7 @@ class StarDetailsGUI(object):
         # GTKTreeView used to display the reference stars and their weight,
         # instrumental magnitude and the standard deviation of their curve
         self.refstars_store = gtk.ListStore(int, float, float, float)
-        self.refstars_view = builder.get_object('refstars-view')
+        self.refstars_view = self._builder.get_object('refstars-view')
         for index, title in enumerate(('Star', 'Weight', 'Mag', 'Stdev')):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
@@ -216,10 +219,11 @@ class StarDetailsGUI(object):
             column.set_sort_column_id(index)
             self.refstars_view.append_column(column)
         self.refstars_view.set_model(self.refstars_store)
+        self.refstars_view.connect('row-activated', parent.handle_row_activated)
 
         # GTKTreeView which displays the information for the star
         self.starinfo_store = gtk.ListStore(str, str, bool)
-        self.starinfo_view = builder.get_object('star-info-view')
+        self.starinfo_view = self._builder.get_object('star-info-view')
         self.starinfo_view.set_headers_visible(False)
         # Column titles not visible; used only for internal reference
         for index, title in enumerate(('Attribute', 'Value', 'Visible')):
@@ -234,7 +238,7 @@ class StarDetailsGUI(object):
             self.starinfo_view.append_column(column)
 
         store = self.starinfo_store
-        x, y, ra, dec, imag = db.get_star(star_id)
+        x, y, ra, dec, imag = self.db.get_star(star_id)
         store.append(('Right ascension', '%s' % methods.ra_str(ra), True))
         store.append(('Right ascension', '%.4f deg' % ra, True))
         store.append(('Declination', '%s' % methods.dec_str(dec), True))
@@ -257,8 +261,8 @@ class StarDetailsGUI(object):
         self.period_hhmmss_indexes = []
         self.period_seconds_indexes = []
 
-        for pfilter in db.pfilters:
-            star_period = db.get_period(star_id, pfilter)
+        for pfilter in self.db.pfilters:
+            star_period = self.db.get_period(star_id, pfilter)
             if star_period is not None:
                 period, step = star_period
                 name = 'Period %s' % pfilter.letter
@@ -275,9 +279,9 @@ class StarDetailsGUI(object):
 
         # A row per filter with the standard deviation of the light curve;
         # we (temporarily) use -1 if the curve is unknown
-        for pfilter in db.pfilters:
+        for pfilter in self.db.pfilters:
             label = "Stdev %s" % pfilter.letter
-            curve = db.get_light_curve(star_id, pfilter)
+            curve = self.db.get_light_curve(star_id, pfilter)
             store.append((label, curve.stdev if curve else -1, True))
 
         # Creation of the filter, from the model
@@ -288,29 +292,28 @@ class StarDetailsGUI(object):
         # Show sexagesimal, decimal coordinates or both, depending on
         # what is selected in the View - Coordinates submenu
         args = 'toggled', self.handle_toggle_view_sexagesimal
-        builder.get_object('radio-view-sexagesimal').connect(*args)
+        self._builder.get_object('radio-view-sexagesimal').connect(*args)
         args = 'toggled', self.handle_toggle_view_decimal
-        builder.get_object('radio-view-decimal').connect(*args)
+        self._builder.get_object('radio-view-decimal').connect(*args)
         self.handle_toggle_view_sexagesimal()
         self.handle_toggle_view_decimal()
 
         # Hide all the period rows but one
-        buttons = [builder.get_object('radio-view-period-days'),
-                   builder.get_object('radio-view-period-hhmmss'),
-                   builder.get_object('radio-view-period-seconds')]
+        buttons = [self._builder.get_object('radio-view-period-days'),
+                   self._builder.get_object('radio-view-period-hhmmss'),
+                   self._builder.get_object('radio-view-period-seconds')]
         args = 'toggled', self.handle_select_period_units
         for button in buttons:
             button.connect(*args)
             self.handle_select_period_units(button)
 
         self.shown = None  # pfilter currently shown
-        self.db = db
         self.id = star_id
 
         self.buttons = {}  # map each pfilter to its button
-        self.HButtonBox = builder.get_object('filter-buttons')
+        self.HButtonBox = self._builder.get_object('filter-buttons')
         group = None
-        for index, pfilter in enumerate(db.pfilters):
+        for index, pfilter in enumerate(self.db.pfilters):
             button = gtk.RadioButton(group, label = str(pfilter))
             if not index:
                 group = button
@@ -324,7 +327,7 @@ class StarDetailsGUI(object):
             button.show()
 
         # The checkbox to enable-disable airmasses in the plots...
-        self.airmasses_checkbox = builder.get_object('plot-airmasses-checkbox')
+        self.airmasses_checkbox = self._builder.get_object('plot-airmasses-checkbox')
         args = 'toggled', self.handle_toggle_airmasses_checkbox
         self.airmasses_checkbox.connect(*args)
 
@@ -780,8 +783,7 @@ class LEMONJuicerGUI(object):
         Returns the StarDetailsGUI instance which encapsulates all the
         informacion of the star"""
 
-        details = StarDetailsGUI(self._builder, self.config, self.db, star_id)
-        details.refstars_view.connect('row-activated', self.handle_row_activated)
+        details = StarDetailsGUI(self, star_id)
 
         tab_label = gtk.Label(self.TABS_LABEL % star_id)
         tab_label.set_width_chars(self.tabs_length)
