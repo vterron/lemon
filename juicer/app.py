@@ -449,6 +449,9 @@ class LEMONJuicerGUI(object):
                     self._notebook.remove_page(-1)
 
         elif index >= 1:
+            # Update list of open stars and close the page
+            star_id = self._notebook.get_nth_page(index).id
+            del self.open_stars[star_id]
             self._notebook.remove_page(index)
 
         # Disable the close button / menu item if the notebook becomes empty
@@ -793,17 +796,26 @@ class LEMONJuicerGUI(object):
         self._notebook.set_current_page(-1)
         return details
 
-    def switch_to_tab(self, star_id):
-        """ Switch to the page with the star whose ID is 'star_id' """
+    def get_star_index(self, star_id):
+        """ Return the page in the notebook with the star whose ID is 'star_id'.
+        Returns -1 if none of the pages of the notebook contains that star """
 
         for index, page in enumerate(self._notebook):
             try:
                 if page.id == star_id:
-                    self._notebook.set_current_page(index)
-                    break
+                    return index
             # The main tab (the list of stars) doesn't have an ID
             except AttributeError:
                 pass
+        else:
+            return -1
+
+    def switch_to_tab(self, star_id):
+        """ Switch to the page with the star whose ID is 'star_id' """
+
+        index = self.get_star_index(star_id)
+        if index != -1:
+            self._notebook.set_current_page(index)
         else:
             msg = "star %d is not being shown" % star_id
             raise ValueError(msg)
