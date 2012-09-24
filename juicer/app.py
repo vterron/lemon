@@ -121,6 +121,10 @@ class StarDetailsGUI(object):
             self.update_curve(curve, self.airmasses_visible())
             self.update_light_curve_points(curve)
             self.update_reference_stars(curve)
+            # Keep track of the filter in the TreeView object, so that
+            # LEMONJuicerGUI.handle_row_activated can know in which filter we
+            # were working when we clicked on one of the reference stars
+            self.refstars_view.pfilter = pfilter
 
     def handle_toggle_view_sexagesimal(self, *args):
         button = self._builder.get_object('radio-view-sexagesimal')
@@ -162,7 +166,15 @@ class StarDetailsGUI(object):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
 
-    def __init__(self, parent, star_id):
+    def __init__(self, parent, star_id, init_pfilter = None):
+        """ Instantiate a notebook page with all the star data.
+
+        Keyword arguments:
+        init_pfilter - the photometric filter in which to display the data for
+                       the star. If not given, the first filter, when sorted by
+                       their wavelength, is used.
+
+        """
 
         # Keep reference to parent LEMONJuicerGUI
         self.parent = parent
@@ -219,6 +231,7 @@ class StarDetailsGUI(object):
             column.set_sort_column_id(index)
             self.refstars_view.append_column(column)
         self.refstars_view.set_model(self.refstars_store)
+        self.refstars_view.pfilter = None # the filter being currently shown
         self.refstars_view.connect('row-activated', parent.handle_row_activated)
 
         # GTKTreeView which displays the information for the star
@@ -331,10 +344,11 @@ class StarDetailsGUI(object):
         args = 'toggled', self.handle_toggle_airmasses_checkbox
         self.airmasses_checkbox.connect(*args)
 
-        # Activate the button of the first filter
-        pfilter = min(self.buttons.keys())
-        self.buttons[pfilter].clicked()
-        self.shown = pfilter
+        # Activate the button of the first filter, unless indicated otherwise
+        if not init_pfilter:
+            init_pfilter = min(self.buttons.keys())
+        self.buttons[init_pfilter].clicked()
+        self.shown = init_pfilter
 
 
 class LEMONJuicerGUI(object):
@@ -781,12 +795,19 @@ class LEMONJuicerGUI(object):
         finally:
             dialog.destroy()
 
-    def show_star(self, star_id):
+    def show_star(self, star_id, pfilter = None):
         """ Append a page with the star whose ID is 'star_id'.
         Returns the StarDetailsGUI instance which encapsulates all the
-        informacion of the star"""
+        information of the star.
 
-        details = StarDetailsGUI(self, star_id)
+        Keyword arguments:
+        pfilter - the photometric filter in which information must be displayed
+                  when the StarDetailsGUI is created. If not given, data will
+                  be shown for the first filter (when sorted by wavelength).
+
+        """
+
+        details = StarDetailsGUI(self, star_id, init_pfilter = pfilter)
 
         tab_label = gtk.Label(self.TABS_LABEL % star_id)
         tab_label.set_width_chars(self.tabs_length)
@@ -810,12 +831,24 @@ class LEMONJuicerGUI(object):
         else:
             return -1
 
-    def switch_to_tab(self, star_id):
-        """ Switch to the page with the star whose ID is 'star_id' """
+    def switch_to_tab(self, star_id, pfilter = None):
+        """ Switch to the page with the star whose ID is 'star_id'.
+
+        Keyword arguments:
+        pfilter - after switching to the page of the star, switch also to this
+                  photometric filter. If not given, the filter will not be
+                  modified, so it will be the last selected by the user. The
+                  KeyError exception is raised if the star has no data for the
+                  specified photometric filter.
+
+        """
 
         index = self.get_star_index(star_id)
         if index != -1:
             self._notebook.set_current_page(index)
+            # Do we have to move to a specific filter after switching?
+            if pfilter:
+                self.open_stars[star_id].buttons[pfilter].clicked()
         else:
             msg = "star %d is not being shown" % star_id
             raise ValueError(msg)
@@ -830,13 +863,21 @@ class LEMONJuicerGUI(object):
 
         """
 
-        # determine the ID of the star on which the user has clicked
+        # Determine the ID of the star on which the user has clicked
         star_id = view.get_model()[row][id_index]
 
+        # If we clicked on the star not in the main window (with all the stars
+        # in the database) but in a list of reference stars, we want to open
+        # the star (or switch to it) in the same filter from which we come.
+        try:
+            pfilter = view.pfilter
+        except AttributeError:
+            pfilter = None
+
         if star_id in self.open_stars.iterkeys():
-            self.switch_to_tab(star_id)
+            self.switch_to_tab(star_id, pfilter = pfilter)
 
         else:
-            details = self.show_star(star_id)
+            details = self.show_star(star_id, pfilter = pfilter)
             self.open_stars[star_id] = details
 
