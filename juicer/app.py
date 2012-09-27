@@ -51,6 +51,12 @@ import plot
 import snr
 import util
 
+# The value which will be inserted in the cells of the gtk.ListStore for which
+# there is no data. It must evaluate to False (and, therefore, must be zero) as
+# it is used by gtk.TreeViewColumn to determine the visibility of the cells:
+# instead of showing a zero, nothing is displayed.
+UNKNOWN_VALUE = 0
+
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
@@ -690,10 +696,12 @@ class LEMONJuicerGUI(object):
 
             for index, attribute in enumerate(star_attrs):
                 render = gtk.CellRendererText()
-                column = gtk.TreeViewColumn(attribute, render, text = index)
-                column.props.resizable = False
 
-                # Set the current sort comparison function of the column
+                # 'text': column from which the text of the column is taken
+                # 'visible': column which determines the visibility of the cell
+                kwargs = dict(text = index)
+
+                # Determine the column by which this column is sorted
                 if index == self.ra_sex_index:
                     sort_index = self.ra_dec_index
                 elif index == self.dec_sex_index:
@@ -702,12 +710,28 @@ class LEMONJuicerGUI(object):
                 # Periods are in the following order: days, hh:mm:ss, seconds.
                 # We want to sort hh:mm:ss periods not lexicographically, but
                 # by the value of the third column, which stores seconds.
+
+                # The first of these columns also be sorted by the period in
+                # days (a real number) but then, when setting the 'visible'
+                # attribute below, we would get the "unable to set property
+                # `visible' of type `gboolean' from value of type `gdouble'"
+                # error. To avoid this, we sort all periods and determine their
+                # visibility using the columns which contain them in seconds.
+                elif index in self.period_days_indexes:
+                    kwargs['visible'] = sort_index = index + 2
+
                 elif index in self.period_hhmmss_indexes:
-                    sort_index = index + 1
+                    kwargs['visible'] = sort_index = index + 1
+
+                elif index in self.period_seconds_indexes:
+                    kwargs['visible'] = sort_index = index
+
                 else:
                     sort_index = index
-                column.set_sort_column_id(sort_index)
 
+                column = gtk.TreeViewColumn(attribute, render, **kwargs)
+                column.props.resizable = False
+                column.set_sort_column_id(sort_index)
                 self.view.append_column(column)
 
             nstars = len(db)
@@ -728,8 +752,7 @@ class LEMONJuicerGUI(object):
                     # used. In case the period is unknown, None is returned.
                     star_period = db.get_period(star_id, pfilter)
                     if star_period is None:
-                        # Use -1 for unknown values
-                        row += [-1, '-1', -1]
+                        row += [UNKNOWN_VALUE, str(UNKNOWN_VALUE), UNKNOWN_VALUE]
                     else:
                         period, step = star_period
                         row.append(period / 3600 / 24) # days
