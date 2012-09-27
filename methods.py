@@ -363,11 +363,14 @@ def check_command(executable):
     """ Return True if the command could be located, False otherwise """
 
     # The 'which' command prints the pathnames of the files which would be
-    # executed in the current environment and, as its exit status, returns
-    # zero if all the specified commands were found and executable.
+    # executed in the current environment and, as its exit status, returns zero
+    # if all the specified commands were found and executable. Some versions of
+    # it, such as that which comes with RHEL, print PATH to standard error if
+    # the command was not found while others, such as GNU/Debian fail silently.
 
     with open(os.devnull, 'wt') as fd:
-        retcode = subprocess.call(['which', executable], stdout = fd)
+        kwargs = dict(stdout = fd, stderr = fd)
+        retcode = subprocess.call(['which', executable], **kwargs)
         return not retcode
 
 def split_by_diff(iterable, delta = 3):
