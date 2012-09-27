@@ -344,7 +344,8 @@ class StarDetailsGUI(object):
             self.HButtonBox.pack_end(button)
             button.show()
 
-        # The checkbox to enable-disable airmasses in the plots...
+        # The checkbox to enable/disable airmasses in the plots, located in
+        # the View submenu and shared by all the StarDetailsGUI instances
         self.airmasses_checkbox = self._builder.get_object('plot-airmasses-checkbox')
         args = 'toggled', self.handle_toggle_airmasses_checkbox
         self.airmasses_checkbox.connect(*args)
