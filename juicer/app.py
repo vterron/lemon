@@ -323,7 +323,7 @@ class StarDetailsGUI(object):
         self.shown = None  # pfilter currently shown
         self.id = star_id
 
-        self.buttons = {}  # map each pfilter to its button
+        self.buttons = {}  # map each non-empty pfilter to its button
         self.HButtonBox = self._builder.get_object('filter-buttons')
         group = None
         for index, pfilter in enumerate(self.db.pfilters):
@@ -333,9 +333,14 @@ class StarDetailsGUI(object):
 
             # Make the radio button look like a normal button
             button.set_mode(draw_indicator = False)
-            button.connect('clicked', self.show_pfilter, pfilter)
 
-            self.buttons[pfilter] = button
+            # Disable the button if there is no curve in this filter
+            if not self.db.get_light_curve(star_id, pfilter):
+                button.set_sensitive(False)
+            else:
+                button.connect('clicked', self.show_pfilter, pfilter)
+                self.buttons[pfilter] = button
+
             self.HButtonBox.pack_end(button)
             button.show()
 
@@ -344,7 +349,8 @@ class StarDetailsGUI(object):
         args = 'toggled', self.handle_toggle_airmasses_checkbox
         self.airmasses_checkbox.connect(*args)
 
-        # Activate the button of the first filter, unless indicated otherwise
+        # Activate the button of the first filter for which there is data
+        # (those in the self.buttons dictionary), unless indicated otherwise
         if not init_pfilter:
             init_pfilter = min(self.buttons.keys())
         self.buttons[init_pfilter].clicked()
