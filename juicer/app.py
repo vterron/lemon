@@ -685,14 +685,29 @@ class LEMONJuicerGUI(object):
                 self.period_hhmmss_indexes.append(length - 2)
                 self.period_seconds_indexes.append(length - 1)
 
-            # Another column for each photometric filter, with the standard
-            # deviation of the points of each light curve.
+            # Two additional columns for each photometric filter, with (a) the
+            # standard deviation of the points of each light curve and (b) a
+            # boolean value indicating whether (a) must be shown. The latter
+            # column, which is never visible, is required because standard
+            # deviations are real values and therefore PyGTK cannot set the
+            # 'visible' attribute from them, even if they contain
+            # UNKNOWN_VALUE.
+
+            self.stdevs_indexes = []
+            self.stdevs_visibility_indexes = []
+
             for pfilter in db_pfilters:
                 label = "Stdev %s" % pfilter.letter
                 star_attrs.append(label)
+                star_attrs.append("Visible (%s)" % label)
+                length = len(star_attrs)
+                self.stdevs_indexes.append(length - 2)
+                self.stdevs_visibility_indexes.append(length - 1)
 
-            args = [float, str, int] * len(db.pfilters) + [float] * len(db.pfilters)
-            self.store = gtk.ListStore(int, str, float, str, float, float, *args)
+            args = [int, str, float, str, float, float]
+            args += [float, str, int] * len(db.pfilters)
+            args += [float, bool] * len(db.pfilters)
+            self.store = gtk.ListStore(*args)
 
             for index, attribute in enumerate(star_attrs):
                 render = gtk.CellRendererText()
@@ -726,12 +741,24 @@ class LEMONJuicerGUI(object):
                 elif index in self.period_seconds_indexes:
                     kwargs['visible'] = sort_index = index
 
+                # The cells with standard deviations are only displayed if the
+                # value in the adjacent column, which stores whether the light
+                # curve could be generated, evaluates to True.
+                elif index in self.stdevs_indexes:
+                    sort_index = index
+                    kwargs['visible'] = index + 1
+
                 else:
                     sort_index = index
 
                 column = gtk.TreeViewColumn(attribute, render, **kwargs)
                 column.props.resizable = False
                 column.set_sort_column_id(sort_index)
+
+                # Hide columns which determine the visibility of the stdevs
+                if index in self.stdevs_visibility_indexes:
+                    column.set_visible(False)
+
                 self.view.append_column(column)
 
             nstars = len(db)
@@ -760,10 +787,12 @@ class LEMONJuicerGUI(object):
                         row.append(period) # seconds
 
                 for pfilter in db_pfilters:
-                    # None returned if the star doesn't have this light curve;
-                    # if that is the case, we (temporarily) use -1 as the stdev
+                    # None returned if the star doesn't have this light curve
                     curve = db.get_light_curve(star_id, pfilter)
-                    row.append(curve.stdev if curve else -1)
+                    if curve:
+                        row += [curve.stdev, True]
+                    else:
+                        row += [UNKNOWN_VALUE, False]
 
                 self.store.append(row)
 
