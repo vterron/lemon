@@ -297,11 +297,16 @@ class StarDetailsGUI(object):
                 self.period_seconds_indexes.append(length - 1)
 
         # A row per filter with the standard deviation of the light curve;
-        # we (temporarily) use -1 if the curve is unknown
+        # these rows are inserted even for the photometric filters in which the
+        # curve could not be generated (using UNKNOWN_VALUE instead), but they
+        # are hidden from the user.
+
         for pfilter in self.db.pfilters:
             label = "Stdev %s" % pfilter.letter
             curve = self.db.get_light_curve(star_id, pfilter)
-            store.append((label, curve.stdev if curve else -1, True))
+            if curve:
+                stdev = curve.stdev if curve else UNKNOWN_VALUE
+                store.append((label, stdev, bool(stdev)))
 
         # Creation of the filter, from the model
         self.starinfo_filter = self.starinfo_store.filter_new()
