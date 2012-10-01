@@ -49,6 +49,7 @@ import glade
 import methods
 import plot
 import snr
+import search
 import util
 
 # The value which will be inserted in the cells of the gtk.ListStore for which
@@ -944,4 +945,9 @@ class LEMONJuicerGUI(object):
         else:
             details = self.show_star(star_id, pfilter = pfilter)
             self.open_stars[star_id] = details
+
+
+    def search_by_amplitudes(self, window):
+        """ Identify stars with amplitudes correlated to the wavelength """
+        search.amplitudes_search(self._main_window, self._builder)
 
