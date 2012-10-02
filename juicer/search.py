@@ -24,36 +24,48 @@ import gtk
 import glade
 import util
 
-def amplitudes_search(parent_window, builder):
+class AmplitudesSearchMessageWindow(object):
 
     DEFAULT_NUMBER_MIN_MAX_POINTS = 5
     DEFAULT_NUMBER_STDEVS = 10
     DEFAULT_AMPSTDEV_RATIO = 2
 
-    builder.add_from_file(glade.AMPLITUDES_DIALOG)
-    object_name = 'amplitudes-search-dialog'
-    with util.destroying(builder.get_object(object_name)) as dialog:
+    def __init__(self, parent_window, builder):
 
-        dialog.set_resizable(False)
-        dialog.set_title("Select stars by their amplitudes")
-        dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        builder.add_from_file(glade.AMPLITUDES_DIALOG)
+        object_name = 'amplitudes-search-dialog'
+        self.dialog = builder.get_object(object_name)
+
+        self.dialog.set_resizable(False)
+        self.dialog.set_title("Select stars by their amplitudes")
+        self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
 
         # Although the value of the adjustment is set in Glade, the spinbuttons
         # are all zero when the window is created, so we need to set them here
         namplitudes = builder.get_object('amplitudes-how-many')
         nstdevs = builder.get_object('comparison-stdevs-how-many')
         ratio = builder.get_object('min-amplitude-stdev-ratio')
-        namplitudes.set_value(DEFAULT_NUMBER_MIN_MAX_POINTS)
-        nstdevs.set_value(DEFAULT_NUMBER_STDEVS)
-        ratio.set_value(DEFAULT_AMPSTDEV_RATIO)
+        namplitudes.set_value(self.DEFAULT_NUMBER_MIN_MAX_POINTS)
+        nstdevs.set_value(self.DEFAULT_NUMBER_STDEVS)
+        ratio.set_value(self.DEFAULT_AMPSTDEV_RATIO)
 
-        dialog.set_transient_for(parent_window)
-        dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+        self.dialog.set_transient_for(parent_window)
+        self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
-        response =  dialog.run()
-        if response == gtk.RESPONSE_OK:
-            pass
-        else:
-            pass
+    def run(self):
+
+        try:
+            response = self.dialog.run()
+            if response == gtk.RESPONSE_OK:
+                pass
+            else:
+                pass
+        finally:
+            self.dialog.destroy()
+
+
+def amplitudes_search(parent_window, builder):
+    dialog = AmplitudesSearchMessageWindow(parent_window, builder)
+    dialog.run()
 
