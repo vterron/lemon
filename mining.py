@@ -550,3 +550,56 @@ class LEMONdBMiner(database.LEMONdB):
                                          descending = False,
                                          ndecimals = ndecimals)
 
+    def amplitudes_by_wavelength(self, increasing, npoints, use_median):
+        """ Find those stars with amplitudes sorted by wavelength.
+
+        The method returns a generator that iterates through each star of the
+        database and determines whether the amplitudes of its light curves
+        increase or decrease (depending on the truth value of the 'increasing'
+        parameter) with the wavelength. Not only the amplitudes must be sorted,
+        but also the star must have a light curve in all the filters for which
+        the LEMONdB has data.
+
+        A two-element tuple is returned for each star that satisfies these
+        conditions, with (a) the ID of the star and (b) a list of two-element
+        tuples which map each photometric filter to the amplitude of that light
+        curve: For example: (1328, [(Passband('KS'), 0.73254), (Passband('H'),
+        0.79212), (Passband('J'), 1.09676)]).
+
+        The peak-to-peak amplitude of each light curve is obtained by using as
+        the peak and trough the median or mean (depending on the truth value of
+        the 'use_median' parameter) of the 'npoint' highest and lowest points
+        of the light curve. In other words: the amplitude used by this method
+        is defined as the difference between the median (or mean) of the
+        'npoints' highest and 'npoints' lowest differential magnitudes.
+
+        The generator yields None for those stars whose amplitudes are not
+        sorted by wavelength or that have one or more missing light curves.
+        These values are useless and most of the time will be ignored, but
+        they make it possible to know exactly how many items the generator
+        has stepped through. This information could be used, for example,
+        to update a progress bar.
+
+        """
+
+        pfilters = sorted(self.pfilters, reverse = not increasing)
+        kwargs = dict(npoints = npoints, median = use_median)
+
+        for star_id in self.star_ids:
+
+            discarded = False
+            star_amplitudes = []
+            for pfilter in pfilters:
+                star_curve = self.get_light_curve(star_id, pfilter)
+                if not star_curve:
+                    discarded = True
+                    break
+                else:
+                    amplitude = star_curve.amplitude(**kwargs)
+                    star_amplitudes.append(amplitude)
+
+            if not discarded and sorted(star_amplitudes) == star_amplitudes:
+                yield star_id, zip(pfilters, star_amplitudes)
+            else:
+                yield None
+
