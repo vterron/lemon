@@ -275,6 +275,30 @@ class LightCurve(object):
         for cstar_id, cweight in zip(self.cstars, self.cweights):
             yield cstar_id, cweight
 
+    def amplitude(self, npoints = 1, median = True):
+        """ Compute the peak-to-peak amplitude of the light curve.
+
+        The amplitude of a light curve is usually defined, and in this manner
+        it is calculated by default, as the change between peak (the highest
+        value) and trough (lowest value). However, this method also allows to
+        take into account that there might be outliers, caused by measurement
+        errors, that could severely affect the result of this difference. Thus,
+        it its possible to take the mean or median of several points as the
+        peak and trough used to compute the amplitude.
+
+        Keyword arguments:
+        npoints - the number of maximum and minimum points (i.e., differential
+                  magnitudes) that are combined to obtain the peak and trough.
+        median - whether the maximum and minimum points are combined taking
+                 their median (if the parameter evaluates to True) or their
+                 arithmetic mean (otherwise).
+
+        """
+
+        magnitudes = sorted(mag for unix_time, mag, snr in self._data)
+        func = numpy.median if median else numpy.mean
+        return func(magnitudes[npoints:]) - func(magnitudes[:npoints])
+
 
 class DuplicateImageError(KeyError):
     """ Raised if two Images with the same Unix time are added to a LEMONdB """
