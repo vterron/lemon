@@ -53,6 +53,21 @@ class AmplitudesSearchMessageWindow(object):
         self.dialog.set_transient_for(parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
+        # The checkbutton that controls whether stars with noisy amplitudes are
+        # excluded from the search, and the widgets (spin and radio buttons)
+        # that adjust the parameters used to detect these amplitudes.
+
+        self.exclude_checkbox = builder.get_object('filter-out-noisy')
+        args = 'toggled', self.handle_toggle_exclude_noisy
+        self.exclude_checkbox.connect(*args)
+
+        w = {}
+        w['nstdevs'] = builder.get_object('comparison-stdevs-how-many')
+        w['stdevs_mean'] = builder.get_object('comparison-stdevs-mean')
+        w['stdevs_median'] = builder.get_object('comparison-stdevs-median')
+        w['min_stdev_ratio'] = builder.get_object('min-amplitude-stdev-ratio')
+        self.exclude_widgets = w
+
     def run(self):
 
         try:
@@ -63,6 +78,14 @@ class AmplitudesSearchMessageWindow(object):
                 pass
         finally:
             self.dialog.destroy()
+
+    def handle_toggle_exclude_noisy(self, widget):
+        """ Enable / disable widgets, as needed, when the 'Filter out those
+        stars with one or more noisy amplitudes' check button is toggled """
+
+        checkbox_enabled = widget.get_active()
+        for w in self.exclude_widgets.itervalues():
+            w.set_sensitive(checkbox_enabled)
 
 
 def amplitudes_search(parent_window, builder):
