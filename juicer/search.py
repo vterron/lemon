@@ -30,11 +30,15 @@ class AmplitudesSearchMessageWindow(object):
     DEFAULT_NUMBER_STDEVS = 10
     DEFAULT_AMPSTDEV_RATIO = 2
 
+    def get(self, name):
+        """ Access a widget in the interface """
+        return self.builder.get_object(name)
+
     def __init__(self, parent_window, builder):
 
-        builder.add_from_file(glade.AMPLITUDES_DIALOG)
-        object_name = 'amplitudes-search-dialog'
-        self.dialog = builder.get_object(object_name)
+        self.builder = builder
+        self.builder.add_from_file(glade.AMPLITUDES_DIALOG)
+        self.dialog = self.get('amplitudes-search-dialog')
 
         self.dialog.set_resizable(False)
         self.dialog.set_title("Select stars by their amplitudes")
@@ -43,9 +47,9 @@ class AmplitudesSearchMessageWindow(object):
 
         # Although the value of the adjustment is set in Glade, the spinbuttons
         # are all zero when the window is created, so we need to set them here
-        namplitudes = builder.get_object('amplitudes-how-many')
-        nstdevs = builder.get_object('comparison-stdevs-how-many')
-        ratio = builder.get_object('min-amplitude-stdev-ratio')
+        namplitudes = self.get('amplitudes-how-many')
+        nstdevs = self.get('comparison-stdevs-how-many')
+        ratio = self.get('min-amplitude-stdev-ratio')
         namplitudes.set_value(self.DEFAULT_NUMBER_MIN_MAX_POINTS)
         nstdevs.set_value(self.DEFAULT_NUMBER_STDEVS)
         ratio.set_value(self.DEFAULT_AMPSTDEV_RATIO)
@@ -57,15 +61,15 @@ class AmplitudesSearchMessageWindow(object):
         # excluded from the search, and the widgets (spin and radio buttons)
         # that adjust the parameters used to detect these amplitudes.
 
-        self.exclude_checkbox = builder.get_object('filter-out-noisy')
+        self.exclude_checkbox = self.get('filter-out-noisy')
         args = 'toggled', self.handle_toggle_exclude_noisy
         self.exclude_checkbox.connect(*args)
 
         w = {}
-        w['nstdevs'] = builder.get_object('comparison-stdevs-how-many')
-        w['stdevs_mean'] = builder.get_object('comparison-stdevs-mean')
-        w['stdevs_median'] = builder.get_object('comparison-stdevs-median')
-        w['min_stdev_ratio'] = builder.get_object('min-amplitude-stdev-ratio')
+        w['nstdevs'] = self.get('comparison-stdevs-how-many')
+        w['stdevs_mean'] = self.get('comparison-stdevs-mean')
+        w['stdevs_median'] = self.get('comparison-stdevs-median')
+        w['min_stdev_ratio'] = self.get('min-amplitude-stdev-ratio')
         self.exclude_widgets = w
 
     def run(self):
