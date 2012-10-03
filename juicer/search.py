@@ -47,6 +47,15 @@ class AmplitudesSearchMessageWindow(object):
         self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
 
+        # Set the labels of the radio buttons that select whether amplitudes
+        # must increase or decrease to the photometric filters in the database
+        pfilters = sorted(self.miner.pfilters)
+        letters = [p.letter for p in pfilters]
+        def make_label(x):
+            return '-'.join(x)
+        self.get('direct-correlation').set_label(make_label(letters))
+        self.get('inverse-correlation').set_label(make_label(reversed(letters)))
+
         # Although the value of the adjustment is set in Glade, the spinbuttons
         # are all zero when the window is created, so we need to set them here
         namplitudes = self.get('amplitudes-how-many')
