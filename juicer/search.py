@@ -22,6 +22,7 @@ import gtk
 
 # LEMON modules
 import glade
+import mining
 import util
 
 class AmplitudesSearchMessageWindow(object):
@@ -34,12 +35,13 @@ class AmplitudesSearchMessageWindow(object):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
 
-    def __init__(self, parent_window, builder):
+    def __init__(self, parent_window, builder, db_path):
 
         self.builder = builder
         self.builder.add_from_file(glade.AMPLITUDES_DIALOG)
-        self.dialog = self.get('amplitudes-search-dialog')
+        self.miner = mining.LEMONdBMiner(db_path)
 
+        self.dialog = self.get('amplitudes-search-dialog')
         self.dialog.set_resizable(False)
         self.dialog.set_title("Select stars by their amplitudes")
         self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
@@ -77,9 +79,19 @@ class AmplitudesSearchMessageWindow(object):
         try:
             response = self.dialog.run()
             if response == gtk.RESPONSE_OK:
-                pass
-            else:
-                pass
+
+                args = (self.get('direct-correlation').get_active(),
+                        int(self.get('amplitudes-how-many').get_value()),
+                        self.get('amplitudes-median').get_active(),
+                        self.get('filter-out-noisy').get_active(),
+                        int(self.get('comparison-stdevs-how-many').get_value()),
+                        self.get('comparison-stdevs-median').get_active(),
+                        self.get('min-amplitude-stdev-ratio').get_value())
+
+                g = self.miner.amplitudes_by_wavelength(*args)
+                for star in g:
+                    pass
+
         finally:
             self.dialog.destroy()
 
@@ -92,7 +104,7 @@ class AmplitudesSearchMessageWindow(object):
             w.set_sensitive(checkbox_enabled)
 
 
-def amplitudes_search(parent_window, builder):
-    dialog = AmplitudesSearchMessageWindow(parent_window, builder)
+def amplitudes_search(parent_window, builder, db):
+    dialog = AmplitudesSearchMessageWindow(parent_window, builder, db)
     dialog.run()
 

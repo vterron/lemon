@@ -949,5 +949,5 @@ class LEMONJuicerGUI(object):
 
     def search_by_amplitudes(self, window):
         """ Identify stars with amplitudes correlated to the wavelength """
-        search.amplitudes_search(self._main_window, self._builder)
+        search.amplitudes_search(self._main_window, self._builder, self.db.path)
 
