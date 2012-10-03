@@ -550,7 +550,9 @@ class LEMONdBMiner(database.LEMONdB):
                                          descending = False,
                                          ndecimals = ndecimals)
 
-    def amplitudes_by_wavelength(self, increasing, npoints, use_median):
+    def amplitudes_by_wavelength(self, increasing, npoints, use_median,
+                                 exclude_noisy, noisy_nstdevs,
+                                 noisy_use_median, noisy_min_ratio):
         """ Find those stars with amplitudes sorted by wavelength.
 
         The method returns a generator that iterates through each star of the
@@ -560,11 +562,27 @@ class LEMONdBMiner(database.LEMONdB):
         but also the star must have a light curve in all the filters for which
         the LEMONdB has data.
 
-        A two-element tuple is returned for each star that satisfies these
-        conditions, with (a) the ID of the star and (b) a list of two-element
-        tuples which map each photometric filter to the amplitude of that light
-        curve: For example: (1328, [(Passband('KS'), 0.73254), (Passband('H'),
-        0.79212), (Passband('J'), 1.09676)]).
+        It is possible, depending on the truth value of 'exclude_noisy', to
+        discard stars with one or more noisy amplitudes. In order to evaluate
+        whether an amplitude is noisy, it is compared against the median or
+        mean ('noisy_use_median' parameter) standard deviation of the light
+        curves of the 'noisy_nstdev' stars with the most similar instrumental
+        magnitude (for example: if the star had a magnitude of 11.4, we would
+        use the light curves of the 'noisy_stdev' stars with a magnitude
+        closest to this value). If the ratio between the amplitude and this
+        median (or mean) standard deviation is smaller than 'noisy_min_ratio',
+        the amplitude is marked as noisy and the star ignored.
+
+        A two-element tuple is yielded for each star that satisfies the above
+        conditions, with (a) the ID of the star, (b) a list of three-element
+        tuples which map each photometric filter (b1) to the amplitude of that
+        light curve (b2) and the median (or mean) standard deviation of the the
+        stars with the most similar instrumental magnitudes (b3). For example:
+        (1023, [(Passband('KS'), 0.046757, 0.01646), (Passband('H'), 0.33077,
+        0.022678), (Passband('J'), 0.856194, 0.024012), (Passband('Z'),
+        1.033273, 0.030219)]). The last item in the three-element tuples is
+        None when 'exclude_noisy' is False, as the calculation of the standard
+        deviation of the stars of similar brightness is skipped.
 
         The peak-to-peak amplitude of each light curve is obtained by using as
         the peak and trough the median or mean (depending on the truth value of
@@ -574,11 +592,11 @@ class LEMONdBMiner(database.LEMONdB):
         'npoints' highest and 'npoints' lowest differential magnitudes.
 
         The generator yields None for those stars whose amplitudes are not
-        sorted by wavelength or that have one or more missing light curves.
-        These values are useless and most of the time will be ignored, but
-        they make it possible to know exactly how many items the generator
-        has stepped through. This information could be used, for example,
-        to update a progress bar.
+        sorted by wavelength or that have one or more missing light curves or
+        noisy amplitudes. These values are useless and most of the time will be
+        ignored, but they make it possible to know exactly how many items the
+        generator has stepped through. This information could be used, for
+        example, to update a progress bar.
 
         """
 
@@ -589,17 +607,64 @@ class LEMONdBMiner(database.LEMONdB):
 
             discarded = False
             star_amplitudes = []
+            cmp_stdevs = []
+
             for pfilter in pfilters:
                 star_curve = self.get_light_curve(star_id, pfilter)
                 if not star_curve:
                     discarded = True
                     break
                 else:
+
                     amplitude = star_curve.amplitude(**kwargs)
                     star_amplitudes.append(amplitude)
 
+                    if exclude_noisy:
+
+                        # Find the ID of the 'noisy_stdevs' stars with the most
+                        # similar magnitude among those that have a light curve.
+                        # Pick elements from the generator one by one, until we
+                        # have as many stars as needed.
+
+                        similar = []
+                        g = self.most_similar_magnitude(star_id, pfilter)
+                        for _ in xrange(noisy_nstdevs):
+                            try:
+                                similar.append(g.next()[0])
+                            except StopIteration:
+                                break
+
+                        # If there are fewer than 'noisy_stdevs' with a light
+                        # curve we cannot determine whether the amplitude is
+                        # noisy, so to be safe we just discard the star.
+
+                        if len(similar) != noisy_nstdevs:
+                            discarded = True
+                            break
+
+                        # Extract the light curve of each similar star and
+                        # compute its standard deviation. Then, calculate their
+                        # median (or arithmetic mean) and check whether the
+                        # ratio between the amplitude and this value is above
+                        # the threshold.
+
+                        stdevs = []
+                        for id_ in similar:
+                            stdevs.append(self.get_light_curve(id_, pfilter).stdev)
+                        func = numpy.median if noisy_use_median else numpy.mean
+                        cmp_stdevs.append(func(stdevs))
+                        ratio = amplitude / cmp_stdevs[-1]
+
+                        if ratio < noisy_min_ratio:
+                            discarded = True
+                            break
+
             if not discarded and sorted(star_amplitudes) == star_amplitudes:
-                yield star_id, zip(pfilters, star_amplitudes)
+                # Use Nones as the last item of the three-element tuple
+                # when stars with noisy amplitudes are not discarded
+                if not exclude_noisy:
+                    cmp_stdevs = [None] * len(star_amplitudes)
+                yield star_id, zip(pfilters, star_amplitudes, cmp_stdevs)
             else:
                 yield None
 
