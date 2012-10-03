@@ -1142,3 +1142,30 @@ class LEMONdB(object):
         assert len(phase) == len(curve) * repeat
         return phase
 
+    def most_similar_magnitude(self, star_id, pfilter):
+        """ Iterate over the stars sorted by their similarity in magnitude.
+
+        Returns a generator over the stars in the LEMONdB that have a light
+        curve in the 'pfilter' photometric filter, sorted by the difference
+        between their instrumental magnitudes and that of the star with ID
+        'star_id'. In other words: the first returned star will be that whose
+        instrumental magnitude is most similar to that of 'star_id', while the
+        last one will be that with the most different magnitude. At each step,
+        a two-element tuple with the ID of the star and its instrumental
+        magnitude is returned.
+
+        """
+
+        # Map each ID other than 'star_id' to its instrumental magnitude
+        magnitudes = [(id_, self.get_star(id_)[-1])
+                      for id_ in self.star_ids if id_ != star_id]
+
+        # Sort the IDs by the difference between their instrumental magnitude
+        # and the reference instrumental magnitude (that of the star with ID
+        # 'star_id', and return one by one those which have a light curve
+        rmag = self.get_star(star_id)[-1]
+        magnitudes.sort(key = lambda x: abs(rmag - x[1]))
+        for id_, imag in magnitudes:
+            if self.get_light_curve(id_, pfilter):
+                yield id_, imag
+
