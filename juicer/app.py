@@ -948,6 +948,14 @@ class LEMONJuicerGUI(object):
 
 
     def search_by_amplitudes(self, window):
-        """ Identify stars with amplitudes correlated to the wavelength """
-        search.amplitudes_search(self._main_window, self._builder, self.db.path)
+        """ Identify stars with amplitudes correlated to the wavelength. These
+        are listed in a gtk.ScrolledWindow which is appended to the notebook"""
+
+        result = search.amplitudes_search(self._main_window, self._builder, self.db.path)
+        if result is not None:
+            label = gtk.Label(result.get_label())
+            window = result.get_window()
+            self._notebook.append_page(window, label)
+            self._notebook.set_tab_reorderable(window, False)
+            self._notebook.set_current_page(-1)
 

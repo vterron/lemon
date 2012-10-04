@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# encoding:UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -26,6 +27,79 @@ import gtk
 import glade
 import mining
 import util
+
+class AmplitudesSearchPage(object):
+    """ Encapsulates a gtk.GtkTreeView (and the corresponding tree store)
+    with the results for the search of stars whose light curve amplitudes
+    are correlated with the wavelength. Use the 'get_window' method to
+    access a gtk.ScrolledWindow, with the tree view, meant to be used
+    in the main gtk.GtkNotebook of the LEMONJuicerGUI class.
+
+    """
+
+    def __init__(self, builder, pfilters, include_ratios):
+        """ Instantiation method for the AmplitudesSearchPage class.
+
+        The 'builder' parameter must be the gtk.GtkBuilder of the parent GTK
+        widget, while 'pfilters' is a sequence with the passband.Passband
+        instances of the photometric filters of the amplitudes that will be
+        added later with the 'add' method. If 'include_ratios' is True,
+        additional columns will be created to store the ratio between each
+        amplitude and its comparison standard deviation.
+
+        """
+
+        self.builder = builder
+        self.builder.add_from_file(glade.AMPLITUDES_RESULTS)
+        self.pfilters = pfilters
+        self.include_ratios = include_ratios
+
+        # ID, amplitudes and (optionally) Δ:stdev ratios
+        args = [int] + [float] * len(pfilters)
+        if include_ratios:
+            args += [float] * len(pfilters)
+        self.store = gtk.ListStore(*args)
+
+        attrs = ['ID']
+        attrs += ["Δ %s" % p.letter for p in pfilters]
+        if include_ratios:
+            attrs += ["Ratio %s" % p.letter for p in pfilters]
+
+        self.view = self.builder.get_object('amplitudes-search-results')
+        for index, title in enumerate(attrs):
+            render = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(title, render, text = index)
+            column.props.resizable = False
+            column.set_sort_column_id(index)
+            self.view.append_column(column)
+
+    def add(self, star_id, amplitudes, ratios = None):
+        """ Append a new row to the store.
+
+        The 'star_id' must be an integer, the ID of the star, 'amplitudes' a
+        sequence of floats with its amplitudes (in the same photometric filters
+        and order that were passed to __init__), and 'ratios' a second sequence
+        with the ratio between each amplitude and its comparison standard
+        deviations. Note, however, that these ratios are ignored if
+        'include_ratios' was not set to True at instantiation time.
+
+        """
+
+        row = [star_id] + list(amplitudes)
+        if self.include_ratios:
+            row += list(ratios)
+        self.store.append(row)
+
+    def get_window(self):
+        """ Return a gtk.ScrolledWindow with the tree view of the stars """
+        self.view.set_model(self.store)
+        return self.builder.get_object('amplitudes-search-scrolled-window')
+
+    def get_label(self):
+        """ Return 'Amplitudes↑/↓', depending on the order of the filters """
+        increasing = self.pfilters == sorted(self.pfilters)
+        return 'Amplitudes' + ('↑' if increasing else '↓')
+
 
 class AmplitudesSearchMessageWindow(object):
 
@@ -122,10 +196,13 @@ class AmplitudesSearchMessageWindow(object):
             self.response = self.dialog.run()
             if self.response == gtk.RESPONSE_OK:
 
-                args = (self.get('direct-correlation').get_active(),
+                increasing = self.get('direct-correlation').get_active()
+                exclude_noisy = self.get('filter-out-noisy').get_active()
+
+                args = (increasing,
                         int(self.get('amplitudes-how-many').get_value()),
                         self.get('amplitudes-median').get_active(),
-                        self.get('filter-out-noisy').get_active(),
+                        exclude_noisy,
                         int(self.get('comparison-stdevs-how-many').get_value()),
                         self.get('comparison-stdevs-median').get_active(),
                         self.get('min-amplitude-stdev-ratio').get_value())
@@ -133,6 +210,11 @@ class AmplitudesSearchMessageWindow(object):
                 g = self.miner.amplitudes_by_wavelength(*args)
                 self.progressbar.set_text("Please wait...")
                 self.ok_button.set_sensitive(False)
+
+                # Photometric filters must be passed to AmplitudesSearchPage
+                # in the same order in which the amplitudes will be added
+                pfilters = sorted(self.miner.pfilters, reverse = not increasing)
+                result = AmplitudesSearchPage(self.builder, pfilters, exclude_noisy)
 
                 nstars = len(self.miner)
                 for star_index, star_data in enumerate(g):
@@ -145,11 +227,22 @@ class AmplitudesSearchMessageWindow(object):
                         self.response = None
                         break
 
+                    if star_data:
+                        star_id = star_data[0]
+                        _ , amplitudes, stdevs = zip(*star_data[-1])
+                        if exclude_noisy:
+                            ratios = [a / s for a, s in zip(amplitudes, stdevs)]
+                        else:
+                            ratios = None
+
+                        result.add(star_id, amplitudes, ratios)
+
                     fraction = round(star_index / nstars, 2)
                     self.set_fraction(fraction)
 
                 else:
-                    pass # show found stars
+                    self.dialog.destroy()
+                    return result
 
             if self.response in [gtk.RESPONSE_CANCEL, gtk.RESPONSE_DELETE_EVENT]:
                 self.dialog.destroy()
@@ -166,5 +259,5 @@ class AmplitudesSearchMessageWindow(object):
 
 def amplitudes_search(parent_window, builder, db):
     dialog = AmplitudesSearchMessageWindow(parent_window, builder, db)
-    dialog.run()
+    return dialog.run()
 

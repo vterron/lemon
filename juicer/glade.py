@@ -27,4 +27,5 @@ GUI_OVERVIEW = os.path.join(GLADE_DIR, 'overview.glade')
 LOADING_DIALOG = os.path.join(GLADE_DIR, 'loading-dialog.glade')
 STAR_DETAILS = os.path.join(GLADE_DIR, 'star-details.glade')
 AMPLITUDES_DIALOG = os.path.join(GLADE_DIR, 'amplitudes-search-dialog.glade')
+AMPLITUDES_RESULTS = os.path.join(GLADE_DIR, 'amplitudes-search-results.glade')
 
