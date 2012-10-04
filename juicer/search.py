@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+
 import gtk
 
 # LEMON modules
@@ -45,7 +47,7 @@ class AmplitudesSearchMessageWindow(object):
         self.dialog.set_resizable(False)
         self.dialog.set_title("Select stars by their amplitudes")
         self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        self.ok_button = self.dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
 
         # Set the labels of the radio buttons that select whether amplitudes
         # must increase or decrease to the photometric filters in the database
@@ -83,11 +85,42 @@ class AmplitudesSearchMessageWindow(object):
         w['min_stdev_ratio'] = self.get('min-amplitude-stdev-ratio')
         self.exclude_widgets = w
 
-    def run(self):
+        self.progressbar = self.get('search-progress-bar')
 
-        try:
-            response = self.dialog.run()
-            if response == gtk.RESPONSE_OK:
+    def set_fraction(self, fraction):
+        """ Fill in the portion of the bar specified by 'fraction'.
+
+        The progress bar is only updated when the percentage varies; if, for
+        example, it is 0.971 (97%), setting the fraction to 0.972 (still 97%)
+        would only unnecessarily slow down the execution.
+
+        """
+
+        if fraction != self.progressbar.get_fraction():
+            self.progressbar.set_fraction(fraction)
+            # Ensure rendering is done immediately
+            while gtk.events_pending():
+                gtk.main_iteration()
+
+    def run(self):
+        """ Run the dialog window in a recursive loop.
+
+        This method shows the dialog window and allows the user to adjust the
+        parameters that will be used in the search. The search can be cancelled
+        at any time by clicking 'Cancel', while clicking it when no search is
+        in progress closes the window. The 'Ok' button is disabled to avoid
+        running two searches in parallel.
+
+        """
+
+        def get_response(widget, response):
+            self.response = response
+        self.dialog.connect('response', get_response)
+
+        while True:
+
+            self.response = self.dialog.run()
+            if self.response == gtk.RESPONSE_OK:
 
                 args = (self.get('direct-correlation').get_active(),
                         int(self.get('amplitudes-how-many').get_value()),
@@ -98,11 +131,29 @@ class AmplitudesSearchMessageWindow(object):
                         self.get('min-amplitude-stdev-ratio').get_value())
 
                 g = self.miner.amplitudes_by_wavelength(*args)
-                for star in g:
-                    pass
+                self.progressbar.set_text("Please wait...")
+                self.ok_button.set_sensitive(False)
 
-        finally:
-            self.dialog.destroy()
+                nstars = len(self.miner)
+                for star_index, star_data in enumerate(g):
+
+                    # Has the user pressed 'Cancel'?
+                    if self.response == gtk.RESPONSE_CANCEL:
+                        self.progressbar.set_fraction(0.0)
+                        self.progressbar.set_text('')
+                        self.ok_button.set_sensitive(True)
+                        self.response = None
+                        break
+
+                    fraction = round(star_index / nstars, 2)
+                    self.set_fraction(fraction)
+
+                else:
+                    pass # show found stars
+
+            if self.response in [gtk.RESPONSE_CANCEL, gtk.RESPONSE_DELETE_EVENT]:
+                self.dialog.destroy()
+                break
 
     def handle_toggle_exclude_noisy(self, widget):
         """ Enable / disable widgets, as needed, when the 'Filter out those

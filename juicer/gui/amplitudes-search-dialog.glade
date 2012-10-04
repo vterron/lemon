@@ -337,6 +337,15 @@ of each light curve, compute the...</property>
                 <property name="position">7</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkProgressBar" id="search-progress-bar">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="padding">10</property>
+                <property name="position">8</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="position">1</property>
