@@ -38,6 +38,7 @@ import scipy.stats
 
 # LEMON modules
 import database
+import methods
 
 class NoStarsSelectedError(ValueError):
     """ Raised when no stars can be returned by the LEMONdBMiner """
@@ -45,7 +46,26 @@ class NoStarsSelectedError(ValueError):
 
 
 class LEMONdBMiner(database.LEMONdB):
-    """ Interface to identify potentially interesting stars in a LEMONdB """
+    """ Interface to identify potentially interesting stars in a LEMONdB.
+
+    Databases accessed through this class are expected to be read-only, and
+    thus methods expensive (whether in I/O or CPU) in the parent class are
+    memoized. Making changes to the LEMONdB would be a very, very bad idea,
+    as you might end up with outdated data.
+
+    """
+
+    @methods.memoize
+    def get_star(self, *args):
+        return super(LEMONdBMiner, self).get_star(*args)
+
+    @methods.memoize
+    def get_light_curve(self, *args):
+        return super(LEMONdBMiner, self).get_light_curve(*args)
+
+    @methods.memoize
+    def get_period(self, *args):
+        return super(LEMONdBMiner, self).get_period(*args)
 
     @staticmethod
     def _ascii_table(headers, table_rows, sort_index = 1, descending = True,
