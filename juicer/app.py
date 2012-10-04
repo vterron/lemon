@@ -397,6 +397,9 @@ class LEMONJuicerGUI(object):
         self.close_button = builder.get_object('close-button')
         self.close_menu_item = builder.get_object('close-menu-item')
 
+        self.amplitudes_search_button = builder.get_object('amplitudes-search-button')
+        self.amplitudes_search_menuitem = builder.get_object('amplitudes-search-item')
+
         self._main_window.set_size_request(*self.MIN_SIZE)
         self._main_window.show()
         self._builder = builder
@@ -500,6 +503,8 @@ class LEMONJuicerGUI(object):
         npages_left = self._notebook.get_n_pages()
         self.close_button.set_sensitive(npages_left)
         self.close_menu_item.set_sensitive(npages_left)
+        self.amplitudes_search_button.set_sensitive(npages_left)
+        self.amplitudes_search_menuitem.set_sensitive(npages_left)
 
     def handle_quit(self, obj):
         self._main_window.destroy()
@@ -855,10 +860,12 @@ class LEMONJuicerGUI(object):
                 self._notebook.set_current_page(-1)
 
                 # Now that there is at least one page in the notebook, make the
-                # 'Close' button and menu items sensitive, so that the user can
-                # interact with them.
+                # 'Close' button and menu item sensitives, as well as other
+                # widgets that need an open database with which interact.
                 self.close_button.set_sensitive(True)
                 self.close_menu_item.set_sensitive(True)
+                self.amplitudes_search_button.set_sensitive(True)
+                self.amplitudes_search_menuitem.set_sensitive(True)
 
         except Exception, err:
             path = os.path.basename(path)
