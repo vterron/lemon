@@ -482,9 +482,18 @@ class LEMONJuicerGUI(object):
                     self._notebook.remove_page(-1)
 
         elif index >= 1:
-            # Update list of open stars and close the page
-            star_id = self._notebook.get_nth_page(index).id
-            del self.open_stars[star_id]
+
+            # Pages of the notebook that correspond to a star (StarDetailsGUI)
+            # have the 'id' attribute, which we need to update the list of open
+            # stars before closing the page. If the attribute does not exist we
+            # are dealing with a different kind of page and then we can simply
+            # remove it.
+
+            try:
+                star_id = self._notebook.get_nth_page(index).id
+                del self.open_stars[star_id]
+            except AttributeError:
+                pass
             self._notebook.remove_page(index)
 
         # Disable the close button / menu item if the notebook becomes empty
