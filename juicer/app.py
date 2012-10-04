@@ -969,6 +969,10 @@ class LEMONJuicerGUI(object):
 
         result = search.amplitudes_search(self._main_window, self._builder, self.db.path)
         if result is not None:
+
+            view = result.view # gtk.GtkTreeView
+            view.connect('row-activated', self.handle_row_activated)
+
             label = gtk.Label(result.get_label())
             window = result.get_window()
             self._notebook.append_page(window, label)
