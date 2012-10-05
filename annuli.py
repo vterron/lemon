@@ -617,7 +617,7 @@ def main(arguments = None):
                 # much to our sorrow, we cannot evaluate it.
                 except mining.NoStarsSelectedError:
                     msg = "%sNo constant stars for this aperture. Ignoring it..."
-                    print style.prefix % style.prefix
+                    print msg % style.prefix
 
                 finally:
 
