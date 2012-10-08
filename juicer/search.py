@@ -159,6 +159,27 @@ class AmplitudesSearchMessageWindow(object):
 
         self.update()
 
+        # Handlers that update the options in the configuration file every time
+        # that the value of a widget (radio, check or spin button) is modified
+
+        def save_widget_update(option, func, type_ = int):
+            """ Return the function that, when called, updates 'option' in the
+            amplitudes search section of the configuration file. 'func' is the
+            method used to get the value of the widget, casted to 'type_' """
+
+            def handler(widget):
+                self.config.amplset(option, type_(getattr(widget, func)()))
+            return handler
+
+        f = save_widget_update
+        self.increasing_button.connect('toggled', f('increasing', 'get_active'))
+        self.amplitudes_median.connect('toggled', f('use_median', 'get_active'))
+        self.namplitudes.connect('output', f('npoints', 'get_value'))
+        self.exclude_checkbox.connect('toggled', f('exclude_noisy', 'get_active'))
+        w['nstdevs'].connect('output', f('noisy_nstdevs', 'get_value'))
+        w['stdevs_median'].connect('toggled', f('noisy_use_median', 'get_active'))
+        w['min_stdev_ratio'].connect('output', f('noisy_min_ratio', 'get_value', type_ = float))
+
     def update(self):
         """ Update the buttons to the values given in the configuration file"""
 

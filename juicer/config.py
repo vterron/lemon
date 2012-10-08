@@ -114,3 +114,7 @@ class Configuration(ConfigParser.SafeConfigParser):
         """ Coerce 'option' in the amplitudes search section to a float """
         return self.getfloat(AMPLSEARCH_SECTION, option)
 
+    def amplset(self, option, value):
+        """ Set 'option' to 'value' in the amplitudes search section """
+        self.set(AMPLSEARCH_SECTION, option, str(value))
+
