@@ -18,14 +18,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import functools
 import os.path
 
 GLADE_DIR = os.path.join(os.path.dirname(__file__), './gui/')
-GUI_MAIN  = os.path.join(GLADE_DIR, 'main.glade')
-GUI_ABOUT = os.path.join(GLADE_DIR, 'about.glade')
-GUI_OVERVIEW = os.path.join(GLADE_DIR, 'overview.glade')
-LOADING_DIALOG = os.path.join(GLADE_DIR, 'loading-dialog.glade')
-STAR_DETAILS = os.path.join(GLADE_DIR, 'star-details.glade')
-AMPLITUDES_DIALOG = os.path.join(GLADE_DIR, 'amplitudes-search-dialog.glade')
-AMPLITUDES_RESULTS = os.path.join(GLADE_DIR, 'amplitudes-search-results.glade')
+get = functools.partial(os.path.join, GLADE_DIR)
+
+GUI_MAIN  = get('main.glade')
+GUI_ABOUT = get('about.glade')
+GUI_OVERVIEW = get('overview.glade')
+LOADING_DIALOG = get('loading-dialog.glade')
+STAR_DETAILS = get('star-details.glade')
+AMPLITUDES_DIALOG = get('amplitudes-search-dialog.glade')
+AMPLITUDES_RESULTS = get('amplitudes-search-results.glade')
 
