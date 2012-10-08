@@ -50,7 +50,7 @@ class DBStar(object):
     """
 
     def __init__(self, id_, pfilter, phot_info, times_indexes,
-                 dtype = numpy.float128):
+                 dtype = numpy.longdouble):
         """ Instantiation method for the DBStar class.
 
         This is an abrupt descent in the abstraction ladder, but needed in
@@ -153,7 +153,7 @@ class DBStar(object):
         return complete_stars
 
     @staticmethod
-    def make_star(id_, pfilter, rows, dtype = numpy.float128):
+    def make_star(id_, pfilter, rows, dtype = numpy.longdouble):
         """ Construct a DBstar instance for some photometric data.
 
         Feeding the class constructor with NumPy arrays and dictionaries is not
@@ -225,7 +225,7 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, pfilter, cstars, cweights, dtype = numpy.float128):
+    def __init__(self, pfilter, cstars, cweights, dtype = numpy.longdouble):
         """ 'cstars' is a sequence or iterable of the IDs in the LEMONdB of the
         stars that were used as comparison stars when the light curve was
         computed, while 'cweights' is another sequence or iterable with the
@@ -331,7 +331,7 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
-    def __init__(self, path, dtype = numpy.float128):
+    def __init__(self, path, dtype = numpy.longdouble):
 
         self.path = path
         self.dtype = dtype

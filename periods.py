@@ -59,7 +59,7 @@ class StringLengthFinder(object):
 
    """
 
-    def __init__(self, size, dtype = numpy.float128):
+    def __init__(self, size, dtype = numpy.longdouble):
         """ Instantiation method for the StringLengthFinder class.
 
         The 'size' argument is the number of points of the light curve of the

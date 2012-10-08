@@ -54,7 +54,7 @@ import style
 class Weights(numpy.ndarray):
     """ Encapsulate the weights associated with some values """
 
-    def __new__(cls, coefficients, dtype = numpy.float128):
+    def __new__(cls, coefficients, dtype = numpy.longdouble):
         """ The constructor does not normalize the Weights, so they do not
         necessarily have to add up to 1.0. Use Weights.normalize() for that """
         if not len(coefficients):
@@ -79,7 +79,7 @@ class Weights(numpy.ndarray):
         return Weights(self / self.total)
 
     @classmethod
-    def inversely_proportional(cls, values, dtype = numpy.float128):
+    def inversely_proportional(cls, values, dtype = numpy.longdouble):
         """ Receives a series of values and returns the weights that are
         inversely proportional to them. Note that at least one value is
         required, and none of them can be zero (as we would be dividing by
@@ -203,7 +203,7 @@ class StarSet(object):
             self._star_ids.append(star.id)
             self._phot_info[index] = star._phot_info[1:]
 
-    def __init__(self, stars, dtype = numpy.float128):
+    def __init__(self, stars, dtype = numpy.longdouble):
         """ Instantiation method for the StarSet class.
 
         The DBStars that belong to the StarSet must be given in a sequence (the
