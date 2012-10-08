@@ -172,6 +172,7 @@
                         <property name="tooltip_text" translatable="yes">Find stars with amplitudes correlated to the wavelength</property>
                         <property name="label" translatable="yes">Amplitudes-wavelength correlations</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="search_by_amplitudes"/>
                       </object>
                     </child>
                   </object>
