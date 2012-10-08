@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import functools
 import gtk
 
 # LEMON modules
@@ -111,10 +112,11 @@ class AmplitudesSearchMessageWindow(object):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
 
-    def __init__(self, parent_window, builder, db_path):
+    def __init__(self, parent_window, builder, db_path, config):
 
         self.builder = builder
         self.builder.add_from_file(glade.AMPLITUDES_DIALOG)
+        self.config = config
         self.miner = mining.LEMONdBMiner(db_path)
 
         self.dialog = self.get('amplitudes-search-dialog')
@@ -123,35 +125,20 @@ class AmplitudesSearchMessageWindow(object):
         self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.ok_button = self.dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
 
-        # Set the labels of the radio buttons that select whether amplitudes
-        # must increase or decrease to the photometric filters in the database
-        pfilters = sorted(self.miner.pfilters)
-        letters = [p.letter for p in pfilters]
-        def make_label(x):
-            return '-'.join(x)
-        self.get('direct-correlation').set_label(make_label(letters))
-        self.get('inverse-correlation').set_label(make_label(reversed(letters)))
-
-        # Although the value of the adjustment is set in Glade, the spinbuttons
-        # are all zero when the window is created, so we need to set them here
-        namplitudes = self.get('amplitudes-how-many')
-        nstdevs = self.get('comparison-stdevs-how-many')
-        ratio = self.get('min-amplitude-stdev-ratio')
-        namplitudes.set_value(self.DEFAULT_NUMBER_MIN_MAX_POINTS)
-        nstdevs.set_value(self.DEFAULT_NUMBER_STDEVS)
-        ratio.set_value(self.DEFAULT_AMPSTDEV_RATIO)
-
         self.dialog.set_transient_for(parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
-        # The checkbutton that controls whether stars with noisy amplitudes are
-        # excluded from the search, and the widgets (spin and radio buttons)
-        # that adjust the parameters used to detect these amplitudes.
-
+        self.progressbar = self.get('search-progress-bar')
+        self.increasing_button = self.get('direct-correlation')
+        self.decreasing_button = self.get('inverse-correlation')
+        self.namplitudes = self.get('amplitudes-how-many')
+        self.amplitudes_median = self.get('amplitudes-median')
+        self.amplitudes_mean = self.get('amplitudes-mean')
         self.exclude_checkbox = self.get('filter-out-noisy')
-        args = 'toggled', self.handle_toggle_exclude_noisy
-        self.exclude_checkbox.connect(*args)
 
+        # The radio and spin buttons below, that adjust how stars with noisy
+        # amplitudes are excluded, are grouped in a dictionary, so that they
+        # all can be easily enabled or disabled by iterating over the items.
         w = {}
         w['nstdevs'] = self.get('comparison-stdevs-how-many')
         w['stdevs_mean'] = self.get('comparison-stdevs-mean')
@@ -159,7 +146,37 @@ class AmplitudesSearchMessageWindow(object):
         w['min_stdev_ratio'] = self.get('min-amplitude-stdev-ratio')
         self.exclude_widgets = w
 
-        self.progressbar = self.get('search-progress-bar')
+        args = 'toggled', self.handle_toggle_exclude_noisy
+        self.exclude_checkbox.connect(*args)
+
+        # Set the labels of the radio buttons that select whether amplitudes
+        # must increase or decrease to the photometric filters in the database
+        pfilters = sorted(self.miner.pfilters)
+        letters = [p.letter for p in pfilters]
+        label = functools.partial('-'.join)
+        self.increasing_button.set_label(label(letters))
+        self.decreasing_button.set_label(label(reversed(letters)))
+
+        self.update()
+
+    def update(self):
+        """ Update the buttons to the values given in the configuration file"""
+
+        config = self.config
+        increasing = config.amplint('increasing')
+        self.increasing_button.set_active(increasing)
+        self.decreasing_button.set_active(int(not increasing))
+        use_median = config.amplint('use_median')
+        self.amplitudes_median.set_active(use_median)
+        self.amplitudes_mean.set_active(int(not use_median))
+        self.namplitudes.set_value(config.amplint('npoints'))
+        self.exclude_checkbox.set_active(config.amplint('exclude_noisy'))
+        w = self.exclude_widgets
+        w['nstdevs'].set_value(config.amplint('noisy_nstdevs'))
+        stdevs_median = config.amplint('noisy_use_median')
+        w['stdevs_median'].set_active(stdevs_median)
+        w['stdevs_mean'].set_active(int(not stdevs_median))
+        w['min_stdev_ratio'].set_value(config.amplfloat('noisy_min_ratio'))
 
     def set_fraction(self, fraction):
         """ Fill in the portion of the bar specified by 'fraction'.
@@ -196,16 +213,17 @@ class AmplitudesSearchMessageWindow(object):
             self.response = self.dialog.run()
             if self.response == gtk.RESPONSE_OK:
 
-                increasing = self.get('direct-correlation').get_active()
-                exclude_noisy = self.get('filter-out-noisy').get_active()
+                increasing = self.increasing_button.get_active()
+                exclude_noisy = self.exclude_checkbox.get_active()
+                w = self.exclude_widgets
 
                 args = (increasing,
-                        int(self.get('amplitudes-how-many').get_value()),
-                        self.get('amplitudes-median').get_active(),
+                        int(self.namplitudes.get_value()),
+                        self.amplitudes_median.get_active(),
                         exclude_noisy,
-                        int(self.get('comparison-stdevs-how-many').get_value()),
-                        self.get('comparison-stdevs-median').get_active(),
-                        self.get('min-amplitude-stdev-ratio').get_value())
+                        int(w['nstdevs'].get_value()),
+                        w['stdevs_median'].get_active(),
+                        w['min_stdev_ratio'].get_value())
 
                 g = self.miner.amplitudes_by_wavelength(*args)
                 self.progressbar.set_text("Please wait...")
@@ -257,7 +275,7 @@ class AmplitudesSearchMessageWindow(object):
             w.set_sensitive(checkbox_enabled)
 
 
-def amplitudes_search(parent_window, builder, db):
-    dialog = AmplitudesSearchMessageWindow(parent_window, builder, db)
+def amplitudes_search(parent_window, builder, db, config):
+    dialog = AmplitudesSearchMessageWindow(parent_window, builder, db, config)
     return dialog.run()
 

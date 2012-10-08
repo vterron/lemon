@@ -56,6 +56,18 @@ DEFAULT_COLORS = dict(
   L = '0.75', # light gray
   M = '0.50' ) # dark gray
 
+# The options of the search for amplitude-wavelength correlated stars
+AMPLSEARCH_SECTION = 'amplitudes-search'
+DEFAULT_AMPLSEARCH_OPTS = dict(
+  increasing = 1,
+  npoints = 10,
+  use_median = 1,
+  exclude_noisy = 1,
+  noisy_nstdevs = 10,
+  noisy_use_median = 1,
+  noisy_min_ratio = 2.0)
+
+
 class Configuration(ConfigParser.SafeConfigParser):
     """ Just a quite simple wrapper to automatically have the configuration
     file loaded at instantiation and written to disk on deletion"""
@@ -68,7 +80,10 @@ class Configuration(ConfigParser.SafeConfigParser):
      "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0)),
      '',
      "[%s]" % COLOR_SECTION] +
-    ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()])
+    ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()] +
+    ['',
+     "[%s]" % AMPLSEARCH_SECTION] +
+    ["%s = %s" % (k, v) for k, v in DEFAULT_AMPLSEARCH_OPTS.iteritems()])
 
     def __init__(self, path, update = True):
         """ Parse a configuration file, creating and populating it with
@@ -90,4 +105,12 @@ class Configuration(ConfigParser.SafeConfigParser):
     def __del__(self):
         with open(self.path, 'wt') as fd:
             self.write(fd)
+
+    def amplint(self, option):
+        """ Coerce 'option' in the amplitudes search section to an integer """
+        return self.getint(AMPLSEARCH_SECTION, option)
+
+    def amplfloat(self, option):
+        """ Coerce 'option' in the amplitudes search section to a float """
+        return self.getfloat(AMPLSEARCH_SECTION, option)
 

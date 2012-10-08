@@ -967,7 +967,8 @@ class LEMONJuicerGUI(object):
         """ Identify stars with amplitudes correlated to the wavelength. These
         are listed in a gtk.ScrolledWindow which is appended to the notebook"""
 
-        result = search.amplitudes_search(self._main_window, self._builder, self.db.path)
+        args = self._main_window, self._builder, self.db.path, self.config
+        result = search.amplitudes_search(*args)
         if result is not None:
 
             view = result.view # gtk.GtkTreeView
