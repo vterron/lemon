@@ -388,6 +388,9 @@ class SNRThresholdDialog(object):
         self.dialog.set_transient_for(parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
+        self.spinbutton = self.builder.get_object('snr-threshold-spinbutton')
+        self.spinbutton.set_value(self.config.get_minimum_snr())
+
     def run(self):
         """ Run the dialog window in a recursive loop.
 
@@ -401,8 +404,9 @@ class SNRThresholdDialog(object):
         try:
             response = self.dialog.run()
             if response == gtk.RESPONSE_OK:
-                spinbutton = self.builder.get_object('snr-threshold-spinbutton')
-                return spinbutton.get_value()
+                snr = self.spinbutton.get_value()
+                self.config.set_minimum_snr(snr)
+                return snr
 
         finally:
             self.dialog.destroy()

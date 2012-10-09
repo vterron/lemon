@@ -30,11 +30,13 @@ VIEW_DECIMAL = 'decimal'
 PERIODS_UNIT = 'periods'
 PERIODS_DAYS, PERIODS_HHMMSS, PERIODS_SECONDS = range(3)
 PLOT_AIRMASSES = 'airmasses'
+PLOT_MIN_SNR = 'snr_threshold'
 
 DEFAULT_VIEW_SEXAGESIMAL = True
 DEFAULT_VIEW_DECIMAL = False
 DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
 DEFAULT_PLOT_AIRMASSES = True
+DEFAULT_PLOT_MIN_SNR = 100
 
 # The color codes can use any of the following formats supported by matplotlib:
 # abbreviations ('g'), full names ('green'), hexadecimal strings ('#008000') or
@@ -78,6 +80,7 @@ class Configuration(ConfigParser.SafeConfigParser):
      "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
      "%s = %d" % (VIEW_DECIMAL, (1 if DEFAULT_VIEW_DECIMAL else 0)),
      "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0)),
+     "%s = %d" % (PLOT_MIN_SNR, DEFAULT_PLOT_MIN_SNR),
      '',
      "[%s]" % COLOR_SECTION] +
     ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()] +
@@ -117,4 +120,13 @@ class Configuration(ConfigParser.SafeConfigParser):
     def amplset(self, option, value):
         """ Set 'option' to 'value' in the amplitudes search section """
         self.set(AMPLSEARCH_SECTION, option, str(value))
+
+    # SafeConfigParser is an old-style class (does not support properties)
+    def get_minimum_snr(self):
+        """ Return the PLOT_MIN_SNR option in the VIEW_SECTION section """
+        return self.getint(VIEW_SECTION, PLOT_MIN_SNR)
+
+    def set_minimum_snr(self, snr):
+        """ Set the value of the PLOT_MIN_SNR option in the VIEW_SECTION """
+        self.set(VIEW_SECTION, PLOT_MIN_SNR, str(int(snr)))
 
