@@ -110,9 +110,9 @@ class StarDetailsGUI(object):
         if self.refstars_store.get_sort_column_id() == (None, None):
             self.refstars_store.set_sort_column_id(1, gtk.SORT_DESCENDING)
 
-    def handle_toggle_airmasses_checkbox(self, widget):
+    def redraw_light_curve(self, widget):
+        """ Replot the light curve """
 
-        # Replot the light curve again, with or without airmasses
         curve = self.db.get_light_curve(self.id, self.shown)
         self.update_curve(curve, self.airmasses_visible())
 
@@ -359,7 +359,7 @@ class StarDetailsGUI(object):
         # The checkbox to enable/disable airmasses in the plots, located in
         # the View submenu and shared by all the StarDetailsGUI instances
         self.airmasses_checkbox = self._builder.get_object('plot-airmasses-checkbox')
-        args = 'toggled', self.handle_toggle_airmasses_checkbox
+        args = 'toggled', self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
 
         # Activate the button of the first filter for which there is data
