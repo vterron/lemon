@@ -145,12 +145,32 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkCheckMenuItem" id="plot-airmasses-checkbox">
+                      <object class="GtkMenuItem" id="plot-submenu-item">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Plot airmasses</property>
+                        <property name="label" translatable="yes">Plots</property>
                         <property name="use_underline">True</property>
-                        <property name="active">True</property>
-                        <signal name="toggled" handler="save_plot_airmasses_checkbox"/>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu4">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="plot-airmasses-checkbox">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Airmasses</property>
+                                <property name="use_underline">True</property>
+                                <property name="active">True</property>
+                                <signal name="toggled" handler="save_plot_airmasses_checkbox"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkMenuItem" id="snr-threshold">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">SNR threshold</property>
+                                <property name="use_underline">True</property>
+                                <signal name="activate" handler="change_snr_threshold"/>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>

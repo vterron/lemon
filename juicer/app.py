@@ -370,6 +370,44 @@ class StarDetailsGUI(object):
         self.shown = init_pfilter
 
 
+class SNRThresholdDialog(object):
+    """ A GTK.Dialog to select the minimum SNR required for plots """
+
+    def __init__(self, parent_window, builder, config):
+        self.builder = builder
+        self.builder.add_from_file(glade.SNR_THRESHOLD_DIALOG)
+        self.config = config
+
+        self.dialog = self.builder.get_object('snr-treshold-dialog')
+        self.dialog.set_resizable(False)
+        self.dialog.set_title("Mininum SNR in plots")
+        self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        self.dialog.set_default_response(gtk.RESPONSE_OK)
+
+        self.dialog.set_transient_for(parent_window)
+        self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+
+    def run(self):
+        """ Run the dialog window in a recursive loop.
+
+        This method shows the dialog window and allows the select, using the
+        spin button, the minimum SNR to be used in plots. If the 'Ok' button
+        is clicked, the value of the spin button is returned, while clicking
+        'Cancel' or destroying the window returns None.
+
+        """
+
+        try:
+            response = self.dialog.run()
+            if response == gtk.RESPONSE_OK:
+                spinbutton = self.builder.get_object('snr-threshold-spinbutton')
+                return spinbutton.get_value()
+
+        finally:
+            self.dialog.destroy()
+
+
 class LEMONJuicerGUI(object):
 
     # The minimum size (width, height) of the GUI, in pixels
@@ -979,4 +1017,11 @@ class LEMONJuicerGUI(object):
             self._notebook.append_page(window, label)
             self._notebook.set_tab_reorderable(window, False)
             self._notebook.set_current_page(-1)
+
+    def change_snr_threshold(self, widget):
+        args = self._main_window, self._builder, self.config
+        dialog = SNRThresholdDialog(*args)
+        threshold = dialog.run()
+        if threshold is not None:
+            pass
 
