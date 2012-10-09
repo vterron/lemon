@@ -28,6 +28,7 @@ relative to the campaign that may be needed for the data analysis process.
 
 """
 
+import copy
 import math
 import numpy
 import operator
@@ -298,6 +299,20 @@ class LightCurve(object):
         magnitudes = sorted(mag for unix_time, mag, snr in self._data)
         func = numpy.median if median else numpy.mean
         return func(magnitudes[npoints:]) - func(magnitudes[:npoints])
+
+    def ignore_noisy(self, snr):
+        """ Return a copy of the LightCurve without noisy points.
+
+        The method returns a deep copy of the instance from which those
+        differential magnitudes whose signal-to-noise ratio is below 'snr'
+        have been removed.
+
+        """
+
+        curve = copy.deepcopy(self)
+        # _data stores three-element tuples: (Unix time, magnitude, snr)
+        curve._data = [x for x in curve._data if x[-1] >= snr]
+        return curve
 
 
 class DuplicateImageError(KeyError):
