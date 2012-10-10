@@ -61,6 +61,21 @@ UNKNOWN_VALUE = 0
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
+    def set_canvas(self, visible):
+        """ Make rows in the 'matplotlib-container' VBox visible/invisible.
+
+        Adjust the visibility of the three rows in the vertical box: if
+        'visible' is True, the first two rows (canvas and navigation toolbar)
+        are made visible, while the error message (stating that no point is
+        above the SNR threshold) is made invisible. Their visibility is
+        reversed if it is False: only the error message can be been.
+
+        """
+
+        self.image_box.set_visible(visible)
+        self.navigation_box.set_visible(visible)
+        self.error_msg.set_visible(not visible)
+
     def update_curve(self, curve, show_airmasses):
 
         if show_airmasses:
@@ -68,11 +83,23 @@ class StarDetailsGUI(object):
         else:
             airmasses = None
 
-        kwargs = dict(airmasses = airmasses, delta = 3 * 3600,
-                      color = self.config.color(curve.pfilter.letter))
+        threshold = self.config.get_minimum_snr()
+        curve = curve.ignore_noisy(threshold)
 
-        plot.curve_plot(self.figure, curve, **kwargs)
-        self.figure.canvas.draw()
+        if not curve:
+            # Display error message: no points of the light curve are above
+            # the SNR threshold. Note that 'curve' can only be None for this
+            # reason: filters for which there is no light curve are disabled
+            # at __init__, so the user cannot plot anything in these filters.
+            self.set_canvas(False)
+
+        else:
+            self.set_canvas(True)
+            kwargs = dict(airmasses = airmasses, delta = 3 * 3600,
+                          color = self.config.color(curve.pfilter.letter))
+
+            plot.curve_plot(self.figure, curve, **kwargs)
+            self.figure.canvas.draw()
 
     def update_light_curve_points(self, curve):
         """ Update the list of points of the light curve """
@@ -197,15 +224,25 @@ class StarDetailsGUI(object):
         self.vbox.id = star_id
         self._builder.connect_signals(self.vbox)
 
-        # Use Matplotlib to plot the light curve(s) of the star
-        container = self._builder.get_object('image-container')
+        # We use a three-row vertical box to pack the Matplotlib canvas (used
+        # to plot the light curve(s) of the star) and its navigation toolbar.
+        # The last row contains a label with the error message that is shown
+        # (after making invisible the other two rows) when there is no light
+        # curve to plot because all the points are below the SNR threshold.
+
+        matplotlib_container = self._builder.get_object('matplotlib-container')
+        self.image_box = self._builder.get_object('image-container-box')
         self.figure = matplotlib.figure.Figure()
         canvas = FigureCanvas(self.figure)
-        navig = NavigationToolbar(canvas, container)
+        self.image_box.pack_start(canvas)
 
-        container.pack_start(canvas)
-        container.pack_start(navig, False)
-        container.show_all()
+        self.navigation_box = self._builder.get_object('navigation-toolbar-box')
+        navig = NavigationToolbar(canvas, self.image_box)
+        self.navigation_box.pack_start(navig)
+        matplotlib_container.show_all()
+
+        self.error_msg = self._builder.get_object('error-messages-label')
+        self.error_msg.set_visible(False)
 
         # GTKTreeView used to display the list of points of the curve; dates
         # are plotted twice: hh:mm:ss and also in Unix time, the latter of
@@ -1023,9 +1060,17 @@ class LEMONJuicerGUI(object):
             self._notebook.set_current_page(-1)
 
     def change_snr_threshold(self, widget):
+        """ Select a new SNR threshold and update all the plots with it """
+
         args = self._main_window, self._builder, self.config
         dialog = SNRThresholdDialog(*args)
         threshold = dialog.run()
+
+        # SNRThresholdDialog.run() returns a value other than None when the
+        # 'Ok' button is clicked. If that is the case, we iterate over all the
+        # StarDetailsGUI's, updating all the plots with the new SNR threshold.
         if threshold is not None:
-            pass
+            for details in self.open_stars.itervalues():
+                details.redraw_light_curve(None)
+
 
