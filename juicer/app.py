@@ -143,22 +143,25 @@ class StarDetailsGUI(object):
         curve = self.db.get_light_curve(self.id, self.shown)
         self.update_curve(curve, self.airmasses_visible())
 
-    def show_pfilter(self, widget, pfilter):
+    def show_pfilter(self, button, event, pfilter):
         """ Display the information of the star in this photometric filter """
 
-        # 'show' is initialized to NoneType; so this method will
-        # be always executed the first time it is called
-        if not self.shown or self.shown != pfilter:
 
-            self.shown = pfilter
-            curve = self.db.get_light_curve(self.id, pfilter)
-            self.update_curve(curve, self.airmasses_visible())
-            self.update_light_curve_points(curve)
-            self.update_reference_stars(curve)
-            # Keep track of the filter in the TreeView object, so that
-            # LEMONJuicerGUI.handle_row_activated can know in which filter we
-            # were working when we clicked on one of the reference stars
-            self.refstars_view.pfilter = pfilter
+        # Ignore clicks on already-pressed buttons (i.e., do not draw the same
+        # light curve twice in a row). Note that 'show' is initialized to None,
+        # so this method will be always executed the first time it is called.
+        if self.shown and self.shown == pfilter:
+            return
+
+        self.shown = pfilter
+        curve = self.db.get_light_curve(self.id, pfilter)
+        self.update_curve(curve, self.airmasses_visible())
+        self.update_light_curve_points(curve)
+        self.update_reference_stars(curve)
+        # Keep track of the filter in the TreeView object, so that
+        # LEMONJuicerGUI.handle_row_activated can know in which filter we
+        # were working when we clicked on one of the reference stars
+        self.refstars_view.pfilter = pfilter
 
     def handle_toggle_view_sexagesimal(self, *args):
         button = self._builder.get_object('radio-view-sexagesimal')
@@ -387,7 +390,7 @@ class StarDetailsGUI(object):
             if not self.db.get_light_curve(star_id, pfilter):
                 button.set_sensitive(False)
             else:
-                button.connect('clicked', self.show_pfilter, pfilter)
+                button.connect('button-press-event', self.show_pfilter, pfilter)
                 self.buttons[pfilter] = button
 
             self.HButtonBox.pack_end(button)
@@ -403,7 +406,10 @@ class StarDetailsGUI(object):
         # (those in the self.buttons dictionary), unless indicated otherwise
         if not init_pfilter:
             init_pfilter = min(self.buttons.keys())
-        self.buttons[init_pfilter].clicked()
+
+        self.buttons[init_pfilter].set_active(True)
+        event = gtk.gdk.Event(gtk.gdk.NOTHING)
+        self.buttons[init_pfilter].emit('button-press-event', event)
         self.shown = init_pfilter
 
 
