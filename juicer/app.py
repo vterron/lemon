@@ -44,9 +44,9 @@ sys.path.append(path)
 
 # LEMON modules
 import config
-import database
 import glade
 import methods
+import mining
 import plot
 import snr
 import search
@@ -756,7 +756,7 @@ class LEMONJuicerGUI(object):
 
         try:
 
-            db = database.LEMONdB(path)
+            db = mining.LEMONdBMiner(path)
             db_pfilters = db.pfilters
 
             # Two columns are used for the right ascension and declination of
