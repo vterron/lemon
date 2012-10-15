@@ -586,7 +586,15 @@ class LEMONJuicerGUI(object):
         self.amplitudes_search_menuitem.set_sensitive(npages_left)
 
     def handle_quit(self, obj):
+        """ Close the application after removing all the pages of the notebook """
+
+        # I'm not sure why it takes way too longer to destroy the window if
+        # there are pages left in the notebook. Are we doing something wrong
+        # in our code, or is it inherent to how (Py)GTK works?
+        while self._notebook.get_n_pages():
+            self._notebook.remove_page(-1)
         self._main_window.destroy()
+        gtk.main_quit()
 
     def handle_show_about(self, obj):
         self._builder.add_from_file(glade.GUI_ABOUT)
@@ -594,9 +602,6 @@ class LEMONJuicerGUI(object):
         about.set_transient_for(self._main_window)
         about.run()
         about.destroy()
-
-    def handle_destroy(self, win):
-        gtk.main_quit()
 
     def handle_toggle_view_sexagesimal(self, *args):
         button = self._builder.get_object('radio-view-sexagesimal')
