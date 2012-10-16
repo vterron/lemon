@@ -437,19 +437,27 @@ class SNRThresholdDialog(object):
     def run(self):
         """ Run the dialog window in a recursive loop.
 
-        This method shows the dialog window and allows the select, using the
-        spin button, the minimum SNR to be used in plots. If the 'Ok' button
-        is clicked, the value of the spin button is returned, while clicking
-        'Cancel' or destroying the window returns None.
+        This method shows the dialog window and allows the user to select,
+        using a spin button, the minimum SNR to be used in plots. If the value
+        of the spin button is modified and the 'Ok' button is clicked, the new
+        SNR threshold is returned. On the other hand, clicking 'Ok' without
+        having modified the SNR, clicking 'Cancel' or destroying the window
+        return None.
+
+        Note that returning None when the SNR is not modified but 'Ok' clicked
+        avoids unnecessary updates of the light curves: without this, we would
+        replot them with the same SNR threshold.
 
         """
 
         try:
+            old_snr = self.spinbutton.get_value()
             response = self.dialog.run()
             if response == gtk.RESPONSE_OK:
                 snr = self.spinbutton.get_value()
-                self.config.set_minimum_snr(snr)
-                return snr
+                if snr != old_snr:
+                    self.config.set_minimum_snr(snr)
+                    return snr
 
         finally:
             self.dialog.destroy()
@@ -1079,9 +1087,10 @@ class LEMONJuicerGUI(object):
         dialog = SNRThresholdDialog(*args)
         threshold = dialog.run()
 
-        # SNRThresholdDialog.run() returns a value other than None when the
-        # 'Ok' button is clicked. If that is the case, we iterate over all the
-        # StarDetailsGUI's, updating all the plots with the new SNR threshold.
+        # SNRThresholdDialog.run() returns a value other than None when a new
+        # minimum SNR value is input and the 'Ok' button is clicked. If that
+        # is the case, we iterate over all the StarDetailsGUI's, updating the
+        # plots with the new SNR threshold.
         if threshold is not None:
             for details in self.open_stars.itervalues():
                 details.redraw_light_curve(None)
