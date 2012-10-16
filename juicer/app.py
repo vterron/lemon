@@ -599,7 +599,6 @@ class LEMONJuicerGUI(object):
         # in our code, or is it inherent to how (Py)GTK works?
         while self._notebook.get_n_pages():
             self._notebook.remove_page(-1)
-        self._main_window.destroy()
         gtk.main_quit()
 
     def handle_show_about(self, obj):
