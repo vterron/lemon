@@ -72,7 +72,7 @@ DEFAULT_AMPLSEARCH_OPTS = dict(
 
 class Configuration(ConfigParser.SafeConfigParser):
     """ Just a quite simple wrapper to automatically have the configuration
-    file loaded at instantiation and written to disk on deletion"""
+    file loaded at instantiation and written to disk with the update method """
 
     DEFAULT_CONFIG = '\n'.join(
     ["[%s]" % VIEW_SECTION,
@@ -105,7 +105,8 @@ class Configuration(ConfigParser.SafeConfigParser):
         """ Return the color code to be used for a photometric filter """
         return self.get(COLOR_SECTION, letter.upper())
 
-    def __del__(self):
+    def update(self):
+        """ Write to disk the configuration file """
         with open(self.path, 'wt') as fd:
             self.write(fd)
 

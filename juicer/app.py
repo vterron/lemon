@@ -594,6 +594,9 @@ class LEMONJuicerGUI(object):
     def handle_quit(self, obj):
         """ Close the application after removing all the pages of the notebook """
 
+        # Update the configuration file with any changes
+        self.config.update()
+
         # I'm not sure why it takes way too longer to destroy the window if
         # there are pages left in the notebook. Are we doing something wrong
         # in our code, or is it inherent to how (Py)GTK works?
