@@ -765,6 +765,64 @@ class LightCurveTest(unittest.TestCase):
                 self.assertEqual(cstar_id, cstars[index])
                 self.assertEqual(cweight, cweights[index])
 
+    def test_amplitude(self):
+
+        curve = self.random()
+        assert not len(curve)
+        curve.add(10000, 14.5, 100)
+        curve.add(11000, 13.1, 110)
+        curve.add(16000, 13.4, 125)
+        curve.add(19000, 14.3, 150)
+        curve.add(21000, 14.45, 125)
+
+        # 14.5 - 13.1 = 1.4 (only one point is used to determine the peak
+        # and trough, so whether we use the median or mean is irrelevant)
+        amplitude1 = curve.amplitude(npoints = 1, median = True)
+        amplitude2 = curve.amplitude(npoints = 1, median = False)
+        self.assertEqual(amplitude1, amplitude2)
+        self.assertAlmostEqual(amplitude1, 1.4)
+
+        # median([14.5, 14.45]) - median([13.1, 13.4]) = 1.225
+        amplitude = curve.amplitude(npoints = 2, median = True)
+        self.assertAlmostEqual(amplitude, 1.225)
+
+        # mean([14.5, 14.45, 14.3]) - mean([13.1, 13.4, 14.3]) = ~0.81666
+        amplitude = curve.amplitude(npoints = 3, median = False)
+        self.assertAlmostEqual(amplitude, 0.81666666666666643)
+
+        for _ in xrange(NITERS):
+
+            curve = self.random()
+            size = random.randint(MIN_NSTARS, MAX_NSTARS)
+            magnitudes = []
+            for point in self.random_points(size):
+                unix_time, mag, snr = point
+                curve.add(*point)
+                magnitudes.append(mag)
+
+            magnitudes.sort()
+            npoints = random.choice(xrange(1, len(curve) + 1))
+
+            # First using the median to combine the points...
+            maximum = numpy.median(magnitudes[-npoints:])
+            minimum = numpy.median(magnitudes[:npoints])
+            amplitude = maximum - minimum
+
+            kwargs = dict(npoints = npoints, median = True)
+            self.assertAlmostEqual(amplitude, curve.amplitude(**kwargs))
+
+            # ... and now with the arithmetic mean
+            maximum = numpy.mean(magnitudes[-npoints:])
+            minimum = numpy.mean(magnitudes[:npoints])
+            amplitude = maximum - minimum
+            kwargs = dict(npoints = npoints, median = False)
+            self.assertAlmostEqual(amplitude, curve.amplitude(**kwargs))
+
+        # ValueError is raised if the LightCuve is empty
+        curve = self.random()
+        assert not len(curve)
+        self.assertRaises(ValueError, curve.amplitude)
+
     @staticmethod
     def assertThatAreEqual(cls, first, second):
         """ Assert that two LightCurves are equal.
