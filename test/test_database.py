@@ -823,6 +823,45 @@ class LightCurveTest(unittest.TestCase):
         assert not len(curve)
         self.assertRaises(ValueError, curve.amplitude)
 
+    def test_noisy(self):
+
+        curve = self.random()
+        assert not len(curve)
+        curve.add(10000, 12.1, 100)
+        curve.add(11000, 12.7, 250)
+        curve.add(12000, 12.9, 400)
+        curve.add(13000, 12.6, 375)
+        curve.add(14000, 12.2, 95)
+
+        # Two points (mags 12.1 and 12.2) have a SNR < 250
+        curve = curve.ignore_noisy(250)
+        self.assertEqual(len(curve), 3)
+        utimes, mags, snrs = zip(*curve)
+        self.assertEqual(utimes, (11000, 12000, 13000))
+        self.assertEqual(mags, (12.7, 12.9, 12.6))
+        self.assertEqual(snrs, (250, 400, 375))
+
+        for _ in xrange(NITERS):
+
+            curve = self.random()
+            size = random.randint(MIN_NSTARS, MAX_NSTARS)
+            [curve.add(*point) for point in self.random_points(size)]
+            utimes, mags, snrs = zip(*curve)
+
+            # The random minimum SNR could discard none to all of the points
+            threshold = random.uniform(0, max(snrs) + 1)
+            non_noisy_curve = curve.ignore_noisy(threshold)
+
+            # The values that we expect the new light curve to contain
+            npoints = [p for p in curve if p[-1] >= threshold]
+            nutimes, nmags, nsnrs = zip(*npoints)
+
+            self.assertEqual(len(non_noisy_curve), len(npoints))
+            self.assertTrue(min(nsnrs) >= threshold)
+            self.assertEqual(nutimes, tuple(p[0] for p in non_noisy_curve))
+            self.assertEqual(nmags,   tuple(p[1] for p in non_noisy_curve))
+            self.assertEqual(nsnrs,   tuple(p[2] for p in non_noisy_curve))
+
     @staticmethod
     def assertThatAreEqual(cls, first, second):
         """ Assert that two LightCurves are equal.
