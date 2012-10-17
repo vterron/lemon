@@ -302,7 +302,7 @@ class LightCurve(object):
 
         magnitudes = sorted(mag for unix_time, mag, snr in self._data)
         func = numpy.median if median else numpy.mean
-        return func(magnitudes[npoints:]) - func(magnitudes[:npoints])
+        return func(magnitudes[-npoints:]) - func(magnitudes[:npoints])
 
     def ignore_noisy(self, snr):
         """ Return a copy of the LightCurve without noisy points.
