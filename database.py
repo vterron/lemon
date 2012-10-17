@@ -285,7 +285,8 @@ class LightCurve(object):
         take into account that there might be outliers, caused by measurement
         errors, that could severely affect the result of this difference. Thus,
         it its possible to take the mean or median of several points as the
-        peak and trough used to compute the amplitude.
+        peak and trough used to compute the amplitude. The ValueError exception
+        is raised if there are no points in the light cuve (i.e., it is empty).
 
         Keyword arguments:
         npoints - the number of maximum and minimum points (i.e., differential
@@ -295,6 +296,9 @@ class LightCurve(object):
                  arithmetic mean (otherwise).
 
         """
+
+        if not self:
+            raise ValueError("light curve is empty")
 
         magnitudes = sorted(mag for unix_time, mag, snr in self._data)
         func = numpy.median if median else numpy.mean
