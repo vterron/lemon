@@ -35,7 +35,7 @@
                 <child>
                   <object class="GtkLabel" id="label8">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Amplitudes must be sorted by</property>
+                    <property name="label" translatable="yes">Amplitudes must increase with</property>
                   </object>
                   <packing>
                     <property name="position">0</property>
