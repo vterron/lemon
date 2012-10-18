@@ -30,15 +30,15 @@ import mining
 import util
 
 class AmplitudesSearchPage(object):
-    """ Encapsulates a gtk.GtkTreeView (and the corresponding tree store)
-    with the results for the search of stars whose light curve amplitudes
-    are correlated with the wavelength. Use the 'get_window' method to
-    access a gtk.ScrolledWindow, with the tree view, meant to be used
-    in the main gtk.GtkNotebook of the LEMONJuicerGUI class.
+    """ Encapsulates a gtk.HBox with (1) a description of the search for stars
+    whose light curve amplitudes are correlated with the wavelength and (2) a
+    gtk.GtkTreeView (and the corresponding tree store) with the found stars.
+    Use the 'get_window' method to access the gtk.HBox, meant to be used in
+    the main gtk.GtkNotebook of the LEMONJuicerGUI class.
 
     """
 
-    def __init__(self, builder, pfilters, include_ratios):
+    def __init__(self, builder, pfilters, include_ratios, description):
         """ Instantiation method for the AmplitudesSearchPage class.
 
         The 'builder' parameter must be the gtk.GtkBuilder of the parent GTK
@@ -46,7 +46,9 @@ class AmplitudesSearchPage(object):
         instances of the photometric filters of the amplitudes that will be
         added later with the 'add' method. If 'include_ratios' is True,
         additional columns will be created to store the ratio between each
-        amplitude and its comparison standard deviation.
+        amplitude and its comparison standard deviation. The text of the
+        GtkLabel on the left column, expected to contain an account of the
+        parameters used in the search, is set to 'description'.
 
         """
 
@@ -66,13 +68,16 @@ class AmplitudesSearchPage(object):
         if include_ratios:
             attrs += ["Ratio %s" % p.letter for p in pfilters]
 
-        self.view = self.builder.get_object('amplitudes-search-results')
+        self.view = self.builder.get_object('amplitudes-search-found-view')
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
             column.props.resizable = False
             column.set_sort_column_id(index)
             self.view.append_column(column)
+
+        self.description = self.builder.get_object('search-description-label')
+        self.description.set_label(description)
 
     def add(self, star_id, amplitudes, ratios = None):
         """ Append a new row to the store.
@@ -92,9 +97,9 @@ class AmplitudesSearchPage(object):
         self.store.append(row)
 
     def get_window(self):
-        """ Return a gtk.ScrolledWindow with the tree view of the stars """
+        """ Return a gtk.HBox with the found stars """
         self.view.set_model(self.store)
-        return self.builder.get_object('amplitudes-search-scrolled-window')
+        return self.builder.get_object('amplitudes-search-result')
 
     def get_label(self):
         """ Return 'Amplitudes↑/↓', depending on the order of the filters """
@@ -214,6 +219,49 @@ class AmplitudesSearchMessageWindow(object):
             while gtk.events_pending():
                 gtk.main_iteration()
 
+    @property
+    def description(self):
+        """ Return a text description of the search, explaining exactly what
+        was made, including the value of all the parameters."""
+
+        increasing_order = self.increasing_button.get_active()
+        using_median = self.amplitudes_median.get_active()
+        params = dict(order = 'increase' if increasing_order else 'decrease',
+                      pfilters = self.increasing_button.get_label(),
+                      mode = 'median' if using_median  else 'mean',
+                      how_many = int(self.namplitudes.get_value()))
+
+        # These parameters will be shown in bold in the GtkLabel
+        # http://faq.pygtk.org/index.py?req=show&file=faq07.003.htp
+        def bold(str_):
+            return "<b>%s</b>" % str_
+        params = dict((k, bold(v)) for k, v in params.iteritems())
+
+        text = \
+        "These are the stars whose amplitudes %(order)s with %(pfilters)s " \
+        "when the peak and trough of each light curve are obtained by " \
+        "taking the %(mode)s of the %(how_many)s highest and lowest " \
+        "magnitudes." % params
+
+        if self.exclude_checkbox.get_active():
+
+            w = self.exclude_widgets
+            using_median = w['stdevs_median'].get_active()
+            params = dict(mode = 'median' if using_median else 'mean',
+                          how_many = int(w['nstdevs'].get_value()),
+                          ratio = w['min_stdev_ratio'].get_value())
+            params = dict((k, bold(v)) for k, v in params.iteritems())
+
+            text += "\n\n" + \
+            "Those stars with one or more noisy amplitudes were " \
+            "excluded from the search. To determine if an amplitude was " \
+            "<i>noisy</i>, we divided it by the %(mode)s of the standard " \
+            "deviation of the light curves of the %(how_many)s stars with " \
+            "the most similar brightnesses: if the ratio was smaller than " \
+            "%(ratio)s, the amplitude was considered noisy." % params
+
+        return text
+
     def run(self):
         """ Run the dialog window in a recursive loop.
 
@@ -234,6 +282,12 @@ class AmplitudesSearchMessageWindow(object):
             self.response = self.dialog.run()
             if self.response == gtk.RESPONSE_OK:
 
+                # Save the description of the search right away, before even
+                # starting the search; otherwise, the user could modify some of
+                # the parameters while the search is in progress, and thus the
+                # description would not match the values used in actuality.
+                description = self.description
+
                 increasing = self.increasing_button.get_active()
                 exclude_noisy = self.exclude_checkbox.get_active()
                 w = self.exclude_widgets
@@ -253,7 +307,8 @@ class AmplitudesSearchMessageWindow(object):
                 # Photometric filters must be passed to AmplitudesSearchPage
                 # in the same order in which the amplitudes will be added
                 pfilters = sorted(self.miner.pfilters, reverse = not increasing)
-                result = AmplitudesSearchPage(self.builder, pfilters, exclude_noisy)
+                args = self.builder, pfilters, exclude_noisy, description
+                result = AmplitudesSearchPage(*args)
 
                 nstars = len(self.miner)
                 for star_index, star_data in enumerate(g):
