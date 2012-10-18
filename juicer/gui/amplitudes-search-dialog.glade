@@ -98,7 +98,7 @@
                   <object class="GtkLabel" id="label4">
                     <property name="visible">True</property>
                     <property name="xpad">5</property>
-                    <property name="label" translatable="yes">To calculate the lowest and highest values
+                    <property name="label" translatable="yes">To calculate the peak and trough
 of each light curve, compute the...</property>
                   </object>
                   <packing>
@@ -184,7 +184,7 @@ of each light curve, compute the...</property>
                   <object class="GtkLabel" id="label2">
                     <property name="visible">True</property>
                     <property name="xalign">0</property>
-                    <property name="label" translatable="yes">maximum and minimum points</property>
+                    <property name="label" translatable="yes">highest and lowest points</property>
                   </object>
                   <packing>
                     <property name="padding">5</property>
