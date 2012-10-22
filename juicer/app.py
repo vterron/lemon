@@ -20,6 +20,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+from __future__ import with_statement
 
 import pygtk
 pygtk.require ('2.0')
@@ -57,6 +58,134 @@ import util
 # it is used by gtk.TreeViewColumn to determine the visibility of the cells:
 # instead of showing a zero, nothing is displayed.
 UNKNOWN_VALUE = 0
+
+
+class ExportCurveDialog(object):
+    """ Encapsulates a dialog window that allows the user to select which
+    attributes of a light curve (such as the time of observation in Unix
+    seconds, or the signal-to-noise ratio, or the error in magnitudes) are
+    dumped to a text file, selected using a gtk.FileChooserDialog """
+
+    def get(self, name):
+        """ Access a widget in the interface """
+        return self.builder.get_object(name)
+
+    def __init__(self, parent_window, builder, id_, pfilter, curve_store):
+        """ Instantiation method for the ExportCurveDialog class.
+
+        The 'parent_window' parameter must be the transient parent of the
+        dialog, while 'builder' is the gtk.GtkBuilder of the parent GTK
+        widget. The 'id_' parameter is the ID of the star, and 'pfilter' a
+        Passband instance encapsulating the photometric filter of the light
+        curve. Lastly, 'curve_store' must be a gtk.ListStore with the data that
+        will be dumped to a file, and should contain six columns: (1) a textual
+        representation of the date of observation, (2) the date of observation
+        in seconds after the Unix epoch, (3) the differential magnitude, (4)
+        the signal-to-noise ratio, (5 and 6) the maximum and minimum errors
+        induced by the noise, respectively. The columns must be in this exact
+        order and of type float, except for the first one, which is a str.
+
+        """
+
+        self.parent_window = parent_window
+        self.builder = builder
+        self.builder.add_from_file(glade.EXPORT_CURVE_DIALOG)
+        self.id = id_
+        self.pfilter = pfilter
+        self.store = curve_store
+
+        self.dialog = self.get('export-curve-dialog')
+        self.dialog.set_resizable(False)
+        self.dialog.set_title("Export to text file")
+        self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+
+        self.dialog.set_transient_for(self.parent_window)
+        self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+
+        text = \
+        "Please select the attributes of the light curve of <b>star %d</b> " \
+        "in <b>filter %s</b> that will be saved to disk. The tab character, " \
+        "'\\t', will be used as separator." % (self.id, self.pfilter)
+        self.get('dialog-description').set_label(text)
+
+    def dump(self, path, separator = '\t', decimals = 8):
+        """ Save a light curve to the plain text file 'path'.
+
+        Iterate over the gtk.ListStore (which is expected, although this is not
+        enforced, to be sorted chronologically; that is, sorted by the value of
+        the second column, which contains the date of observation in Unix time)
+        and save a textual representation of its rows to 'path', truncating the
+        file if it already exists. Not all the rows of the gtk.ListStore (i.e.,
+        the attributes of the light curve, such as the signal-to-noise ratio or
+        the maximum and minimum error induced by the noise) are saved to the
+        file, but only those for which the corresponding checkbox is active
+        (checked).
+
+        """
+
+        def is_active(name):
+            """ Determine whether a check-button is active """
+            return self.get(name).get_active()
+
+        def parse_float(value):
+            """ Cast value to str; use exactly 'decimals' decimal digits """
+            return '%.*f' % (decimals, value)
+
+        with open(path, 'wt') as fd:
+
+            for row in self.store:
+
+                values = []
+                if is_active('date-str-checkbox'):
+                    values.append(row[0])
+                if is_active('date-secs-checkbox'):
+                    values.append(parse_float(row[1]))
+                if is_active('mags-checkbox'):
+                    values.append(parse_float(row[2]))
+                if is_active('snr-checkbox'):
+                    values.append(parse_float(row[3]))
+                if is_active('merr-pos-checkbox'):
+                    values.append(parse_float(row[4]))
+                if is_active('merr-neg-checkbox'):
+                    values.append(parse_float(row[5]))
+
+                fd.write('%s\n' % separator.join(values))
+
+    def run(self):
+        """ Run the dialog window in a recursive loop.
+
+        This method shows the dialog window and allows the user to select,
+        using checkboxes, which attributes of the light curve of the star will
+        be dumped. Then, upon clicking 'Save', a gtk.FileChooserDialog lets the
+        user browse for the location where the plain text file will be saved.
+
+        """
+
+        response = self.dialog.run()
+        if response == gtk.RESPONSE_OK:
+
+            kwargs = dict(title = "Export light curve to...",
+                          parent = self.parent_window,
+                          action = gtk.FILE_CHOOSER_ACTION_SAVE,
+                          buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+
+            with util.destroying(gtk.FileChooserDialog(**kwargs)) as chooser:
+
+                # Ask the user to confirm overwriting an existing file
+                chooser.set_do_overwrite_confirmation(True)
+
+                # Suggest a name for the plain text file
+                filename = 'star_%d_curve_%s' % (self.id, self.pfilter)
+                chooser.set_current_name(filename)
+                response = chooser.run()
+
+                if response == gtk.RESPONSE_OK:
+                    self.dump(chooser.get_filename())
+
+        self.dialog.destroy()
+
 
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
@@ -411,6 +540,19 @@ class StarDetailsGUI(object):
         event = gtk.gdk.Event(gtk.gdk.NOTHING)
         self.buttons[init_pfilter].emit('button-press-event', event)
         self.shown = init_pfilter
+
+        # The button to export the light curve to a text file
+        export_button = self._builder.get_object('save-curve-points-button')
+        args = 'clicked', self.save_light_curve_points
+        export_button.connect(*args)
+
+    def save_light_curve_points(self, widget):
+        """ Dump the points of the light curve to a plain text file """
+
+        args = (self.parent._main_window, self._builder,
+                self.id, self.shown, self.curve_store)
+        dialog = ExportCurveDialog(*args)
+        dialog.run()
 
 
 class SNRThresholdDialog(object):
