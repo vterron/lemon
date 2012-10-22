@@ -109,10 +109,6 @@ class AmplitudesSearchPage(object):
 
 class AmplitudesSearchMessageWindow(object):
 
-    DEFAULT_NUMBER_MIN_MAX_POINTS = 5
-    DEFAULT_NUMBER_STDEVS = 10
-    DEFAULT_AMPSTDEV_RATIO = 2
-
     def get(self, name):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
