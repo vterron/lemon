@@ -69,6 +69,16 @@ DEFAULT_AMPLSEARCH_OPTS = dict(
   noisy_use_median = 1,
   noisy_min_ratio = 2.0)
 
+# The options for how light curves are dumped to plain-text files
+CURVEDUMP_SECTION = 'curve-export'
+DEFAULT_CURVEDUMP_OPTS = dict(
+  dump_date_text = 1,
+  dump_date_seconds = 1,
+  dump_magnitude = 1,
+  dump_snr = 1,
+  dump_max_merr = 1,
+  dump_min_merr = 1,
+  decimal_places = 8)
 
 class Configuration(ConfigParser.SafeConfigParser):
     """ Just a quite simple wrapper to automatically have the configuration
@@ -86,7 +96,10 @@ class Configuration(ConfigParser.SafeConfigParser):
     ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()] +
     ['',
      "[%s]" % AMPLSEARCH_SECTION] +
-    ["%s = %s" % (k, v) for k, v in DEFAULT_AMPLSEARCH_OPTS.iteritems()])
+    ["%s = %s" % (k, v) for k, v in DEFAULT_AMPLSEARCH_OPTS.iteritems()] +
+    ['',
+     "[%s]" % CURVEDUMP_SECTION] +
+    ["%s = %s" % (k, v) for k, v in DEFAULT_CURVEDUMP_OPTS.iteritems()])
 
     def __init__(self, path, update = True):
         """ Parse a configuration file, creating and populating it with
@@ -130,4 +143,12 @@ class Configuration(ConfigParser.SafeConfigParser):
     def set_minimum_snr(self, snr):
         """ Set the value of the PLOT_MIN_SNR option in the VIEW_SECTION """
         self.set(VIEW_SECTION, PLOT_MIN_SNR, str(int(snr)))
+
+    def dumpint(self, option):
+        """ Coerce 'option' in the curves export section to an integer """
+        return self.getint(CURVEDUMP_SECTION, option)
+
+    def dumpset(self, option, value):
+        """ Set 'option' to 'value' in the curves export section """
+        self.set(CURVEDUMP_SECTION, option, str(value))
 

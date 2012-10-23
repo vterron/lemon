@@ -66,21 +66,20 @@ class ExportCurveDialog(object):
     seconds, or the signal-to-noise ratio, or the error in magnitudes) are
     dumped to a text file, selected using a gtk.FileChooserDialog """
 
-    DEFAULT_NDECIMALS = 8
-
     def get(self, name):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
 
-    def __init__(self, parent_window, builder, id_, pfilter, curve_store):
+    def __init__(self, parent_window, builder, config, id_, pfilter, curve_store):
         """ Instantiation method for the ExportCurveDialog class.
 
         The 'parent_window' parameter must be the transient parent of the
-        dialog, while 'builder' is the gtk.GtkBuilder of the parent GTK
-        widget. The 'id_' parameter is the ID of the star, and 'pfilter' a
-        Passband instance encapsulating the photometric filter of the light
-        curve. Lastly, 'curve_store' must be a gtk.ListStore with the data that
-        will be dumped to a file, and should contain six columns: (1) a textual
+        dialog, while 'builder' and 'config' are the gtk.GtkBuilder and
+        Configuration instances, respectively, of the parent GTK widget.
+        The 'id_' parameter is the ID of the star, and 'pfilter' a Passband
+        instance encapsulating the photometric filter of the light curve.
+        Lastly, 'curve_store' must be a gtk.ListStore with the data that will
+        be dumped to a file, and should contain six columns: (1) a textual
         representation of the date of observation, (2) the date of observation
         in seconds after the Unix epoch, (3) the differential magnitude, (4)
         the signal-to-noise ratio, (5 and 6) the maximum and minimum errors
@@ -92,6 +91,7 @@ class ExportCurveDialog(object):
         self.parent_window = parent_window
         self.builder = builder
         self.builder.add_from_file(glade.EXPORT_CURVE_DIALOG)
+        self.config = config
         self.id = id_
         self.pfilter = pfilter
         self.store = curve_store
@@ -111,9 +111,46 @@ class ExportCurveDialog(object):
         "'\\t', will be used as separator." % (self.id, self.pfilter)
         self.get('dialog-description').set_label(text)
 
-        # Allow the user to select how many decimal places will be used
+        self.date_str_checkbox = self.get('date-str-checkbox')
+        self.date_secs_checkbox = self.get('date-secs-checkbox')
+        self.mags_checkbox = self.get('mags-checkbox')
+        self.snr_checkbox = self.get('snr-checkbox')
+        self.merr_pos_checkbox = self.get('merr-pos-checkbox')
+        self.merr_neg_checkbox = self.get('merr-neg-checkbox')
         self.spinbutton = self.get('ndecimals-spinbutton')
-        self.spinbutton.set_value(self.DEFAULT_NDECIMALS)
+        self.update()
+
+        # Handlers that update the options in the configuration file every time
+        # that the value of a widget (either check or spin button) is modified
+        def save_widget_update(option, func = 'get_active'):
+            """ Return the function that, when called, updates 'option' in the
+            curve export section of the configuration file. 'func' is the
+            method used to get the value of the widget, casted to integer """
+
+            def handler(widget):
+                self.config.dumpset(option, int(getattr(widget, func)()))
+            return handler
+
+        f = save_widget_update
+        self.date_str_checkbox.connect('toggled', f('dump_date_text'))
+        self.date_secs_checkbox.connect('toggled', f('dump_date_seconds'))
+        self.mags_checkbox.connect('toggled', f('dump_magnitude'))
+        self.snr_checkbox.connect('toggled', f('dump_snr'))
+        self.merr_pos_checkbox.connect('toggled', f('dump_max_merr'))
+        self.merr_neg_checkbox.connect('toggled', f('dump_min_merr'))
+        self.spinbutton.connect('output', f('decimal_places', 'get_value'))
+
+    def update(self):
+        """ Update the buttons to the values given in the configuration file """
+
+        config = self.config
+        self.date_str_checkbox.set_active(config.dumpint('dump_date_text'))
+        self.date_secs_checkbox.set_active(config.dumpint('dump_date_seconds'))
+        self.mags_checkbox.set_active(config.dumpint('dump_magnitude'))
+        self.snr_checkbox.set_active(config.dumpint('dump_snr'))
+        self.merr_pos_checkbox.set_active(config.dumpint('dump_max_merr'))
+        self.merr_neg_checkbox.set_active(config.dumpint('dump_min_merr'))
+        self.spinbutton.set_value(config.dumpint('decimal_places'))
 
     def dump(self, path, separator = '\t'):
         """ Save a light curve to the plain text file 'path'.
@@ -130,10 +167,6 @@ class ExportCurveDialog(object):
 
         """
 
-        def is_active(name):
-            """ Determine whether a check-button is active """
-            return self.get(name).get_active()
-
         def parse_float(value):
             """ Cast value to str; use exactly 'decimals' decimal digits """
             ndecimals = int(self.spinbutton.get_value())
@@ -144,17 +177,17 @@ class ExportCurveDialog(object):
             for row in self.store:
 
                 values = []
-                if is_active('date-str-checkbox'):
+                if self.date_str_checkbox.get_active():
                     values.append(row[0])
-                if is_active('date-secs-checkbox'):
+                if self.date_secs_checkbox.get_active():
                     values.append(parse_float(row[1]))
-                if is_active('mags-checkbox'):
+                if self.mags_checkbox.get_active():
                     values.append(parse_float(row[2]))
-                if is_active('snr-checkbox'):
+                if self.snr_checkbox.get_active():
                     values.append(parse_float(row[3]))
-                if is_active('merr-pos-checkbox'):
+                if self.merr_pos_checkbox.get_active():
                     values.append(parse_float(row[4]))
-                if is_active('merr-neg-checkbox'):
+                if self.merr_neg_checkbox.get_active():
                     values.append(parse_float(row[5]))
 
                 fd.write('%s\n' % separator.join(values))
@@ -556,7 +589,7 @@ class StarDetailsGUI(object):
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
 
-        args = (self.parent._main_window, self._builder,
+        args = (self.parent._main_window, self._builder, self.config,
                 self.id, self.shown, self.curve_store)
         dialog = ExportCurveDialog(*args)
         dialog.run()
