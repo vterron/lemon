@@ -66,6 +66,8 @@ class ExportCurveDialog(object):
     seconds, or the signal-to-noise ratio, or the error in magnitudes) are
     dumped to a text file, selected using a gtk.FileChooserDialog """
 
+    DEFAULT_NDECIMALS = 8
+
     def get(self, name):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
@@ -109,7 +111,11 @@ class ExportCurveDialog(object):
         "'\\t', will be used as separator." % (self.id, self.pfilter)
         self.get('dialog-description').set_label(text)
 
-    def dump(self, path, separator = '\t', decimals = 8):
+        # Allow the user to select how many decimal places will be used
+        self.spinbutton = self.get('ndecimals-spinbutton')
+        self.spinbutton.set_value(self.DEFAULT_NDECIMALS)
+
+    def dump(self, path, separator = '\t'):
         """ Save a light curve to the plain text file 'path'.
 
         Iterate over the gtk.ListStore (which is expected, although this is not
@@ -130,7 +136,8 @@ class ExportCurveDialog(object):
 
         def parse_float(value):
             """ Cast value to str; use exactly 'decimals' decimal digits """
-            return '%.*f' % (decimals, value)
+            ndecimals = int(self.spinbutton.get_value())
+            return '%.*f' % (ndecimals, value)
 
         with open(path, 'wt') as fd:
 
