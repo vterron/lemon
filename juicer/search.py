@@ -23,6 +23,7 @@ from __future__ import division
 
 import functools
 import gtk
+import operator
 
 # LEMON modules
 import glade
@@ -307,9 +308,7 @@ class AmplitudesSearchMessageWindow(object):
                 self.progressbar.set_text("Please wait...")
                 self.ok_button.set_sensitive(False)
 
-                # Photometric filters must be passed to AmplitudesSearchPage
-                # in the same order in which the amplitudes will be added
-                pfilters = sorted(self.miner.pfilters, reverse = not increasing)
+                pfilters = sorted(self.miner.pfilters)
                 args = self.builder, pfilters, exclude_noisy, description
                 result = AmplitudesSearchPage(*args)
 
@@ -326,7 +325,14 @@ class AmplitudesSearchMessageWindow(object):
 
                     if star_data:
                         star_id = star_data[0]
-                        _ , amplitudes, stdevs = zip(*star_data[-1])
+
+                        # Sort the list of three-element tuples (photometric
+                        # filter, amplitude and comparison standard deviation)
+                        # by the first element, as columns must be sorted by
+                        # wavelength in the AmplitudesSearchPage.
+                        arg = sorted(star_data[-1], key = operator.itemgetter(0))
+                        _ , amplitudes, stdevs = zip(*arg)
+
                         if exclude_noisy:
                             ratios = [a / s for a, s in zip(amplitudes, stdevs)]
                         else:
