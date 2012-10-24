@@ -596,7 +596,7 @@ class LEMONdBMiner(database.LEMONdB):
         A two-element tuple is yielded for each star that satisfies the above
         conditions, with (a) the ID of the star, (b) a list of three-element
         tuples which map each photometric filter (b1) to the amplitude of that
-        light curve (b2) and the median (or mean) standard deviation of the the
+        light curve (b2) and the median (or mean) standard deviation of the
         stars with the most similar instrumental magnitudes (b3). For example:
         (1023, [(Passband('KS'), 0.046757, 0.01646), (Passband('H'), 0.33077,
         0.022678), (Passband('J'), 0.856194, 0.024012), (Passband('Z'),
