@@ -719,6 +719,11 @@ class LEMONJuicerGUI(object):
             raise ConfigParser.ParsingError(msg)
         builder.get_object(name).set_active(True)
 
+        # The searches for stars by amplitudes (Find → Amplitudes-wavelength
+        # correlation) are numbered sequentially and in Roman numerals: i.e.,
+        # the first one is labeled with 'I', the second with 'II', etc.
+        self.nampl_searches = 0
+
     def save_plot_airmasses_checkbox(self, widget):
         """ Airmasses are not plotted here (that is done StarDetailsGUI), but
         we need to update the configuration file with the new value of the
@@ -931,6 +936,12 @@ class LEMONJuicerGUI(object):
         overview = self._builder.get_object('database-overview')
         self.view = self._builder.get_object('table-view')
         self.view.connect('row-activated', self.handle_row_activated)
+
+        # Reset the counter of searches for stars by amplitudes: if we are
+        # working with a LEMONdB, have made four searches and open another
+        # LEMONdB, we do not want the next search to be considered the
+        # fifth — it is the *first* search for this database.
+        self.nampl_searches = 0
 
         # Display a dialog with a progress bar which is updated as all the
         # stars are loaded into memory, as this may take a while. A 'Cancel'
@@ -1244,7 +1255,6 @@ class LEMONJuicerGUI(object):
             details = self.show_star(star_id, pfilter = pfilter)
             self.open_stars[star_id] = details
 
-
     def search_by_amplitudes(self, window):
         """ Identify stars with amplitudes correlated to the wavelength. These
         are listed in a gtk.ScrolledWindow which is appended to the notebook"""
@@ -1256,7 +1266,8 @@ class LEMONJuicerGUI(object):
             view = result.view # gtk.GtkTreeView
             view.connect('row-activated', self.handle_row_activated)
 
-            label = gtk.Label(result.get_label())
+            self.nampl_searches += 1
+            label = gtk.Label(result.get_label(self.nampl_searches))
             window = result.get_window()
             self._notebook.append_page(window, label)
             self._notebook.set_tab_reorderable(window, False)

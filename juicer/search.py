@@ -26,6 +26,7 @@ import gtk
 
 # LEMON modules
 import glade
+import methods
 import mining
 import util
 
@@ -101,11 +102,17 @@ class AmplitudesSearchPage(object):
         self.view.set_model(self.store)
         return self.builder.get_object('amplitudes-search-result')
 
-    def get_label(self):
-        """ Return 'Amplitudes↑/↓', depending on the order of the filters """
-        increasing = self.pfilters == sorted(self.pfilters)
-        return 'Amplitudes' + ('↑' if increasing else '↓')
+    def get_label(self, order):
+        """ Return the title (text of the label) of the search.
 
+        The method returns a string, 'Amplitudes', followed by the value given
+        in 'order' but expressed in Roman numerals (e.g., 'Amplitudes IV' and
+        'Amplitudes VII', for values 4 and 7, respectively). Searches should
+        be numbered sequentially to allow the user to refer to them easily.
+
+        """
+
+        return 'Amplitudes %s' % methods.int_to_roman(order)
 
 class AmplitudesSearchMessageWindow(object):
 

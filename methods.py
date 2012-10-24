@@ -409,3 +409,27 @@ def memoize(f):
         return cache[x]
     return memf
 
+def int_to_roman(i):
+    """ Convert an integer to Roman numerals.
+
+    This is a slightly modified version of the recipe published by Tim Valenta
+    at ActiveState Code Recipes. As it was posted in a comment, it did not list
+    its exact license in the sidebar, but, according to the FAQ, all of the
+    code licenses allowed for recipes are OSI approved open source licenses.
+    http://code.activestate.com/recipes/81611-roman-numerals/#c4
+
+    """
+
+    numeral_map = (
+      (1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'), (100, 'C'),
+      (90, 'XC'), (50, 'L'), (40, 'XL'),  (10, 'X'), (9, 'IX'),
+      (5, 'V'), (4, 'IV'), (1, 'I')
+    )
+
+    result = []
+    for integer, numeral in numeral_map:
+        count = int(i / integer)
+        result.append(numeral * count)
+        i -= integer * count
+    return ''.join(result)
+
