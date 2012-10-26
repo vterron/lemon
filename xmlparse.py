@@ -32,7 +32,7 @@ def validate_dtd(path):
     """ Validate a XML file against a DTD.
 
     The method validates an Extensible Markup Language (XML) against a Document
-    Type Definition (DTD) referenced by the document, raising the appropiate
+    Type Definition (DTD) referenced by the document, raising the appropriate
     exception if an error is encountered, and doing nothing otherwise.
 
     """
