@@ -53,12 +53,19 @@ import snr
 import search
 import util
 
+# Make sure that stock icons are shown in buttons, as with the default options
+# this is not always the case. I have not been able to find out whether this is
+# caused by GTK+ or GNOME (see http://stackoverflow.com/questions/2188659/ and
+# http://www.daa.com.au/pipermail/pygtk/2009-November/017826.html), but in any
+# case it can be fixed without having to change any system configuration files.
+settings = gtk.settings_get_default()
+settings.props.gtk_button_images = True
+
 # The value which will be inserted in the cells of the gtk.ListStore for which
 # there is no data. It must evaluate to False (and, therefore, must be zero) as
 # it is used by gtk.TreeViewColumn to determine the visibility of the cells:
 # instead of showing a zero, nothing is displayed.
 UNKNOWN_VALUE = 0
-
 
 class ExportCurveDialog(object):
     """ Encapsulates a dialog window that allows the user to select which
