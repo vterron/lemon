@@ -61,11 +61,10 @@ class AmplitudesSearchPage(object):
     "]>",
     ""]
 
-    def __init__(self, builder, pfilters, include_ratios, description):
+    def __init__(self, pfilters, include_ratios, description):
         """ Instantiation method for the AmplitudesSearchPage class.
 
-        The 'builder' parameter must be the gtk.GtkBuilder of the parent GTK
-        widget, while 'pfilters' is a sequence with the passband.Passband
+        The 'pfilters' parameter is a sequence with the passband.Passband
         instances of the photometric filters of the amplitudes that will be
         added later with the 'add' method. If 'include_ratios' is True,
         additional columns will be created to store the ratio between each
@@ -75,8 +74,9 @@ class AmplitudesSearchPage(object):
 
         """
 
-        self.builder = builder
+        self.builder = gtk.Builder()
         self.builder.add_from_file(glade.AMPLITUDES_RESULTS)
+
         self.pfilters = pfilters
         self.include_ratios = include_ratios
 
@@ -397,7 +397,7 @@ class AmplitudesSearchMessageWindow(object):
                 self.ok_button.set_sensitive(False)
 
                 pfilters = sorted(self.miner.pfilters)
-                args = self.builder, pfilters, exclude_noisy, description
+                args = pfilters, exclude_noisy, description
                 result = AmplitudesSearchPage(*args)
 
                 nstars = len(self.miner)
