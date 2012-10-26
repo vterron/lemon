@@ -102,6 +102,11 @@ class AmplitudesSearchPage(object):
         self.description = self.builder.get_object('search-description-label')
         self.description.set_label(description)
 
+        # The button to export the search results to an XML file
+        save_button = self.builder.get_object('save-button')
+        save_button.connect('clicked', self.export_to_file)
+
+
     def add(self, star_id, amplitudes, ratios = None):
         """ Append a new row to the store.
 
@@ -132,9 +137,15 @@ class AmplitudesSearchPage(object):
         'Amplitudes VII', for values 4 and 7, respectively). Searches should
         be numbered sequentially to allow the user to refer to them easily.
 
+        The returned title is also stored in the 'label' attribute. Note that
+        this attribute is not initialized at __init__, so attempting to access
+        it before this method is called for the first time will unavoidably
+        raise the AttributeError exception.
+
         """
 
-        return 'Amplitudes %s' % methods.int_to_roman(order)
+        self.label = 'Amplitudes %s' % methods.int_to_roman(order)
+        return self.label
 
     def toxml(self, encoding = 'utf-8'):
         """ Return the XML representation of the object.
@@ -215,6 +226,45 @@ class AmplitudesSearchPage(object):
         with open(path, 'wt') as fd:
             fd.write(self.toxml(encoding = encoding))
         xmlparse.validate_dtd(path)
+
+    def export_to_file(self, widget):
+        """ Let the user choose where the object is saved to an XML file.
+
+        Prompt a gtk.FileChooserDialog to let the user browse for the location
+        where the XML file with the representation of the AmplitudesSearchPage
+        will be saved, and write the file to disk (see 'xml_dump' method) only
+        if 'Save' is clicked. The dialog suggests a filename based on the title
+        of the search, but only if the 'get_label' method has been called at
+        least once.
+
+        """
+
+        kwargs = dict(title = "Export light curve to...",
+                      action = gtk.FILE_CHOOSER_ACTION_SAVE,
+                      buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                 gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+
+        with util.destroying(gtk.FileChooserDialog(**kwargs)) as chooser:
+
+            # Ask the user to confirm overwriting an existing file
+            chooser.set_do_overwrite_confirmation(True)
+
+            # If AmplitudesSearchPage.get_label has been called, use the label
+            # that it returned to suggest a name for the XML file, replacing
+            # whitespaces with dashes and making sure that it starts with lower
+            # case (e.g., "amplitudes-IV.xml" is suggested for "Amplitudes IV".
+            # We do not suggest anything if we method has not been called.
+
+            try:
+                filename = '%s.xml' % self.label.replace(' ', '-')
+                filename = filename[0].lower() + filename[1:]
+                chooser.set_current_name(filename)
+            except AttributeError:
+                pass
+
+            response = chooser.run()
+            if response == gtk.RESPONSE_OK:
+                self.xml_dump(chooser.get_filename())
 
 
 class AmplitudesSearchMessageWindow(object):
