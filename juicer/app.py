@@ -1323,7 +1323,15 @@ class LEMONJuicerGUI(object):
 
         """
 
-        result = search.AmplitudesSearchPage.xml_load(path)
+        try:
+            result = search.AmplitudesSearchPage.xml_load(path)
+        except Exception, err:
+            title = "Error while loading XML file"
+            msg = "File '%s' could not be loaded. Please make sure that you " \
+            "are opening an XML file created by LEMON through 'Save As'. " \
+            "The error was: \n\n%s" % (path, str(err))
+            util.show_error_dialog(self._main_window, title, msg)
+            return
 
         if self.db is not None:
             view = result.view # gtk.GtkTreeView
