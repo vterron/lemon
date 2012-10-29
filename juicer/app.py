@@ -1333,14 +1333,26 @@ class LEMONJuicerGUI(object):
             util.show_error_dialog(self._main_window, title, msg)
             return
 
-        if self.db is not None:
-            view = result.view # gtk.GtkTreeView
-            view.connect('row-activated', self.handle_row_activated)
-
         self.nampl_searches += 1
         label = gtk.Label(result.get_label(self.nampl_searches))
         window = result.get_window()
         self._notebook.append_page(window, label)
         self._notebook.set_tab_reorderable(window, False)
         self._notebook.set_current_page(-1)
+
+        # If no LEMONdB is open, ignore the 'row-activated' signal and let
+        # the user know that double-clicking on a row will have no effect
+        if self.db is not None:
+            view = result.view # gtk.GtkTreeView
+            view.connect('row-activated', self.handle_row_activated)
+        else:
+            title = "Double-click has been disabled"
+            msg = "Please note that double-clicking on a star will not open " \
+            "a page with its information: as the XML file has been opened " \
+            "before the LEMON database, no other information than what is " \
+            "presented here is available."
+            args = self._main_window, title, msg
+            kwargs = dict(msg_type = gtk.MESSAGE_WARNING,
+                          buttons = gtk.BUTTONS_CLOSE)
+            util.show_message_dialog(*args, **kwargs)
 
