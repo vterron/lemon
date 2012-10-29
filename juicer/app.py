@@ -1288,6 +1288,27 @@ class LEMONJuicerGUI(object):
             details = self.show_star(star_id, pfilter = pfilter)
             self.open_stars[star_id] = details
 
+    def append_amplitudes_search(self, result, connect):
+        """ Append an AmplitudesSearchPage to the gtk.Notebook.
+
+        Append the gtk.ScrolledWindow (with the result of the search) of an
+        AmplitudesSearchPage object to the gtk.Notebook. The 'row-activated'
+        signal is connected to the LEMONJuicerGUI.handle_row_activated method
+        depending on the truth value of 'connect'.
+
+        """
+
+        if connect:
+            view = result.view # gtk.GtkTreeView
+            view.connect('row-activated', self.handle_row_activated)
+
+        self.nampl_searches += 1
+        label = gtk.Label(result.get_label(self.nampl_searches))
+        window = result.get_window()
+        self._notebook.append_page(window, label)
+        self._notebook.set_tab_reorderable(window, False)
+        self._notebook.set_current_page(-1)
+
     def search_by_amplitudes(self, window):
         """ Identify stars with amplitudes correlated to the wavelength. These
         are listed in a gtk.ScrolledWindow which is appended to the notebook"""
@@ -1295,16 +1316,7 @@ class LEMONJuicerGUI(object):
         args = self._main_window, self._builder, self.db.path, self.config
         result = search.amplitudes_search(*args)
         if result is not None:
-
-            view = result.view # gtk.GtkTreeView
-            view.connect('row-activated', self.handle_row_activated)
-
-            self.nampl_searches += 1
-            label = gtk.Label(result.get_label(self.nampl_searches))
-            window = result.get_window()
-            self._notebook.append_page(window, label)
-            self._notebook.set_tab_reorderable(window, False)
-            self._notebook.set_current_page(-1)
+            self.append_amplitudes_search(result, True)
 
     def change_snr_threshold(self, widget):
         """ Select a new SNR threshold and update all the plots with it """
@@ -1343,12 +1355,8 @@ class LEMONJuicerGUI(object):
             util.show_error_dialog(self._main_window, title, msg)
             return
 
-        self.nampl_searches += 1
-        label = gtk.Label(result.get_label(self.nampl_searches))
-        window = result.get_window()
-        self._notebook.append_page(window, label)
-        self._notebook.set_tab_reorderable(window, False)
-        self._notebook.set_current_page(-1)
+        connect_double_click = self.db is not None
+        self.append_amplitudes_search(result, connect_double_click)
 
         # Make sure that the 'Close' button and menu item are sensitive (they
         # will be disabled if the XML file is opened before the LEMONdB, but
@@ -1356,12 +1364,8 @@ class LEMONJuicerGUI(object):
         self.close_button.set_sensitive(True)
         self.close_menu_item.set_sensitive(True)
 
-        # If no LEMONdB is open, ignore the 'row-activated' signal and let
-        # the user know that double-clicking on a row will have no effect
-        if self.db is not None:
-            view = result.view # gtk.GtkTreeView
-            view.connect('row-activated', self.handle_row_activated)
-        else:
+        # If no LEMONdB is open, double-clicking on a row will have no effect
+        if self.db is None:
             title = "Double-click has been disabled"
             msg = "Please note that double-clicking on a star will not open " \
             "a page with its information: as the XML file has been opened " \
