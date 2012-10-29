@@ -904,6 +904,10 @@ class LEMONJuicerGUI(object):
 
         with util.destroying(gtk.FileChooserDialog(**kwargs)) as dialog:
 
+            # Use two different filters: one for the LEMON databases (.LEMONdB
+            # extension, binary files) and another for the XML files to which
+            # search of wavelength-amplitude correlated stars can be saved.
+
             filt = gtk.FileFilter()
             pattern = '*.LEMONdB'
             filt.set_name('LEMON Database (%s)' % pattern)
@@ -911,11 +915,23 @@ class LEMONJuicerGUI(object):
             filt.add_pattern(pattern)
             dialog.add_filter(filt)
 
+            filt = gtk.FileFilter()
+            pattern = '*.xml'
+            filt.set_name('LEMON XML File (%s)' % pattern)
+            filt.add_mime_type('application/xml')
+            filt.add_pattern(pattern)
+            dialog.add_filter(filt)
+
             response = dialog.run()
             if response == gtk.RESPONSE_OK:
                 path = dialog.get_filename()
                 dialog.destroy()
-                self.open_db(path)
+
+                if path.endswith('.LEMONdB'):
+                    self.open_db(path)
+                else:
+                    assert path.endswith('.xml')
+                    self.open_amplitudes_xml(path)
 
     def open_db(self, path):
 
@@ -1295,4 +1311,28 @@ class LEMONJuicerGUI(object):
             for details in self.open_stars.itervalues():
                 details.redraw_light_curve(None)
 
+    def open_amplitudes_xml(self, path):
+        """ Parse an XML file and deserialize an AmplitudesSearchPage object.
+
+        The gtk.ScrolledWindow returned by the AmplitudesSearchPage instance is
+        appended to the gtk.Notebook so that the stars found in the serialized
+        search are presented to the user exactly as other search results. The
+        only difference is that the 'row-activated' signal is ignored if the
+        XML file has been opened before the LEMONdB: without access to the
+        database we cannot show the details of any star.
+
+        """
+
+        result = search.AmplitudesSearchPage.xml_load(path)
+
+        if self.db is not None:
+            view = result.view # gtk.GtkTreeView
+            view.connect('row-activated', self.handle_row_activated)
+
+        self.nampl_searches += 1
+        label = gtk.Label(result.get_label(self.nampl_searches))
+        window = result.get_window()
+        self._notebook.append_page(window, label)
+        self._notebook.set_tab_reorderable(window, False)
+        self._notebook.set_current_page(-1)
 
