@@ -29,7 +29,7 @@ import time
 import passband
 
 def validate_dtd(path):
-    """ Validate a XML file against a DTD.
+    """ Validate an XML file against a DTD.
 
     The method validates an Extensible Markup Language (XML) against a Document
     Type Definition (DTD) referenced by the document, raising the appropriate
@@ -104,7 +104,7 @@ class XMLOffsetFile(object):
     """ Interface to write and read XMLOffsets to a standalone XML file.
 
     This class is used as a container of XMLOffset instances, whose XML
-    representation can be written to a XML file and also read from it. These
+    representation can be written to an XML file and also read from it. These
     XML files are self-contained, which means that the DTD declaration is at
     the top of the document, right after the XML declaration.
 
@@ -135,7 +135,7 @@ class XMLOffsetFile(object):
     ""]
 
     def __init__(self, path = None):
-        """ Load a XML file into memory, or create a new one """
+        """ Load an XML file into memory, or create a new one """
 
         if not path:
             self.root = lxml.etree.Element('offsets', size = '0')
@@ -153,7 +153,7 @@ class XMLOffsetFile(object):
         return len(self.root)
 
     def add(self, offset):
-        """ Add a XMLOffset to the XML file.
+        """ Add an XMLOffset to the XML file.
 
         This updates the in-memory contents of the XML file, adding to it
         another XMLOffset. These changes are not written to disk until the
@@ -200,7 +200,7 @@ class XMLOffsetFile(object):
         return setup_header(xml_content, self.XML_DTD)
 
     def dump(self, path, encoding = 'utf-8'):
-        """ Write the XMLOffsets to a XML file.
+        """ Write the XMLOffsets to an XML file.
 
         The method saves the XMLOffsets to a standalone XML file, silently
         overwriting it if it already exists. The output document includes
@@ -302,7 +302,7 @@ class CandidateAnnuli(object):
 
     @classmethod
     def xml_dump(cls, xml_path, annuli, encoding = 'utf-8'):
-        """ Save multiple CadidateAnnuli instances to a XML file.
+        """ Save multiple CadidateAnnuli instances to an XML file.
 
         This method dumps to a file the XML representation of a dictionary
         which maps each photometric filter to a list of the CandidateInstances
@@ -381,9 +381,9 @@ class CandidateAnnuli(object):
 
     @staticmethod
     def xml_load(xml_path, best_only = False):
-        """ Load a series of CandidateAnnuli instances from a XML file.
+        """ Load a series of CandidateAnnuli instances from an XML file.
 
-        This method reverses the functionality of xml_dump(), reading a XML
+        This method reverses the functionality of xml_dump(), reading an XML
         file and returning a dictionary which maps each photometric filter to
         a list of the CandidateAnnuli instances that were saved to it.
 
