@@ -904,22 +904,32 @@ class LEMONJuicerGUI(object):
 
         with util.destroying(gtk.FileChooserDialog(**kwargs)) as dialog:
 
-            # Use two different filters: one for the LEMON databases (.LEMONdB
-            # extension, binary files) and another for the XML files to which
-            # search of wavelength-amplitude correlated stars can be saved.
+            # By default, both LEMON databases (.LEMONdB extension) and XML
+            # files (with a previous search for wavelength-amplitude correlated
+            # stars) are displayed by the gtk.FileChooserDialog. Two additional
+            # filters are added in case the user is interested in a specific
+            # type of file.
+
+            db_extension = '.LEMONdB'
+            db_pattern = '*' + db_extension
+            xml_extension = '.xml'
+            xml_pattern = '*' + xml_extension
+            xml_mime_type = 'application/xml'
 
             filt = gtk.FileFilter()
-            pattern = '*.LEMONdB'
-            filt.set_name('LEMON Database (%s)' % pattern)
-            filt.add_mime_type('application/octet-stream; charset=binary')
-            filt.add_pattern(pattern)
+            filt.set_name("All LEMON Files")
+            filt.add_pattern(db_pattern)
+            filt.add_mime_type(xml_mime_type)
             dialog.add_filter(filt)
 
             filt = gtk.FileFilter()
-            pattern = '*.xml'
-            filt.set_name('LEMON XML File (%s)' % pattern)
-            filt.add_mime_type('application/xml')
-            filt.add_pattern(pattern)
+            filt.set_name("LEMON Database (%s)" % db_pattern)
+            filt.add_pattern(db_pattern)
+            dialog.add_filter(filt)
+
+            filt = gtk.FileFilter()
+            filt.set_name('LEMON XML File (%s)' % xml_pattern)
+            filt.add_mime_type(xml_mime_type)
             dialog.add_filter(filt)
 
             response = dialog.run()
@@ -927,10 +937,10 @@ class LEMONJuicerGUI(object):
                 path = dialog.get_filename()
                 dialog.destroy()
 
-                if path.endswith('.LEMONdB'):
+                if path.lower().endswith(db_extension.lower()):
                     self.open_db(path)
                 else:
-                    assert path.endswith('.xml')
+                    assert path.lower().endswith(xml_extension.lower())
                     self.open_amplitudes_xml(path)
 
     def open_db(self, path):
