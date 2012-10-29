@@ -1350,6 +1350,12 @@ class LEMONJuicerGUI(object):
         self._notebook.set_tab_reorderable(window, False)
         self._notebook.set_current_page(-1)
 
+        # Make sure that the 'Close' button and menu item are sensitive (they
+        # will be disabled if the XML file is opened before the LEMONdB, but
+        # we need a way to close the page when we are done with it).
+        self.close_button.set_sensitive(True)
+        self.close_menu_item.set_sensitive(True)
+
         # If no LEMONdB is open, ignore the 'row-activated' signal and let
         # the user know that double-clicking on a row will have no effect
         if self.db is not None:
