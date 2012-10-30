@@ -1191,9 +1191,9 @@ class LEMONJuicerGUI(object):
                 self.view.set_model(self.store)
 
                 label = gtk.Label(os.path.basename(path))
-                self._notebook.append_page(overview, label)
+                self._notebook.insert_page(overview, label, 0)
                 self._notebook.set_tab_reorderable(overview, False)
-                self._notebook.set_current_page(-1)
+                self._notebook.set_current_page(0)
 
                 # Now that there is at least one page in the notebook, make the
                 # 'Close' button and menu item sensitives, as well as other
