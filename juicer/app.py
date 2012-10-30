@@ -914,12 +914,21 @@ class LEMONJuicerGUI(object):
             db_pattern = '*' + db_extension
             xml_extension = '.xml'
             xml_pattern = '*' + xml_extension
-            xml_mime_type = 'application/xml'
+
+            # Return the function that can be used to filter files with the
+            # gtk.FileFilter.add_custom method. 'filter_info' is a 4-element
+            # tuple: the full pathname of the file, the URI of the file, the
+            # display name of the file and the MIME type of the file.
+            def ends_with(extension):
+                def func(filter_info):
+                    return filter_info[0].lower().endswith(extension.lower())
+                return func
+            xml_filter = ends_with(xml_extension)
 
             filt = gtk.FileFilter()
             filt.set_name("All LEMON Files")
             filt.add_pattern(db_pattern)
-            filt.add_mime_type(xml_mime_type)
+            filt.add_custom(gtk.FILE_FILTER_FILENAME, xml_filter)
             dialog.add_filter(filt)
 
             filt = gtk.FileFilter()
@@ -929,7 +938,7 @@ class LEMONJuicerGUI(object):
 
             filt = gtk.FileFilter()
             filt.set_name('LEMON XML File (%s)' % xml_pattern)
-            filt.add_mime_type(xml_mime_type)
+            filt.add_custom(gtk.FILE_FILTER_FILENAME, xml_filter)
             dialog.add_filter(filt)
 
             response = dialog.run()
