@@ -923,17 +923,18 @@ class LEMONJuicerGUI(object):
                 def func(filter_info):
                     return filter_info[0].lower().endswith(extension.lower())
                 return func
+            db_filter = ends_with(db_extension)
             xml_filter = ends_with(xml_extension)
 
             filt = gtk.FileFilter()
             filt.set_name("All LEMON Files")
-            filt.add_pattern(db_pattern)
+            filt.add_custom(gtk.FILE_FILTER_FILENAME, db_filter)
             filt.add_custom(gtk.FILE_FILTER_FILENAME, xml_filter)
             dialog.add_filter(filt)
 
             filt = gtk.FileFilter()
             filt.set_name("LEMON Database (%s)" % db_pattern)
-            filt.add_pattern(db_pattern)
+            filt.add_custom(gtk.FILE_FILTER_FILENAME, db_filter)
             dialog.add_filter(filt)
 
             filt = gtk.FileFilter()
