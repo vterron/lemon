@@ -67,12 +67,13 @@ class XMLOffset(object):
 
     """
 
-    def __init__(self, reference, shifted, shifted_filter, shifted_date,
-                 x_offset, y_offset, x_overlap, y_overlap):
+    def __init__(self, reference, shifted, object_, shifted_filter,
+                 shifted_date, x_offset, y_offset, x_overlap, y_overlap):
         """ Instantiation method for the XMLOffset class.
 
         reference - the path to the reference, 'unmoved' FITS image.
         shifted - the path to the displaced FITS image.
+        object_ - the name of the observed object in the shifted image.
         shifted_filter - the photometric filter of the shifted image,
                          encapsulated as a passband.Passband instance.
         shifted_date - the data of observation of the shifted image, in
@@ -88,6 +89,7 @@ class XMLOffset(object):
 
         self.reference = reference
         self.shifted   = shifted
+        self.object    = object_
         self.filter    = shifted_filter
         self.date      = shifted_date
         self.x         = x_offset
@@ -127,6 +129,7 @@ class XMLOffsetFile(object):
     "<!ELEMENT shifted   (#PCDATA)>",
     "<!ATTLIST shifted date   CDATA  #REQUIRED>",
     "<!ATTLIST shifted filter CDATA  #REQUIRED>",
+    "<!ATTLIST shifted object CDATA  #REQUIRED>",
     "<!ELEMENT x_offset  (#PCDATA)>",
     "<!ATTLIST x_offset overlap CDATA #REQUIRED>",
     "<!ELEMENT y_offset  (#PCDATA)>",
@@ -167,7 +170,8 @@ class XMLOffsetFile(object):
         element.append(reference)
 
         shifted_date_str = "%s UTC" % time.asctime(time.gmtime(offset.date))
-        kwargs = {'date' : shifted_date_str, 'filter' : str(offset.filter)}
+        kwargs = {'date' : shifted_date_str, 'filter' : str(offset.filter),
+                  'object' : str(offset.object)}
         shifted = lxml.etree.Element('shifted', **kwargs)
         shifted.text = offset.shifted
         element.append(shifted)
@@ -220,11 +224,14 @@ class XMLOffsetFile(object):
 
         element = offset[1]
         shifted_path = element.text
+
+        shifted_object = element.get('object')
+        shifted_pfilter = passband.Passband(element.get('filter'))
+
         # From string to struct_time in UTC to Unix seconds
         shifted_date_str = element.get('date')
         args = shifted_date_str, self.STRPTIME_FORMAT
         shifted_date = calendar.timegm(time.strptime(*args))
-        shifted_pfilter = passband.Passband(element.get('filter'))
 
         element = offset[2]
         x_offset = float(element.text)
@@ -234,8 +241,8 @@ class XMLOffsetFile(object):
         y_offset = float(element.text)
         y_overlap = int(element.get('overlap'))
 
-        args = (reference_path, shifted_path, shifted_pfilter, shifted_date,
-                x_offset, y_offset, x_overlap, y_overlap)
+        args = (reference_path, shifted_path, shifted_object, shifted_pfilter,
+                shifted_date, x_offset, y_offset, x_overlap, y_overlap)
         return XMLOffset(*args)
 
 

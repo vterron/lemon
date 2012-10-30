@@ -677,11 +677,12 @@ def main(arguments = None):
 
     # The photometry method always receives an XMLOffset instance, so we need
     # to create one to stupidly indicate that the offset between the reference
-    # image and itself is... zero. Who would have guessed that?
+    # image and itself is... zero. Who would have guessed that? Do not bother
+    # reading the object name from the FITS header as it is irrelevant here.
     reference_date = reference_img.date(date_keyword = options.datek,
                                         exp_keyword = options.exptimek)
     null_offset = xmlparse.XMLOffset(reference_img.path, reference_img.path, 'N/A',
-                                     reference_date, 0.0, 0.0, 'inf', 'inf')
+                                     'N/A', reference_date, 0.0, 0.0, 'inf', 'inf')
 
     if not fixed_annuli:
 
