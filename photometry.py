@@ -856,11 +856,10 @@ def main(arguments = None):
 
     rimage_filter = reference_img.read_keyword(options.filterk)
     pfilter = passband.Passband(rimage_filter)
-    unix_time = reference_img.date(options.datek, options.exptimek)
     object_ = reference_img.read_keyword(options.objectk)
     airmass  = reference_img.read_keyword(options.airmassk)
     gain = options.gain or reference_img.read_keyword(options.gaink)
-    args = reference_img.path, pfilter, unix_time, object_, airmass, gain
+    args = reference_img.path, pfilter, reference_date, object_, airmass, gain
     output_db.rimage = database.ReferenceImage(*args)
 
     # Determine how many different filters there are among the images contained
