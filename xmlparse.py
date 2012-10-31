@@ -126,10 +126,11 @@ class XMLOffsetFile(object):
     "",
     "<!ELEMENT offset (reference, shifted, x_offset, y_offset)>",
     "<!ELEMENT reference (#PCDATA)>",
-    "<!ELEMENT shifted   (#PCDATA)>",
-    "<!ATTLIST shifted date   CDATA  #REQUIRED>",
-    "<!ATTLIST shifted filter CDATA  #REQUIRED>",
-    "<!ATTLIST shifted object CDATA  #REQUIRED>",
+    "<!ELEMENT shifted (path, date, filter, object)>",
+    "<!ELEMENT path (#PCDATA)>",
+    "<!ELEMENT date (#PCDATA)>",
+    "<!ELEMENT filter (#PCDATA)>",
+    "<!ELEMENT object (#PCDATA)>",
     "<!ELEMENT x_offset  (#PCDATA)>",
     "<!ATTLIST x_offset overlap CDATA #REQUIRED>",
     "<!ELEMENT y_offset  (#PCDATA)>",
@@ -169,11 +170,24 @@ class XMLOffsetFile(object):
         reference.text = offset.reference
         element.append(reference)
 
-        shifted_date_str = "%s UTC" % time.asctime(time.gmtime(offset.date))
-        kwargs = {'date' : shifted_date_str, 'filter' : str(offset.filter),
-                  'object' : str(offset.object)}
-        shifted = lxml.etree.Element('shifted', **kwargs)
-        shifted.text = offset.shifted
+        shifted = lxml.etree.Element('shifted')
+
+        path_element = lxml.etree.Element('path')
+        path_element.text = offset.shifted
+        shifted.append(path_element)
+
+        date_element = lxml.etree.Element('date')
+        date_element.text = "%s UTC" % time.asctime(time.gmtime(offset.date))
+        shifted.append(date_element)
+
+        filter_element = lxml.etree.Element('filter')
+        filter_element.text = str(offset.filter)
+        shifted.append(filter_element)
+
+        object_element = lxml.etree.Element('object')
+        object_element.text = str(offset.object)
+        shifted.append(object_element)
+
         element.append(shifted)
 
         x = lxml.etree.Element('x_offset', overlap = str(offset.x_overlap))
@@ -219,25 +233,30 @@ class XMLOffsetFile(object):
     def __getitem__(self, index):
         """ Return the index-th XMLOffset in the XML file """
 
+        def get_child(element, tag):
+            """ Return the first child of 'element' with tag 'tag' """
+            return element.getiterator(tag = tag).next()
+
         offset = self.root[index]
-        reference_path = offset[0].text
+        reference_path = get_child(offset, 'reference').text
 
-        element = offset[1]
-        shifted_path = element.text
+        shifted_element = get_child(offset, 'shifted')
+        shifted_path = get_child(shifted_element, 'path').text
 
-        shifted_object = element.get('object')
-        shifted_pfilter = passband.Passband(element.get('filter'))
+        shifted_object = get_child(shifted_element, 'object').text
+        shifted_pfilter_str = get_child(shifted_element, 'filter').text
+        shifted_pfilter = passband.Passband(shifted_pfilter_str)
 
         # From string to struct_time in UTC to Unix seconds
-        shifted_date_str = element.get('date')
+        shifted_date_str = get_child(shifted_element, 'date').text
         args = shifted_date_str, self.STRPTIME_FORMAT
         shifted_date = calendar.timegm(time.strptime(*args))
 
-        element = offset[2]
+        element = get_child(offset, 'x_offset')
         x_offset = float(element.text)
         x_overlap = int(element.get('overlap'))
 
-        element = offset[3]
+        element = get_child(offset, 'y_offset')
         y_offset = float(element.text)
         y_overlap = int(element.get('overlap'))
 
