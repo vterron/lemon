@@ -682,11 +682,13 @@ def main(arguments = None):
     # The photometry method always receives an XMLOffset instance, so we need
     # to create one to stupidly indicate that the offset between the reference
     # image and itself is... zero. Who would have guessed that? Do not bother
-    # reading the object name from the FITS header as it is irrelevant here.
+    # reading the object name from the FITS header, nor its FWHM, as they are
+    # irrelevant for our purposes here.
     reference_date = reference_img.date(date_keyword = options.datek,
                                         exp_keyword = options.exptimek)
-    null_offset = xmlparse.XMLOffset(reference_img.path, reference_img.path, 'N/A',
-                                     'N/A', reference_date, 0.0, 0.0, 'inf', 'inf')
+    args = (reference_img.path, reference_img.path, 'N/A',
+           'N/A', reference_date, 1.0, 0.0, 0.0, 'inf', 'inf')
+    null_offset = xmlparse.XMLOffset(*args)
 
     if not fixed_annuli:
 
@@ -912,15 +914,9 @@ def main(arguments = None):
 
             img_fwhms = []
             for img in band_offsets:
-                logging.debug("%s: reading value of '%s' keyword..." % \
-                              (img.shifted, options.fwhmk))
-                image_fwhm = fitsimage.FITSImage(img.shifted).read_keyword(options.fwhmk)
-                logging.debug("%s: FWHM = %.3f (read from FITS header)" % \
-                              (img.shifted, image_fwhm))
-                img_fwhms.append(image_fwhm)
+                logging.debug("%s: FWHM = %.3f" % (img.shifted, img.fwhm))
+                img_fwhms.append(img.fwhm)
 
-
-            assert all([isinstance(x, float) for x in img_fwhms])
             fwhm = numpy.median(img_fwhms)
             print 'done.'
 

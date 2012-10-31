@@ -760,8 +760,7 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = "keyword to which to write the estimated FWHM "
                      "of of the image. This value is needed by subsequent "
-                     "modules of the pipeline, the most important of them "
-                     "being photometry.py and annuli.py [default: %default]")
+                     "modules of the pipeline [default: %default]")
 parser.add_option_group(key_group)
 
 def parallel_sextractor(args):

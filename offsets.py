@@ -49,7 +49,7 @@ import style
 import xmlparse
 
 def offset(reference_path, shifted_path, maximum, margin, per,
-           object_keyword, filter_keyword, date_keyword,
+           object_keyword, filter_keyword, date_keyword, fwhm_keyword,
            exp_keyword, coadd_keyword):
     """ Calculate the offset between two FITS images.
 
@@ -102,6 +102,7 @@ def offset(reference_path, shifted_path, maximum, margin, per,
                    was 'yy/mm/dd' and may be used only for dates from 1900
                    through 1999.  The new Y2K compliant date format is
                    'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss]'.
+    fwhm_keyword - FITS keyword for the full width at half maximum (FWHM)
     exp_keyword - the FITS keyword in which the duration of the exposure is
                   stored. It is expected to be a floating-point number which
                   gives the duration in seconds. The exact definition of
@@ -119,18 +120,19 @@ def offset(reference_path, shifted_path, maximum, margin, per,
     shifted = seeing.FITSeeingImage(shifted_path, maximum,
                                     margin, coaddk = coadd_keyword)
 
-    # Get the object name, filter and date of observation of the shifted
-    # image. Raise KeyError if they cannot be found in the FITS header.
+    # Get the object name, filter, date of observation and FWHM of the shifted
+    # image. Raise KeyError if one or more cannot be found in the FITS header.
     shifted_object = shifted.read_keyword(object_keyword)
     shifted_filter = shifted.read_keyword(filter_keyword)
     shifted_date   = shifted.date(date_keyword = date_keyword,
                                   exp_keyword = exp_keyword)
+    shifted_fwhm = shifted.read_keyword(fwhm_keyword)
 
     x_offset, y_offset, x_overlap, y_overlap = \
         reference.offset(shifted, per = per)
 
-    return xmlparse.XMLOffset(reference.path, shifted.path,
-                              shifted_object, shifted_filter, shifted_date,
+    return xmlparse.XMLOffset(reference.path, shifted.path, shifted_object,
+                              shifted_filter, shifted_date, shifted_fwhm,
                               x_offset, y_offset, x_overlap, y_overlap)
 
 # The Queue is global -- this works, but note that we could have
@@ -163,8 +165,8 @@ def parallel_offset(args):
 
     img_offset = offset(reference.path, shifted_path, options.maximum,
                         options.margin, options.percentile, options.objectk,
-                        options.filterk, options.datek, options.exptimek,
-                        options.coaddk)
+                        options.filterk, options.datek, options.fwhmk,
+                        options.exptimek, options.coaddk)
     queue.put(img_offset)
 
 
@@ -234,6 +236,10 @@ key_group.add_option('--filterk', action = 'store', type = 'str',
 key_group.add_option('--datek', action = 'store', type = 'str',
                      dest = 'datek', default = keywords.datek,
                      help = keywords.desc['datek'])
+
+key_group.add_option('--fwhmk', action = 'store', type = 'str',
+                     dest = 'fwhmk', default = keywords.fwhmk,
+                     help = keywords.desc['fwhmk'])
 
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,

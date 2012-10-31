@@ -68,7 +68,8 @@ class XMLOffset(object):
     """
 
     def __init__(self, reference, shifted, object_, shifted_filter,
-                 shifted_date, x_offset, y_offset, x_overlap, y_overlap):
+                 shifted_date, shifted_fwhm, x_offset, y_offset,
+                 x_overlap, y_overlap):
         """ Instantiation method for the XMLOffset class.
 
         reference - the path to the reference, 'unmoved' FITS image.
@@ -78,6 +79,7 @@ class XMLOffset(object):
                          encapsulated as a passband.Passband instance.
         shifted_date - the data of observation of the shifted image, in
                        seconds after the Unix epoch (aka Unix time)
+        shifted_fwhm - full width at half maximum of the shifted image
         x_offset - the offset, in pixels, in the x-axis.
         y_offset - the offset, in pixels, in the y-axis.
         x_overlap - the number of stars that overlapped in the x-axis when
@@ -92,6 +94,7 @@ class XMLOffset(object):
         self.object    = object_
         self.filter    = shifted_filter
         self.date      = shifted_date
+        self.fwhm      = shifted_fwhm
         self.x         = x_offset
         self.y         = y_offset
         self.x_overlap = x_overlap
@@ -126,11 +129,12 @@ class XMLOffsetFile(object):
     "",
     "<!ELEMENT offset (reference, shifted, x_offset, y_offset)>",
     "<!ELEMENT reference (#PCDATA)>",
-    "<!ELEMENT shifted (path, date, filter, object)>",
+    "<!ELEMENT shifted (path, date, filter, object, fwhm)>",
     "<!ELEMENT path (#PCDATA)>",
     "<!ELEMENT date (#PCDATA)>",
     "<!ELEMENT filter (#PCDATA)>",
     "<!ELEMENT object (#PCDATA)>",
+    "<!ELEMENT fwhm (#PCDATA)>",
     "<!ELEMENT x_offset  (#PCDATA)>",
     "<!ATTLIST x_offset overlap CDATA #REQUIRED>",
     "<!ELEMENT y_offset  (#PCDATA)>",
@@ -187,6 +191,10 @@ class XMLOffsetFile(object):
         object_element = lxml.etree.Element('object')
         object_element.text = str(offset.object)
         shifted.append(object_element)
+
+        fwhm_element = lxml.etree.Element('fwhm')
+        fwhm_element.text = str(offset.fwhm)
+        shifted.append(fwhm_element)
 
         element.append(shifted)
 
@@ -252,6 +260,8 @@ class XMLOffsetFile(object):
         args = shifted_date_str, self.STRPTIME_FORMAT
         shifted_date = calendar.timegm(time.strptime(*args))
 
+        shifted_fwhm = float(get_child(shifted_element, 'fwhm').text)
+
         element = get_child(offset, 'x_offset')
         x_offset = float(element.text)
         x_overlap = int(element.get('overlap'))
@@ -260,8 +270,9 @@ class XMLOffsetFile(object):
         y_offset = float(element.text)
         y_overlap = int(element.get('overlap'))
 
-        args = (reference_path, shifted_path, shifted_object, shifted_pfilter,
-                shifted_date, x_offset, y_offset, x_overlap, y_overlap)
+        args = (reference_path, shifted_path, shifted_object,
+                shifted_pfilter, shifted_date, shifted_fwhm,
+                x_offset, y_offset, x_overlap, y_overlap)
         return XMLOffset(*args)
 
 
