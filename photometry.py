@@ -105,7 +105,7 @@ def parallel_photometry(args):
     # by the program.
 
     img_pfilter = img_offset.filter
-    img_unix_time = photometry_image.date(options.datek, options.exptimek)
+    img_unix_time = img_offset.date
     img_object = img_offset.object
     img_airmass = photometry_image.read_keyword(options.airmassk)
     img_gain = options.gain or photometry_image.read_keyword(options.gaink)
