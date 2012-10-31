@@ -197,8 +197,7 @@ key_group.add_option('--uik', action = 'store', type = 'str',
 
 key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
-                     help = "keyword for the FWHM of the image, stored by "
-                     "LEMON at the seeing.py stage [default: %default]")
+                     help = keywords.desc['fwhmk'])
 parser.add_option_group(key_group)
 
 def main(arguments = None):

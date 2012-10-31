@@ -72,7 +72,9 @@ desc['uncimgk'] = \
 "photometry is done [default: %default]"
 
 fwhmk = 'LEMON FWHM'
-# No description here, it's never the same; it depends on the module
+desc['fwhmk'] = \
+"keyword for the Full Width at Half Maximum (FWHM) of the image, which is " \
+"written to the FITS header at the seeing.py stage [default: %default]"
 
 objectk = 'OBJECT'
 desc['objectk'] = \
