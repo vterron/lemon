@@ -104,8 +104,7 @@ def parallel_photometry(args):
     # annulus and dannulus, on the other hand, were received as input
     # by the program.
 
-    img_filter  = photometry_image.read_keyword(options.filterk)
-    img_pfilter = passband.Passband(img_filter)
+    img_pfilter = img_offset.filter
     img_unix_time = photometry_image.date(options.datek, options.exptimek)
     img_object = img_offset.object
     img_airmass = photometry_image.read_keyword(options.airmassk)
@@ -115,7 +114,7 @@ def parallel_photometry(args):
     img_yoffset = img_offset.y
     img_yoverlap = img_offset.y_overlap
 
-    logging.debug("%s: filter = %s" % (img_path, img_filter))
+    logging.debug("%s: filter = %s" % (img_path, img_pfilter))
     logging.debug("%s: observation date: %.2f (%s)" % \
                   (img_path, img_unix_time, time.ctime(img_unix_time)))
     logging.debug("%s: object = %s" % (img_path, img_object))
