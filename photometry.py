@@ -845,9 +845,9 @@ def main(arguments = None):
     # can be correlated to something.
     #
     # The date of the image may not make much sense in many cases (for example,
-    # when the reference image is the output of the combine.py module, i.e.,
-    # the result of combining multiple images in order to maximize the SNR),
-    # but it is still valid when a single image is used for sources detection.
+    # when the reference image is the output of the mosaic.py module, i.e., the
+    # result of combining multiple images in order to maximize the SNR), but it
+    # is still valid when a single image is used for sources detection.
 
     rimage_filter = reference_img.read_keyword(options.filterk)
     pfilter = passband.Passband(rimage_filter)
