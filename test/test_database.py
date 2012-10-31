@@ -28,6 +28,7 @@ import operator
 import os
 import random
 import sqlite3
+import string
 import tempfile
 import time
 import unittest
@@ -481,6 +482,8 @@ class ImageTest(unittest.TestCase):
     MAX_XOFFSET = MAX_YOFFSET = 500  # ... offsets in both axes (pixels)
     MIN_XOVERLAP = MIN_YOVERLAP = 0    # Minimum and maximum values for random
     MAX_XOVERLAP = MAX_YOVERLAP = 2000 # ... numbers of stars that overlap
+    OBJECT_LENGTH = (1, 30) # Minimum and maximum length of the random string
+                            # used as the name of the observed object
 
     @classmethod
     def random_data(cls):
@@ -493,6 +496,8 @@ class ImageTest(unittest.TestCase):
         pfilter = passband.Passband.random()
         pparams = PhotometricParametersTest.random()
         unix_time = runix_times(1)[0]
+        size = random.randint(*cls.OBJECT_LENGTH)
+        object_ = ''.join(random.choice(string.letters) for _ in xrange(size))
         airmass = random.uniform(cls.MIN_AIRMASS, cls.MAX_AIRMASS)
         gain = random.uniform(cls.MIN_GAIN, cls.MAX_GAIN)
         xoffset = random.uniform(cls.MIN_XOFFSET, cls.MAX_XOFFSET)
@@ -500,7 +505,7 @@ class ImageTest(unittest.TestCase):
         xoverlap = random.randint(cls.MIN_XOVERLAP, cls.MAX_XOVERLAP)
         yoverlap = random.randint(cls.MIN_YOVERLAP, cls.MAX_YOVERLAP)
 
-        return (path, pfilter, pparams, unix_time, airmass,
+        return (path, pfilter, pparams, unix_time, object_, airmass,
                 gain, xoffset, yoffset, xoverlap, yoverlap)
 
     @classmethod
@@ -544,12 +549,13 @@ class ImageTest(unittest.TestCase):
             self.assertEqual(img.pparams.annulus, pparams.annulus)
             self.assertEqual(img.pparams.dannulus, pparams.dannulus)
             self.assertEqual(img.unix_time, args[3])
-            self.assertEqual(img.airmass, args[4])
-            self.assertEqual(img.gain, args[5])
-            self.assertEqual(img.xoffset, args[6])
-            self.assertEqual(img.yoffset, args[7])
-            self.assertEqual(img.xoverlap, args[8])
-            self.assertEqual(img.yoverlap, args[9])
+            self.assertEqual(img.object, args[4])
+            self.assertEqual(img.airmass, args[5])
+            self.assertEqual(img.gain, args[6])
+            self.assertEqual(img.xoffset, args[7])
+            self.assertEqual(img.yoffset, args[8])
+            self.assertEqual(img.xoverlap, args[9])
+            self.assertEqual(img.yoverlap, args[10])
 
     @staticmethod
     def equal(first, second):
@@ -574,8 +580,8 @@ class ReferenceImageTest(unittest.TestCase):
     def random_data(cls):
         """ Return the args needed to instantiate a random ReferenceImage"""
         args = ImageTest.random_data()
-        # Return the first six elements, except for 'pparams'
-        return args[:2] + args[3:6]
+        # Return the first seven elements, except for 'pparams'
+        return args[:2] + args[3:7]
 
     @classmethod
     def random(cls):
@@ -586,11 +592,12 @@ class ReferenceImageTest(unittest.TestCase):
     def test_init_(self):
         for _ in xrange(NITERS):
             args = self.random_data()
-            path, pfilter, unix_time, airmass, gain = args
+            path, pfilter, unix_time, object_, airmass, gain = args
             rimage = ReferenceImage(*args)
             self.assertEqual(rimage.path, path)
             self.assertEqual(rimage.pfilter, pfilter)
             self.assertEqual(rimage.unix_time, unix_time)
+            self.assertEqual(rimage.object, object_)
             self.assertEqual(rimage.airmass, airmass)
             self.assertEqual(rimage.gain, gain)
 

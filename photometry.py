@@ -107,6 +107,7 @@ def parallel_photometry(args):
     img_filter  = photometry_image.read_keyword(options.filterk)
     img_pfilter = passband.Passband(img_filter)
     img_unix_time = photometry_image.date(options.datek, options.exptimek)
+    img_object = img_offset.object
     img_airmass = photometry_image.read_keyword(options.airmassk)
     img_gain = options.gain or photometry_image.read_keyword(options.gaink)
     img_xoffset  = img_offset.x
@@ -117,6 +118,7 @@ def parallel_photometry(args):
     logging.debug("%s: filter = %s" % (img_path, img_filter))
     logging.debug("%s: observation date: %.2f (%s)" % \
                   (img_path, img_unix_time, time.ctime(img_unix_time)))
+    logging.debug("%s: object = %s" % (img_path, img_object))
     logging.debug("%s: airmass = %.4f" % (img_path, img_airmass))
     gain_comes_from_msg = "given by user" if options.gain else "read from header"
     logging.debug("%s: gain (%s) = %.4f" % \
@@ -133,8 +135,8 @@ def parallel_photometry(args):
 
     pimage = \
         database.Image(img_path, img_pfilter, pparams, img_unix_time,
-                       img_airmass, img_gain, img_xoffset, img_yoffset,
-                       img_xoverlap, img_yoverlap)
+                       img_object, img_airmass, img_gain, img_xoffset,
+                       img_yoffset, img_xoverlap, img_yoverlap)
 
     queue.put((pimage, img_offset, qphot_result))
 
@@ -282,6 +284,10 @@ parser.add_option_group(qphot_fixed)
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
+
+key_group.add_option('--objectk', action = 'store', type = 'str',
+                     dest = 'objectk', default = keywords.objectk,
+                     help = keywords.desc['objectk'])
 
 key_group.add_option('--filterk', action = 'store', type = 'str',
                      dest = 'filterk', default = keywords.filterk,
@@ -852,10 +858,11 @@ def main(arguments = None):
     rimage_filter = reference_img.read_keyword(options.filterk)
     pfilter = passband.Passband(rimage_filter)
     unix_time = reference_img.date(options.datek, options.exptimek)
+    object_ = reference_img.read_keyword(options.objectk)
     airmass  = reference_img.read_keyword(options.airmassk)
     gain = options.gain or reference_img.read_keyword(options.gaink)
-    output_db.rimage = database.ReferenceImage(reference_img.path, pfilter,
-                                               unix_time, airmass, gain)
+    args = reference_img.path, pfilter, unix_time, object_, airmass, gain
+    output_db.rimage = database.ReferenceImage(*args)
 
     # Determine how many different filters there are among the images contained
     # in the list of offsets. Then, sort the filters by their wavelength, so

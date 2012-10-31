@@ -196,19 +196,21 @@ class PhotometricParameters(object):
 
 class ReferenceImage(object):
     """ Encapculates the image used for the offsets calculation """
-    def __init__(self, path, pfilter, unix_time, airmass, gain):
+    def __init__(self, path, pfilter, unix_time, object_, airmass, gain):
         self.path = path
         self.pfilter  = pfilter
         self.unix_time = unix_time
+        self.object = object_
         self.airmass = airmass
         self.gain = gain
 
 
 class Image(ReferenceImage):
     """ Encapsulates the images shifted from the reference one """
-    def __init__(self, path, pfilter, pparams, unix_time, airmass, gain,
-                 xoffset, yoffset, xoverlap, yoverlap):
-        super(Image, self).__init__(path, pfilter, unix_time, airmass, gain)
+    def __init__(self, path, pfilter, pparams, unix_time, object_, airmass,
+                 gain, xoffset, yoffset, xoverlap, yoverlap):
+        args = path, pfilter, unix_time, object_, airmass, gain
+        super(Image, self).__init__(*args)
         self.pparams = pparams  # photometric parameters
         self.xoffset = xoffset
         self.yoffset = yoffset
@@ -444,6 +446,7 @@ class LEMONdB(object):
            path       TEXT NOT NULL,
            wavelength INTEGER NOT NULL,
            unix_time  REAL NOT NULL,
+           object     TEXT,
            airmass    REAL NOT NULL,
            gain       REAL NOT NULL,
            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength))
@@ -455,6 +458,7 @@ class LEMONdB(object):
             path       TEXT NOT NULL,
             wavelength INTEGER NOT NULL,
             pparams_id INTEGER NOT NULL,
+            object     TEXT,
             airmass    REAL NOT NULL,
             gain       REAL NOT NULL,
             xoffset    REAL NOT NULL,
@@ -588,7 +592,8 @@ class LEMONdB(object):
     @property
     def rimage(self):
         """ Return a ReferenceImage instance, or None if there isn't any"""
-        self._execute("SELECT r.path, p.name, r.unix_time, r.airmass, r.gain "
+        self._execute("SELECT r.path, p.name, r.unix_time, "
+                      "       r.object, r.airmass, r.gain "
                       "FROM rimage AS r, photometric_filters AS p "
                       "ON r.wavelength = p.wavelength")
         rows = list(self._rows)
@@ -605,9 +610,9 @@ class LEMONdB(object):
         """ Set the reference image that was used to compute the offsets """
         self._add_pfilter(rimage.pfilter)
         t = (rimage.path, rimage.pfilter.wavelength, rimage.unix_time,
-             rimage.airmass, rimage.gain)
+             rimage.object, rimage.airmass, rimage.gain)
         self._execute("DELETE FROM rimage")
-        self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?)", t)
+        self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?, ?)", t)
 
     def add_image(self, image):
         """ Store an image into the database.
@@ -625,11 +630,11 @@ class LEMONdB(object):
         self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
         t = (image.unix_time, image.path, image.pfilter.wavelength, pparams_id,
-             image.airmass, image.gain, image.xoffset, image.xoverlap,
-             image.yoffset, image.yoverlap)
+             image.object, image.airmass, image.gain, image.xoffset,
+             image.xoverlap, image.yoffset, image.yoverlap)
         try:
             self._execute("INSERT INTO images "
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
@@ -646,9 +651,9 @@ class LEMONdB(object):
         """ Return the Image observed at a Unix time. Raises
         KeyError if there is no image for this observation date."""
 
-        self._execute("SELECT i.path, p.name, i.unix_time, i.airmass, i.gain, "
-                      "       i.xoffset, i.yoffset, i.xoverlap, i.yoverlap, "
-                      "       i.pparams_id "
+        self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
+                      "       i.airmass, i.gain, i.xoffset, i.yoffset, "
+                      "       i.xoverlap, i.yoverlap, i.pparams_id "
                       "FROM images AS i, photometric_filters AS p "
                       "ON i.wavelength = p.wavelength "
                       "WHERE i.unix_time = ?", (unix_time,))
