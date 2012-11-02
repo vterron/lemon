@@ -128,7 +128,7 @@ class XMLOffsetFile(list):
     "<!ELEMENT offsets (reference, offset+)>",
     "<!ATTLIST offsets size CDATA  #REQUIRED>",
     "",
-    "<!ELEMENT reference (#PCDATA)>",
+    "<!ELEMENT reference (image)>",
     "<!ELEMENT offset (image, x_offset, y_offset)>",
     "<!ELEMENT image (path, date, filter, object, fwhm)>",
     "<!ELEMENT path (#PCDATA)>",
@@ -143,8 +143,21 @@ class XMLOffsetFile(list):
     "]>",
     ""]
 
-    def __init__(self, reference_path):
-        self.reference_path = reference_path
+    def __init__(self, reference_path, date, filter_, object_, fwhm):
+        """ Instantiation method for the XMLOffset class.
+
+        The 'reference_path', 'date', 'filter_', 'object' and 'fwhm' arguments
+        are the (1) path, (2) date of observation, (3) photometric filter, (4)
+        astronomical target object and (5) full width at half-maximum of the
+        reference image, respectively. These values are stored in an internal
+        attribute called 'reference', so, for example, in order to get the path
+        to the reference image we have to access XMLOffset.reference['path'].
+
+        """
+
+        kwargs = {'path' : reference_path, 'date' : date, 'filter' : filter_,
+                  'object' : object_, 'fwhm' : fwhm}
+        self.reference = dict(**kwargs)
         super(XMLOffsetFile, self).__init__()
 
     def add(self, offset):
@@ -158,7 +171,7 @@ class XMLOffsetFile(list):
 
         """
 
-        if offset.reference != self.reference_path:
+        if offset.reference != self.reference['path']:
             msg = "reference image differs from that of XMLOffsetFile"
             raise ValueError(msg)
 
@@ -175,35 +188,59 @@ class XMLOffsetFile(list):
         root = lxml.etree.Element('offsets')
         root.set('size', str(len(self)))
 
-        reference_element = lxml.etree.Element('reference')
-        reference_element.text = self.reference_path
-        root.append(reference_element)
+        def build_image_element(path, date, filter_, object_, fwhm):
+            """ Return the lxml.etree with the 'image' XML node.
 
-        for offset in self:
+            For example, given the parameters './data/ferM_016_obfs.fits',
+            1329174680, passband.Passband('Johnson I'), 'ngc2264_1minI' and
+            5.722, the returned lxml.etree would be the following:
 
-            element = lxml.etree.Element('offset')
+            <image>
+              <path>./data/ferM_016_obfs.fits</path>
+              <date>Mon Feb 13 23:11:20 2012 UTC</date>
+              <filter>Johnson I</filter>
+              <object>ngc2264_1minI</object>
+              <fwhm>5.722</fwhm>
+            </image>
+
+            """
+
             image = lxml.etree.Element('image')
-
             path_element = lxml.etree.Element('path')
-            path_element.text = offset.shifted
+            path_element.text = path
             image.append(path_element)
 
-            date_str = time.asctime(time.gmtime(offset.date))
+            date_str = time.asctime(time.gmtime(date))
             date_element = lxml.etree.Element('date')
             date_element.text = "%s UTC" % date_str
             image.append(date_element)
 
             filter_element = lxml.etree.Element('filter')
-            filter_element.text = str(offset.filter)
+            filter_element.text = str(filter_)
             image.append(filter_element)
 
             object_element = lxml.etree.Element('object')
-            object_element.text = str(offset.object)
+            object_element.text = str(object_)
             image.append(object_element)
 
             fwhm_element = lxml.etree.Element('fwhm')
-            fwhm_element.text = str(offset.fwhm)
+            fwhm_element.text = str(fwhm)
             image.append(fwhm_element)
+            return image
+
+        reference_element = lxml.etree.Element('reference')
+        keys = ('path', 'date', 'filter', 'object', 'fwhm')
+        args = [self.reference[k] for k in keys]
+        image = build_image_element(*args)
+        reference_element.append(image)
+        root.append(reference_element)
+
+        for offset in self:
+
+            element = lxml.etree.Element('offset')
+            attrs = ['shifted', 'date', 'filter', 'object', 'fwhm']
+            args = [getattr(offset, a) for a in attrs]
+            image = build_image_element(*args)
             element.append(image)
 
             x = lxml.etree.Element('x_offset', overlap = str(offset.x_overlap))
@@ -258,24 +295,50 @@ class XMLOffsetFile(list):
             """ Return the first child of 'element' with tag 'tag' """
             return element.getiterator(tag = tag).next()
 
-        reference_path = get_child(root, 'reference').text
-        offset_file = cls(reference_path)
+        def parse_image_element(element):
+            """ Extractt eh values from a lxml.etree with the 'image' XML node.
+
+            For example, given the following lxml.etree...
+
+            <image>
+              <path>./data/ferM_016_obfs.fits</path>
+              <date>Mon Feb 13 23:11:20 2012 UTC</date>
+              <filter>Johnson I</filter>
+              <object>ngc2264_1minI</object>
+              <fwhm>5.722</fwhm>
+            </image>
+
+            ... the five-element tuple ('./data/ferM_016_obfs.fits',
+            1329174680, passband.Passband('Johnson I'), 'ngc2264_1minI', 5.722)
+            would be returned.
+
+            """
+
+            path = get_child(element, 'path').text
+
+            # From string to struct_time in UTC to Unix seconds
+            date_str = get_child(element, 'date').text
+            args = date_str, cls.STRPTIME_FORMAT
+            date = calendar.timegm(time.strptime(*args))
+
+            filter_str = get_child(element, 'filter').text
+            filter_ = passband.Passband(filter_str)
+            object_ = get_child(element, 'object').text
+            fwhm = float(get_child(element, 'fwhm').text)
+
+            return path, date, filter_, object_, fwhm
+
+        reference = get_child(root, 'reference')
+        args = parse_image_element(get_child(reference, 'image'))
+        offset_file = cls(*args)
 
         for offset in root.getiterator(tag = 'offset'):
 
-            image_element = get_child(offset, 'image')
-            image_path = get_child(image_element, 'path').text
+            args = [offset_file.reference['path']]
 
-            image_object = get_child(image_element, 'object').text
-            image_pfilter_str = get_child(image_element, 'filter').text
-            image_pfilter = passband.Passband(image_pfilter_str)
-
-            # From string to struct_time in UTC to Unix seconds
-            image_date_str = get_child(image_element, 'date').text
-            args = image_date_str, cls.STRPTIME_FORMAT
-            image_date = calendar.timegm(time.strptime(*args))
-
-            image_fwhm = float(get_child(image_element, 'fwhm').text)
+            image = get_child(offset, 'image')
+            path, date, filter_, object_, fwhm = parse_image_element(image)
+            args += [path, object_, filter_, date, fwhm]
 
             element = get_child(offset, 'x_offset')
             x_offset = float(element.text)
@@ -284,10 +347,8 @@ class XMLOffsetFile(list):
             element = get_child(offset, 'y_offset')
             y_offset = float(element.text)
             y_overlap = int(element.get('overlap'))
+            args += [x_offset, y_offset, x_overlap, y_overlap]
 
-            args = (reference_path, image_path, image_object,
-                    image_pfilter, image_date, image_fwhm,
-                    x_offset, y_offset, x_overlap, y_overlap)
             offset_file.append(XMLOffset(*args))
 
         return offset_file

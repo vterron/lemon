@@ -284,14 +284,6 @@ parser.add_option_group(qphot_fixed)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
-key_group.add_option('--objectk', action = 'store', type = 'str',
-                     dest = 'objectk', default = keywords.objectk,
-                     help = keywords.desc['objectk'])
-
-key_group.add_option('--filterk', action = 'store', type = 'str',
-                     dest = 'filterk', default = keywords.filterk,
-                     help = keywords.desc['filterk'])
-
 key_group.add_option('--rak', action = 'store', type = 'str',
                      dest = 'rak', default = keywords.rak,
                      help = keywords.desc['rak'])
@@ -299,10 +291,6 @@ key_group.add_option('--rak', action = 'store', type = 'str',
 key_group.add_option('--deck', action = 'store', type = 'str',
                      dest = 'deck', default = keywords.deck,
                      help = keywords.desc['deck'])
-
-key_group.add_option('--datek', action = 'store', type = 'str',
-                     dest = 'datek', default = keywords.datek,
-                     help = keywords.desc['datek'])
 
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
@@ -324,9 +312,6 @@ key_group.add_option('--uik', action = 'store', type = 'str',
                      dest = 'uncimgk', default = keywords.uncimgk,
                      help = keywords.desc['uncimgk'])
 
-key_group.add_option('--fwhmk', action = 'store', type = 'str',
-                     dest = 'fwhmk', default = keywords.fwhmk,
-                     help = keywords.desc['fwhmk'])
 parser.add_option_group(key_group)
 
 def main(arguments = None):
@@ -554,7 +539,7 @@ def main(arguments = None):
     # conforming file? Just to make sure, you know. In order to do that, simply
     # pass it to FITSImage, which will throw the appropiate exceptions if an
     # error is encountered.
-    reference_img = fitsimage.FITSImage(xml_offsets.reference_path)
+    reference_img = fitsimage.FITSImage(xml_offsets.reference['path'])
 
     # Light curves, which are our ultimate goal, can only have one differential
     # magnitude for each point in time. Therefore, we cannot have two or more
@@ -661,19 +646,17 @@ def main(arguments = None):
 
     # The photometry method always receives an XMLOffset instance, so we need
     # to create one to stupidly indicate that the offset between the reference
-    # image and itself is... zero. Who would have guessed that? Do not bother
-    # reading the object name from the FITS header, nor its FWHM, as they are
-    # irrelevant for our purposes here.
-    reference_date = reference_img.date(date_keyword = options.datek,
-                                        exp_keyword = options.exptimek)
-    args = (reference_img.path, reference_img.path, 'N/A',
-           'N/A', reference_date, 1.0, 0.0, 0.0, 'inf', 'inf')
+    # image and itself is... zero. Who would have guessed that?
+
+    keys = ('path', 'path', 'object', 'filter', 'date', 'fwhm')
+    args = [xml_offsets.reference[k] for k in keys]
+    args += [0.0, 0.0, float('inf'), float('inf')]
     null_offset = xmlparse.XMLOffset(*args)
 
     if not fixed_annuli:
 
         try:
-            reference_fwhm = reference_img.read_keyword(options.fwhmk)
+            reference_fwhm = xml_offsets.reference['fwhm']
         except KeyError:
             # The FWHM of the image was not found at the FITS header. This may
             # happen, even if all the images went through the seeing.py module,
@@ -835,12 +818,12 @@ def main(arguments = None):
     # result of combining multiple images in order to maximize the SNR), but it
     # is still valid when a single image is used for sources detection.
 
-    rimage_filter = reference_img.read_keyword(options.filterk)
-    pfilter = passband.Passband(rimage_filter)
-    object_ = reference_img.read_keyword(options.objectk)
-    airmass  = reference_img.read_keyword(options.airmassk)
+    pfilter = xml_offsets.reference['filter']
+    date = xml_offsets.reference['date']
+    object_ = xml_offsets.reference['object']
+    airmass = reference_img.read_keyword(options.airmassk)
     gain = options.gain or reference_img.read_keyword(options.gaink)
-    args = reference_img.path, pfilter, reference_date, object_, airmass, gain
+    args = reference_img.path, pfilter, date, object_, airmass, gain
     output_db.rimage = database.ReferenceImage(*args)
 
     # Determine how many different filters there are among the images contained

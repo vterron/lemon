@@ -43,6 +43,7 @@ import defaults
 import keywords
 import fitsimage
 import optparse
+import passband
 import methods
 import seeing
 import style
@@ -123,7 +124,7 @@ def offset(reference_path, shifted_path, maximum, margin, per,
     # Get the object name, filter, date of observation and FWHM of the shifted
     # image. Raise KeyError if one or more cannot be found in the FITS header.
     shifted_object = shifted.read_keyword(object_keyword)
-    shifted_filter = shifted.read_keyword(filter_keyword)
+    shifted_filter = passband.Passband(shifted.read_keyword(filter_keyword))
     shifted_date   = shifted.date(date_keyword = date_keyword,
                                   exp_keyword = exp_keyword)
     shifted_fwhm = shifted.read_keyword(fwhm_keyword)
@@ -349,7 +350,15 @@ def main(arguments = None):
 
     print  "%sGenerating the output XML tree..." % style.prefix ,
     sys.stdout.flush()
-    xml_tree = xmlparse.XMLOffsetFile(reference_img.path)
+
+    # The XML file also contains information on the reference image
+    kwargs = dict(date_keyword = options.datek, exp_keyword = options.exptimek)
+    date = reference_img.date(**kwargs)
+    filter_ = passband.Passband(reference_img.read_keyword(options.filterk))
+    object_ = reference_img.read_keyword(options.objectk)
+    fwhm = reference_img.read_keyword(options.fwhmk)
+    args = (reference_img.path, date, filter_, object_, fwhm)
+    xml_tree = xmlparse.XMLOffsetFile(*args)
 
     for xml_offset in offsets_list:
         xml_tree.append(xml_offset)
