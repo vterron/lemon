@@ -51,7 +51,7 @@ import xmlparse
 
 def offset(reference_path, shifted_path, maximum, margin, per,
            object_keyword, filter_keyword, date_keyword, fwhm_keyword,
-           exp_keyword, coadd_keyword):
+           airmass_keyword, exp_keyword, coadd_keyword):
     """ Calculate the offset between two FITS images.
 
     The method returns an instance of xmlparse.XMLOffset, which encapsulates
@@ -104,6 +104,7 @@ def offset(reference_path, shifted_path, maximum, margin, per,
                    through 1999.  The new Y2K compliant date format is
                    'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss]'.
     fwhm_keyword - FITS keyword for the full width at half maximum (FWHM)
+    airmass_keyword - FITS keyword for the airmass.
     exp_keyword - the FITS keyword in which the duration of the exposure is
                   stored. It is expected to be a floating-point number which
                   gives the duration in seconds. The exact definition of
@@ -128,13 +129,15 @@ def offset(reference_path, shifted_path, maximum, margin, per,
     shifted_date   = shifted.date(date_keyword = date_keyword,
                                   exp_keyword = exp_keyword)
     shifted_fwhm = shifted.read_keyword(fwhm_keyword)
+    shifted_airmass = shifted.read_keyword(airmass_keyword)
 
     x_offset, y_offset, x_overlap, y_overlap = \
         reference.offset(shifted, per = per)
 
-    return xmlparse.XMLOffset(reference.path, shifted.path, shifted_object,
-                              shifted_filter, shifted_date, shifted_fwhm,
-                              x_offset, y_offset, x_overlap, y_overlap)
+    args = (reference.path, shifted.path, shifted_object, shifted_filter,
+            shifted_date, shifted_fwhm, shifted_airmass, x_offset, y_offset,
+            x_overlap, y_overlap)
+    return xmlparse.XMLOffset(*args)
 
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
@@ -167,7 +170,7 @@ def parallel_offset(args):
     img_offset = offset(reference.path, shifted_path, options.maximum,
                         options.margin, options.percentile, options.objectk,
                         options.filterk, options.datek, options.fwhmk,
-                        options.exptimek, options.coaddk)
+                        options.airmassk, options.exptimek, options.coaddk)
     queue.put(img_offset)
 
 
@@ -241,6 +244,10 @@ key_group.add_option('--datek', action = 'store', type = 'str',
 key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = keywords.desc['fwhmk'])
+
+key_group.add_option('--airmk', action = 'store', type = 'str',
+                     dest = 'airmassk', default = keywords.airmassk,
+                     help = keywords.desc['airmassk'])
 
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
@@ -357,7 +364,8 @@ def main(arguments = None):
     filter_ = passband.Passband(reference_img.read_keyword(options.filterk))
     object_ = reference_img.read_keyword(options.objectk)
     fwhm = reference_img.read_keyword(options.fwhmk)
-    args = (reference_img.path, date, filter_, object_, fwhm)
+    airmass = reference_img.read_keyword(options.airmassk)
+    args = (reference_img.path, date, filter_, object_, fwhm, airmass)
     xml_tree = xmlparse.XMLOffsetFile(*args)
 
     for xml_offset in offsets_list:

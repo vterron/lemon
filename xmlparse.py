@@ -68,8 +68,8 @@ class XMLOffset(object):
     """
 
     def __init__(self, reference, shifted, object_, shifted_filter,
-                 shifted_date, shifted_fwhm, x_offset, y_offset,
-                 x_overlap, y_overlap):
+                 shifted_date, shifted_fwhm, shifted_airmass,
+                 x_offset, y_offset, x_overlap, y_overlap):
         """ Instantiation method for the XMLOffset class.
 
         reference - the path to the reference, 'unmoved' FITS image.
@@ -80,6 +80,7 @@ class XMLOffset(object):
         shifted_date - the data of observation of the shifted image, in
                        seconds after the Unix epoch (aka Unix time)
         shifted_fwhm - full width at half maximum of the shifted image
+        shifted_airmass - the airmass of the shifted image.
         x_offset - the offset, in pixels, in the x-axis.
         y_offset - the offset, in pixels, in the y-axis.
         x_overlap - the number of stars that overlapped in the x-axis when
@@ -95,6 +96,7 @@ class XMLOffset(object):
         self.filter    = shifted_filter
         self.date      = shifted_date
         self.fwhm      = shifted_fwhm
+        self.airmass   = shifted_airmass
         self.x         = x_offset
         self.y         = y_offset
         self.x_overlap = x_overlap
@@ -130,12 +132,13 @@ class XMLOffsetFile(list):
     "",
     "<!ELEMENT reference (image)>",
     "<!ELEMENT offset (image, x_offset, y_offset)>",
-    "<!ELEMENT image (path, date, filter, object, fwhm)>",
+    "<!ELEMENT image (path, date, filter, object, fwhm, airmass)>",
     "<!ELEMENT path (#PCDATA)>",
     "<!ELEMENT date (#PCDATA)>",
     "<!ELEMENT filter (#PCDATA)>",
     "<!ELEMENT object (#PCDATA)>",
     "<!ELEMENT fwhm (#PCDATA)>",
+    "<!ELEMENT airmass (#PCDATA)>",
     "<!ELEMENT x_offset  (#PCDATA)>",
     "<!ATTLIST x_offset overlap CDATA #REQUIRED>",
     "<!ELEMENT y_offset  (#PCDATA)>",
@@ -143,20 +146,21 @@ class XMLOffsetFile(list):
     "]>",
     ""]
 
-    def __init__(self, reference_path, date, filter_, object_, fwhm):
+    def __init__(self, reference_path, date, filter_, object_, fwhm, airmass):
         """ Instantiation method for the XMLOffset class.
 
-        The 'reference_path', 'date', 'filter_', 'object' and 'fwhm' arguments
-        are the (1) path, (2) date of observation, (3) photometric filter, (4)
-        astronomical target object and (5) full width at half-maximum of the
-        reference image, respectively. These values are stored in an internal
-        attribute called 'reference', so, for example, in order to get the path
-        to the reference image we have to access XMLOffset.reference['path'].
+        The 'reference_path', 'date', 'filter_', 'object', 'fwhm' and 'airmass'
+        arguments are the (1) path, (2) date of observation, (3) photometric
+        filter, (4) astronomical target object, (5) full width at half maximum
+        and (6) airmass of the reference image, respectively. These values are
+        stored in an internal attribute called 'reference', so, for example, in
+        order to get the path to the reference image we have to access
+        XMLOffset.reference['path'].
 
         """
 
         kwargs = {'path' : reference_path, 'date' : date, 'filter' : filter_,
-                  'object' : object_, 'fwhm' : fwhm}
+                  'object' : object_, 'fwhm' : fwhm, 'airmass' : airmass}
         self.reference = dict(**kwargs)
         super(XMLOffsetFile, self).__init__()
 
@@ -188,12 +192,12 @@ class XMLOffsetFile(list):
         root = lxml.etree.Element('offsets')
         root.set('size', str(len(self)))
 
-        def build_image_element(path, date, filter_, object_, fwhm):
+        def build_image_element(path, date, filter_, object_, fwhm, airmass):
             """ Return the lxml.etree with the 'image' XML node.
 
             For example, given the parameters './data/ferM_016_obfs.fits',
-            1329174680, passband.Passband('Johnson I'), 'ngc2264_1minI' and
-            5.722, the returned lxml.etree would be the following:
+            1329174680, passband.Passband('Johnson I'), 'ngc2264_1minI', 5.722
+            and 1.134, the returned lxml.etree would be the following:
 
             <image>
               <path>./data/ferM_016_obfs.fits</path>
@@ -201,6 +205,7 @@ class XMLOffsetFile(list):
               <filter>Johnson I</filter>
               <object>ngc2264_1minI</object>
               <fwhm>5.722</fwhm>
+              <airmass>1.134</airmass>
             </image>
 
             """
@@ -226,10 +231,14 @@ class XMLOffsetFile(list):
             fwhm_element = lxml.etree.Element('fwhm')
             fwhm_element.text = str(fwhm)
             image.append(fwhm_element)
+
+            airmass_element = lxml.etree.Element('airmass')
+            airmass_element.text = str(airmass)
+            image.append(airmass_element)
             return image
 
         reference_element = lxml.etree.Element('reference')
-        keys = ('path', 'date', 'filter', 'object', 'fwhm')
+        keys = ('path', 'date', 'filter', 'object', 'fwhm', 'airmass')
         args = [self.reference[k] for k in keys]
         image = build_image_element(*args)
         reference_element.append(image)
@@ -238,7 +247,7 @@ class XMLOffsetFile(list):
         for offset in self:
 
             element = lxml.etree.Element('offset')
-            attrs = ['shifted', 'date', 'filter', 'object', 'fwhm']
+            attrs = ['shifted', 'date', 'filter', 'object', 'fwhm', 'airmass']
             args = [getattr(offset, a) for a in attrs]
             image = build_image_element(*args)
             element.append(image)
@@ -306,10 +315,11 @@ class XMLOffsetFile(list):
               <filter>Johnson I</filter>
               <object>ngc2264_1minI</object>
               <fwhm>5.722</fwhm>
+              <airmass>1.134</airmass>
             </image>
 
-            ... the five-element tuple ('./data/ferM_016_obfs.fits',
-            1329174680, passband.Passband('Johnson I'), 'ngc2264_1minI', 5.722)
+            ... the six-element tuple ('./data/ferM_016_obfs.fits', 1329174680,
+            passband.Passband('Johnson I'), 'ngc2264_1minI', 5.722, 1.134)
             would be returned.
 
             """
@@ -325,8 +335,9 @@ class XMLOffsetFile(list):
             filter_ = passband.Passband(filter_str)
             object_ = get_child(element, 'object').text
             fwhm = float(get_child(element, 'fwhm').text)
+            airmass = float(get_child(element, 'airmass').text)
 
-            return path, date, filter_, object_, fwhm
+            return path, date, filter_, object_, fwhm, airmass
 
         reference = get_child(root, 'reference')
         args = parse_image_element(get_child(reference, 'image'))
@@ -337,8 +348,9 @@ class XMLOffsetFile(list):
             args = [offset_file.reference['path']]
 
             image = get_child(offset, 'image')
-            path, date, filter_, object_, fwhm = parse_image_element(image)
-            args += [path, object_, filter_, date, fwhm]
+            path, date, filter_, object_, fwhm, airmass = \
+              parse_image_element(image)
+            args += [path, object_, filter_, date, fwhm, airmass]
 
             element = get_child(offset, 'x_offset')
             x_offset = float(element.text)

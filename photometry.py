@@ -107,7 +107,7 @@ def parallel_photometry(args):
     img_pfilter = img_offset.filter
     img_unix_time = img_offset.date
     img_object = img_offset.object
-    img_airmass = photometry_image.read_keyword(options.airmassk)
+    img_airmass = img_offset.airmass
     img_gain = options.gain or photometry_image.read_keyword(options.gaink)
     img_xoffset  = img_offset.x
     img_xoverlap = img_offset.x_overlap
@@ -287,10 +287,6 @@ key_group = optparse.OptionGroup(parser, "FITS Keywords",
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
-
-key_group.add_option('--airmk', action = 'store', type = 'str',
-                     dest = 'airmassk', default = keywords.airmassk,
-                     help = keywords.desc['airmassk'])
 
 key_group.add_option('--coaddk', action = 'store', type = 'str',
                      dest = 'coaddk', default = keywords.coaddk,
@@ -640,7 +636,7 @@ def main(arguments = None):
     # to create one to stupidly indicate that the offset between the reference
     # image and itself is... zero. Who would have guessed that?
 
-    keys = ('path', 'path', 'object', 'filter', 'date', 'fwhm')
+    keys = ('path', 'path', 'object', 'filter', 'date', 'fwhm', 'airmass')
     args = [xml_offsets.reference[k] for k in keys]
     args += [0.0, 0.0, float('inf'), float('inf')]
     null_offset = xmlparse.XMLOffset(*args)
@@ -813,7 +809,7 @@ def main(arguments = None):
     pfilter = xml_offsets.reference['filter']
     date = xml_offsets.reference['date']
     object_ = xml_offsets.reference['object']
-    airmass = reference_img.read_keyword(options.airmassk)
+    airmass = xml_offsets.reference['airmass']
     gain = options.gain or reference_img.read_keyword(options.gaink)
     args = reference_img.path, pfilter, date, object_, airmass, gain
     output_db.rimage = database.ReferenceImage(*args)
