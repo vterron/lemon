@@ -758,7 +758,7 @@ def main(arguments = None):
     # Load all the offsets, saving them as a list of XMLOffset instances.
     # Note that the XML file is initially read as a XMLOffsetsFile instance,
     # from which we extract all the XMLOffsets and save them in a list.
-    xml_offsets = xmlparse.XMLOffsetFile(xml_path)
+    xml_offsets = xmlparse.XMLOffsetFile.load(xml_path)
     print 'done.'
 
     if not xml_offsets:

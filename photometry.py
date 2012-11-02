@@ -494,31 +494,11 @@ def main(arguments = None):
     xmlparse.validate_dtd(xml_path)
     print 'done.'
 
-    # Load all the offsets, saving them as a list of XMLOffset instances.
-    # Note that the XML file is initially read as a XMLOffsetsFile instance,
-    # from which we extract all the XMLOffsets and save them in a list.
     print "%sLoading input XML file into memory..." % style.prefix,
     sys.stdout.flush()
-    xml_offsets = list(xmlparse.XMLOffsetFile(xml_path))
-
-    # Also, make sure that all of them pertain to the same reference frame.
-    # Otherwise, whiningly complain and abort the execution. Note the cast to
-    # map and then to list, in order to remove duplicated names.
-    list_of_reference_imgs = list(set((x.reference for x in xml_offsets)))
-    if len(list_of_reference_imgs) != 1:
-        print style.prefix
-        print "%sError. The offsets must all refer to the same reference " \
-              "image." % style.prefix
-        print "%sHowever, multiple reference images were found in the " \
-              "input XML file:" % style.prefix
-        print "%s[%s]" % (style.prefix, ", ".join(list_of_reference_imgs))
-        print style.error_exit_message
-        return 1
-    else:
-        print 'done.'
-        print "%s%d offsets were read." % (style.prefix, len(xml_offsets))
-        reference_img_path = list_of_reference_imgs[0]
-
+    xml_offsets = xmlparse.XMLOffsetFile.load(xml_path)
+    print 'done.'
+    print "%s%d offsets were read." % (style.prefix, len(xml_offsets))
 
     # Although all the offsets listed in the XML file are loaded into memory,
     # the --passband option allows the user to specify which must be taken into
@@ -574,7 +554,7 @@ def main(arguments = None):
     # conforming file? Just to make sure, you know. In order to do that, simply
     # pass it to FITSImage, which will throw the appropiate exceptions if an
     # error is encountered.
-    reference_img = fitsimage.FITSImage(reference_img_path)
+    reference_img = fitsimage.FITSImage(xml_offsets.reference_path)
 
     # Light curves, which are our ultimate goal, can only have one differential
     # magnitude for each point in time. Therefore, we cannot have two or more

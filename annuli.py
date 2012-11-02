@@ -464,7 +464,7 @@ def main(arguments = None):
         # Needed in-memory to compute the median FWHM of each filter
         print "%sLoading XML offsets into memory..." % style.prefix ,
         sys.stdout.flush()
-        xml_offsets = xmlparse.XMLOffsetFile(offsets_xml_path)
+        xml_offsets = xmlparse.XMLOffsetFile.load(offsets_xml_path)
         print 'done.'
 
         for pfilter, path in pixels_files.iteritems():

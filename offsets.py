@@ -349,10 +349,10 @@ def main(arguments = None):
 
     print  "%sGenerating the output XML tree..." % style.prefix ,
     sys.stdout.flush()
-    xml_tree = xmlparse.XMLOffsetFile()
+    xml_tree = xmlparse.XMLOffsetFile(reference_img.path)
 
     for xml_offset in offsets_list:
-        xml_tree.add(xml_offset)
+        xml_tree.append(xml_offset)
     print 'done.'
 
     print "%sSaving the translation offsets to '%s'..." % \

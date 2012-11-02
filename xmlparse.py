@@ -105,13 +105,14 @@ class XMLOffset(object):
         return self.date - other.date
 
 
-class XMLOffsetFile(object):
-    """ Interface to write and read XMLOffsets to a standalone XML file.
+class XMLOffsetFile(list):
+    """ A collection of XMLOffset instances with the same reference image.
 
-    This class is used as a container of XMLOffset instances, whose XML
-    representation can be written to an XML file and also read from it. These
-    XML files are self-contained, which means that the DTD declaration is at
-    the top of the document, right after the XML declaration.
+    This class is used as a container of XMLOffset instances that share their
+    reference image, whose XML representation can be written to an XML file and
+    also read from it. These XML files are self-contained, which means that the
+    DTD declaration is at the top of the document, right after the XML
+    declaration.
 
     Note that, although kept in memory in seconds after the Unix epoch, dates
     are written to disk, for user's convenience, as a string of the following
@@ -124,12 +125,12 @@ class XMLOffsetFile(object):
     XML_DTD = [
     "",
     "<!DOCTYPE offsets [",
-    "<!ELEMENT offsets (offset+)>",
+    "<!ELEMENT offsets (reference, offset+)>",
     "<!ATTLIST offsets size CDATA  #REQUIRED>",
     "",
-    "<!ELEMENT offset (reference, shifted, x_offset, y_offset)>",
     "<!ELEMENT reference (#PCDATA)>",
-    "<!ELEMENT shifted (path, date, filter, object, fwhm)>",
+    "<!ELEMENT offset (image, x_offset, y_offset)>",
+    "<!ELEMENT image (path, date, filter, object, fwhm)>",
     "<!ELEMENT path (#PCDATA)>",
     "<!ELEMENT date (#PCDATA)>",
     "<!ELEMENT filter (#PCDATA)>",
@@ -142,74 +143,26 @@ class XMLOffsetFile(object):
     "]>",
     ""]
 
-    def __init__(self, path = None):
-        """ Load an XML file into memory, or create a new one """
-
-        if not path:
-            self.root = lxml.etree.Element('offsets', size = '0')
-        else:
-            # There is no need to open the file to parse it with lxml, but we
-            # do it here to check that it exists and is readable by the user.
-            # This gives us a clearer error message than what lxml would raise
-            # if it failed because the file did not exist (would be something
-            # like "Error reading file: failed to load external entity)
-            with open(path, 'r') as _: pass
-            self.root = lxml.etree.parse(path).getroot()
-
-    def __len__(self):
-        """ Return the number of XMLOffsets saved in the XML file """
-        return len(self.root)
+    def __init__(self, reference_path):
+        self.reference_path = reference_path
+        super(XMLOffsetFile, self).__init__()
 
     def add(self, offset):
-        """ Add an XMLOffset to the XML file.
+        """ Add an XMLOffset to the end of the XML file.
 
-        This updates the in-memory contents of the XML file, adding to it
-        another XMLOffset. These changes are not written to disk until the
-        XMLOffsetFile.dump method is called.
+        The method raises ValueError if the reference image of the XMLOffset is
+        different that that of the XMLOffsets already in the object. Although
+        it is also possible to add an offset using the insert method (as list
+        is the parent class), this method should be preferred as it guarantees
+        that all the XMLOffsets in the file have the same reference image.
 
         """
 
-        element = lxml.etree.Element('offset')
-        reference = lxml.etree.Element('reference')
-        reference.text = offset.reference
-        element.append(reference)
+        if offset.reference != self.reference_path:
+            msg = "reference image differs from that of XMLOffsetFile"
+            raise ValueError(msg)
 
-        shifted = lxml.etree.Element('shifted')
-
-        path_element = lxml.etree.Element('path')
-        path_element.text = offset.shifted
-        shifted.append(path_element)
-
-        date_element = lxml.etree.Element('date')
-        date_element.text = "%s UTC" % time.asctime(time.gmtime(offset.date))
-        shifted.append(date_element)
-
-        filter_element = lxml.etree.Element('filter')
-        filter_element.text = str(offset.filter)
-        shifted.append(filter_element)
-
-        object_element = lxml.etree.Element('object')
-        object_element.text = str(offset.object)
-        shifted.append(object_element)
-
-        fwhm_element = lxml.etree.Element('fwhm')
-        fwhm_element.text = str(offset.fwhm)
-        shifted.append(fwhm_element)
-
-        element.append(shifted)
-
-        x = lxml.etree.Element('x_offset', overlap = str(offset.x_overlap))
-        x.text = str(offset.x)
-        element.append(x)
-
-        y = lxml.etree.Element('y_offset', overlap = str(offset.y_overlap))
-        y.text = str(offset.y)
-        element.append(y)
-
-        self.root.append(element)
-
-        # Update the 'nimages' attribute of the root element
-        self.root.set('size', str(len(self)))
+        super(XMLOffsetFile, self).append(offset)
 
     def _toxml(self, encoding = 'utf-8'):
         """ Return the XML representation of the XMLOffsets.
@@ -217,12 +170,55 @@ class XMLOffsetFile(object):
         The method returns a string with the standalone XML representation of
         the XMLOffsets that have been added to the instance, ready to be
         written to disk. Includes the XML header and the DTD declaration.
-
         """
+
+        root = lxml.etree.Element('offsets')
+        root.set('size', str(len(self)))
+
+        reference_element = lxml.etree.Element('reference')
+        reference_element.text = self.reference_path
+        root.append(reference_element)
+
+        for offset in self:
+
+            element = lxml.etree.Element('offset')
+            image = lxml.etree.Element('image')
+
+            path_element = lxml.etree.Element('path')
+            path_element.text = offset.shifted
+            image.append(path_element)
+
+            date_str = time.asctime(time.gmtime(offset.date))
+            date_element = lxml.etree.Element('date')
+            date_element.text = "%s UTC" % date_str
+            image.append(date_element)
+
+            filter_element = lxml.etree.Element('filter')
+            filter_element.text = str(offset.filter)
+            image.append(filter_element)
+
+            object_element = lxml.etree.Element('object')
+            object_element.text = str(offset.object)
+            image.append(object_element)
+
+            fwhm_element = lxml.etree.Element('fwhm')
+            fwhm_element.text = str(offset.fwhm)
+            image.append(fwhm_element)
+            element.append(image)
+
+            x = lxml.etree.Element('x_offset', overlap = str(offset.x_overlap))
+            x.text = str(offset.x)
+            element.append(x)
+
+            y = lxml.etree.Element('y_offset', overlap = str(offset.y_overlap))
+            y.text = str(offset.y)
+            element.append(y)
+
+            root.append(element)
 
         kwargs = {'encoding' : encoding, 'xml_declaration': True,
                   'pretty_print' : True, 'standalone' : True}
-        xml_content = lxml.etree.tostring(self.root, **kwargs)
+        xml_content = lxml.etree.tostring(root, **kwargs)
         return setup_header(xml_content, self.XML_DTD)
 
     def dump(self, path, encoding = 'utf-8'):
@@ -238,42 +234,63 @@ class XMLOffsetFile(object):
             fd.write(self._toxml(encoding = encoding))
         validate_dtd(path)
 
-    def __getitem__(self, index):
-        """ Return the index-th XMLOffset in the XML file """
+    @classmethod
+    def load(cls, xml_path):
+        """ Load an XMLOffsetFile object from an XML file.
+
+        The opposite of dump, this class method parses 'xml_path', reading the
+        XMLOffsetFile object and returning it. The XML files generated by LEMON
+        are always standalone documents, meaning that the (DTD) Document Type
+        Definition is also included. If the XML file cannot be validated, the
+        appropriate exception will be raised.
+
+        """
+
+        # There is no need to open the file to parse it with lxml, but we do it
+        # here to check that it exists and is readable by the user. This gives
+        # us a clearer error message than what lxml would raise if it failed
+        # because the file did not exist (it would be something like "Error
+        # reading file: failed to load external entity)
+        with open(xml_path, 'r') as _: pass
+        root = lxml.etree.parse(xml_path).getroot()
 
         def get_child(element, tag):
             """ Return the first child of 'element' with tag 'tag' """
             return element.getiterator(tag = tag).next()
 
-        offset = self.root[index]
-        reference_path = get_child(offset, 'reference').text
+        reference_path = get_child(root, 'reference').text
+        offset_file = cls(reference_path)
 
-        shifted_element = get_child(offset, 'shifted')
-        shifted_path = get_child(shifted_element, 'path').text
+        for offset in root.getiterator(tag = 'offset'):
 
-        shifted_object = get_child(shifted_element, 'object').text
-        shifted_pfilter_str = get_child(shifted_element, 'filter').text
-        shifted_pfilter = passband.Passband(shifted_pfilter_str)
+            image_element = get_child(offset, 'image')
+            image_path = get_child(image_element, 'path').text
 
-        # From string to struct_time in UTC to Unix seconds
-        shifted_date_str = get_child(shifted_element, 'date').text
-        args = shifted_date_str, self.STRPTIME_FORMAT
-        shifted_date = calendar.timegm(time.strptime(*args))
+            image_object = get_child(image_element, 'object').text
+            image_pfilter_str = get_child(image_element, 'filter').text
+            image_pfilter = passband.Passband(image_pfilter_str)
 
-        shifted_fwhm = float(get_child(shifted_element, 'fwhm').text)
+            # From string to struct_time in UTC to Unix seconds
+            image_date_str = get_child(image_element, 'date').text
+            args = image_date_str, cls.STRPTIME_FORMAT
+            image_date = calendar.timegm(time.strptime(*args))
 
-        element = get_child(offset, 'x_offset')
-        x_offset = float(element.text)
-        x_overlap = int(element.get('overlap'))
+            image_fwhm = float(get_child(image_element, 'fwhm').text)
 
-        element = get_child(offset, 'y_offset')
-        y_offset = float(element.text)
-        y_overlap = int(element.get('overlap'))
+            element = get_child(offset, 'x_offset')
+            x_offset = float(element.text)
+            x_overlap = int(element.get('overlap'))
 
-        args = (reference_path, shifted_path, shifted_object,
-                shifted_pfilter, shifted_date, shifted_fwhm,
-                x_offset, y_offset, x_overlap, y_overlap)
-        return XMLOffset(*args)
+            element = get_child(offset, 'y_offset')
+            y_offset = float(element.text)
+            y_overlap = int(element.get('overlap'))
+
+            args = (reference_path, image_path, image_object,
+                    image_pfilter, image_date, image_fwhm,
+                    x_offset, y_offset, x_overlap, y_overlap)
+            offset_file.append(XMLOffset(*args))
+
+        return offset_file
 
 
 class CandidateAnnuli(object):
