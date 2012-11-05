@@ -237,16 +237,10 @@ parser.add_option_group(diffphot_group)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
-key_group.add_option(photometry.parser.get_option('--filterk'))
-key_group.add_option(photometry.parser.get_option('--rak'))
-key_group.add_option(photometry.parser.get_option('--deck'))
-key_group.add_option(photometry.parser.get_option('--datek'))
 key_group.add_option(photometry.parser.get_option('--expk'))
-key_group.add_option(photometry.parser.get_option('--airmk'))
 key_group.add_option(photometry.parser.get_option('--coaddk'))
 key_group.add_option(photometry.parser.get_option('--gaink'))
 key_group.add_option(photometry.parser.get_option('--uik'))
-key_group.add_option(photometry.parser.get_option('--fwhmk'))
 parser.add_option_group(key_group)
 
 def check_run(function, *args):
