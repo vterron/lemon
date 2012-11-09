@@ -454,7 +454,8 @@ class LEMONdB(object):
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS images (
-            unix_time  REAL PRIMARY KEY,
+            id         INTEGER PRIMARY KEY,
+            unix_time  REAL NOT NULL,
             path       TEXT NOT NULL,
             wavelength INTEGER NOT NULL,
             pparams_id INTEGER NOT NULL,
@@ -466,32 +467,33 @@ class LEMONdB(object):
             yoffset    REAL NOT NULL,
             yoverlap   INTEGER NOT NULL,
             FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
-            FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id))
+            FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
+            UNIQUE (unix_time, wavelength))
+
         ''')
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS photometry (
             id         INTEGER PRIMARY KEY,
             star_id    INTEGER NOT NULL,
-            unix_time  INTEGER NOT NULL,
+            image_id   INTEGER NOT NULL,
             magnitude  REAL NOT NULL,
             snr        REAL NOT NULL,
-            FOREIGN KEY (star_id)   REFERENCES stars(id),
-            FOREIGN KEY (unix_time) REFERENCES images(unix_time),
-            UNIQUE (star_id, unix_time))
+            FOREIGN KEY (star_id)  REFERENCES stars(id),
+            FOREIGN KEY (image_id) REFERENCES images(id),
+            UNIQUE (star_id, image_id))
         ''')
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS light_curves (
             id         INTEGER PRIMARY KEY,
             star_id    INTEGER NOT NULL,
-            unix_time  INTEGER NOT NULL,
+            image_id   INTEGER NOT NULL,
             magnitude  REAL NOT NULL,
             snr        REAL,
-            FOREIGN KEY (star_id)   REFERENCES stars(id),
-            FOREIGN KEY (unix_time) REFERENCES images(unix_time),
-            UNIQUE (star_id, unix_time))
-
+            FOREIGN KEY (star_id)  REFERENCES stars(id),
+            FOREIGN KEY (image_id) REFERENCES images(id),
+            UNIQUE (star_id, image_id))
         ''')
 
         self._execute('''
@@ -520,12 +522,12 @@ class LEMONdB(object):
 
         self._execute("CREATE INDEX IF NOT EXISTS phot_by_star "
                       "ON photometry(star_id)")
-        self._execute("CREATE INDEX IF NOT EXISTS phot_by_unix_time "
-                      "ON photometry(unix_time)")
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_unix_time "
-                      "ON images(unix_time)")
+        self._execute("CREATE INDEX IF NOT EXISTS phot_by_image_id "
+                      "ON photometry(image_id)")
         self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength "
                       "ON images(wavelength)")
+        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_and_unix_time "
+                      "ON images(wavelength, unix_time)")
         self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_and_wavelength "
                       "ON cmp_stars(star_id, wavelength)")
         self._execute("CREATE INDEX IF NOT EXISTS curve_by_star "
@@ -617,9 +619,10 @@ class LEMONdB(object):
     def add_image(self, image):
         """ Store an image into the database.
 
-        Raises DuplicateImageError if the Image has the same Unix time than
-        another instance already stored in the database (as the primary key
-        of the table of images is the date of observation).
+        Raises DuplicateImageError if the Image has the same Unix time and
+        photometric filter that another instance already stored in the LEMON
+        database (as these two values must be unique; that is, we cannot have
+        two or more images with the same Unix time and photometric filter).
 
         """
 
@@ -629,37 +632,68 @@ class LEMONdB(object):
         mark = self._savepoint()
         self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
-        t = (image.unix_time, image.path, image.pfilter.wavelength, pparams_id,
-             image.object, image.airmass, image.gain, image.xoffset,
-             image.xoverlap, image.yoffset, image.yoverlap)
+
+        t = (None, image.unix_time, image.path, image.pfilter.wavelength,
+             pparams_id, image.object, image.airmass, image.gain,
+             image.xoffset, image.xoverlap, image.yoffset, image.yoverlap)
         try:
             self._execute("INSERT INTO images "
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
             self._rollback_to(mark)
             unix_time = image.unix_time
+            pfilter = image.pfilter
+
             if __debug__:
                 self._execute("SELECT unix_time FROM images")
                 assert (unix_time,) in self._rows
-            msg = "Unix time %.4f (%s) already in database" % \
-                  (unix_time, time.ctime(unix_time))
+                self._execute("SELECT 1 "
+                              "FROM photometric_filters "
+                              "WHERE wavelength = ?", (pfilter.wavelength,))
+                assert [(1,)] == list(self._rows)
+
+            msg = "Image with Unix time %.4f (%s) and filter %s already in " \
+                  "database" % (unix_time, time.ctime(unix_time), pfilter)
             raise DuplicateImageError(msg)
 
-    def get_image(self, unix_time):
-        """ Return the Image observed at a Unix time. Raises
-        KeyError if there is no image for this observation date."""
+    def _get_image_id(self, unix_time, pfilter):
+        """ Return the ID of the Image with this Unix time and filter.
+        Raises KeyError if there is no image for this date and filter"""
 
+        t = (unix_time, pfilter.wavelength)
+        self._execute("SELECT id "
+                      "FROM images "
+                      "WHERE unix_time = ? "
+                      "  AND wavelength = ?", t)
+        rows = list(self._rows)
+        if not rows:
+            msg = "%.4f (%s) and filter %s"
+            args = unix_time, time.ctime(unix_time), pfilter
+            raise KeyError(msg % args)
+        else:
+            assert len(rows) == 1
+            assert len(rows[0]) == 1
+            return rows[0][0]
+
+    def get_image(self, unix_time, pfilter):
+        """ Return the Image observed at a Unix time and photometric filter.
+        Raises KeyError if there is no image for this date and filter"""
+
+        image_id = self._get_image_id(unix_time, pfilter)
         self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
                       "       i.airmass, i.gain, i.xoffset, i.yoffset, "
                       "       i.xoverlap, i.yoverlap, i.pparams_id "
                       "FROM images AS i, photometric_filters AS p "
                       "ON i.wavelength = p.wavelength "
-                      "WHERE i.unix_time = ?", (unix_time,))
+                      "WHERE i.id = ?", (image_id,))
+
         rows = list(self._rows)
         if not rows:
-            raise KeyError("%.4f (%s)" % (unix_time, time.ctime(unix_time)))
+            msg = "%.4f (%s) and filter %s"
+            args = unix_time, time.ctime(unix_time), pfilter
+            raise KeyError(msg % args)
         else:
             assert len(rows) == 1
             row = rows[0]
@@ -724,38 +758,41 @@ class LEMONdB(object):
         self._execute("SELECT id FROM stars ORDER BY id ASC")
         return list(x[0] for x in self._rows)
 
-    def add_photometry(self, star_id, unix_time, magnitude, snr):
-        """ Store the photometric record for a star at a given time.
+    def add_photometry(self, star_id, unix_time, pfilter, magnitude, snr):
+        """ Store the photometric record of a star at a given time and filter.
 
         Raises UnknownStarError if 'star_id' does not match the ID of any of
         the stars in the database, while UnknownImageError is raised if the
-        Unix time does not match that of any of the images previously added.
-        At most one photometric record can be stored for each star and image,
-        so the addition of a second record for the same star ID and Unix time
+        Unix time and photometric filter do not match those of any of the
+        images previously added. At most one photometric record can be stored
+        for each star, image and photometric filter; therefore, the addition of
+        a second record for the same star ID, Unix time and photometric filter
         causes DuplicatePhotometryError to be raised.
 
         """
 
         try:
+            # Raises KeyError if no image has this Unix time and filter
+            image_id = self._get_image_id(unix_time, pfilter)
+
             # Note the casts to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
-            t = (None, star_id, float(unix_time), float(magnitude), float(snr))
+            t = (None, star_id, image_id, float(magnitude), float(snr))
             self._execute("INSERT INTO photometry VALUES (?, ?, ?, ?, ?)", t)
+
+        except KeyError, e:
+            raise UnknownImageError(str(e))
 
         except sqlite3.IntegrityError:
             if not star_id in self.star_ids:
                 msg = "star with ID = %d not in database" % star_id
                 raise UnknownStarError(msg)
 
-            self._execute("SELECT unix_time FROM images")
-            if not (unix_time,) in self._rows:
-                msg = "image with Unix time = %.4f not in database" % unix_time
-                raise UnknownImageError(msg)
-
-            msg = "photometry for star ID = %d and Unix time = %4.f " \
-                  "already in database" % (star_id, unix_time)
-            raise DuplicatePhotometryError(msg)
+            msg = "photometry for star ID = %d, Unix time = %4.f " \
+                  "(%s) and filter %s already in database"
+            args = (star_id, unix_time, time.ctime(unix_time), pfilter)
+            raise DuplicatePhotometryError(msg % args)
 
     def get_photometry(self, star_id, pfilter):
         """ Return the photometric information of the star.
@@ -772,12 +809,12 @@ class LEMONdB(object):
             raise KeyError(msg)
 
         t = (star_id, pfilter.wavelength)
-        self._execute("SELECT phot.unix_time, phot.magnitude, phot.snr "
+        self._execute("SELECT img.unix_time, phot.magnitude, phot.snr "
                       "FROM photometry AS phot, images AS img "
-                      "ON phot.unix_time = img.unix_time "
+                      "ON phot.image_id = img.id "
                       "WHERE phot.star_id = ? "
                       "  AND img.wavelength = ? "
-                      "ORDER BY phot.unix_time ASC", t)
+                      "ORDER BY img.unix_time ASC", t)
 
         args = star_id, pfilter, list(self._rows)
         return DBStar.make_star(*args, dtype = self.dtype)
@@ -800,7 +837,7 @@ class LEMONdB(object):
         self._execute("""SELECT DISTINCT f.name
                          FROM photometry AS phot
                          INNER JOIN images AS img
-                         ON phot.unix_time = img.unix_time
+                         ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
                          ON img.wavelength = f.wavelength
                          WHERE phot.star_id = ?
@@ -828,46 +865,49 @@ class LEMONdB(object):
         self._execute("""SELECT DISTINCT f.name
                          FROM photometry AS phot
                          INNER JOIN images AS img
-                         ON phot.unix_time = img.unix_time
+                         ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
                          ON img.wavelength = f.wavelength
                          ORDER BY f.wavelength ASC """)
 
         return [passband.Passband(x[0]) for x in self._rows]
 
-    def _add_curve_point(self, star_id, unix_time, magnitude, snr):
+    def _add_curve_point(self, star_id, unix_time, pfilter, magnitude, snr):
         """ Store a point of the light curve of a star.
 
         Raises UnknownStarError if 'star_id' does not match the ID of any of
         the stars in the database, while UnknownImageError is raised if the
-        Unix time does not match that of any of the images previously added.
-        At most one light curve point can be stored for each star and image,
-        so the addition of a second point for the same star ID and Unix time
-        causes DuplicateLightCurvePointError to be raised.
+        Unix time and photometric filter do not match those of any of the
+        images previously added. At most one light curve point can be stored
+        for each star and image, so the addition of a second point for the same
+        star ID, Unix time and filter causes DuplicateLightCurvePointError to
+        be raised.
 
         """
 
         try:
+            # Raises KeyError if no image has this Unix time and filter
+            image_id = self._get_image_id(unix_time, pfilter)
+
             # Note the casts to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
-            t = (None, star_id, float(unix_time), float(magnitude), float(snr))
+            t = (None, star_id, image_id, float(magnitude), float(snr))
             self._execute("INSERT INTO light_curves "
                           "VALUES (?, ?, ?, ?, ?)", t)
+
+        except KeyError, e:
+            raise UnknownImageError(str(e))
 
         except sqlite3.IntegrityError:
             if not star_id in self.star_ids:
                 msg = "star with ID = %d not in database" % star_id
                 raise UnknownStarError(msg)
 
-            self._execute("SELECT unix_time FROM images")
-            if not (unix_time,) in self._rows:
-                msg = "image with Unix time = %.4f not in database" % unix_time
-                raise UnknownImageError(msg)
-
-            msg = "light curve point for star ID = %d and Unix time = %4.f " \
-                  "already in database" % (star_id, unix_time)
-            raise DuplicateLightCurvePointError(msg)
+            msg = "light curve point for star ID = %d, Unix time = %4.f " \
+                  "(%s) and filter %s already in database"
+            args = (star_id, unix_time, time.ctime(unix_time), pfilter)
+            raise DuplicateLightCurvePointError(msg % args)
 
     def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight):
         """ Add a comparison star to the light curve of a star.
@@ -920,9 +960,10 @@ class LEMONdB(object):
         used in advance to store the stars with these IDs.
 
         (2) UnknownImageError if any of the Unix times in the light curve does
-        not match that of any of the images in the database. Therefore, before
-        a light curve is stored, the Images to which its points refer must have
-        been added with LEMONdB.add_image.
+        not match that of any of the images in the database with the same
+        photometric filter. Therefore, before a light curve is stored, the
+        Images to which its points refer must have been added with the
+        LEMONdB.add_image method.
 
         (3) DuplicateLightCurvePointError if the light curve has more than one
         point for the same Unix time, or if the light curve of a star is added
@@ -936,8 +977,9 @@ class LEMONdB(object):
 
         mark = self._savepoint()
         try:
-            for point in light_curve:
-                self._add_curve_point(star_id, *point)
+            for unix_time, magnitude, snr in light_curve:
+                args = star_id, unix_time, light_curve.pfilter, magnitude, snr
+                self._add_curve_point(*args)
             for weight in light_curve.weights():
                 self._add_cmp_star(star_id, light_curve.pfilter, *weight)
             self._release(mark)
@@ -967,12 +1009,12 @@ class LEMONdB(object):
 
         # Extract the points of the light curve ...
         t = (star_id, pfilter.wavelength)
-        self._execute("SELECT curve.unix_time, curve.magnitude, curve.snr "
+        self._execute("SELECT img.unix_time, curve.magnitude, curve.snr "
                       "FROM light_curves AS curve, images AS img "
-                      "ON curve.unix_time = img.unix_time "
+                      "ON curve.image_id = img.id "
                       "WHERE curve.star_id = ? "
                       "  AND img.wavelength = ? "
-                      "ORDER BY curve.unix_time ASC", t)
+                      "ORDER BY img.unix_time ASC", t)
         curve_points = list(self._rows)
 
         if curve_points:

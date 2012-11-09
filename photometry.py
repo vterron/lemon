@@ -995,7 +995,8 @@ def main(arguments = None):
                                   (pimage.path, star_id, snr))
                     logging.debug("%s: storing photometry for star %d in database" % \
                                   (pimage.path, star_id))
-                    output_db.add_photometry(star_id, pimage.unix_time, magnitude, snr)
+                    args = star_id, pimage.unix_time, pimage.pfilter, magnitude, snr
+                    output_db.add_photometry(*args)
                     logging.debug("%s: photometry for star %d successfully stored" % \
                                   (pimage.path, star_id))
 

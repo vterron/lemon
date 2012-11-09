@@ -83,6 +83,13 @@ def runix_times(size):
             rtimes.append(utime)
     return rtimes
 
+def different_runix_time(utimes):
+    """ Return a random Unix time not in 'utimes' """
+    while True:
+        t = ImageTest.random().unix_time
+        if t not in utimes:
+            return t
+
 class DBStarTest(unittest.TestCase):
 
     MIN_ID = 1     # Minimum ID for random DBStars
@@ -509,22 +516,72 @@ class ImageTest(unittest.TestCase):
                 gain, xoffset, yoffset, xoverlap, yoverlap)
 
     @classmethod
-    def nrandom(cls, size, pfilter = None):
+    def nrandom(cls, size, pfilter = None, simult_prob = 0.5):
         """ Return a generator which steps through 'size' random Images.
 
-        The random Image instances are guaranteed to have different Unix
-        times. If 'pfilter' is given, it is used as the photometric filter,
-        instead of a random one -- though it could be argued then that they
-        are not completely 'random'.
+        The random Image instances may have the same Unix time, but in these
+        cases they are guaranteed to have a different photometric filter, to
+        simulate a campaign with simultaneous observations. In other words: in
+        no case two returned Images may have the same Unix time and photometric
+        filter.
+
+        If 'pfilter' is given, it is set as the photometric filter of all the
+        Images, instead of using a random one for each image. When this is the
+        case it is not possible to have simultaneous observations (as all the
+        Images have the same filter), so all the Unix times will be different.
+
+        The 'simult_prob' keyword parameter defines the probability that each
+        random generated image has the same Unix time, but a different filter,
+        that one of the Images previously returned by the method. A value of
+        0.5, for example, means that on average half of the random Images will
+        share their Unix time with another Image.
 
         """
 
-        for unix_time in runix_times(size):
+        # Map each filter to the Unix times that have been used for it
+        used_utimes = collections.defaultdict(set)
+
+        for index, unix_time in enumerate(runix_times(size)):
             args = list(cls.random_data())
             args[3] = unix_time
+
+            img = Image(*args)
+
+            # No simultaneus observations if all the images will have the same
+            # photometric filter, or if there will be simultaneous ones but
+            # this image is (a) either the first one, a case in which there is
+            # no previous image whose Unix time we can reuse or (b) not chosen
+            # randomly to have a duplicate Unix time.
+
             if pfilter:
-                args[1] = pfilter
-            yield Image(*args)
+                img.pfilter = pfilter
+
+            elif bool(used_utimes) and random.random() < simult_prob:
+
+                # Reuse the Unix time of one the Images already returned, but
+                # we need to find a filter for which it has not been used yet.
+                # Give up, of course, if all the photometric filters have been
+                # already used for this Unix time.
+
+                all_utimes = set().union(*used_utimes.itervalues())
+                img.unix_time = random.choice(list(all_utimes))
+
+                all_pfilters = passband.Passband.all()
+                random.shuffle(all_pfilters)
+                for duplicate_pfilter in all_pfilters:
+                    if img.unix_time not in used_utimes[duplicate_pfilter]:
+                        img.pfilter = duplicate_pfilter
+                        break
+
+                # This point is reached only if no photometric filter was
+                # available for this Unix time. Nothing we can do here.
+
+            used_utimes[img.pfilter].add(img.unix_time)
+            yield img
+
+        if __debug__:
+            all_utimes = set().union(*used_utimes.itervalues())
+            assert len(all_utimes) <= size
 
     @classmethod
     def random(cls, pfilter = None):
@@ -965,34 +1022,63 @@ class LEMONdBTest(unittest.TestCase):
         db = LEMONdB(':memory:')
         size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
 
-        # Add the random Images to the database. Use a dictionary to map each
-        # Unix time to its image, in order to be able to fetch them later
-        images = {}
-        for img in ImageTest.nrandom(size):
-            images[img.unix_time] = img
+        # Add the random Images to the database. Use a two-level dictionary to
+        # map each photometric filter to a Unix time to an Image, so that we
+        # know what we have added and can later be able to fetch them from the
+        # LEMONdB and check that they are the same.
+        added_images = collections.defaultdict(dict)
+
+        for index, img in enumerate(ImageTest.nrandom(size)):
+            added_images[img.pfilter][img.unix_time] = img
             db.add_image(img)
-        assert len(images) == size
 
-        items = images.items()
-        # Do not fetch them in the same order in which they were added
-        random.shuffle(items)
-        for unix_time, input_img in items:
-            output_img = db.get_image(unix_time)
-            self.assertTrue(ImageTest.equal(input_img, output_img))
+        # Add the lengths of the second-level dictionaries (i.e., find the
+        # number of images that have been added to the LEMONdB, regardless
+        # of their photometric filter and any duplicate Unix time)
+        assert sum([len(p) for p in added_images.itervalues()]) == size
 
-        # LEMONdB.get_image raises KeyError if there is no Image for a
-        # Unix time. We need to generate one not already in the database.
-        while True:
-            unix_time = ImageTest.random().unix_time
-            if unix_time not in images.iterkeys():
-                self.assertRaises(KeyError, db.get_image, unix_time)
-                break
+        # Extract the Images from the LEMONdB and check that the returned
+        # objects are exactly equal to what we added previously
+        for pfilter in added_images.iterkeys():
+            for unix_time, input_img in added_images[pfilter].iteritems():
+                output_img = db.get_image(unix_time, pfilter)
+                self.assertTrue(ImageTest.equal(input_img, output_img))
+
+        # LEMONdB.get_image raises KeyError if there is no Image with the
+        # specified Unix time *and* photometric filter. Try the three possible
+        # combinations: missing Unix time, missing photometric filter, or both.
+
+        # (1) Missing Unix time. To do this we need a set with the Unix times
+        # of all the Images that have been added to the LEMONdB, regardless of
+        # their photometric filter; in other words, we need to extract all the
+        # keys of the second-level dictionary.
+        all_utimes = itertools.chain(*[x.keys() for x in added_images.values()])
+        nonexistent_unix_time = different_runix_time(all_utimes)
+        pfilter = random.choice(added_images.keys())
+        args = nonexistent_unix_time, pfilter
+        self.assertRaises(KeyError, db.get_image, *args)
+
+        # (2) Missing photometric filter. We need a fresh LEMONdB here as all
+        # the photometric filters that the Passband class can encapsulate may
+        # have been used when we populated the database in the above code.
+        db = LEMONdB(':memory:')
+        image = ImageTest.random()
+        db.add_image(image)
+
+        nonexistent_filter = image.pfilter.different()
+        args = image.unix_time, nonexistent_filter
+        self.assertRaises(KeyError, db.get_image, *args)
+
+        # (3) Missing Unix time *and* photometric filter
+        nonexistent_unix_time = different_runix_time([image.unix_time])
+        args = nonexistent_unix_time, nonexistent_filter
+        self.assertRaises(KeyError, db.get_image, *args)
 
         # LEMONdB.add_image raises DuplicateImageError if we add an image with
-        # the same date of observation than another image that was previously
-        # added. We also need to verify that the insertions of the filter and
-        # photometric parameters of the image which raises the Exception are
-        # rolled back, so that the database is not modified in case of error.
+        # the same date of observation *and* photometric filter that another
+        # image that was previously added. In these cases we need to verify
+        # that any possible insertions into the tables are rolled back, so
+        # that the database is not modified in case of an error.
         db = LEMONdB(':memory:')
         img1 = ImageTest.random()
         db.add_image(img1)
@@ -1013,22 +1099,23 @@ class LEMONdBTest(unittest.TestCase):
             pparams = tuple(db._rows)
             return images, filters, pparams
 
-        # Get another random Image with the same Unix time but different filter
-        # and photometric parameters. If everything went well, the insertion of
-        # the image would also store them (adding new rows) in the database. We
-        # need them to be different as otherwise, since the database is not
-        # modified when an already-existing filter of photometric parameter is
-        # added, we would have no way of knowing whether their insertion was
-        # effectively rolled back.
-        img2 = ImageTest.random(pfilter = img1.pfilter.different())
+        # Get another random Image with the same Unix time and photometric
+        # filter but different photometric parameters. If everything went well,
+        # the addition of the image would insert new rows into the tables. We
+        # need the photometric parameters to be different as otherwise we would
+        # have no way of knowing whether their insertion was rolled back.
+
+        img2 = ImageTest.random(pfilter = img1.pfilter)
         img2.unix_time = img1.unix_time
+
+        _eq_ = PhotometricParametersTest.equal
         while True:
             img2.pparams = PhotometricParametersTest.random()
-            _eq_ = PhotometricParametersTest.equal
             if not _eq_(img1.pparams, img2.pparams):
                 break
 
-        assert img1.pfilter != img2.pfilter
+        assert img1.unix_time == img2.unix_time
+        assert img1.pfilter == img2.pfilter
         assert img1.pparams != img2.pparams
 
         before_tables = tables_status(db)
@@ -1155,180 +1242,138 @@ class LEMONdBTest(unittest.TestCase):
         johnson_B = passband.Passband('B')
         johnson_V = passband.Passband('V')
 
-        star1_id = 1
-        star2_id = 2
+        star_ids = [star1_id, star2_id] = range(2)
+        for id_ in star_ids:
+            star_info =  self.random_star_info(id_ = id_)
+            db.add_star(*star_info)
 
-        star1_info = self.random_star_info(id_ = star1_id)
-        star2_info = self.random_star_info(id_ = star2_id)
+        # Note that the second image precedes the first one in time, and that
+        # the third and fourth have the same Unix time. This is fine as long
+        # as they have different photometric filters, as the LEMONdB class
+        # supports simultaneous observations.
 
-        db.add_star(*star1_info)
-        db.add_star(*star2_info)
-
-        # Note that img2 precedes img1 in time
         img1 = ImageTest.random(johnson_B)
         img1.unix_time = 100000
         img2 = ImageTest.random(johnson_B)
         img2.unix_time = 90000
         img3 = ImageTest.random(johnson_V)
-        img3.unix_time = 15400
+        img3.unix_time = 150400
+        img4 = ImageTest.random(johnson_B)
+        img4.unix_time = img3.unix_time
 
-        db.add_image(img1)
-        db.add_image(img2)
-        db.add_image(img3)
+        images = [img1, img2, img3, img4]
+        for img in images:
+            db.add_image(img)
 
-        db.add_photometry(star1_id, img1.unix_time, 10.1, 150)
-        db.add_photometry(star1_id, img2.unix_time, 10.8, 125)
-        db.add_photometry(star1_id, img3.unix_time, 9.5, 175)
+        db.add_photometry(star1_id, img1.unix_time, img1.pfilter, 10.1, 150)
+        db.add_photometry(star1_id, img2.unix_time, img2.pfilter, 10.8, 125)
+        db.add_photometry(star1_id, img3.unix_time, img3.pfilter, 9.5, 175)
+        db.add_photometry(star1_id, img4.unix_time, img4.pfilter, 7.3, 200)
 
-        db.add_photometry(star2_id, img1.unix_time, 7.1, 350)
-        db.add_photometry(star2_id, img2.unix_time, 7.9, 315)
-        db.add_photometry(star2_id, img3.unix_time, 5.8, 550)
+        db.add_photometry(star2_id, img1.unix_time, img1.pfilter, 7.1, 350)
+        db.add_photometry(star2_id, img2.unix_time, img2.pfilter, 7.9, 315)
+        db.add_photometry(star2_id, img3.unix_time, img3.pfilter, 5.8, 550)
+        db.add_photometry(star2_id, img4.unix_time, img4.pfilter, 5.9, 450)
 
-        # Records in the DBStars are returned sorted by their Unix time
+        # The records in DBStars are sorted by their Unix time; therefore, the
+        # magnitudes of the stars in the second Image should come before those
+        # in the first one, as Unix time 90,000 < 100,000.
         star1_B = db.get_photometry(star1_id, johnson_B)
-        self.assertEqual(len(star1_B), 2)
+        self.assertEqual(len(star1_B), 3)
+
         self.assertEqual(star1_B.time(0), img2.unix_time)
         self.assertEqual(star1_B.mag(0), 10.8)
         self.assertEqual(star1_B.snr(0), 125)
+
         self.assertEqual(star1_B.time(1), img1.unix_time)
         self.assertEqual(star1_B.mag(1), 10.1)
         self.assertEqual(star1_B.snr(1), 150)
 
+        self.assertEqual(star1_B.time(2), img4.unix_time)
+        self.assertEqual(star1_B.mag(2), 7.3)
+        self.assertEqual(star1_B.snr(2), 200)
+
         star1_V = db.get_photometry(star1_id, johnson_V)
         self.assertEqual(len(star1_V), 1)
+
         self.assertEqual(star1_V.time(0), img3.unix_time)
         self.assertEqual(star1_V.mag(0), 9.5)
         self.assertEqual(star1_V.snr(0), 175)
 
         star2_B = db.get_photometry(star2_id, johnson_B)
-        self.assertEqual(len(star2_B), 2)
+        self.assertEqual(len(star2_B), 3)
+
         self.assertEqual(star2_B.time(0), img2.unix_time)
         self.assertEqual(star2_B.mag(0), 7.9)
         self.assertEqual(star2_B.snr(0), 315)
+
         self.assertEqual(star2_B.time(1), img1.unix_time)
         self.assertEqual(star2_B.mag(1), 7.1)
         self.assertEqual(star2_B.snr(1), 350)
+
+        self.assertEqual(star2_B.time(2), img4.unix_time)
+        self.assertEqual(star2_B.mag(2), 5.9)
+        self.assertEqual(star2_B.snr(2), 450)
 
         star2_V = db.get_photometry(star2_id, johnson_V)
         self.assertEqual(star2_V.time(0), img3.unix_time)
         self.assertEqual(star2_V.mag(0), 5.8)
         self.assertEqual(star2_V.snr(0), 550)
 
-        # ... and the random test case
-        db = LEMONdB(':memory:')
-        nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
-        nimages = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
-        images = list(ImageTest.nrandom(nimages))
-
-        # Add 'nimages' random Images to the database. Use a dictionary
-        # to reserve map each Unix image to its Image instance.
-        utime_to_img = {}  # map each Unix time to its image
-        for img in images:
-            utime_to_img[img.unix_time] = img
-            db.add_image(img)
-
-        # Three-level dictionary: map each star ID to a photometric filter
-        # to a dictionary which maps each Unix time to a two-element tuple
-        # with the magnitude and SNR of the star at that time and filter.
-        observations = \
-            collections.defaultdict(lambda: collections.defaultdict(dict))
-
-        unix_times = [img.unix_time for img in images]
-        assert sorted(unix_times) == sorted(utime_to_img.keys())
-
-        # Reminder: the probability of a star being observed in each image is
-        # OBSERVED_PROB. We do not know for which images this will happen.
-        for star in self.random_stars(nstars, unix_times):
-
-            # Save the coordinates and magnitude of this star
-            star_info = self.random_star_info(id_ = star.id)
-            db.add_star(*star_info)
-
-            for index in xrange(len(star)):
-                utime = star.time(index)
-                mag = star.mag(index)
-                snr = star.snr(index)
-
-                # Keep track of the photometric record to be added
-                pfilter = utime_to_img[utime].pfilter
-                observations[star.id][pfilter][utime] = (mag, snr)
-
-                db.add_photometry(star.id, utime, mag, snr)
-
-            obs_items = observations.items()
-            random.shuffle(obs_items)
-            for star_id, star_pfilters in obs_items:
-
-                pfilter_items = star_pfilters.items()
-                random.shuffle(pfilter_items)
-                for pfilter, unix_times in pfilter_items:
-
-                    star = db.get_photometry(star_id, pfilter)
-
-                    # The DBStar must have the expected number of records...
-                    self.assertEqual(len(star), len(unix_times))
-
-                    # ... which must be sorted by their date of observation.
-                    for index in xrange(len(star) - 1):
-                        self.assertTrue(star.time(index) < star.time(index + 1))
-
-                    for index in xrange(len(star)):
-                        utime = star.time(index)
-                        self.assertTrue(utime in unix_times)
-
-                        imag, isnr = observations[star_id][pfilter][utime]
-                        omag, osnr = star.mag(index), star.snr(index)
-                        self.assertAlmostEqual(imag, omag)
-                        self.assertAlmostEqual(isnr, isnr)
-
-        # LEMONdB.add_photometry raises UnknownStarError if 'star_id'
-        # does not match the ID of any of the stars in the database
-        db = LEMONdB(':memory:')
-        johnson_V = passband.Passband('V')
-
+        # LEMONdB.add_photometry raises UnknownStarError if 'star_id' does not
+        # match the ID of any of the stars in the database
         star_info = self.random_star_info()
-        star_id = star_info[0]
+        star_id = star_info[0] = 2
+        self.assertTrue(star_id not in db.star_ids)
 
-        img = ImageTest.random(pfilter = johnson_V)
+        img = ImageTest.random(pfilter = johnson_B)
         db.add_image(img)
 
-        args = [star_id, img.unix_time, 14.5, 100]
+        args = [star_id, img.unix_time, img.pfilter, 14.5, 100]
         self.assertRaises(UnknownStarError, db.add_photometry, *args)
-        # Let's add the star and see how it now works
+        # But if the star is added before, it works, of course
         db.add_star(*star_info)
         db.add_photometry(*args)
 
-        # UnknownImageError is raised if the given Unix time is
-        # not that of any of the images stored in the database.
-        args[1] += 1000 # get a different Unix time
+        # The UnknownImageError exception is raised by LEMONdB.add_photometry
+        # if there is no Image with the specified Unix time *and* photometric
+        # filter. Try the three possible combinations: missing Unix time,
+        # missing photometric filter, or both.
+
+        # (1) Missing Unix time
+        nonexistent_unix_time = different_runix_time([img.unix_time])
+        args = star_id, nonexistent_unix_time, img.pfilter, 15.4, 125
+        self.assertRaises(UnknownImageError, db.add_photometry, *args)
+
+        # (2) Missing photometric filter
+        nonexistent_filter = passband.Passband('Z')
+        self.assertTrue(nonexistent_filter not in db.pfilters)
+        args = star_id, img.unix_time, nonexistent_filter, 16.5, 175
+        self.assertRaises(UnknownImageError, db.add_photometry, *args)
+
+        # (3) Missing Unix time *and* photometric filter
+        args = star_id, nonexistent_unix_time, nonexistent_filter, 17.8, 235
         self.assertRaises(UnknownImageError, db.add_photometry, *args)
 
         # DuplicatePhotometryError is raised if we attempt to add a second
-        # photometric record for the same star and image (Unix time)
-        args = [star_id, img.unix_time, 13.2, 125]
+        # record for the same star, Unix time and photometric filter (that is,
+        # if more than one photometric record is added for the same Image).
+        args = [star_id, img.unix_time, img.pfilter, 13.2, 125]
         self.assertRaises(DuplicatePhotometryError, db.add_photometry, *args)
 
         # LEMONdB.get_photometry raises KeyError if the star ID does not
         # match that of any of the stars already stored in the database
-        db = LEMONdB(':memory:')
-        johnson_R = passband.Passband('R')
-        johnson_I = passband.Passband('I')
-        star_info = self.random_star_info()
-        star_id = star_info[0]
-        db.add_star(*star_info)
+        nonexistent_id = 3
+        self.assertTrue(nonexistent_id not in db.star_ids)
+        args = nonexistent_id, johnson_V
+        self.assertRaises(KeyError, db.get_photometry, *args)
 
-        img = ImageTest.random(pfilter = johnson_R)
-        db.add_image(img)
-        db.add_photometry(star_id, img.unix_time, 14.5, 150)
-        did = star_id + 1 # get a different star ID, not in the database
-        self.assertRaises(KeyError, db.get_photometry, did, johnson_R)
-
-        # If the star has no records, an empty DBStar is returned
-        empty_star = db.get_photometry(star_id, johnson_I)
+        # If the star has no records in a filter, an empty DBStar is returned
+        empty_star = db.get_photometry(star_id, johnson_V)
         self.assertEqual(len(empty_star), 0)
 
-
     def test_pfilters_and_star_pfilters(self):
+
         db = LEMONdB(':memory:')
 
         db.rimage = ImageTest.random()
@@ -1348,8 +1393,10 @@ class LEMONdBTest(unittest.TestCase):
         # see how the list of filters in which each star (and also the database
         # as a whole) has been observed is correctly updated as images with
         # different filters are added.
+
         nimages = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
         images = list(ImageTest.nrandom(nimages))
+
         for img in images:
             db.add_image(img)
 
@@ -1365,7 +1412,7 @@ class LEMONdBTest(unittest.TestCase):
                 if random.random() < self.OBSERVED_PROB:
                     mag = random.uniform(self.MIN_MAG, self.MAX_MAG)
                     snr = random.uniform(self.MIN_SNR, self.MAX_SNR)
-                    db.add_photometry(star_id, img.unix_time, mag, snr)
+                    db.add_photometry(star_id, img.unix_time, img.pfilter, mag, snr)
                     stars_pfilters[star_id].add(img.pfilter)
                     seen_pfilters.add(img.pfilter)
 
@@ -1432,15 +1479,6 @@ class LEMONdBTest(unittest.TestCase):
         # needed. Again, we need to ensure that when an error occurs
         # none of the tables of the database is modified.
 
-        star_id = 1
-        cstar1_id = 2
-        cstar2_id = 3
-        cstars = [cstar1_id, cstar2_id]
-        pfilter = passband.Passband.random()
-        images = list(ImageTest.nrandom(2, pfilter = pfilter))
-        curve = LightCurveTest.random(cstars = cstars)
-        curve = LightCurveTest.populate(curve, images)
-
         def tables_status(db):
             """ Return three sorted tuples with all the information stored in
             the LIGHT_CURVES, CMP_STARS and PHOTOMETRIC_FILTERS tables of the
@@ -1469,53 +1507,68 @@ class LEMONdBTest(unittest.TestCase):
             for img in images:
                 db.add_image(img)
 
-        # Raises UnknownStarError ('star_id' not in database)
+
         db = LEMONdB(':memory:')
-        args = star_id, curve
+        star1_id, star2_id, star3_id = range(3)
+        pfilter = passband.Passband.random()
+        # Three random Images in the same filter, for use only two
+        images = list(ImageTest.nrandom(3, pfilter = pfilter))
+        img1, img2, img3 = images
+        add_test_img(db, img1, img2)
+        kwargs = dict(pfilter = pfilter, cstars = [star2_id, star3_id])
+        curve = LightCurveTest.random(**kwargs)
+        curve = LightCurveTest.populate(curve, [img1, img2])
+
+        # Raises UnknownStarError ('star1_id' not in database)
+        args = star1_id, curve
+        before_tables = tables_status(db)
+        self.assertTrue(star1_id not in db.star_ids)
+        self.assertRaises(UnknownStarError, db.add_light_curve, *args)
+        self.assertEqual(tables_status(db), before_tables)
+
+        # Let's add the star and one of the comparison stars. The method must
+        # fail, as one of the comparison stars, 'star2_id', is still missing.
+        # Once we add it, the light curve can finally be added to the LEMONdB.
+        add_test_star(db, star1_id, star2_id)
         before_tables = tables_status(db)
         self.assertRaises(UnknownStarError, db.add_light_curve, *args)
         self.assertEqual(tables_status(db), before_tables)
 
-        # Let's add two of the stars, as well as all the images
-        add_test_star(db, star_id, cstar1_id)
-        add_test_img(db, *images)
-
-        # Still fails (one of the comparison stars, 'cstar2_id' is still
-        # missing); once we add it, the curve can finally be added to the
-        # database
-
-        before_tables = tables_status(db)
-        self.assertRaises(UnknownStarError, db.add_light_curve, *args)
-        self.assertEqual(tables_status(db), before_tables)
-
-        add_test_star(db, cstar2_id)
+        add_test_star(db, star3_id)
         db.add_light_curve(*args) # works!
 
-        # UnknownImageError raised if the stars are in the LEMONdB but
-        # not one (or more) of the images to which the light curve refers
-        db = LEMONdB(':memory:')
-        add_test_star(db, star_id, *cstars)
-        add_test_img(db, images[0]) # second Image is not added
+        # UnknownImageError raised if the stars are in the LEMONdB but not one
+        # (or more) of the images to which the light curve refers; we use the
+        # light curve of the second star, which has the third as comparison but
+        # records for the three images (although only the first two have been
+        # added to the LEMONdB).
 
+        kwargs = dict(pfilter = pfilter, cstars = [star3_id])
+        curve = LightCurveTest.random(**kwargs)
+        curve = LightCurveTest.populate(curve, [img1, img2, img3])
+
+        args = star2_id, curve
         before_tables = tables_status(db)
         self.assertRaises(UnknownImageError, db.add_light_curve, *args)
         self.assertEqual(tables_status(db), before_tables)
 
-        add_test_img(db, images[1])
+        add_test_img(db, img3)
         db.add_light_curve(*args) # works!
 
         # DuplicateLightCurvePointError raised if the light curve has more than
-        # one point for the same Unix time, or if the light curve of a star is
-        # added more than once.
+        # one point for the same Unix time, or if more than one light curve per
+        # star and filter is attempted to be added.
 
         # Attempt to insert it again... (and fail)
         before_tables = tables_status(db)
         self.assertRaises(DuplicateLightCurvePointError, db.add_light_curve, *args)
         self.assertEqual(tables_status(db), before_tables)
 
-        db = LEMONdB(':memory:')
-        add_test_star(db, star_id, *cstars)
-        add_test_img(db, *images)
+        # Generate the light curve of the third star (uses both the first and
+        # second as comparison), but insert two points with the same Unix time
+        kwargs = dict(pfilter = pfilter, cstars = [star1_id, star2_id])
+        curve = LightCurveTest.random(**kwargs)
+        curve = LightCurveTest.populate(curve, [img1, img2, img3])
 
         # Reuse the Unix time of the last point
         point = list(LightCurveTest.random_point())
@@ -1523,27 +1576,31 @@ class LEMONdBTest(unittest.TestCase):
         duplicate_curve = copy.deepcopy(curve)
         duplicate_curve.add(*point)
 
-        dargs = star_id, duplicate_curve
+        args = db.add_light_curve, star3_id, duplicate_curve
         before_tables = tables_status(db)
-        self.assertRaises(DuplicateLightCurvePointError, db.add_light_curve, *dargs)
+        self.assertRaises(DuplicateLightCurvePointError, *args)
         self.assertEqual(tables_status(db), before_tables)
 
-        db.add_light_curve(*args) # the good one works, of course!
+        db.add_light_curve(star3_id, curve) # the good one works, of course!
 
-        # ValueError if the star uses itself as one of its comparison stars.
-        db = LEMONdB(':memory:')
-        add_test_star(db, star_id, *cstars)
-        add_test_img(db, *images)
-        curve.cstars[-1] = star_id
+        # ValueError if the star uses itself as one of its comparison stars; to
+        # test this, we add to the LEMONdB a new star (the fourth one), and use
+        # a light curve where it has itself as one of the comparison stars.
+        star4_id = 3
+        add_test_star(db, star_id, star4_id)
+        kwargs = dict(pfilter = pfilter, cstars = [star2_id, star4_id])
+        curve = LightCurveTest.random(**kwargs)
+        curve = LightCurveTest.populate(curve, [img1, img2, img3])
 
+        args = star4_id, curve
         before_tables = tables_status(db)
         self.assertRaises(ValueError, db.add_light_curve, *args)
         self.assertEqual(tables_status(db), before_tables)
 
-        # LEMONdB.get_light_curve, on the other hand, raises
-        # KeyError if the star does not exist in the database...
+        # The LEMONdB.get_light_curve method, on the other hand, raises
+        # KeyError if the star with the given ID is not in the database...
         nstar_id = 17 # any other new value would work
-        assert nstar_id not in db.star_ids
+        self.assertTrue(nstar_id not in db.star_ids)
         self.assertRaises(KeyError, db.get_light_curve, nstar_id, pfilter)
 
         # ... and returns None if the star exists but there is no curve
@@ -1553,9 +1610,11 @@ class LEMONdBTest(unittest.TestCase):
         # Finally, let's corrupt the database manually: insert a point for the
         # light curve of the star (using the private method _add_curve_point)
         # and leave the database without information on the comparison stars.
-        db._add_curve_point(nstar_id, images[0].unix_time, 7.4, 100)
-        args = db.get_light_curve, nstar_id, pfilter
-        self.assertRaises(sqlite3.IntegrityError, *args)
+        # After this, LEMONdB.get_light_curve must raise sqlite3.IntegrityError
+        args = nstar_id, img1.unix_time, img1.pfilter, 7.4, 100
+        db._add_curve_point(*args)
+        args = nstar_id, pfilter
+        self.assertRaises(sqlite3.IntegrityError, db.get_light_curve, *args)
 
     def test_add_and_get_period_and_get_periods(self):
         db = LEMONdB(':memory:')
