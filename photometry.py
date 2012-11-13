@@ -643,24 +643,7 @@ def main(arguments = None):
 
     if not fixed_annuli:
 
-        try:
-            reference_fwhm = xml_offsets.reference['fwhm']
-        except KeyError:
-            # The FWHM of the image was not found at the FITS header. This may
-            # happen, even if all the images went through the seeing.py module,
-            # if the FWHM keyword has whitespaces (such as "LEMON FWHM"), since
-            # SWarp, or at least its version 2.19.1, seems not to propagate
-            # them. Better than aborting the execution, and until this bug (?)
-            # is fixed, we compute it now, using the default parameters of
-            # seeing.py.
-
-            seeing_default_opts = seeing.parser.defaults
-            fwhm_per  = seeing_default_opts['per']
-            fwhm_mode = seeing_default_opts['mean'] and 'mean' or 'median'
-            reference_fwhm = reference_img.fwhm(per  = fwhm_per,
-                                                mode = fwhm_mode)
-
-        assert isinstance(reference_fwhm, float)
+        reference_fwhm = xml_offsets.reference['fwhm']
         reference_aperture = options.aperture * reference_fwhm
         reference_annulus  = options.annulus  * reference_fwhm
         reference_dannulus = options.dannulus * reference_fwhm

@@ -613,7 +613,39 @@ def swarp(img_path, head_path, copy_keywords = None,
         except subprocess.CalledProcessError, e:
             raise SWarpError(e.returncode, e.cmd)
 
-        return output_path
+        # The latest stable version (v2.19.1) of SWarp does not propagate FITS
+        # keywords with whitespaces (such as "LEMON FWHM"). This is not much of
+        # a problem as we can check that all the keywords have been actually
+        # propagated, manually copying them to the header of the output image
+        # if that is not the case. It is not that we do not trust SWarp; just
+        # that we prefer to make sure everything went well.
+
+        input_img = fitsimage.FITSImage(img_path)
+        output_img = fitsimage.FITSImage(output_path)
+
+        for keyword in copy_keywords:
+
+            # Read the keyword from the output image; we do not check its
+            # value, but just make sure that it is there, as expected. If
+            # it is missing, the KeyError exception is raised and the
+            # keyword is copied from the header of the input image.
+
+            try:
+                output_img.read_keyword(keyword)
+
+            except KeyError:
+
+                try:
+                    value = input_img.read_keyword(keyword)
+                    kwargs = dict(comment = "Propagated keyword")
+                    output_img.update_keyword(keyword, value, **kwargs)
+
+                # Ignore the keyword (it's not in the input image either)
+                except KeyError:
+                    pass
+
+        # Do not return a FITSImage object, only the path
+        return output_img.path
 
     finally:
         os.chdir(cwd) # move back to original directory
