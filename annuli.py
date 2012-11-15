@@ -336,16 +336,10 @@ def main(arguments = None):
             '-i', options.annulus,
             '-k', options.dannulus,
             '--min', options.min,
-            '--filterk', options.filterk,
-            '--rak', options.rak,
-            '--deck', options.deck,
-            '--datek', options.datek,
             '--expk', options.exptimek,
-            '--airmk', options.airmassk,
             '--coaddk', options.coaddk,
             '--gaink', options.gaink,
-            '--uik', options.uncimgk,
-            '--fwhmk', options.fwhmk]
+            '--uik', options.uncimgk]
 
     # The -g option defaults to None, so we add it to the list of arguments
     # only if it was given by the user. Otherwise, it would be given a value
@@ -541,16 +535,10 @@ def main(arguments = None):
                         '--ip', annulus,
                         '--kp', dannulus,
                         '--min', options.min,
-                        '--filterk', options.filterk,
-                        '--rak', options.rak,
-                        '--deck', options.deck,
-                        '--datek', options.datek,
                         '--expk', options.exptimek,
-                        '--airmk', options.airmassk,
                         '--coaddk', options.coaddk,
                         '--gaink', options.gaink,
-                        '--uik', options.uncimgk,
-                        '--fwhmk', options.fwhmk]
+                        '--uik', options.uncimgk]
 
                 if options.gain:
                     args += ['-g', options.gain]
