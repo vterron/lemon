@@ -116,7 +116,7 @@ def parallel_photometry(args):
 
     logging.debug("%s: filter = %s" % (img_path, img_pfilter))
     logging.debug("%s: observation date: %.2f (%s)" % \
-                  (img_path, img_unix_time, time.ctime(img_unix_time)))
+                  (img_path, img_unix_time, methods.utctime(img_unix_time)))
     logging.debug("%s: object = %s" % (img_path, img_object))
     logging.debug("%s: airmass = %.4f" % (img_path, img_airmass))
     gain_comes_from_msg = "given by user" if options.gain else "read from header"
@@ -574,7 +574,7 @@ def main(arguments = None):
                     print
 
                 msg = "%sWarning! Multiple images have date %s"
-                warnings.warn(msg % (style.prefix, time.ctime(unix_time)))
+                warnings.warn(msg % (style.prefix, methods.utctime(unix_time)))
                 for offset in utime_offsets:
                     xml_offsets.remove(offset)
                     discarded += 1

@@ -308,7 +308,7 @@ def main(arguments = None):
     print 'done.'
     output_img = fitsimage.FITSImage(options.output_path)
 
-    msg1 = "Astrometry done by LEMON on %s UTC" % time.asctime(time.gmtime())
+    msg1 = "Astrometry done by LEMON on %s" % methods.utctime()
     msg2 = "[Astrometry] Implemented using Emmanuel Bertin's SCAMP and SWarp"
     msg3 = "[Astrometry] Astrometric system: %s" % options.radecsys
     msg4 = "[Astrometry] Mean equinox: %d" % options.equinox

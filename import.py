@@ -416,7 +416,7 @@ def main(arguments = None):
                                     os.path.abspath(dest_img.path),
                                     comment = comment)
 
-            msg1 = "File imported by LEMON on %s UTC" % time.asctime(time.gmtime())
+            msg1 = "File imported by LEMON on %s" % methods.utctime()
             msg2 = "[Import] Original image: %s" % os.path.abspath(fits_file.path)
             dest_img.add_history(msg1)
             dest_img.add_history(msg2)

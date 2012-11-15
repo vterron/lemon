@@ -25,6 +25,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import warnings
 
 # LEMON modules
@@ -432,4 +433,21 @@ def int_to_roman(i):
         result.append(numeral * count)
         i -= integer * count
     return ''.join(result)
+
+def utctime(seconds = None, suffix = True):
+    """ UTC version of time.ctime.
+
+    Convert a time expressed in seconds since the Unix epoch to a 28-character
+    string, representing Coordinated Universal Time, of the following form:
+    'Sun Jun 20 23:21:05 1993 UTC'. Fractions of a second are ignored. The last
+    part of the string, ' UTC', is omitted (and therefore a 24-character string
+    returned) if the 'suffix' argument evaluates to False. If 'seconds' is not
+    provided or None, the current time as returned by time.time() is used.
+
+    """
+
+    utc_ctime = time.asctime(time.gmtime(seconds))
+    if suffix:
+        utc_ctime += ' UTC'
+    return utc_ctime
 

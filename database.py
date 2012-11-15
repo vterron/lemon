@@ -38,6 +38,7 @@ import sqlite3
 import time
 
 # LEMON modules
+import methods
 import passband
 
 class DBStar(object):
@@ -655,7 +656,7 @@ class LEMONdB(object):
                 assert [(1,)] == list(self._rows)
 
             msg = "Image with Unix time %.4f (%s) and filter %s already in " \
-                  "database" % (unix_time, time.ctime(unix_time), pfilter)
+                  "database" % (unix_time, methods.utctime(unix_time), pfilter)
             raise DuplicateImageError(msg)
 
     def _get_image_id(self, unix_time, pfilter):
@@ -670,7 +671,7 @@ class LEMONdB(object):
         rows = list(self._rows)
         if not rows:
             msg = "%.4f (%s) and filter %s"
-            args = unix_time, time.ctime(unix_time), pfilter
+            args = unix_time, methods.utctime(unix_time), pfilter
             raise KeyError(msg % args)
         else:
             assert len(rows) == 1
@@ -692,7 +693,7 @@ class LEMONdB(object):
         rows = list(self._rows)
         if not rows:
             msg = "%.4f (%s) and filter %s"
-            args = unix_time, time.ctime(unix_time), pfilter
+            args = unix_time, methods.utctime(unix_time), pfilter
             raise KeyError(msg % args)
         else:
             assert len(rows) == 1
@@ -791,7 +792,7 @@ class LEMONdB(object):
 
             msg = "photometry for star ID = %d, Unix time = %4.f " \
                   "(%s) and filter %s already in database"
-            args = (star_id, unix_time, time.ctime(unix_time), pfilter)
+            args = (star_id, unix_time, methods.utctime(unix_time), pfilter)
             raise DuplicatePhotometryError(msg % args)
 
     def get_photometry(self, star_id, pfilter):
@@ -906,7 +907,7 @@ class LEMONdB(object):
 
             msg = "light curve point for star ID = %d, Unix time = %4.f " \
                   "(%s) and filter %s already in database"
-            args = (star_id, unix_time, time.ctime(unix_time), pfilter)
+            args = (star_id, unix_time, methods.utctime(unix_time), pfilter)
             raise DuplicateLightCurvePointError(msg % args)
 
     def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight):
