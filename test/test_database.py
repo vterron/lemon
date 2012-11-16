@@ -887,7 +887,7 @@ class LightCurveTest(unittest.TestCase):
         assert not len(curve)
         self.assertRaises(ValueError, curve.amplitude)
 
-    def test_noisy(self):
+    def test_ignore_noisy(self):
 
         curve = self.random()
         assert not len(curve)
