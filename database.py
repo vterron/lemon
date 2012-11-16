@@ -663,7 +663,10 @@ class LEMONdB(object):
         """ Return the ID of the Image with this Unix time and filter.
         Raises KeyError if there is no image for this date and filter"""
 
-        t = (unix_time, pfilter.wavelength)
+        # Note the cast to Python's built-in float. Otherwise, if the method
+        # gets a NumPy float, SQLite raises "sqlite3.InterfaceError: Error
+        # binding parameter - probably unsupported type"
+        t = (float(unix_time), pfilter.wavelength)
         self._execute("SELECT id "
                       "FROM images "
                       "WHERE unix_time = ? "
