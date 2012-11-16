@@ -1817,3 +1817,185 @@ class LEMONdBTest(unittest.TestCase):
         assert nstar_id not in db.star_ids
         self.assertRaises(KeyError, db.get_phase_diagram, nstar_id, pfilter, 65)
 
+    def test_most_similar_magnitude(self):
+
+        # The ID, x- and y-image coordinates, right ascension, declination and
+        # instrumental magnitudes of the five stars that will be used in this
+        # test case. These values are all required by LEMONdB.add_star, but we
+        # are only interested in the first (star ID) and the last (magnitude).
+        stars_info = \
+        [[1, 115, 235, 145.3, 190.4, 11.5], # star 1
+         [2, 931, 833, 146.2, 191.3, 12.9], # star 2
+         [3, 342, 781, 144.1, 190.9, 10.1], # star 3
+         [4, 782, 101, 143.9, 189.2, 13.4], # star 4
+         [5, 689, 288, 144.2, 189.4, 10.3]] # star 5
+
+        db = LEMONdB(':memory:')
+        for info in stars_info:
+            db.add_star(*info)
+
+        # These stars, which we have just added to the database, will have
+        # light curves in the Johnson V and I photometric filters. We will use
+        # ten images for the first filter (V) and five for the second (I) but,
+        # of course, any number greater than zero would work too. These images
+        # need to be generated all at once by ImageTest.nrandom using the same
+        # filter (Johnson V), in order to guarantee that their Unix times are
+        # unique, and then we change the filter of the last five to Johnson I.
+
+        johnson_V = passband.Passband('V')
+        johnson_I = passband.Passband('I')
+
+        # Map each photometric filter to the list of Images observed in it
+        images = collections.defaultdict(list)
+        for index, img in enumerate(ImageTest.nrandom(15, pfilter = johnson_V)):
+            if index >= 10:
+                img.pfilter = johnson_I
+            images[img.pfilter].append(img)
+
+        assert len(images[johnson_V]) == 10
+        assert len(images[johnson_I]) == 5
+
+        # Add the images, for both filters, to the LEMONdB
+        for img in itertools.chain(*images.values()):
+            db.add_image(img)
+
+        def add_rcurve(star_id, all_ids, pfilter):
+            """ Add a random light curve to the LEMONdB for the star with ID
+            'star_id' and the 'pfilter' photometric filter. Use as comparison
+            stars those whose IDs are in 'all_ids', excluding 'star_id' in case
+            it is contained there -- as a star cannot use itself as comparison.
+            """
+
+            cstars = list(set(all_ids) - set([star_id]))
+            kwargs = dict(pfilter = pfilter, cstars = cstars)
+            curve = LightCurveTest.random(**kwargs)
+            curve = LightCurveTest.populate(curve, images[pfilter])
+            db.add_light_curve(star_id, curve)
+
+        # The first four stars (IDs 1-4) have a light curve in Johnson V, while
+        # only the last two (IDs 4 and 5) have it in Johnson I. Note that only
+        # the fourth star (ID = 4) has a curve in both photometric filters.
+
+        ids = [1, 2, 3, 4]
+        for star_id in ids:
+            add_rcurve(star_id, ids, johnson_V)
+
+        ids = [4, 5]
+        for star_id in ids:
+            add_rcurve(star_id, ids, johnson_I)
+
+        # ********************* Johnson V *********************
+
+        # Star 1: magnitude = 11.5
+        # Star 2: abs(11.5 - 12.9) = 1.4 --> 1st
+        # Star 3: abs(11.5 - 10.1) = 1.4 --> 2nd
+        # Star 4: abs(11.5 - 13.4) = 2.1 --> 3rd
+        # Star 5: no light curve in V, ignored
+        #
+        # The difference between stars 1-2 and 1-3 is exactly the same: 1.4.
+        # In these cases, due to its implementation (and the fact the sorts are
+        # guaranteed to be stable in Python), the method should return first
+        # the star with the lowest ID, as it comes across it sooner.
+
+        star1_similar_V = list(db.most_similar_magnitude(1, johnson_V))
+        self.assertEqual(len(star1_similar_V), 3)
+        expected = [(2, 12.9), (3, 10.1), (4, 13.4)]
+        self.assertEqual(star1_similar_V, expected)
+
+        # Star 2: magnitude = 12.9
+        # Star 1: abs(12.9 - 11.5) = 1.4 --> 2nd
+        # Star 3: abs(12.9 - 10.1) = 2.8 --> 3rd
+        # Star 4: abs(12.9 - 13.4) = 0.5 --> 1st
+        # Star 5: no light curve in V, ignored
+        star2_similar_V = list(db.most_similar_magnitude(2, johnson_V))
+        self.assertEqual(len(star2_similar_V), 3)
+        expected = [(4, 13.4), (1, 11.5), (3, 10.1)]
+        self.assertEqual(star2_similar_V, expected)
+
+        # Star 3: magnitude = 10.1
+        # Star 1: abs(10.1 - 11.5) = 1.4 --> 1st
+        # Star 2: abs(10.1 - 12.9) = 2.8 --> 2nd
+        # Star 4: abs(10.1 - 13.4) = 3.3 --> 3rd
+        # Star 5: no light curve in V, ignored
+        star3_similar_V = list(db.most_similar_magnitude(3, johnson_V))
+        self.assertEqual(len(star3_similar_V), 3)
+        expected = [(1, 11.5), (2, 12.9), (4, 13.4)]
+        self.assertEqual(star3_similar_V, expected)
+
+        # Star 4: magnitude 13.4
+        # Star 1: abs(13.4 - 11.5) = 1.9 --> 2nd
+        # Star 2: abs(13.4 - 12.9) = 0.5 --> 1st
+        # Star 3: abs(13.4 - 10.1) = 3.3 --> 3rd
+        # Star 5: no light curve in V, ignored
+        star4_similar_V = list(db.most_similar_magnitude(4, johnson_V))
+        self.assertEqual(len(star4_similar_V), 3)
+        expected = [(2, 12.9), (1, 11.5), (3, 10.1)]
+        self.assertEqual(star4_similar_V, expected)
+
+        # Star 5: magnitude = 10.3
+        # Star 1: abs(10.3 - 11.5) = 1.2 --> 2nd
+        # Star 2: abs(10.3 - 12.9) = 2.6 --> 3rd
+        # Star 3: abs(10.3 - 10.1) = 0.2 --> 1st
+        # Star 4: abs(10.3 - 13.4) = 3.1 --> 4th
+        #
+        # Note that the method can be called even it the reference star (i.e.,
+        # the star to which the instrumental magnitudes of all the stars are
+        # compared) does not have a light curve in this filter.
+
+        star5_similar_V = list(db.most_similar_magnitude(5, johnson_V))
+        self.assertEqual(len(star5_similar_V), 4)
+        expected = [(3, 10.1), (1, 11.5), (2, 12.9), (4, 13.4)]
+        self.assertEqual(star5_similar_V, expected)
+
+        # ********************* Johnson I *********************
+
+        # Star 1: magnitude = 11.5
+        # Star 2: no light curve in I, ignored
+        # Star 3: no light curve in I, ignored
+        # Star 4: abs(11.5 - 13.4) = 1.9 --> 2nd
+        # Star 5: abs(11.5 - 10.3) = 1.2 --> 1st
+        star1_similar_I = list(db.most_similar_magnitude(1, johnson_I))
+        self.assertEqual(len(star1_similar_I), 2)
+        expected = [(5, 10.3), (4, 13.4)]
+        self.assertEqual(star1_similar_I, expected)
+
+        # Star 2: magnitude = 12.9
+        # Star 1: no light curve in I, ignored
+        # Star 3: no light curve in I, ignored
+        # Star 4: abs(12.9 - 13.4) = 0.5 --> 1st
+        # Star 5: abs(12.9 - 10.3) = 2.6 --> 2nd
+        star2_similar_I = list(db.most_similar_magnitude(2, johnson_I))
+        self.assertEqual(len(star2_similar_I), 2)
+        expected = [(4, 13.4), (5, 10.3)]
+        self.assertEqual(star2_similar_I, expected)
+
+        # Star 3: magnitude = 10.1
+        # Star 1: no light curve in I, ignored
+        # Star 2: no light curve in I, ignored
+        # Star 4: abs(10.1 - 13.4) = 3.3 --> 2nd
+        # Star 5: abs(10.1 - 10.3) = 0.2 --> 1st
+        star3_similar_I = list(db.most_similar_magnitude(3, johnson_I))
+        self.assertEqual(len(star3_similar_I), 2)
+        expected = [(5, 10.3), (4, 13.4)]
+        self.assertEqual(star3_similar_I, expected)
+
+        # Star 4: magnitude = 13.4
+        # Star 1: no light curve in I, ignored
+        # Star 2: no light curve in I, ignored
+        # Star 3: no light curve in I, ignored
+        # Star 5: abs(13.4 - 10.3) = 3.1 --> 1st
+        star4_similar_I = list(db.most_similar_magnitude(4, johnson_I))
+        self.assertEqual(len(star4_similar_I), 1)
+        expected = [(5, 10.3)]
+        self.assertEqual(star4_similar_I, expected)
+
+        # Star 5: magnitude = 10.3
+        # Star 1: no light curve in I, ignored
+        # Star 2: no light curve in I, ignored
+        # Star 3: no light curve in I, ignored
+        # Star 4: abs(10.3 - 13.4) = 3.1 --> 1st
+        star5_similar_I = list(db.most_similar_magnitude(5, johnson_I))
+        self.assertEqual(len(star5_similar_I), 1)
+        expected = [(4, 13.4)]
+        self.assertEqual(star5_similar_I, expected)
+
