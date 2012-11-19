@@ -28,6 +28,7 @@ relative to the campaign that may be needed for the data analysis process.
 
 """
 
+import collections
 import copy
 import math
 import numpy
@@ -1238,4 +1239,54 @@ class LEMONdB(object):
         for id_, imag in magnitudes:
             if self.get_light_curve(id_, pfilter):
                 yield id_, imag
+
+    @property
+    def field_name(self):
+        """ Determine the name of the field observed during a campaign.
+
+        The method finds the most common prefix among the object names of the
+        images (IMAGES table) contained in the database. What we understand by
+        'most common prefix' in this context is the longest substring with
+        which more than half of the images start. The purpose of this method is
+        to allow to automatically determine which field was observed, without
+        relying on a single image but instead by analyzing all of them. The
+        ValueError exception is raised if there are no images in the LEMONdB.
+        None is returned, on the other hand, if there is no prefix common to
+        the object names (e.g., if there are two images whose names are
+        'FT_Tau_1minB' and 'BD+78_779_20minV').
+
+        For example: if there are only three images in the LEMONdB and their
+        object names are 'IC5146_30minV', 'IC5146_30minR' and 'IC5146_1minI',
+        the string 'IC5146' is returned. Trailing whitespaces and underscores
+        are stripped from the common prefix.
+
+        """
+
+        self._execute("SELECT object FROM images")
+        object_names = [x[0] for x in self._rows]
+
+        if not object_names:
+            msg = "database contains no images"
+            raise ValueError(msg)
+
+        # Loop over all the object names stored in the LEMONdB, keeping the
+        # track of how many times each prefix is seen (e.g., 'abc' gives us
+        # three different prefixes: 'a', 'ab' and 'abc').
+        substrings = collections.defaultdict(int)
+        for name in object_names:
+            for index in range(1, len(name) + 1):
+                substrings[name[:index]] += 1
+
+        def startswith_counter(prefix, names):
+            """ Return the number of strings in 'names' starting with 'prefix' """
+            return len([x for x in names if x.startswith(prefix)])
+
+        # Loop over the prefixes, from longest to shortest, until one common to
+        # more than half of the object names (i.e., images) in the database is
+        # found.
+        longest = sorted(substrings.keys(), key = len, reverse = True)
+        minimum_matches = len(object_names) // 2 + 1
+        for prefix in longest:
+            if startswith_counter(prefix, object_names) >= minimum_matches:
+                return prefix.strip(" _") # e.g., "NGC 2276_" to "NGC 2264"
 

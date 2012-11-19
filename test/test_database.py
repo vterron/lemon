@@ -1999,3 +1999,62 @@ class LEMONdBTest(unittest.TestCase):
         expected = [(4, 13.4)]
         self.assertEqual(star5_similar_I, expected)
 
+    def test_field_name(self):
+
+        def populate_with_images(names):
+            """ Return a LEMONdB that contains Images whose object names are
+            taken from 'names', which must be an iterable of strings. """
+
+            db = LEMONdB(':memory:')
+            rimages = ImageTest.nrandom(len(names))
+            for image, name in zip(rimages, names):
+                image.object = name
+                db.add_image(image)
+            return db
+
+        # (1) An easy case: 'FT_Tau_' is the prefix common to all the object
+        # names. However, the trailing '_' is stripped, resulting in 'FT_Tau'.
+        names = ['FT_Tau_15secI', 'FT_Tau_15secI', 'FT_Tau_2minV',
+                 'FT_Tau_5minV',  'FT_Tau_15secI', 'FT_Tau_30secI',
+                 'FT_Tau_20secI', 'FT_Tau_25secI', 'FT_Tau_25secI',
+                 'FT_Tau_25secI', 'FT_Tau_5minV',  'FT_Tau_4minV',
+                 'FT_Tau_3minV',  'FT_Tau_10minB', 'FT_Tau_25secI',
+                 'FT_Tau_15secI', 'FT_Tau_15secI', 'FT_Tau_15secI']
+        db = populate_with_images(names)
+        self.assertEqual(db.field_name, 'FT_Tau')
+
+        # (2) The method must return 'IC5146', which is common to all of the
+        # images except for the last one, where lower-case letters were used.
+        names = ['IC5146_30minV', 'IC5146_30minR', 'IC5146_1minI',
+                 'IC5146_25minI', 'IC5146_20minV', 'ic5146_1minI']
+        db = populate_with_images(names)
+        self.assertEqual(db.field_name, 'IC5146')
+
+        # (3) Note the typo ('mgc') in the second object name
+        names = ['ngc2264_20minB', 'mgc2264_25minV', 'ngc2264_5minV',
+                 'ngc2264_3minI',  'ngc2264_25minI', 'ngc2264_15minV']
+        db = populate_with_images(names)
+        self.assertEqual(db.field_name, 'ngc2264')
+
+        # (4) Two images of FT Tau amid a series of observations of BD+78_779
+        names = ['BD+78_779_30secI', 'BD+78_779_750secI', 'BD+78_779_75secV',
+                 'BD+78_779_20minV', 'BD+78_779_2minB',   'BD+78_779_20minB',
+                 'BD+78_779_30secI', 'BD+78_779_750secI', 'BD+78_779_3minB',
+                 'FT_Tau_5minV',  'FT_Tau_15secI']
+        db = populate_with_images(names)
+        self.assertEqual(db.field_name, 'BD+78_779')
+
+        # (5) The object name of a single image is also the common prefix
+        name = 'BD+78_779_3minB'
+        db = populate_with_images([name])
+        self.assertEqual(db.field_name, name)
+
+        # (6) None is returned if there is no common prefix
+        names = ['IC5146_1minI', 'FT_Tau_5minV', 'BD+78_779_30secI']
+        db = populate_with_images(names)
+        self.assertEqual(db.field_name, None)
+
+        # (7) Exception raised if there are no images in the LEMONdB
+        db = LEMONdB(':memory:')
+        self.assertRaises(ValueError, lambda: db.field_name)
+
