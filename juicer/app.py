@@ -1190,7 +1190,14 @@ class LEMONJuicerGUI(object):
 
                 self.view.set_model(self.store)
 
-                label = gtk.Label(os.path.basename(path))
+                # Although an extremely rare case, LEMONdB.field_name will be
+                # None if the name of the observed object cannot be determined
+                # (i.e., if there is no prefix common to the object names of
+                # the images stored in the database). In those cases, we use
+                # the name of the .LEMONdB file for the tab label for the page.
+
+                text = db.field_name or os.path.basename(db.path)
+                label = gtk.Label(text)
                 self._notebook.insert_page(overview, label, 0)
                 self._notebook.set_tab_reorderable(overview, False)
                 self._notebook.set_current_page(0)
