@@ -473,14 +473,7 @@ def main(arguments = None):
             # to calculate the range of aperture annuli to be evaluated.
             print "%sCalculating the median FWHM for this filter..." % style.prefix,
             sys.stdout.flush()
-
-            # FWHMs are not computed, but read from the FITS header, where they
-            # were saved by seeing.py. KeyError is raised otherwise.
-            band_fwhms = \
-                [fitsimage.FITSImage(offset.shifted).read_keyword(options.fwhmk)
-                 for offset in band_offsets]
-
-            assert all(isinstance(x, float) for x in band_fwhms)
+            band_fwhms = [offset.fwhm for offset in band_offsets]
             fwhm = numpy.median(band_fwhms)
             print 'done.'
 
