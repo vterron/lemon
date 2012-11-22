@@ -419,6 +419,16 @@ class LEMONdB(object):
     def _create_tables(self):
         """ Create, if needed, the tables used by the database """
 
+        # This table will contain non-relational information about the LEMONdB
+        # itself: we need to store records (key-value pairs, such as ('AUTHOR',
+        # 'John Doe'), and there cannot be more than one row for each key.
+        self._execute('''
+        CREATE TABLE IF NOT EXISTS metadata (
+            key   TEXT NOT NULL,
+            value TEXT NOT NULL,
+            UNIQUE (key))
+        ''')
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS stars (
             id   INTEGER PRIMARY KEY,
