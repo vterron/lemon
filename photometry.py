@@ -487,10 +487,16 @@ def main(arguments = None):
               "than '%s'..." % (style.prefix, options.passband) ,
         sys.stdout.flush()
 
+        # Iterate backwards, removing those XMLOffsets with a photometric
+        # filter other than that specified with the --passband option. We
+        # cannot use a list comprehension here as, if we did so, we would
+        # end up with, well, a list, when we need an XMLOffsetFile object.
         pfilter = passband.Passband(options.passband)
-        xml_offsets = [x for x in xml_offsets if x.filter.wavelength == pfilter.wavelength]
+        for index in reversed(xrange(len(xml_offsets))):
+            if xml_offsets[index].filter != pfilter:
+                del xml_offsets[index]
 
-        if not xml_offsets:
+        if not len(xml_offsets):
             print style.prefix
             print "%sError. No shifted image was taken with the '%s' " \
                   "passband." % (style.prefix, options.passband)
@@ -498,6 +504,8 @@ def main(arguments = None):
             return 1
 
         else:
+            # The remaining XMLOffsets must all have the same filter
+            assert set(x.filter for x in xml_offsets) == set([pfilter])
             print 'done.'
             print "%s%d offsets matched the '%s' passband; the rest were " \
                   "discarded." % (style.prefix, len(xml_offsets),
