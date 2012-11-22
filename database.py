@@ -354,6 +354,9 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
+    # Keys of the records stored in the METADATA tables
+    _METADATA_DATE_KEY = 'DATE'  # date of creation of the LEMONdB
+
     def __init__(self, path, dtype = numpy.longdouble):
 
         self.path = path
@@ -1328,4 +1331,17 @@ class LEMONdB(object):
             assert len(rows) == 1
             assert len(rows[0]) == 1
             return rows[0][0]
+
+    def _get_date(self):
+        """ Return the date of creation of the LEMONdB, cast to float"""
+        value = self._get_metadata(self._METADATA_DATE_KEY)
+        if value is not None:
+            value = float(value)
+        return value
+
+    def _set_date(self, unix_time):
+        """ Set (or replace) the date of creation of the LEMONdB """
+        self._set_metadata(self._METADATA_DATE_KEY, unix_time)
+
+    date = property(_get_date, _set_date)
 
