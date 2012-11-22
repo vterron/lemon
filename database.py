@@ -1300,3 +1300,32 @@ class LEMONdB(object):
             if startswith_counter(prefix, object_names) >= minimum_matches:
                 return prefix.strip(" _") # e.g., "NGC 2276_" to "NGC 2264"
 
+    def _set_metadata(self, key, value):
+        """ Set (or replace) the value of a record in the METADATA table.
+
+        Both the key and the value are casted to string and cannot be NULL, and
+        therefore the ValueError exception will be raised if None is used. Note
+        that empty strings are allowed, however (but why would you do that?)"""
+
+        if key is None:
+            raise ValueError("key cannot be None")
+        if value is None:
+            raise ValueError("value cannot be None")
+
+        t = (str(key), str(value))
+        self._execute("INSERT OR REPLACE INTO metadata VALUES (?, ?)", t)
+
+    def _get_metadata(self, key):
+        """ Return the value of a record in the METADATA table. None is
+        returned if 'key' does not match that of any key-value pair. """
+
+        t = (key, )
+        self._execute("SELECT value FROM metadata WHERE key = ?", t)
+        rows = tuple(self._rows)
+        if not rows:
+            return None
+        else:
+            assert len(rows) == 1
+            assert len(rows[0]) == 1
+            return rows[0][0]
+

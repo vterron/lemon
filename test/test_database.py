@@ -2058,3 +2058,39 @@ class LEMONdBTest(unittest.TestCase):
         db = LEMONdB(':memory:')
         self.assertRaises(ValueError, lambda: db.field_name)
 
+    def test_set_and_get_metadata(self):
+
+        db = LEMONdB(':memory:')
+
+        key, value = 'AUTHOR', 'John Doe'
+        # None is returned if the key is not in the table
+        self.assertEqual(db._get_metadata(key), None)
+        db._set_metadata(key, value)
+        self.assertEqual(db._get_metadata(key), value)
+
+        # If assigned again, the value of the record is replaced
+        value = 'Jane Doe'
+        db._set_metadata(key, value)
+        self.assertEqual(db._get_metadata(key), value)
+
+        # Both keys and values are casted to a string
+        key, value = 'ATTEMPTS', 17
+        db._set_metadata(key, value)
+        self.assertEqual(db._get_metadata(key), str(value))
+
+        key, value = 'DATE', time.time()
+        db._set_metadata(key, value)
+        self.assertEqual(db._get_metadata(key), str(value))
+
+        key, value = 3.1415926535897931, 'Pi'
+        db._set_metadata(key, value)
+        self.assertEqual(db._get_metadata(str(key)), value)
+
+        # Neither the key nor the value can be None...
+        self.assertRaises(ValueError, db._set_metadata, None, value)
+        self.assertRaises(ValueError, db._set_metadata, key, None)
+
+        # ... but empty strings are allowed
+        db._set_metadata('P.I.', '')     # useless
+        db._set_metadata('', 'IAA-CSIC') # even worse
+
