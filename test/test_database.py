@@ -2111,3 +2111,13 @@ class LEMONdBTest(unittest.TestCase):
         # Any value is valid, except None (which raises ValueError)
         self.assertRaises(ValueError, setattr, db, 'date', None)
 
+    def test_author(self):
+
+        db = LEMONdB(':memory:')
+        self.assertEqual(db.author, None)
+        db.author = name = 'Jane Doe'
+        self.assertEqual(db.author, name)
+        db.author = new_name = 'Baby Doe' # now update it
+        self.assertEqual(db.author, new_name)
+        self.assertRaises(ValueError, setattr, db, 'author', None)
+

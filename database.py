@@ -355,7 +355,8 @@ class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
     # Keys of the records stored in the METADATA tables
-    _METADATA_DATE_KEY = 'DATE'  # date of creation of the LEMONdB
+    _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
+    _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
 
     def __init__(self, path, dtype = numpy.longdouble):
 
@@ -1344,4 +1345,14 @@ class LEMONdB(object):
         self._set_metadata(self._METADATA_DATE_KEY, unix_time)
 
     date = property(_get_date, _set_date)
+
+    def _get_author(self):
+        """ Return the name of the user who created the LEMONdB """
+        return self._get_metadata(self._METADATA_AUTHOR_KEY)
+
+    def _set_author(self, author):
+        """ Set (or replace) the name of the user who created the LEMONdB """
+        self._set_metadata(self._METADATA_AUTHOR_KEY, author)
+
+    author = property(_get_author, _set_author)
 
