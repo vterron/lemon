@@ -2121,3 +2121,13 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db.author, new_name)
         self.assertRaises(ValueError, setattr, db, 'author', None)
 
+    def test_hostname(self):
+
+        db = LEMONdB(':memory:')
+        self.assertEqual(db.hostname, None)
+        db.author = host = 'example.com'
+        self.assertEqual(db.author, host)
+        db.author = new_host = 'github.com' # now update it
+        self.assertEqual(db.author, new_host)
+        self.assertRaises(ValueError, setattr, db, 'hostname', None)
+

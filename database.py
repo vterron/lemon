@@ -357,6 +357,7 @@ class LEMONdB(object):
     # Keys of the records stored in the METADATA tables
     _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
     _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
+    _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
 
     def __init__(self, path, dtype = numpy.longdouble):
 
@@ -1355,4 +1356,14 @@ class LEMONdB(object):
         self._set_metadata(self._METADATA_AUTHOR_KEY, author)
 
     author = property(_get_author, _set_author)
+
+    def _get_hostname(self):
+        """ Return the hostname of the machine where the LEMONdB was created"""
+        return self._get_metadata(self._METADATA_HOSTNAME_KEY)
+
+    def _set_hostname(self, host):
+        """ Set / replace the hostname of the machine the LEMONdB was created"""
+        self._set_metadata(self._METADATA_HOSTNAME_KEY, host)
+
+    hostname = property(_get_hostname, _set_hostname)
 
