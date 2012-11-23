@@ -41,6 +41,7 @@ import multiprocessing
 import numpy
 import random
 import shutil
+import socket
 import sys
 import time
 
@@ -923,6 +924,12 @@ def main(arguments = None):
 
             methods.show_progress(100.0)
             print
+
+    # Update LEMONdB metadata
+    db.date = time.time()
+    db.author = os.getlogin()
+    db.hostname = socket.gethostname()
+    db.commit()
 
     methods.owner_writable(options.output_db, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
