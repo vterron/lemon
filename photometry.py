@@ -48,6 +48,7 @@ import numpy
 import optparse
 import os
 import os.path
+import socket
 import sys
 import time
 import warnings
@@ -1003,6 +1004,16 @@ def main(arguments = None):
 
             methods.show_progress(100.0)
             print
+
+    # Store into the METADATA table of the LEMONdB the current time (in seconds
+    # since the Unix epoch), the name of the user logged in on the controlling
+    # terminal of the process and the hostname of the machine where Python is
+    # currently executing.
+
+    output_db.date = time.time()
+    output_db.author = os.getlogin()
+    output_db.hostname = socket.gethostname()
+    output_db.commit()
 
     methods.owner_writable(options.output_db, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
