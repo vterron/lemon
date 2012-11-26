@@ -48,6 +48,7 @@ class AmplitudesSearchPage(object):
     "<!DOCTYPE AmplitudesSearchResult [",
     "<!ELEMENT AmplitudesSearchResult (description, filter+, star+)>",
     "<!ATTLIST AmplitudesSearchResult include_ratios CDATA  #REQUIRED>",
+    "<!ATTLIST AmplitudesSearchResult database_id CDATA  #REQUIRED>",
     "",
     "<!ELEMENT description (#PCDATA)>",
     "",
@@ -62,7 +63,7 @@ class AmplitudesSearchPage(object):
     "]>",
     ""]
 
-    def __init__(self, pfilters, include_ratios, description):
+    def __init__(self, pfilters, include_ratios, description, id_):
         """ Instantiation method for the AmplitudesSearchPage class.
 
         The 'pfilters' parameter is a sequence with the passband.Passband
@@ -72,6 +73,12 @@ class AmplitudesSearchPage(object):
         amplitude and its comparison standard deviation. The text of the
         GtkLabel on the left column, expected to contain an account of the
         parameters used in the search, is set to 'description'.
+
+        The 'id_' parameter, lastly, is the unique identifier of the LEMONdB:
+        when the object is serialized it is written to the XML file to map the
+        results of the search to the database to which they correspond. This is
+        necessary to avoid, when we are working with a LEMONdB, loading search
+        results for a different one.
 
         """
 
@@ -102,6 +109,7 @@ class AmplitudesSearchPage(object):
 
         self.description = self.builder.get_object('search-description-label')
         self.description.set_label(description)
+        self.id = id_
 
         # The button to export the search results to an XML file
         save_button = self.builder.get_object('save-button')
@@ -157,7 +165,8 @@ class AmplitudesSearchPage(object):
 
         """
 
-        kwargs = dict(include_ratios = str(self.include_ratios).lower())
+        kwargs = dict(include_ratios = str(self.include_ratios).lower(),
+                      database_id = self.id)
         root = lxml.etree.Element('AmplitudesSearchResult', **kwargs)
 
         description_element = lxml.etree.Element('description')
@@ -297,8 +306,9 @@ class AmplitudesSearchPage(object):
         pfilters = [passband.Passband(k) for k in orders.iterkeys()]
         pfilters.sort(key = lambda x: orders[str(x)])
 
+        id_ = root.get('database_id')
         include_ratios = root.get('include_ratios').title() == str(True)
-        result = cls(pfilters, include_ratios, description)
+        result = cls(pfilters, include_ratios, description, id_)
 
         for star_element in root.iterchildren(tag = 'star'):
             star_id = int(star_element.get('id'))
@@ -514,7 +524,8 @@ class AmplitudesSearchMessageWindow(object):
                 self.ok_button.set_sensitive(False)
 
                 pfilters = sorted(self.miner.pfilters)
-                args = pfilters, exclude_noisy, description
+                id_ = self.miner.id
+                args = pfilters, exclude_noisy, description, id_
                 result = AmplitudesSearchPage(*args)
 
                 nstars = len(self.miner)
