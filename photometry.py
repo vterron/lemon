@@ -42,6 +42,7 @@ the manual for further information.
 """
 
 import collections
+import hashlib
 import logging
 import multiprocessing
 import numpy
@@ -1013,6 +1014,17 @@ def main(arguments = None):
     output_db.date = time.time()
     output_db.author = pwd.getpwuid(os.getuid())[0]
     output_db.hostname = socket.gethostname()
+    output_db.commit()
+
+    # Use as unique identifier of the LEMONdB a 32-digit hexadecimal number:
+    # the MD5 hash of the concatenation, in this order, of the LEMONdB.date,
+    # author and hostname properties, which we have just set above.
+
+    md5 = hashlib.md5()
+    md5.update(str(output_db.date))
+    md5.update(str(output_db.author))
+    md5.update(str(output_db.hostname))
+    output_db.id = md5.hexdigest()
     output_db.commit()
 
     methods.owner_writable(options.output_db, False) # chmod u-w

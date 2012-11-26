@@ -358,6 +358,7 @@ class LEMONdB(object):
     _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
     _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
     _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
+    _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
 
     def __init__(self, path, dtype = numpy.longdouble):
 
@@ -1366,4 +1367,14 @@ class LEMONdB(object):
         self._set_metadata(self._METADATA_HOSTNAME_KEY, host)
 
     hostname = property(_get_hostname, _set_hostname)
+
+    def _get_id(self):
+        """ Return the unique identifier of the LEMONdB """
+        return self._get_metadata(self._METADATA_ID_KEY)
+
+    def _set_id(self, id_):
+        """ Set (or replace) the unique identifier of the LEMONdB """
+        self._set_metadata(self._METADATA_ID_KEY, id_)
+
+    id = property(_get_id, _set_id)
 
