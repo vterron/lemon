@@ -29,6 +29,7 @@ import gtk
 import ConfigParser
 import datetime
 import functools
+import operator
 import os.path
 import sys
 import time
@@ -1371,6 +1372,24 @@ class LEMONJuicerGUI(object):
             "The error was: \n\n%s" % (path, str(err))
             util.show_error_dialog(self._main_window, title, msg)
             return
+
+        # The search results stored in the XML file must refer to the current
+        # LEMONdB, if any. This can be verified as the 'database_id' attribute
+        # of the root element must equal the value of the LEMONdB.id property,
+        # as the latter is written to the XML file when results are serialized.
+
+        if self.db is not None:
+            ids = result.id, self.db.id
+            if operator.ne(*ids):
+                title = "XML file does not match LEMONdB"
+                msg = "The LEMONdB to which the search results in this XML " \
+                "file correspond (ID = %s) is different from the one " \
+                "currently open (ID = %s). The file, therefore, cannot be " \
+                "be loaded, as it refers to a different LEMONdB." % ids
+                args = self._main_window, title, msg
+                kwargs = dict(buttons = gtk.BUTTONS_CLOSE)
+                util.show_error_dialog(*args, **kwargs)
+                return
 
         connect_double_click = self.db is not None
         self.append_amplitudes_search(result, connect_double_click)
