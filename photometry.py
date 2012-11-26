@@ -323,7 +323,7 @@ def main(arguments = None):
     if arguments is None:
         arguments = sys.argv[1:] # ignore argv[0], the script name
 
-    # All the parameters must be casted to string before beging passed to the
+    # All the parameters must be cast to string before beging passed to the
     # option parser, as apparently it only expects str data types. Otherwise,
     # optparse may raise a TypeError exception and complains about how int or
     # float objects are unsuscriptable.

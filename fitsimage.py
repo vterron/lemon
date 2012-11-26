@@ -452,7 +452,7 @@ class FITSImage(object):
 
         The reason why the number is returned as a string is to not remove
         the leading zeros, if any. The value returned by the method may, thus,
-        need to be casted to integer.
+        need to be cast to integer.
 
         """
 

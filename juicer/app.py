@@ -132,7 +132,7 @@ class ExportCurveDialog(object):
         def save_widget_update(option, func = 'get_active'):
             """ Return the function that, when called, updates 'option' in the
             curve export section of the configuration file. 'func' is the
-            method used to get the value of the widget, casted to integer """
+            method used to get the value of the widget, cast to integer """
 
             def handler(widget):
                 self.config.dumpset(option, int(getattr(widget, func)()))

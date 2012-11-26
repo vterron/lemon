@@ -379,7 +379,7 @@ class AmplitudesSearchMessageWindow(object):
         def save_widget_update(option, func, type_ = int):
             """ Return the function that, when called, updates 'option' in the
             amplitudes search section of the configuration file. 'func' is the
-            method used to get the value of the widget, casted to 'type_' """
+            method used to get the value of the widget, cast to 'type_' """
 
             def handler(widget):
                 self.config.amplset(option, type_(getattr(widget, func)()))
