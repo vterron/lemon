@@ -25,6 +25,7 @@ import functools
 import gtk
 import lxml.etree
 import operator
+import re
 
 # LEMON modules
 import glade
@@ -46,11 +47,12 @@ class AmplitudesSearchPage(object):
     XML_DTD = [
     "",
     "<!DOCTYPE AmplitudesSearchResult [",
-    "<!ELEMENT AmplitudesSearchResult (description, filter+, star+)>",
+    "<!ELEMENT AmplitudesSearchResult (description, field, filter+, star+)>",
     "<!ATTLIST AmplitudesSearchResult include_ratios CDATA  #REQUIRED>",
     "<!ATTLIST AmplitudesSearchResult database_id CDATA  #REQUIRED>",
     "",
     "<!ELEMENT description (#PCDATA)>",
+    "<!ELEMENT field (#PCDATA)>",
     "",
     "<!ELEMENT filter (#PCDATA)>",
     "<!ATTLIST filter order CDATA  #REQUIRED>",
@@ -63,7 +65,7 @@ class AmplitudesSearchPage(object):
     "]>",
     ""]
 
-    def __init__(self, pfilters, include_ratios, description, id_):
+    def __init__(self, pfilters, include_ratios, description, id_, field_name):
         """ Instantiation method for the AmplitudesSearchPage class.
 
         The 'pfilters' parameter is a sequence with the passband.Passband
@@ -74,11 +76,13 @@ class AmplitudesSearchPage(object):
         GtkLabel on the left column, expected to contain an account of the
         parameters used in the search, is set to 'description'.
 
-        The 'id_' parameter, lastly, is the unique identifier of the LEMONdB:
-        when the object is serialized it is written to the XML file to map the
-        results of the search to the database to which they correspond. This is
-        necessary to avoid, when we are working with a LEMONdB, loading search
-        results for a different one.
+        The 'id_' parameter is the unique identifier of the LEMONdB: when the
+        object is serialized it is written to the XML file to map the results
+        of the search to the database to which they correspond. It is necessary
+        to avoid, when we are working with a LEMONdB, loading search results
+        for a different one. Lastly, 'field_name' is a string containing the
+        name of the observed field, used to suggest a filename in the 'Save
+        As...' dialog.
 
         """
 
@@ -110,6 +114,7 @@ class AmplitudesSearchPage(object):
         self.description = self.builder.get_object('search-description-label')
         self.description.set_label(description)
         self.id = id_
+        self.field_name = field_name
 
         # The button to export the search results to an XML file
         save_button = self.builder.get_object('save-button')
@@ -172,6 +177,10 @@ class AmplitudesSearchPage(object):
         description_element = lxml.etree.Element('description')
         description_element.text = self.description.get_label()
         root.append(description_element)
+
+        field_element = lxml.etree.Element('field')
+        field_element.text = self.field_name
+        root.append(field_element)
 
         for index, pfilter in enumerate(self.pfilters):
             kwargs = dict(order = str(index))
@@ -243,9 +252,9 @@ class AmplitudesSearchPage(object):
         Prompt a gtk.FileChooserDialog to let the user browse for the location
         where the XML file with the representation of the AmplitudesSearchPage
         will be saved, and write the file to disk (see 'xml_dump' method) only
-        if 'Save' is clicked. The dialog suggests a filename based on the title
-        of the search, but only if the 'get_label' method has been called at
-        least once.
+        if 'Save' is clicked. The dialog suggests a filename based on the name
+        of the observed field and the title of the search, but only if the
+        'get_label' method has been called at least once.
 
         """
 
@@ -260,14 +269,20 @@ class AmplitudesSearchPage(object):
             chooser.set_do_overwrite_confirmation(True)
 
             # If AmplitudesSearchPage.get_label has been called, use the label
-            # that it returned to suggest a name for the XML file, replacing
-            # whitespaces with dashes and making sure that it starts with lower
-            # case (e.g., "amplitudes-IV.xml" is suggested for "Amplitudes IV".
-            # We do not suggest anything if we method has not been called.
+            # that it returned, and the name of the observed field, to suggest
+            # a filename for the XML file. Except for the Roman numerals, it is
+            # in lower case (e.g., "ngc2264_amplitudes_IV.xml" is suggested for
+            # "NGC2264" and "Amplitudes IV"). Do not suggest anything if
+            # get_label has not been called.
 
             try:
-                filename = '%s.xml' % self.label.replace(' ', '-')
-                filename = filename[0].lower() + filename[1:]
+                # 'Amplitudes IV' to 'amplitudes-IV'
+                title = re.sub(r'\s', '_', self.label)
+                title = title[0].lower() + title[1:]
+                # 'IC 5146' to 'ic_5146'
+                field = re.sub(r'\s', '_', self.field_name.lower())
+                args = field, title
+                filename = '%s_%s.xml' % args
                 chooser.set_current_name(filename)
             except AttributeError:
                 pass
@@ -299,6 +314,10 @@ class AmplitudesSearchPage(object):
         assert len(elements) == 1
         description = elements[0].text
 
+        elements = list(root.iterchildren(tag = 'field'))
+        assert len(elements) == 1
+        field_name = elements[0].text
+
         # Encapsulate the photometric filters as Passband instances,
         # and sort them by the value of their 'order' XML attribute.
         filter_elements = root.iterchildren(tag = 'filter')
@@ -308,7 +327,7 @@ class AmplitudesSearchPage(object):
 
         id_ = root.get('database_id')
         include_ratios = root.get('include_ratios').title() == str(True)
-        result = cls(pfilters, include_ratios, description, id_)
+        result = cls(pfilters, include_ratios, description, id_, field_name)
 
         for star_element in root.iterchildren(tag = 'star'):
             star_id = int(star_element.get('id'))
@@ -525,7 +544,8 @@ class AmplitudesSearchMessageWindow(object):
 
                 pfilters = sorted(self.miner.pfilters)
                 id_ = self.miner.id
-                args = pfilters, exclude_noisy, description, id_
+                field = self.miner.field_name
+                args = pfilters, exclude_noisy, description, id_, field
                 result = AmplitudesSearchPage(*args)
 
                 nstars = len(self.miner)
