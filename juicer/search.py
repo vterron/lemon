@@ -474,12 +474,13 @@ class AmplitudesSearchMessageWindow(object):
         def bold(str_):
             return "<b>%s</b>" % str_
         params = dict((k, bold(v)) for k, v in params.iteritems())
+        params['field'] = self.miner.field_name # not in bold
 
         text = \
-        "These are the stars whose amplitudes %(order)s with %(pfilters)s " \
-        "when the peak and trough of each light curve are obtained by " \
-        "taking the %(mode)s of the %(how_many)s highest and lowest " \
-        "magnitudes." % params
+        "These are the stars in %(field)s whose amplitudes %(order)s with " \
+        "%(pfilters)s when the peak and trough of each light curve are " \
+        "obtained by taking the %(mode)s of the %(how_many)s highest and " \
+        "lowest magnitudes." % params
 
         if self.exclude_checkbox.get_active():
 
