@@ -38,6 +38,7 @@ import logging
 import optparse
 import os
 import multiprocessing
+import pwd
 import numpy
 import random
 import shutil
@@ -927,7 +928,7 @@ def main(arguments = None):
 
     # Update LEMONdB metadata
     db.date = time.time()
-    db.author = os.getlogin()
+    db.author = pwd.getpwuid(os.getuid())[0]
     db.hostname = socket.gethostname()
     db.commit()
 

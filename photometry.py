@@ -48,6 +48,7 @@ import numpy
 import optparse
 import os
 import os.path
+import pwd
 import socket
 import sys
 import time
@@ -1006,12 +1007,11 @@ def main(arguments = None):
             print
 
     # Store into the METADATA table of the LEMONdB the current time (in seconds
-    # since the Unix epoch), the name of the user logged in on the controlling
-    # terminal of the process and the hostname of the machine where Python is
-    # currently executing.
+    # since the Unix epoch), the login name of the currently effective user id
+    # and the hostname of the machine where Python is currently executing.
 
     output_db.date = time.time()
-    output_db.author = os.getlogin()
+    output_db.author = pwd.getpwuid(os.getuid())[0]
     output_db.hostname = socket.gethostname()
     output_db.commit()
 
