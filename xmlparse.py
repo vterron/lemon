@@ -429,6 +429,9 @@ class CandidateAnnuli(object):
                self.dannulus == other.dannulus and \
                self.stdev == other.stdev
 
+    def __ne__(self, other):
+        return not self == other
+
     def __repr__(self):
         return "%s(%f, %f, %f, %f)" % (self.__class__.__name__, self.aperture,
                                        self.annulus, self.dannulus, self.stdev)
