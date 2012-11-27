@@ -423,6 +423,12 @@ class CandidateAnnuli(object):
         self.dannulus = dannulus
         self.stdev    = stdev
 
+    def __eq__(self, other):
+        return self.aperture == other.aperture and \
+               self.annulus == other.annulus and \
+               self.dannulus == other.dannulus and \
+               self.stdev == other.stdev
+
     def __repr__(self):
         return "%s(%f, %f, %f, %f)" % (self.__class__.__name__, self.aperture,
                                        self.annulus, self.dannulus, self.stdev)
