@@ -50,6 +50,7 @@ from database import \
    UnknownStarError)
 
 from diffphot import Weights
+from xmlparse import CandidateAnnuli
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 25   # Minimum number of items for random collections of DBStars
@@ -89,6 +90,7 @@ def different_runix_time(utimes):
         t = ImageTest.random().unix_time
         if t not in utimes:
             return t
+
 
 class DBStarTest(unittest.TestCase):
 
@@ -976,6 +978,12 @@ class LEMONdBTest(unittest.TestCase):
     OBSERVED_PROB = 0.50  # Probability of a star being observed in each image,
                           # needed some test cases which use random sets of data
 
+    # Minimum and maximum number of random xmlparse.CandidateAnnuli objects to
+    # be added and retrieved from random databases in the test cases of the
+    # LEMONdB.add_candidate_pparams and get_candidate_pparams methods.
+    MIN_CANDIDATE_PPARAMS = 1
+    MAX_CANDIDATE_PPARAMS = 128
+
     # Minimum and maximum number of photometrics filters in which a
     # random star may have been observed in some of the test cases
     MIN_NFILTERS = 1
@@ -1009,6 +1017,42 @@ class LEMONdBTest(unittest.TestCase):
                 self.assertTrue(os.path.exists(path))
             finally:
                 os.unlink(path)
+
+    def test_add_and_get_candidate_pparams(self):
+
+        for _ in xrange(NITERS):
+
+            db = LEMONdB(':memory:')
+            args = self.MIN_CANDIDATE_PPARAMS, self.MAX_CANDIDATE_PPARAMS
+            how_many = random.randint(*args) # number of CandidateAnnuli
+
+            # Map each photometric filter to a list of CandidateAnnuli objects;
+            # to keep the track of which have been added for each filter. This
+            # is what we we expect LEMONdB.get_candidate_pparams to return.
+            added = collections.defaultdict(list)
+
+            for index in xrange(how_many):
+                args = list(PhotometricParametersTest.random_data())
+                args.append(random.random()) # the standard deviation
+                candidate = CandidateAnnuli(*args)
+                pfilter = passband.Passband.random()
+
+                added[pfilter].append(candidate)
+                db.add_candidate_pparams(candidate, pfilter)
+
+            # Add the last CandidateAnnuli object for the same photometric
+            # filter again, but using a different standard deviation. This
+            # should replace the record we added previously, and for that
+            # reason we need to update 'added' accordingly.
+            candidate.stdev = random.random()
+            added[pfilter][-1].stdev = candidate.stdev
+            db.add_candidate_pparams(candidate, pfilter)
+
+            for pfilter, expected in added.iteritems():
+                # The returned CandidateAnnuli are sorted by their stdev
+                expected.sort(key = operator.attrgetter('stdev'))
+                retrieved = db.get_candidate_pparams(pfilter)
+                self.assertEqual(retrieved, expected)
 
     def test_rimage(self):
         db = LEMONdB(':memory:')
