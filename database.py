@@ -459,6 +459,22 @@ class LEMONdB(object):
             dannulus INTEGER NOT NULL)
         ''')
 
+        # Map (1) a set of photometric parameters and (2) a photometric filter
+        # to a standard deviation. This table is populated by the photometry
+        # module when the --annuli option is used, storing here the contents
+        # of the XML file with all the candidate photometric parameters.
+
+        self._execute('''
+        CREATE TABLE IF NOT EXISTS candidate_parameters (
+            id         INTEGER PRIMARY KEY,
+            pparams_id INTEGER NOT NULL,
+            wavelength INTEGER NOT NULL,
+            stdev      REAL NOT NULL,
+            FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
+            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
+            UNIQUE (pparams_id, wavelength))
+        ''')
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS rimage (
            path       TEXT NOT NULL,
