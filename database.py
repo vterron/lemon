@@ -625,6 +625,34 @@ class LEMONdB(object):
             self._execute("INSERT INTO photometric_parameters VALUES (?, ?, ?, ?)", t)
             return self._cursor.lastrowid
 
+    def add_candidate_pparams(self, candidate_annuli, pfilter):
+        """ Store a CandidateAnnuli instance into the LEMONdB.
+
+        The method links an xmlparse.CandidateAnnuli instance to a photometric
+        filter, adding a new record to the CANDIDATE_PARAMETERS table. This
+        allows us to store in the LEMONdB the photometric parameters what were
+        evaluated for each photometric filter, and how good they were (the
+        lower the standard deviation, the better). Please refer to the docs of
+        the xmlparse.CandidateAnnuli class and the annuli module for further
+        information on how the optimal parameters for aperture photometry are
+        identified.
+
+        Adding, for the same filter, a CandidateAnnuli with the same aperture,
+        annulus and dannulus (sky annulus) that a previously added object, but
+        a different stdev, will replace the CandidateAnnuli already in the
+        database. For example, if we are working with Johnson I and first add
+        CandidateAnnuli(1.618, 14.885, 3.236, 0.476) and, later on,
+        CandidateAnnuli(1.618, 14.885, 3.236, 0.981), also for Johnson I, the
+        former record (that with stdev 0.981) will be replaced by the latter.
+
+        """
+
+        pparams_id = self._add_pparams(candidate_annuli)
+        self._add_pfilter(pfilter)
+        t = (None, pparams_id, pfilter.wavelength, candidate_annuli.stdev)
+        self._execute("INSERT OR REPLACE INTO candidate_parameters "
+                      "VALUES (?, ?, ?, ?)", t)
+
     @property
     def rimage(self):
         """ Return a ReferenceImage instance, or None if there isn't any"""
