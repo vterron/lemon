@@ -41,6 +41,7 @@ import time
 # LEMON modules
 import methods
 import passband
+import xmlparse
 
 class DBStar(object):
     """ Encapsulates the instrumental photometric information for a star.
@@ -652,6 +653,27 @@ class LEMONdB(object):
         t = (None, pparams_id, pfilter.wavelength, candidate_annuli.stdev)
         self._execute("INSERT OR REPLACE INTO candidate_parameters "
                       "VALUES (?, ?, ?, ?)", t)
+
+    def get_candidate_pparams(self, pfilter):
+        """ Return all the CandidateAnnuli for a photometric filter.
+
+        The method returns a list with all the CandidateAnnuli objects that
+        have been stored in the LEMONdB (in the CANDIDATE_PARAMETERS table,
+        using the add_candidate_pparams method) for the 'filter' photometric
+        filter. The returned CandidateAnnuli are sorted in increasing order by
+        their standard deviation; that is, the one with the lowest stdev goes
+        first, while that with the highest stdev is the last one.
+
+        """
+
+        t = (pfilter.wavelength,)
+        self._execute("SELECT p.aperture, p.annulus, p.dannulus, c.stdev "
+                      " FROM candidate_parameters AS c, "
+                      "      photometric_parameters AS p "
+                      "ON c.pparams_id = p.id "
+                      "WHERE c.wavelength = ? "
+                      "ORDER BY c.stdev ASC", t)
+        return [xmlparse.CandidateAnnuli(*args) for args in self._rows]
 
     @property
     def rimage(self):
