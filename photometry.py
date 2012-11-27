@@ -379,7 +379,7 @@ def main(arguments = None):
             return 1
         else:
             xml_annuli = \
-                xmlparse.CandidateAnnuli.xml_load(options.xml_annuli, best_only = True)
+                xmlparse.CandidateAnnuli.xml_load(options.xml_annuli)
             print "%sPhotometric paramaters read from the '%s' file." % \
                   (style.prefix, os.path.basename(options.xml_annuli))
 
@@ -522,9 +522,7 @@ def main(arguments = None):
 
     if xml_annuli:
         xml_offsets_bands = set(x.filter for x in xml_offsets)
-        for pfilter, annuli in xml_annuli.iteritems():
-            # Only the best CandidateAnnuli must have been loaded
-            assert len(annuli) == 1
+        for pfilter in xml_annuli.iterkeys():
             if pfilter not in xml_offsets_bands:
                 print "%sError. The photometric parameters for the %s filter " \
                       "are not listed in" % (style.prefix, pfilter)
@@ -824,10 +822,10 @@ def main(arguments = None):
               "%s filter." % (style.prefix, len(band_offsets), pfilter)
 
         # The procedure if the dimensions of the aperture and sky annuli are to
-        # be extracted from the --annuli file is simple: just take the
-        # CandidateAnnuli instance with the best photometric paramaters for
-        # this filter (as we previously made sure that there is an instance for
-        # each passband on which photometry is to be done) and use them.
+        # be extracted from the --annuli file is simple: just take the first
+        # CandidateAnnuli instance, as they are sorted in increasing order by
+        # the standard deviation (which means that the best one is the first
+        # element of the list) and use it.
         #
         # Alternatively, if the dimensions of the annuli are to be determined
         # by the median FWHM of the images, this has to be done for each
@@ -837,7 +835,11 @@ def main(arguments = None):
 
         if xml_annuli:
 
-            assert len(xml_annuli[pfilter]) == 1
+            # Store all the CandidateAnnuli objects in the LEMONdB
+            assert len(xml_annuli[pfilter])
+            for cand in xml_annuli[pfilter]:
+                output_db.add_candidate_pparams(cand, pfilter)
+
             filter_annuli = xml_annuli[pfilter][0]
             aperture = filter_annuli.aperture
             annulus  = filter_annuli.annulus
