@@ -562,23 +562,27 @@ class ImageTest(unittest.TestCase):
 
                 # Reuse the Unix time of one the Images already returned, but
                 # we need to find a filter for which it has not been used yet.
-                # Give up, of course, if all the photometric filters have been
-                # already used for this Unix time.
 
                 all_utimes = set().union(*used_utimes.itervalues())
-                img.unix_time = random.choice(list(all_utimes))
+                duplicate_utime = random.choice(list(all_utimes))
 
                 all_pfilters = passband.Passband.all()
                 random.shuffle(all_pfilters)
                 for duplicate_pfilter in all_pfilters:
-                    if img.unix_time not in used_utimes[duplicate_pfilter]:
+                    if duplicate_utime not in used_utimes[duplicate_pfilter]:
+                        img.unix_time = duplicate_utime
                         img.pfilter = duplicate_pfilter
                         break
 
-                # This point is reached only if no photometric filter was
-                # available for this Unix time. Nothing we can do here.
+                # This point is reached only if all the photometric filters
+                # have been already used for this Unix time. Therefore, we
+                # cannot reuse the Unix time, so give up -- use the original,
+                # unique Unix time that obtained with the runix_times function
+                # and with which we have instantiated the Image object.
 
-            used_utimes[img.pfilter].add(img.unix_time)
+            pfilter_utimes = used_utimes[img.pfilter]
+            assert img.unix_time not in pfilter_utimes
+            pfilter_utimes.add(img.unix_time)
             yield img
 
         if __debug__:
