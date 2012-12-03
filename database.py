@@ -922,12 +922,13 @@ class LEMONdB(object):
 
         t = (star_id, )
         self._execute("""SELECT DISTINCT f.name
-                         FROM photometry AS phot
+                         FROM (SELECT DISTINCT image_id
+                               FROM photometry
+                               WHERE star_id = ?) AS phot
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
                          ON img.wavelength = f.wavelength
-                         WHERE phot.star_id = ?
                          ORDER BY f.wavelength ASC """, t)
 
         return [passband.Passband(x[0]) for x in self._rows]
@@ -950,7 +951,8 @@ class LEMONdB(object):
         """
 
         self._execute("""SELECT DISTINCT f.name
-                         FROM photometry AS phot
+                         FROM (SELECT DISTINCT image_id
+                               FROM photometry) as phot
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
