@@ -423,6 +423,23 @@ class LEMONdB(object):
         including the most recent savepoint with this name """
         self._execute("RELEASE %s" % name)
 
+    def analyze(self):
+        """ Run the ANALYZE command and commit automatically.
+
+        This command gathers statistics about tables and indexes and stores the
+        collected information in internal tables of the database where the
+        query optimizer can access the information and use it to help make
+        better query planning choices. These statistics are not automatically
+        updated as the content of the database changes. If the content of the
+        database changes significantly, or if the database schema changes, then
+        one should consider rerunning the ANALYZE command in order to update
+        the statistics. [https://www.sqlite.org/lang_analyze.html]
+
+        """
+
+        self._execute("ANALYZE")
+        self.commit()
+
     def _create_tables(self):
         """ Create, if needed, the tables used by the database """
 
