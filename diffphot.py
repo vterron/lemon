@@ -926,6 +926,11 @@ def main(arguments = None):
             methods.show_progress(100.0)
             print
 
+    print "%sUpdating statistics about tables and indexes..." % style.prefix ,
+    sys.stdout.flush()
+    db.analyze()
+    print 'done.'
+
     # Update LEMONdB metadata
     db.date = time.time()
     db.author = pwd.getpwuid(os.getuid())[0]
