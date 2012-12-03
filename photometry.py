@@ -1009,6 +1009,16 @@ def main(arguments = None):
             methods.show_progress(100.0)
             print
 
+    # Collect information that can be used by the query optimizer to help make
+    # better query planning choices. In the absence of ANALYZE information,
+    # SQLite assumes that each table contains one million records when deciding
+    # between doing a full table scan and constructing an automatic index.
+
+    print "%sGathering statistics about tables and indexes..." % style.prefix ,
+    sys.stdout.flush()
+    output_db.analyze()
+    print 'done.'
+
     # Store into the METADATA table of the LEMONdB the current time (in seconds
     # since the Unix epoch), the login name of the currently effective user id
     # and the hostname of the machine where Python is currently executing.
