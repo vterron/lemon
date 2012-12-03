@@ -524,9 +524,7 @@ class LEMONdB(object):
 
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength "
-                      "ON images(wavelength)")
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_and_unix_time "
+        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_time "
                       "ON images(wavelength, unix_time)")
 
         self._execute('''
@@ -588,10 +586,8 @@ class LEMONdB(object):
             UNIQUE (star_id, wavelength))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS period_by_star "
-                      "ON periods(star_id)")
-        self._execute("CREATE INDEX IF NOT EXISTS period_by_star_and_wavelength ON "
-                      "periods(star_id, wavelength)")
+        self._execute("CREATE INDEX IF NOT EXISTS period_by_star_wavelength "
+                      "ON periods(star_id, wavelength)")
 
     def _table_count(self, table):
         """ Return the number of rows in 'table' """
