@@ -524,6 +524,11 @@ class LEMONdB(object):
 
         ''')
 
+        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength "
+                      "ON images(wavelength)")
+        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_and_unix_time "
+                      "ON images(wavelength, unix_time)")
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS photometry (
             id         INTEGER PRIMARY KEY,
@@ -535,6 +540,11 @@ class LEMONdB(object):
             FOREIGN KEY (image_id) REFERENCES images(id),
             UNIQUE (star_id, image_id))
         ''')
+
+        self._execute("CREATE INDEX IF NOT EXISTS phot_by_star "
+                      "ON photometry(star_id)")
+        self._execute("CREATE INDEX IF NOT EXISTS phot_by_image_id "
+                      "ON photometry(image_id)")
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS light_curves (
@@ -548,6 +558,9 @@ class LEMONdB(object):
             UNIQUE (star_id, image_id))
         ''')
 
+        self._execute("CREATE INDEX IF NOT EXISTS curve_by_star "
+                      "ON light_curves(star_id)")
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS cmp_stars (
             id         INTEGER PRIMARY KEY,
@@ -559,6 +572,9 @@ class LEMONdB(object):
             FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
             FOREIGN KEY (cstar_id)   REFERENCES stars(id))
         ''')
+
+        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_and_wavelength "
+                      "ON cmp_stars(star_id, wavelength)")
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS periods (
@@ -572,18 +588,6 @@ class LEMONdB(object):
             UNIQUE (star_id, wavelength))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS phot_by_star "
-                      "ON photometry(star_id)")
-        self._execute("CREATE INDEX IF NOT EXISTS phot_by_image_id "
-                      "ON photometry(image_id)")
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength "
-                      "ON images(wavelength)")
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_and_unix_time "
-                      "ON images(wavelength, unix_time)")
-        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_and_wavelength "
-                      "ON cmp_stars(star_id, wavelength)")
-        self._execute("CREATE INDEX IF NOT EXISTS curve_by_star "
-                      "ON light_curves(star_id)")
         self._execute("CREATE INDEX IF NOT EXISTS period_by_star "
                       "ON periods(star_id)")
         self._execute("CREATE INDEX IF NOT EXISTS period_by_star_and_wavelength ON "
