@@ -571,7 +571,7 @@ class LEMONdB(object):
             FOREIGN KEY (cstar_id)   REFERENCES stars(id))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_and_wavelength "
+        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_wavelength "
                       "ON cmp_stars(star_id, wavelength)")
 
         self._execute('''
