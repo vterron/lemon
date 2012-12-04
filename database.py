@@ -477,6 +477,9 @@ class LEMONdB(object):
             dannulus INTEGER NOT NULL)
         ''')
 
+        self._execute("CREATE INDEX IF NOT EXISTS phot_params_all_rows "
+                      "ON photometric_parameters(aperture, annulus, dannulus)")
+
         # Map (1) a set of photometric parameters and (2) a photometric filter
         # to a standard deviation. This table is populated by the photometry
         # module when the --annuli option is used, storing here the contents
