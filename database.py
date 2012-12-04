@@ -941,7 +941,7 @@ class LEMONdB(object):
         t = (star_id, )
         self._execute("""SELECT DISTINCT f.name
                          FROM (SELECT DISTINCT image_id
-                               FROM photometry
+                               FROM photometry INDEXED BY phot_by_star_image
                                WHERE star_id = ?) AS phot
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
