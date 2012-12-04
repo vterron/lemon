@@ -970,7 +970,8 @@ class LEMONdB(object):
 
         self._execute("""SELECT DISTINCT f.name
                          FROM (SELECT DISTINCT image_id
-                               FROM photometry) as phot
+                               FROM photometry INDEXED BY phot_by_image)
+                               AS phot
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
