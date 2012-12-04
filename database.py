@@ -768,7 +768,7 @@ class LEMONdB(object):
         # binding parameter - probably unsupported type"
         t = (float(unix_time), pfilter.wavelength)
         self._execute("SELECT id "
-                      "FROM images "
+                      "FROM images INDEXED BY img_by_wavelength_time "
                       "WHERE unix_time = ? "
                       "  AND wavelength = ?", t)
         rows = list(self._rows)
