@@ -1203,7 +1203,7 @@ class LEMONdB(object):
 
         t = (star_id, pfilter.wavelength)
         self._execute("SELECT period, step "
-                      "FROM periods "
+                      "FROM periods INDEXED BY period_by_star_wavelength "
                       "WHERE star_id = ? "
                       "  AND wavelength = ?", t)
         try:
@@ -1234,7 +1234,7 @@ class LEMONdB(object):
 
         t = (star_id,)
         self._execute("SELECT period "
-                      "FROM periods "
+                      "FROM periods INDEXED BY period_by_star_wavelength "
                       "WHERE star_id = ? ", t)
         periods = tuple(x[0] for x in self._rows)
         if not periods and star_id not in self.star_ids:
