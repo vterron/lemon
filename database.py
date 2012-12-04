@@ -556,8 +556,8 @@ class LEMONdB(object):
             UNIQUE (star_id, image_id))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS curve_by_star "
-                      "ON light_curves(star_id)")
+        self._execute("CREATE INDEX IF NOT EXISTS curve_by_star_image "
+                      "ON light_curves(star_id, image_id)")
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS cmp_stars (
