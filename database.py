@@ -636,6 +636,7 @@ class LEMONdB(object):
         t = [pparams.aperture, pparams.annulus, pparams.dannulus]
         self._execute("SELECT id "
                       "FROM photometric_parameters "
+                      "     INDEXED BY phot_params_all_rows "
                       "WHERE aperture = ? "
                       "  AND annulus  = ? "
                       "  AND dannulus = ?", t)
