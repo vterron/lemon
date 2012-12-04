@@ -914,7 +914,8 @@ class LEMONdB(object):
 
         t = (star_id, pfilter.wavelength)
         self._execute("SELECT img.unix_time, phot.magnitude, phot.snr "
-                      "FROM photometry AS phot, images AS img "
+                      "FROM photometry AS phot INDEXED BY phot_by_star_image, "
+                      "     images AS img INDEXED BY img_by_wavelength_time "
                       "ON phot.image_id = img.id "
                       "WHERE phot.star_id = ? "
                       "  AND img.wavelength = ? "
