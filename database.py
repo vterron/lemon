@@ -1118,7 +1118,8 @@ class LEMONdB(object):
         # Extract the points of the light curve ...
         t = (star_id, pfilter.wavelength)
         self._execute("SELECT img.unix_time, curve.magnitude, curve.snr "
-                      "FROM light_curves AS curve, images AS img "
+                      "FROM light_curves AS curve INDEXED BY curve_by_star_image, "
+                      "     images AS img INDEXED BY img_by_wavelength_time "
                       "ON curve.image_id = img.id "
                       "WHERE curve.star_id = ? "
                       "  AND img.wavelength = ? "
@@ -1128,7 +1129,7 @@ class LEMONdB(object):
         if curve_points:
             # ... as well as the comparison stars.
             self._execute("SELECT cstar_id, weight "
-                          "FROM cmp_stars "
+                          "FROM cmp_stars INDEXED BY cstars_by_star_wavelength "
                           "WHERE star_id = ? "
                           "  AND wavelength = ? "
                           "ORDER BY cstar_id", t)
