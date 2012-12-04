@@ -1257,7 +1257,7 @@ class LEMONdB(object):
 
         t = (pfilter.wavelength, )
         self._execute("SELECT unix_time, airmass "
-                      "FROM images "
+                      "FROM images INDEXED BY img_by_wavelength_time "
                       "WHERE wavelength = ? ", t)
         return dict(self._rows)
 
