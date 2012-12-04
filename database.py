@@ -539,8 +539,8 @@ class LEMONdB(object):
             UNIQUE (star_id, image_id))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS phot_by_star "
-                      "ON photometry(star_id)")
+        self._execute("CREATE INDEX IF NOT EXISTS phot_by_star_image "
+                      "ON photometry(star_id, image_id)")
         self._execute("CREATE INDEX IF NOT EXISTS phot_by_image "
                       "ON photometry(image_id)")
 
