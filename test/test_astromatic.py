@@ -95,3 +95,29 @@ class PixelTest(unittest.TestCase):
             self.assertNotEqual(pixel, different)
             self.assertNotEqual(identical, different)
 
+    def test_hash(self):
+
+        pix1 = Pixel(83.1, 18.2)
+        pix2 = Pixel(33.1, 13.4)
+        self.assertEqual(hash(pix1), hash(pix1))
+        self.assertEqual(hash(pix2), hash(pix2))
+        self.assertNotEqual(hash(pix1), hash(pix2))
+
+        for _ in xrange(NITERS):
+
+            pixel = self.random()
+            self.assertEqual(hash(pixel), hash(pixel))
+
+            # Half of these random cases use 'pixel' and another Pixel to which
+            # it compares equal (so they must have the same hash value), where
+            # the other half uses a different Pixel (the hashes must differ).
+
+            if random.choice([True, False]):
+                identical = copy.deepcopy(pixel)
+                self.assertEqual(hash(identical), hash(identical))
+                self.assertEqual(hash(pixel), hash(identical))
+            else:
+                different = self.different(pixel)
+                self.assertEqual(hash(different), hash(different))
+                self.assertNotEqual(hash(pixel), hash(different))
+
