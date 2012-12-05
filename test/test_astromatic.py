@@ -19,6 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import numpy
 import random
 import unittest
 
@@ -120,4 +121,30 @@ class PixelTest(unittest.TestCase):
                 different = self.different(pixel)
                 self.assertEqual(hash(different), hash(different))
                 self.assertNotEqual(hash(pixel), hash(different))
+
+    def test_distance(self):
+
+        pixel1 = Pixel(4, 6)
+        pixel2 = Pixel(8, 5)
+        distance = pixel1.distance(pixel2)
+        # ((4 - 8) ^ 2 + (6 - 5) ^ 2) ^ 0.5
+        self.assertAlmostEqual(distance, 4.1231056256176606)
+
+        pixel1 = Pixel(2.14, 1.89)
+        pixel2 = Pixel(3.34, 8.01)
+        distance = pixel1.distance(pixel2)
+        # ((2.14 - 3.34) ^ 2 + (1.89 - 8.01) ^ 2) ^ 0.5
+        self.assertAlmostEqual(distance, 6.2365375008894155)
+
+        for _ in xrange(NITERS):
+
+            pixel1 = self.random()
+            pixel2 = self.random()
+            distance = pixel1.distance(pixel2)
+
+            # Compute the expected Euclidean distance with NumPy
+            array1 = numpy.array([pixel1.x, pixel1.y])
+            array2 = numpy.array([pixel2.x, pixel2.y])
+            expected = numpy.linalg.norm(array1 - array2)
+            self.assertAlmostEqual(distance, expected)
 
