@@ -37,6 +37,15 @@ class PixelTest(unittest.TestCase):
         y = random.uniform(*cls.Y_COORD_RANGE)
         return Pixel(x, y)
 
+    @classmethod
+    def different(cls, pixel):
+        """ Return a Pixel with a different x- or y-coordinate value, or both"""
+        while True:
+            another = cls.random()
+            assert id(pixel) != id(another)
+            if pixel != another:
+                return another
+
     def test_init(self):
         for _ in xrange(NITERS):
             x = random.uniform(*self.X_COORD_RANGE)
