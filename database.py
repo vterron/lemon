@@ -692,7 +692,8 @@ class LEMONdB(object):
 
         t = (pfilter.wavelength,)
         self._execute("SELECT p.aperture, p.annulus, p.dannulus, c.stdev "
-                      " FROM candidate_parameters AS c, "
+                      " FROM candidate_parameters AS c "
+                      "      INDEXED BY cand_wavelength, "
                       "      photometric_parameters AS p "
                       "ON c.pparams_id = p.id "
                       "WHERE c.wavelength = ? "
