@@ -45,3 +45,20 @@ class PixelTest(unittest.TestCase):
             self.assertEqual(pixel.x, x)
             self.assertEqual(pixel.y, y)
 
+    def test_repr(self):
+        for _ in xrange(NITERS):
+            pixel = self.random()
+            repr_pixel = eval(`pixel`)
+
+            # We need to use TestCase.assertAlmostEqual, instead of a simple
+            # equality comparison, because the precision of the coordinates in
+            # 'repr_pixel' is limited by the number of decimal places printed
+            # by __repr__. The Pixel returned by eval(`pixel`), therefore, may
+            # not be exactly equal to 'pixel' when the coordinates are real
+            # numbers, but we just want to verify that it __repr__ computes a
+            # valid, approximate-enough string representation of the object.
+
+            kwargs = dict(places = 5)
+            self.assertAlmostEqual(pixel.x, repr_pixel.x, **kwargs)
+            self.assertAlmostEqual(pixel.y, repr_pixel.y, **kwargs)
+
