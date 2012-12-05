@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import random
 import unittest
 
@@ -70,4 +71,27 @@ class PixelTest(unittest.TestCase):
             kwargs = dict(places = 5)
             self.assertAlmostEqual(pixel.x, repr_pixel.x, **kwargs)
             self.assertAlmostEqual(pixel.y, repr_pixel.y, **kwargs)
+
+    def test_eq(self):
+
+        pix1 = Pixel(13.2, 15.4)
+        pix2 = Pixel(67.3, 12.5)
+        self.assertEqual(pix1, pix1)
+        self.assertEqual(pix2, pix2)
+        self.assertNotEqual(pix1, pix2)
+
+        for _ in xrange(NITERS):
+
+            # Three objects: 'pixel' == 'identical' != 'different'
+            pixel = self.random()
+            identical = copy.deepcopy(pixel)
+
+            self.assertEqual(pixel, pixel)
+            self.assertEqual(identical, identical)
+            self.assertEqual(pixel, identical)
+
+            different = self.different(pixel)
+            self.assertEqual(different, different)
+            self.assertNotEqual(pixel, different)
+            self.assertNotEqual(identical, different)
 
