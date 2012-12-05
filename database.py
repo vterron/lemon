@@ -496,6 +496,9 @@ class LEMONdB(object):
             UNIQUE (pparams_id, wavelength))
         ''')
 
+        self._execute("CREATE INDEX IF NOT EXISTS cand_wavelength "
+                      "ON candidate_parameters(wavelength)")
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS rimage (
            path       TEXT NOT NULL,
