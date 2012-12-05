@@ -75,9 +75,6 @@ class Pixel(object):
     def __repr__(self):
         return '%s(%f, %f)' % (self.__class__.__name__, self.x, self.y)
 
-    def __str__(self):
-        return repr(self)
-
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
