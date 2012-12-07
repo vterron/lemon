@@ -153,3 +153,32 @@ class PixelTest(unittest.TestCase):
             expected = numpy.linalg.norm(array1 - array2)
             self.assertAlmostEqual(distance, expected)
 
+
+class StarTest(unittest.TestCase):
+
+    X_COORD_RANGE = (1, 2048)
+    Y_COORD_RANGE = (1, 2048)
+    RIGHT_ASCENSION_RANGE = (0, 360)
+    DECLINATION_RANGE = (-90, 90)
+    ISOAREAF_RANGE = (1, 100)
+    MAGNITUDE_RANGE = (1.47, 25)
+    SNR_RANGE = (2, 10000)
+    FWHM_RANGE = (0.5, 4.5)
+    ELONGATION_RANGE = (1, 3.5)
+
+    @classmethod
+    def rargs(cls):
+        """ Return the arguments needed to instantiate a random Star """
+
+        x = random.uniform(*cls.X_COORD_RANGE)
+        y = random.uniform(*cls.Y_COORD_RANGE)
+        alpha = random.uniform(*cls.RIGHT_ASCENSION_RANGE)
+        delta = random.uniform(*cls.DECLINATION_RANGE)
+        isoareaf = random.uniform(*cls.ISOAREAF_RANGE)
+        mag = random.uniform(*cls.MAGNITUDE_RANGE)
+        saturated = random.choice([True, False])
+        snr = random.uniform(*cls.SNR_RANGE)
+        fwhm = random.uniform(*cls.FWHM_RANGE)
+        elong = random.uniform(*cls.ELONGATION_RANGE)
+        return x, y, alpha, delta, isoareaf, mag, saturated, snr, fwhm, elong
+
