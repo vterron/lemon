@@ -130,24 +130,6 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
 
         return output_directory
 
-def to_binary(decimal):
-    """ Format integer as a binary string.
-
-    Keyword arguments:
-    decimal - the integer to be returned as a binary string.
-
-    """
-
-    string_repr = ""
-    if decimal == 0 or decimal == 1:
-        return str(decimal)
-    else:
-        string_repr += to_binary(decimal / 2)
-        string_repr += str(decimal % 2)
-
-    assert int(string_repr, 2) == decimal
-    return string_repr
-
 def deprecated(func):
     """ Mark a function as deprecated.
 

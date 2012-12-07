@@ -270,7 +270,7 @@ class Catalog(list):
 
         """
 
-        binary_repr = methods.to_binary(flag_value)
+        binary_repr = bin(flag_value)
         return len(binary_repr) >= 3 and binary_repr[-3] == '1'
 
     def _load_stars(self):
