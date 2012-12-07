@@ -23,7 +23,7 @@ import numpy
 import random
 import unittest
 
-from astromatic import Pixel
+from astromatic import Pixel, Star
 
 NITERS = 100
 
@@ -181,4 +181,21 @@ class StarTest(unittest.TestCase):
         fwhm = random.uniform(*cls.FWHM_RANGE)
         elong = random.uniform(*cls.ELONGATION_RANGE)
         return x, y, alpha, delta, isoareaf, mag, saturated, snr, fwhm, elong
+
+    def test_init(self):
+        for _ in xrange(NITERS):
+            args = self.rargs()
+            star = Star(*args)
+
+            x, y, ra, dec, area, mag, satur, snr, fwhm, elong = args
+            self.assertEqual(star.x, x)
+            self.assertEqual(star.y, y)
+            self.assertEqual(star.alpha, ra)
+            self.assertEqual(star.delta, dec)
+            self.assertEqual(star.area, area)
+            self.assertEqual(star.mag, mag)
+            self.assertEqual(star.saturated, satur)
+            self.assertEqual(star.snr, snr)
+            self.assertEqual(star.fwhm, fwhm)
+            self.assertEqual(star.elongation, elong)
 
