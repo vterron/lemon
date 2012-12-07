@@ -33,10 +33,16 @@ class PixelTest(unittest.TestCase):
     Y_COORD_RANGE = (1, 2048)
 
     @classmethod
-    def random(cls):
-        """ Return a random Pixel object """
+    def rargs(cls):
+        """ Return the arguments needed to instantiate a random Pixel """
         x = random.uniform(*cls.X_COORD_RANGE)
         y = random.uniform(*cls.Y_COORD_RANGE)
+        return x, y
+
+    @classmethod
+    def random(cls):
+        """ Return a random Pixel object """
+        x, y = cls.rargs()
         return Pixel(x, y)
 
     @classmethod
@@ -50,8 +56,7 @@ class PixelTest(unittest.TestCase):
 
     def test_init(self):
         for _ in xrange(NITERS):
-            x = random.uniform(*self.X_COORD_RANGE)
-            y = random.uniform(*self.Y_COORD_RANGE)
+            x, y = self.rargs()
             pixel = Pixel(x, y)
             self.assertEqual(pixel.x, x)
             self.assertEqual(pixel.y, y)
