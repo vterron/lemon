@@ -182,6 +182,11 @@ class StarTest(unittest.TestCase):
         elong = random.uniform(*cls.ELONGATION_RANGE)
         return x, y, alpha, delta, isoareaf, mag, saturated, snr, fwhm, elong
 
+    @classmethod
+    def random(cls):
+        """ Return a random Star object """
+        return Star(*cls.rargs())
+
     def test_init(self):
         for _ in xrange(NITERS):
             args = self.rargs()
