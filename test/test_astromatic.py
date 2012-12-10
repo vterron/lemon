@@ -23,7 +23,7 @@ import numpy
 import random
 import unittest
 
-from astromatic import Pixel, Star
+from astromatic import Pixel, Star, Catalog
 
 NITERS = 100
 
@@ -262,4 +262,33 @@ class StarTest(unittest.TestCase):
             array2 = numpy.array([star2.x, star2.y])
             expected = numpy.linalg.norm(array1 - array2)
             self.assertAlmostEqual(distance, expected)
+
+
+class CatalogTest(unittest.TestCase):
+
+    def test_flag_saturated(self):
+
+        # Numbers in the [0, 255] range whose 3rd least significant bit is one
+        saturated_flags = set([4, 5, 6, 7, 12, 13, 14, 15, 20, 21, 22, 23, 28,
+        29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 52, 53, 54, 55, 60, 61, 62,
+        63, 68, 69, 70, 71, 76, 77, 78, 79, 84, 85, 86, 87, 92, 93, 94, 95,
+        100, 101, 102, 103, 108, 109, 110, 111, 116, 117, 118, 119, 124, 125,
+        126, 127, 132, 133, 134, 135, 140, 141, 142, 143, 148, 149, 150, 151,
+        156, 157, 158, 159, 164, 165, 166, 167, 172, 173, 174, 175, 180, 181,
+        182, 183, 188, 189, 190, 191, 196, 197, 198, 199, 204, 205, 206, 207,
+        212, 213, 214, 215, 220, 221, 222, 223, 228, 229, 230, 231, 236, 237,
+        238, 239, 244, 245, 246, 247, 252, 253, 254, 255])
+
+        for flag in xrange(0, 256):
+            is_saturated = Catalog.flag_saturated(flag)
+            if flag in saturated_flags:
+                self.assertTrue(is_saturated)
+            else:
+                self.assertFalse(is_saturated)
+
+        # Flags outside of the range raise ValueError
+        self.assertRaises(ValueError, Catalog.flag_saturated, -2)
+        self.assertRaises(ValueError, Catalog.flag_saturated, -1)
+        self.assertRaises(ValueError, Catalog.flag_saturated, 256)
+        self.assertRaises(ValueError, Catalog.flag_saturated, 257)
 
