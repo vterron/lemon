@@ -268,7 +268,16 @@ class Catalog(list):
         as a binary string and we check whether the third bit (2**(3-1) == 4)
         from the left equals one.
 
+        Since the value of the flag is determined by the first eight powers of
+        two, its minimum valid value is zero and the maximum (2**8)-1 = 255.
+        The ValueError exception is raised if the decimal value of the flag
+        is outside of this range.
+
         """
+
+        if not 0 <= flag_value <= 255:
+            msg = "flag value out of range [0, 255]"
+            raise ValueError(msg)
 
         binary_repr = bin(flag_value)
         return len(binary_repr) >= 3 and binary_repr[-3] == '1'
