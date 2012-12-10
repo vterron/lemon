@@ -279,8 +279,11 @@ class Catalog(list):
             msg = "flag value out of range [0, 255]"
             raise ValueError(msg)
 
-        binary_repr = bin(flag_value)
-        return len(binary_repr) >= 3 and binary_repr[-3] == '1'
+        # Convert from, for example, '0b1' to '1', and then fill in with as
+        # many zeros are needed to represent the flag as an eight-bit binary
+        # number ('00000001'), so that we can always check the value of the
+        # third least significant bit.
+        return int(bin(flag_value)[2:].zfill(8)[-3]) == 1
 
     def _load_stars(self):
         """ Load a SExtractor catalog into memory.
