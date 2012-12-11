@@ -362,3 +362,19 @@ class CatalogTest(unittest.TestCase):
         self.assertRaises(ValueError, Catalog, self.SAMPLE_INCOMPLETE_PATH)
         self.assertRaises(ValueError, Catalog, self.SAMPLE_NOASCIIHEAD_PATH)
 
+    def test_get_image_coordinates(self):
+
+        catalog = Catalog(self.SAMPLE_CATALOG_PATH)
+        self.assertEqual(len(catalog), 127)
+        pixels = catalog.get_image_coordinates()
+
+        # The returned list must contain as many Pixel objects, and in the same
+        # order, as detected sources are in the SExtractor catalog. That is to
+        # say that the x- and y-coordinates of the first Pixel must match those
+        # of the first object in the Catalog, and so on.
+
+        self.assertEqual(len(pixels), len(catalog))
+        for pixel, star in zip(pixels, catalog):
+            self.assertEqual(pixel.x, star.x)
+            self.assertEqual(pixel.y, star.y)
+
