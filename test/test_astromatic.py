@@ -19,8 +19,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import functools
 import numpy
+import os
+import os.path
 import random
+import tempfile
 import unittest
 
 from astromatic import Pixel, Star, Catalog
@@ -266,6 +270,12 @@ class StarTest(unittest.TestCase):
 
 class CatalogTest(unittest.TestCase):
 
+    args = os.path.dirname(__file__), './test_data/'
+    get_path = functools.partial(os.path.join, *args)
+    SAMPLE_CATALOG_PATH = get_path('sextractor.cat')
+    SAMPLE_INCOMPLETE_PATH = get_path('sextractor_incomplete.cat')
+    SAMPLE_NOASCIIHEAD_PATH = get_path('sextractor_noasciihead.cat')
+
     def test_flag_saturated(self):
 
         # Numbers in the [0, 255] range whose 3rd least significant bit is one
@@ -291,4 +301,64 @@ class CatalogTest(unittest.TestCase):
         self.assertRaises(ValueError, Catalog.flag_saturated, -1)
         self.assertRaises(ValueError, Catalog.flag_saturated, 256)
         self.assertRaises(ValueError, Catalog.flag_saturated, 257)
+
+    def test_init(self):
+
+        path = self.SAMPLE_CATALOG_PATH
+        catalog = Catalog(path)
+        self.assertEqual(catalog.path, path)
+        self.assertEqual(len(catalog), 127)
+
+        star = catalog[0]
+        self.assertEqual(star.x, 844.359)
+        self.assertEqual(star.y, 434.109)
+        self.assertEqual(star.alpha, 100.2910553)
+        self.assertEqual(star.delta, +9.4697032)
+        self.assertEqual(star.area, 8085)
+        self.assertEqual(star.mag, 8.2460)
+        self.assertFalse(star.saturated)
+        # S/N = FLUX_ISO / FLUXERR_ISO = 8545557 / 12811.09
+        self.assertAlmostEqual(star.snr, 667.043709786)
+        self.assertAlmostEqual(star.fwhm, 12.668) # FLUX_RADIUS x 2
+        self.assertEqual(star.elongation, 1.562)
+
+        star = catalog[68]
+        self.assertEqual(star.x, 4.189)
+        self.assertEqual(star.y, 1995.196)
+        self.assertEqual(star.alpha, 100.1844554)
+        self.assertEqual(star.delta, +9.2744660)
+        self.assertEqual(star.area, 16)
+        self.assertEqual(star.mag, 14.8506)
+        self.assertFalse(star.saturated)
+        # S/N = FLUX_ISO / FLUXERR_ISO = 10539.52 / 569.9098
+        self.assertAlmostEqual(star.snr, 18.49331245)
+        self.assertAlmostEqual(star.fwhm, 2.126) # FLUX_RADIUS x 2
+        self.assertEqual(star.elongation, 1.339)
+
+        star = catalog[126]
+        self.assertEqual(star.x, 107.033)
+        self.assertEqual(star.y, 1953.500)
+        self.assertEqual(star.alpha, 100.1971009)
+        self.assertEqual(star.delta, +9.2796855)
+        self.assertEqual(star.area, 10)
+        self.assertEqual(star.mag, 15.9567)
+        self.assertTrue(star.saturated)
+        # S/N = FLUX_ISO / FLUXERR_ISO = 3833.773 / 450.5532
+        self.assertAlmostEqual(star.snr, 8.509035115)
+        self.assertAlmostEqual(star.fwhm, 2.412) # FLUX_RADIUS x 2
+        self.assertEqual(star.elongation, 1.613)
+
+        # IOError is raised if the SExtractor catalog does not exist; in order
+        # to get the path to a non-existent file, we use NamedTemporaryFile and
+        # close the file (deleting it) immediately after.
+        with tempfile.NamedTemporaryFile(suffix = '.cat') as fd: pass
+        self.assertFalse(os.path.exists(fd.name))
+        self.assertRaises(IOError, Catalog, fd.name)
+
+        # ValueError is raised if one of the required SExtractor parameters is
+        # not in the catalog, or if it was not saved in the ASCII_HEAD format
+        # and therefore there are no comment lines listing column labels, which
+        # are needed in order to determine in which column each parameter is.
+        self.assertRaises(ValueError, Catalog, self.SAMPLE_INCOMPLETE_PATH)
+        self.assertRaises(ValueError, Catalog, self.SAMPLE_NOASCIIHEAD_PATH)
 
