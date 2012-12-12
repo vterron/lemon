@@ -43,6 +43,15 @@ class PixelTest(unittest.TestCase):
         y = random.uniform(*cls.Y_COORD_RANGE)
         return Pixel(x, y)
 
+    def test_immutability(self):
+        """ Make sure that the Pixel class is immutable """
+
+        pixel = self.random()
+        for name in pixel._asdict().iterkeys():
+            value = random.random()
+            self.assertRaises(AttributeError, setattr, pixel, name, value)
+            self.assertRaises(AttributeError, delattr, pixel, name)
+
     def test_distance(self):
 
         pixel1 = Pixel(4, 6)
