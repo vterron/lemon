@@ -20,6 +20,7 @@
 
 from __future__ import division
 
+import collections
 import hashlib
 import os
 import os.path
@@ -65,21 +66,8 @@ class SWarpNotInstalled(StandardError):
 class SWarpError(subprocess.CalledProcessError):
     pass
 
-class Pixel(object):
-    """ A pair of x- and y-coordinates. """
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def __repr__(self):
-        return '%s(%f, %f)' % (self.__class__.__name__, self.x, self.y)
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-
-    def __hash__(self):
-        return hash((self.x, self.y))
+class Pixel(collections.namedtuple('Pixel', "x y")):
+    """ A pair of immutable x- and y-coordinates. """
 
     def distance(self, another):
         """ Return the Euclidean distance between two Pixels """
