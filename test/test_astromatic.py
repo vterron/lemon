@@ -37,16 +37,10 @@ class PixelTest(unittest.TestCase):
     Y_COORD_RANGE = (1, 2048)
 
     @classmethod
-    def rargs(cls):
-        """ Return the arguments needed to instantiate a random Pixel """
-        x = random.uniform(*cls.X_COORD_RANGE)
-        y = random.uniform(*cls.Y_COORD_RANGE)
-        return x, y
-
-    @classmethod
     def random(cls):
         """ Return a random Pixel object """
-        x, y = cls.rargs()
+        x = random.uniform(*cls.X_COORD_RANGE)
+        y = random.uniform(*cls.Y_COORD_RANGE)
         return Pixel(x, y)
 
     def test_distance(self):
