@@ -76,45 +76,37 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
         y_axis = pow(self.y - another.y, 2)
         return math.sqrt(x_axis + y_axis)
 
-class Star(object):
-    """ A Star is primarily made up of two Pixels: one that encapsulates the
-    image coordinates of the Star and another that encapsulates its celestial
-    coordinates (right ascension and declination).
+class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
+           "mag, saturated, snr, fwhm, elongation")):
+    """ An immutable class with a sourced detected by SExtractor. """
 
-    """
-
-    def __init__(self, x, y, alpha, delta, isoareaf, magnitude, saturated,
-                 snr, fwhm, elongation):
-        """ Instantiate a Star with values read from a SExtractor catalog.
+    def __new__(cls, x, y, alpha, delta, area, mag, satur, snr, fwhm, elong):
+        """ Customize the creation of a Star instance: encapsulate the (x, y)
+        and (alpha, delta) as Pixel objects and pass them as the first two
+        arguments of the named tuple. The other arguments are not modified.
 
         x - star position along x.
         y - star position along y.
         alpha - right ascension of the star.
         delta - declination of the star.
-        isoareaf - isophotal area (filtered) above detection threshold (pix^2).
-        magnitude - the measure of the brightness of the Star as seen by an
-                    observer on Earth.
-        saturated - indicated whether at least one pixel of the Star is
-                    saturated, or very close to.
-        snr - the signal-to-noise ratio of the star. This is the only value not
-              directly read from the SExtractor catalog, but which has to be
-              derived by us from other values.
-        fwhm - the full width at half maximum (FWHM) of the star
-        elongation - the value of A/B, where A and B are its semi-major and
-                     semi-minor axis lengths, as reported by SExtractor. More
-                     precisely, A and B represent the maximum and minimum
-                     spatial rms of the object profile along any direction.
+        area - isophotal area (filtered) above detection threshold (pix^2).
+        mag - measure of the brightness as seen by an observer on Earth.
+        satur - at least one pixel of the Star is saturated, or very close to.
+        snr - the signal-to-noise ratio of the star. This is the only value
+              not directly read from the SExtractor catalog, but which has
+              to be derived by us from other values.
+        fwhm - the full width at half maximum (FWHM) of the star.
+        elong - the value of A/B, where A and B are its semi-major and
+                semi-minor axis lengths, as reported by SExtractor. More
+                precisely, A and B represent the maximum and minimum spatial
+                rms of the object profile along any direction.
 
         """
 
-        self.img_coords = Pixel(x, y)
-        self.sky_coords = Pixel(alpha, delta)
-        self.area = isoareaf
-        self.mag = magnitude
-        self.saturated = saturated
-        self.snr = snr
-        self.fwhm = fwhm
-        self.elongation = elongation
+        img_coords = Pixel(x, y)
+        sky_coords = Pixel(alpha, delta)
+        args = img_coords, sky_coords, area, mag, satur, snr, fwhm, elong
+        return super(Star, cls).__new__(cls, *args)
 
     @property
     def x(self):
@@ -131,10 +123,6 @@ class Star(object):
     @property
     def delta(self):
         return self.sky_coords.y
-
-    def __str__(self):
-        return '%s<(%f, %f)-->(%f, %f)' % (self.__class__.__name__,
-               self.x, self.y, self.alpha, self.delta)
 
     def angular_distance(self, another):
         """ Return the angular distance, in degrees, between two Stars. """
@@ -318,9 +306,12 @@ class Catalog(list):
                 snr = flux_iso / fluxerr_iso
                 fwhm = flux_radius * 2
 
-                elongation     = float(line[self._find_column('ELONGATION')])
-                self.append(Star(x, y, alpha, delta, isoareaf, mag_auto,
-                                 saturated, snr, fwhm, elongation))
+                elongation = float(line[self._find_column('ELONGATION')])
+
+                args = (x, y, alpha, delta, isoareaf, mag_auto, saturated, snr,
+                        fwhm, elongation)
+                star = Star(*args)
+                self.append(star)
 
         return self
 

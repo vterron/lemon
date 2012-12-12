@@ -117,6 +117,7 @@ class StarTest(unittest.TestCase):
             args = self.rargs()
             star = Star(*args)
 
+            # Make sure the 'x', 'y', 'alpha' and 'delta' properties work
             x, y, ra, dec, area, mag, satur, snr, fwhm, elong = args
             self.assertEqual(star.x, x)
             self.assertEqual(star.y, y)
