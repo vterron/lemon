@@ -130,6 +130,15 @@ class StarTest(unittest.TestCase):
             self.assertEqual(star.fwhm, fwhm)
             self.assertEqual(star.elongation, elong)
 
+    def test_immutability(self):
+        """ Make sure that the Star class is immutable """
+
+        star = self.random()
+        for name in star._asdict().iterkeys():
+            value = random.random()
+            self.assertRaises(AttributeError, setattr, star, name, value)
+            self.assertRaises(AttributeError, delattr, star, name)
+
     def test_angular_distance(self):
 
         # The first case is taken from Sten Odenwald's Ask the Astronomer
