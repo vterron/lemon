@@ -143,7 +143,7 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
         """ The Euclidean distance between the image coordinates of two Stars """
         return self.img_coords.distance(another.img_coords)
 
-class Catalog(list):
+class Catalog(tuple):
     """ High-level interface to a SExtractor catalog """
 
     @staticmethod
@@ -296,10 +296,16 @@ class Catalog(list):
                         fwhm, elongation)
                 yield Star(*args)
 
-    def __init__(self, path):
-        self.path = path
-        stars = self._load_stars(path)
-        super(Catalog, self).__init__(stars)
+    def __new__(cls, path):
+        stars = cls._load_stars(path)
+        catalog = super(Catalog, cls).__new__(cls, stars)
+        catalog._path = path
+        return catalog
+
+    @property
+    def path(self):
+        """ Read-only 'path' attribute """
+        return self._path
 
     def get_image_coordinates(self):
         """ Return as a list the image coordinates of the stars in the catalog.
