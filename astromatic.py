@@ -21,6 +21,7 @@
 from __future__ import division
 
 import collections
+import functools
 import hashlib
 import os
 import os.path
@@ -145,28 +146,22 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
 class Catalog(list):
     """ High-level interface to a SExtractor catalog """
 
-    def _read_catalog(self):
-        """ A generator over the contents of the catalog.
-
-        The method returns, one-by-one, the lines in the SExtractor catalog,
-        splitting the words in a list where runs of consecutive whitespace are
-        regarded as a single separator. ['#', '1', 'X_IMAGE', 'Object',
-        'position', 'along', 'x', '[pixel]'] is an example of what may
-        be returned.
-
-        """
-        with open(self.path, 'rt') as fd:
-            for line in fd:
-                yield line.split()
-
-    def _find_column(self, parameter):
+    def _find_column(self, contents, parameter):
         """ Return the index of a SExtractor paramater in the catalog.
 
-        The method returns the zero-based index of the column in which a
-        SExtractor parameter (such as X_IMAGE or FLUX_MAX) was written to a
-        catalog. As happens with list.index, ValueError is raised if the
-        parameter cannot be found in the catalog. For user's convenience the
-        search is case-insensitive, so 'x_world' would match 'X_WORLD'.
+        The method takes as inputs the contents of a SExtractor catalog and the
+        name of a parameter (such as 'X_IMAGE' or 'FLUX_MAX') and returns the
+        zero-based index of the column in which it is located. As happens with
+        list.index(), ValueError is raised if the parameter cannot be found in
+        the catalog. For user's convenience the search is case-insensitive, so
+        'x_world' would match 'X_WORLD'.
+
+        The 'contents' parameter must be a list (one element per line in the
+        SExtractor catalog) of lists (one element per word in each line, as
+        returned by str.split(). This is how 'content' could look like, e.g.:
+        [['#', '1', 'X_IMAGE', 'Object', 'position', 'along', 'x', '[pixel]'],
+         ['#', '2', 'Y_IMAGE', 'Object', 'position', 'along', 'y', '[pixel]'],
+         ...]
 
         Is is important no note that, for the parameter being able to be found,
         the catalog must have been saved in the SExtractor ASCII_HEAD format,
@@ -197,9 +192,8 @@ class Catalog(list):
             # Where the first integer in each line, right after the '#',
             # indicates the column of the parameter. Note that we must
             # subtract one from these indexes, as they are one-based.
-
             comments = (line
-                        for line in self._read_catalog()
+                        for line in contents
                         if line and line[0] and line[0][0] == '#')
 
             for line in comments:
@@ -207,7 +201,7 @@ class Catalog(list):
                 if param_name.upper() == parameter.upper():
                     param_index = int(line[1]) - 1
                     setattr(self, attr, param_index)
-                    return self._find_column(parameter)
+                    return self._find_column(contents, parameter)
             else:
                 raise ValueError("'%s' not in %s" % (parameter, self.path))
 
@@ -261,7 +255,7 @@ class Catalog(list):
         # third least significant bit.
         return int(bin(flag_value)[2:].zfill(8)[-3]) == 1
 
-    def _load_stars(self):
+    def _load_stars(self, path):
         """ Load a SExtractor catalog into memory.
 
         The method parses a SExtractor catalog and adds to 'self', after
@@ -289,24 +283,30 @@ class Catalog(list):
 
         del self[:]
 
-        for line in self._read_catalog():
-            if line[0][0] != '#': # ignore comments
-                x           = float(line[self._find_column('X_IMAGE')])
-                y           = float(line[self._find_column('Y_IMAGE')])
-                alpha       = float(line[self._find_column('ALPHA_SKY')])
-                delta       = float(line[self._find_column('DELTA_SKY')])
-                isoareaf    =   int(line[self._find_column('ISOAREAF_IMAGE')])
-                mag_auto    = float(line[self._find_column('MAG_AUTO')])
-                flux_iso    = float(line[self._find_column('FLUX_ISO')])
-                fluxerr_iso = float(line[self._find_column('FLUXERR_ISO')])
-                flux_radius = float(line[self._find_column('FLUX_RADIUS')])
+        with open(path, 'rt') as fd:
+            contents = [line.split() for line in fd]
 
-                flags = int(line[self._find_column('FLAGS')])
+        for line in contents:
+            if line[0][0] != '#': # ignore comments
+
+                get_index = functools.partial(self._find_column, contents)
+
+                x           = float(line[get_index('X_IMAGE')])
+                y           = float(line[get_index('Y_IMAGE')])
+                alpha       = float(line[get_index('ALPHA_SKY')])
+                delta       = float(line[get_index('DELTA_SKY')])
+                isoareaf    =   int(line[get_index('ISOAREAF_IMAGE')])
+                mag_auto    = float(line[get_index('MAG_AUTO')])
+                flux_iso    = float(line[get_index('FLUX_ISO')])
+                fluxerr_iso = float(line[get_index('FLUXERR_ISO')])
+                flux_radius = float(line[get_index('FLUX_RADIUS')])
+
+                flags = int(line[get_index('FLAGS')])
                 saturated = Catalog.flag_saturated(flags)
                 snr = flux_iso / fluxerr_iso
                 fwhm = flux_radius * 2
 
-                elongation = float(line[self._find_column('ELONGATION')])
+                elongation = float(line[get_index('ELONGATION')])
 
                 args = (x, y, alpha, delta, isoareaf, mag_auto, saturated, snr,
                         fwhm, elongation)
@@ -318,7 +318,7 @@ class Catalog(list):
     def __init__(self, path):
         super(list, self).__init__()
         self.path = path
-        self._load_stars()
+        self._load_stars(path)
 
     def get_image_coordinates(self):
         """ Return as a list the image coordinates of the stars in the catalog.
