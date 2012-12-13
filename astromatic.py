@@ -241,18 +241,18 @@ class Catalog(list):
         # third least significant bit.
         return int(bin(flag_value)[2:].zfill(8)[-3]) == 1
 
-    def _load_stars(self, path):
+    @classmethod
+    def _load_stars(cls, path):
         """ Load a SExtractor catalog into memory.
 
-        The method parses a SExtractor catalog and adds to 'self', after
-        emptying it, an instance of the Star class for each detected object.
-        It is mandatory, or the ValueError exception will be raised otherwise,
-        that the following parameters are present in the catalog: X_IMAGE,
-        Y_IMAGE, ALPHA_SKY, DELTA_SKY, ISOAREAF_IMAGE, MAG_AUTO, FLUX_ISO,
-        FLUXERR_ISO, FLUX_RADIUS, ELONGATION and CLASS_STAR. Also, the catalog
-        must have been saved in the SExtractor ASCII_HEAD format, as the
-        comment lines listing column labels are needed in order to detect in
-        which column each parameter is.
+        The method parses a SExtractor catalog and returns a generator of Star
+        objects, once for each detected object. It is mandatory, or ValueError
+        will be raised otherwise, that the following parameters are present in
+        the catalog: X_IMAGE, Y_IMAGE, ALPHA_SKY, DELTA_SKY, ISOAREAF_IMAGE,
+        MAG_AUTO, FLUX_ISO, FLUXERR_ISO, FLUX_RADIUS and ELONGATION. Also, the
+        catalog must have been saved in the SExtractor ASCII_HEAD format, as
+        the comment lines listing column labels are needed in order to detect
+        in which column each parameter is.
 
         The FWHM is derived from the FLUX_RADIUS parameter, which estimates the
         radius of the circle centered on the barycenter that encloses about
@@ -267,15 +267,13 @@ class Catalog(list):
 
         """
 
-        del self[:]
-
         with open(path, 'rt') as fd:
             contents = [line.split() for line in fd]
 
         for line in contents:
             if line[0][0] != '#': # ignore comments
 
-                get_index = functools.partial(self._find_column, contents)
+                get_index = functools.partial(cls._find_column, contents)
 
                 x           = float(line[get_index('X_IMAGE')])
                 y           = float(line[get_index('Y_IMAGE')])
@@ -296,15 +294,12 @@ class Catalog(list):
 
                 args = (x, y, alpha, delta, isoareaf, mag_auto, saturated, snr,
                         fwhm, elongation)
-                star = Star(*args)
-                self.append(star)
-
-        return self
+                yield Star(*args)
 
     def __init__(self, path):
-        super(list, self).__init__()
         self.path = path
-        self._load_stars(path)
+        stars = self._load_stars(path)
+        super(Catalog, self).__init__(stars)
 
     def get_image_coordinates(self):
         """ Return as a list the image coordinates of the stars in the catalog.
