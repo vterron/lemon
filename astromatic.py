@@ -146,7 +146,8 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
 class Catalog(list):
     """ High-level interface to a SExtractor catalog """
 
-    def _find_column(self, contents, parameter):
+    @staticmethod
+    def _find_column(contents, parameter):
         """ Return the index of a SExtractor paramater in the catalog.
 
         The method takes as inputs the contents of a SExtractor catalog and the
@@ -167,43 +168,28 @@ class Catalog(list):
         the catalog must have been saved in the SExtractor ASCII_HEAD format,
         so that the file stars with comment lines listing column labels.
 
-        In order to avoid unnecessary disk accesses, already-found parameter
-        indexes internally cached, so that they can be directly returned the
-        next time they are needed. I would have rather used our memoization
-        decorator, but it is not that simple as, subclassing from list, this
-        class is unhashable.
-
         """
 
-        attr = '__%s_index' % parameter
+        # We need to examine the comment lines (those that start with a '#')
+        # and extract the value of the column associated to the parameter.
+        # SExtractor comments follow the following format:
+        #
+        #       # 1 X_IMAGE     Object position along x     [pixel]
+        #       # 2 Y_IMAGE     Object position along y     [pixel]
+        #
+        # The first integer in each line, right after the '#', indicates the
+        # column of the parameter. Note that we must subtract one from these
+        # indexes, as they are one-based.
 
-        try:
-            return getattr(self, attr)
-
-        except AttributeError:
-
-            # We need to examine the comment lines (those that start with a
-            # '#') and extract the value of the column associated to the
-            # parameter.  SExtractpr comments follow the following format:
-            #
-            #       # 1 X_IMAGE     Object position along x     [pixel]
-            #       # 2 Y_IMAGE     Object position along y     [pixel]
-            #
-            # Where the first integer in each line, right after the '#',
-            # indicates the column of the parameter. Note that we must
-            # subtract one from these indexes, as they are one-based.
-            comments = (line
-                        for line in contents
-                        if line and line[0] and line[0][0] == '#')
-
-            for line in comments:
+        for line in contents:
+            if line[0][0] == '#':
                 param_name = line[2]
                 if param_name.upper() == parameter.upper():
                     param_index = int(line[1]) - 1
-                    setattr(self, attr, param_index)
-                    return self._find_column(contents, parameter)
-            else:
-                raise ValueError("'%s' not in %s" % (parameter, self.path))
+                    return param_index
+        else:
+            msg = "parameter '%s' not found" % parameter
+            raise ValueError(msg)
 
     @staticmethod
     def flag_saturated(flag_value):
