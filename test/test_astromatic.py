@@ -293,6 +293,26 @@ class CatalogTest(unittest.TestCase):
         self.assertRaises(ValueError, Catalog, self.SAMPLE_INCOMPLETE_PATH)
         self.assertRaises(ValueError, Catalog, self.SAMPLE_NOASCIIHEAD_PATH)
 
+    def test_immutability(self):
+        """ Make sure that the Catalog class is immutable """
+
+        catalog = Catalog(self.SAMPLE_CATALOG_PATH)
+        args = setattr, catalog, 'path', self.SAMPLE_INCOMPLETE_PATH
+        self.assertRaises(AttributeError, *args)
+        self.assertRaises(AttributeError, delattr, catalog, 'path')
+
+        # Encapsulate item assignment and deletion for assertRaises
+        def assign(catalog, index, star):
+            catalog[index] = star
+
+        def delete(catalog, index):
+            del catalog[index]
+
+        for index in xrange(len(catalog)):
+            star = StarTest.random()
+            self.assertRaises(TypeError, assign, catalog, index, star)
+            self.assertRaises(TypeError, delete, catalog, index)
+
     def test_get_image_coordinates(self):
 
         catalog = Catalog(self.SAMPLE_CATALOG_PATH)
