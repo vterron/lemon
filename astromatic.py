@@ -270,30 +270,45 @@ class Catalog(tuple):
         with open(path, 'rt') as fd:
             contents = [line.split() for line in fd]
 
+        get_index = functools.partial(cls._find_column, contents)
+        x_index = get_index('X_IMAGE')
+        y_index = get_index('Y_IMAGE')
+        alpha_index = get_index('ALPHA_SKY')
+        delta_index = get_index('DELTA_SKY')
+        area_index = get_index('ISOAREAF_IMAGE')
+        mag_index = get_index('MAG_AUTO')
+        flux_index = get_index('FLUX_ISO')
+        fluxerr_index = get_index('FLUXERR_ISO')
+        flux_radius_index = get_index('FLUX_RADIUS')
+        flags_index = get_index('FLAGS')
+        elong_index = get_index('ELONGATION')
+
         for line in contents:
             if line[0][0] != '#': # ignore comments
 
-                get_index = functools.partial(cls._find_column, contents)
+                def get_param(index, type_ = float):
+                    """ Get the index-th element of 'line', cast to 'type_'"""
+                    return type_(line[index])
 
-                x           = float(line[get_index('X_IMAGE')])
-                y           = float(line[get_index('Y_IMAGE')])
-                alpha       = float(line[get_index('ALPHA_SKY')])
-                delta       = float(line[get_index('DELTA_SKY')])
-                isoareaf    =   int(line[get_index('ISOAREAF_IMAGE')])
-                mag_auto    = float(line[get_index('MAG_AUTO')])
-                flux_iso    = float(line[get_index('FLUX_ISO')])
-                fluxerr_iso = float(line[get_index('FLUXERR_ISO')])
-                flux_radius = float(line[get_index('FLUX_RADIUS')])
+                x = get_param(x_index)
+                y = get_param(y_index)
+                alpha = get_param(alpha_index)
+                delta = get_param(delta_index)
+                area = get_param(area_index, type_ = int)
+                mag = get_param(mag_index)
+                flux = get_param(flux_index)
+                fluxerr = get_param(fluxerr_index)
+                flux_radius = get_param(flux_radius_index)
+                flags = get_param(flags_index, type_ = int)
+                elongation = get_param(elong_index)
 
-                flags = int(line[get_index('FLAGS')])
                 saturated = Catalog.flag_saturated(flags)
-                snr = flux_iso / fluxerr_iso
+                snr = flux / fluxerr
                 fwhm = flux_radius * 2
 
-                elongation = float(line[get_index('ELONGATION')])
-
-                args = (x, y, alpha, delta, isoareaf, mag_auto, saturated, snr,
+                args = (x, y, alpha, delta, area, mag, saturated, snr,
                         fwhm, elongation)
+
                 yield Star(*args)
 
     def __new__(cls, path):
