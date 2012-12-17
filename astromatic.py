@@ -322,6 +322,20 @@ class Catalog(tuple):
         """ Read-only 'path' attribute """
         return self._path
 
+    @classmethod
+    def from_sequence(cls, *stars):
+        """ Create a Catalog from a sequence of Stars.
+
+        Return a Catalog that is not the result of loading a SExtractor catalog
+        into memory, but that encapsulates a series of Star objects. Note that,
+        being an 'in-memory' catalog, so to speak, the returned instance does
+        not have the 'path' attribute, so any attempt to access it will raise
+        the AttributeError exception.
+
+        """
+
+        return super(Catalog, cls).__new__(cls, stars)
+
     def get_image_coordinates(self):
         """ Return as a list the image coordinates of the stars in the catalog.
 
