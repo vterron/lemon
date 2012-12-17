@@ -313,6 +313,37 @@ class CatalogTest(unittest.TestCase):
             self.assertRaises(TypeError, assign, catalog, index, star)
             self.assertRaises(TypeError, delete, catalog, index)
 
+    def test_from_sequence(self):
+
+        # Load a SExtractor catalog into memory and pass all of its stars to
+        # Catalog.from_sequence(): both Catalogs must be equal. This is not the
+        # case if the order of the stars passed to from_sequence() is altered,
+        # of course, as tuples are compared position by position.
+
+        catalog = Catalog(self.SAMPLE_CATALOG_PATH)
+        stars = catalog[:]
+
+        identical = Catalog.from_sequence(*stars)
+        self.assertEqual(type(identical), Catalog)
+        self.assertEqual(identical, catalog)
+
+        different = Catalog.from_sequence(*stars[::-1])
+        self.assertEqual(type(different), Catalog)
+        self.assertNotEqual(different, catalog)
+
+        # Now create a second Catalog containing those stars whose magnitude is
+        # greater than or equal to sixteen. There are nineteen of these stars,
+        # but this number is anyway irrelevant for our purposes. What matters
+        # is that all the stars passed to from_sequence() must also be in the
+        # returned Catalog, in the same order.
+
+        stars = [star for star in catalog if star.mag > 16]
+        self.assertEqual(len(stars), 19)
+        faint_catalog = Catalog.from_sequence(*stars)
+        self.assertEqual(type(faint_catalog), Catalog)
+        self.assertEqual(list(faint_catalog), list(stars))
+
+
     def test_get_image_coordinates(self):
 
         catalog = Catalog(self.SAMPLE_CATALOG_PATH)
