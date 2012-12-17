@@ -228,35 +228,40 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         """
 
-        # Ignore (remove) those stars too close to the image borders; as we
-        # are modifying the Catalog in situ, we need to iterate backwards.
+        # Catalogs are a subclass of tuple and cannot therefore be modified, so
+        # we need to use a list comprehension first, to identify the stars that
+        # are not too close to the edges, and use from_sequence() to create a
+        # new Catalog instance with the selected stars.
+
         self._ignored_sources = 0
         catalog = astromatic.Catalog(self.catalog_path)
         logging.info("Removing from the catalog objects too close to the "
                      "edges of %s" % self.path)
         logging.debug("Margin width: %d pixels" % self.margin)
         logging.debug("Image size: (%d, %d)" % self.size)
-        for star_index in reversed(range(len(catalog))):
-            star = catalog[star_index]
+
+        non_discarded = []
+        for star in catalog:
             logger_msg = "Star at %.3f, %.3f " % (star.x, star.y)
             if star.x < self.margin or \
                star.x > (self.x_size - self.margin) or \
                star.y < self.margin or \
                star.y > (self.y_size - self.margin):
-                   del catalog[star_index]
                    logging.debug(logger_msg + "ignored -- too close to edges")
                    self._ignored_sources += 1
             else:
+                non_discarded.append(star)
                 logging.debug(logger_msg + "OK -- inside of margins")
 
         if __debug__:
-            for star in catalog:
+            assert len(catalog) == len(non_discarded) + self._ignored_sources
+            for star in non_discarded:
                 assert star.x >= self.margin
                 assert star.x <= (self.x_size - self.margin)
                 assert star.y >= self.margin
                 assert star.y <= (self.y_size - self.margin)
 
-        return catalog
+        return astromatic.Catalog.from_sequence(*non_discarded)
 
     def __len__(self):
         """ Return the number of stars detected by SExtractor in the image """
