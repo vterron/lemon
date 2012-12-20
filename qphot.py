@@ -66,6 +66,7 @@ import os.path
 import tempfile
 
 # LEMON modules
+import astromatic
 import fitsimage
 import seeing
 
@@ -413,10 +414,19 @@ def run(xml_offset, aperture, annulus, dannulus,
     shifted_image = fitsimage.FITSImage(xml_offset.shifted)
 
     # Apply the offset to the coordinates of each star.
-    shifted_pixels = copy.deepcopy(pixels)
-    for pixel in shifted_pixels:
-        pixel.x += xml_offset.x
-        pixel.y += xml_offset.y
+    shifted_pixels = []
+    for pixel in pixels:
+        x = pixel.x + xml_offset.x
+        y = pixel.y + xml_offset.y
+        shifted = astromatic.Pixel(x, y)
+        shifted_pixels.append(shifted)
+
+    if __debug__:
+        assert len(pixels) == len(shifted_pixels)
+        epsilon = 0.001  # a thousandth of a pixel!
+        for pixel, shifted in zip(pixels, shifted_pixels):
+            assert abs(shifted.x - xml_offset.x - pixel.x) < epsilon
+            assert abs(shifted.y - xml_offset.y - pixel.y) < epsilon
 
     # And, finally, do photometry on the shifted image
     img_qphot = QPhot(shifted_image.path)
