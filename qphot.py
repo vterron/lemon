@@ -68,6 +68,7 @@ import tempfile
 # LEMON modules
 import astromatic
 import fitsimage
+import methods
 import seeing
 
 class QPhotResult(object):
@@ -277,10 +278,28 @@ class QPhot(list):
             # a good thing, but in this case we need the photometry to be done
             # exactly on the specified coordinates.
 
-            apphot.qphot(self.path, cbox = 0, annulus = annulus,
-                         dannulus = dannulus, aperture = aperture,
-                         coords = stars_coords, output = qphot_output,
-                         exposure = exptimek, interactive = "no")
+            kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
+                          aperture = aperture, coords = stars_coords,
+                          output = qphot_output, exposure = exptimek,
+                          interactive = 'no')
+
+            # Ignore the annoying warning message that is, from time to time,
+            # printed to the standard error, and that look like what follows:
+            #
+            # Exception pyraf.subproc.SubprocessError: SubprocessError("Failed
+            # kill of subproc 24600, '/iraf/iraf/bin.linux/x_images.e -c', with
+            # signals ['TERM', 'KILL']",) in <bound method Subprocess.__del__
+            # of <Subprocess '/iraf/iraf/bin.linux/x_images.e -c', at
+            # 7f9f3f408710>> ignored
+            #
+            # This message is printed because of an uncaught exception in the
+            # __del__() method of the PyRAF's Subprocess class. As explained in
+            # the Python data model, those exceptions are ignored and a warning
+            # message printed to stderr instead. Using this context manager we
+            # can get rid of these messages.
+
+            with methods.ignore_del_exceptions():
+                apphot.qphot(self.path, **kwargs)
 
             # Make sure the outpout was written to where we said
             assert os.path.exists(qphot_output)
