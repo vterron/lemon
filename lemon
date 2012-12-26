@@ -23,7 +23,7 @@ import sys
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
 
-    print "usage: %s COMMAND [ARGS]" % name
+    print "usage: %s [--help] COMMAND [ARGS]" % name
     print
     print "The available commands are:"
     print "   import       Group the images of an observing campaign"
@@ -40,6 +40,6 @@ def show_help(name):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) == 1:
+    if len(sys.argv) == 1 or '--help' in sys.argv:
         show_help(sys.argv[0])
 
