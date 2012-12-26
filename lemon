@@ -20,6 +20,9 @@
 
 import sys
 
+LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
+                  'annuli', 'photometry', 'diffphot', 'periods']
+
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
 
@@ -42,4 +45,13 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 1 or '--help' in sys.argv:
         show_help(sys.argv[0])
+
+    else:
+
+        name, command = sys.argv[:2]
+        args = sys.argv[2:]
+
+        if command not in LEMON_COMMANDS:
+            msg = "%s: '%s' is not a lemon command. See 'lemon --help'."
+            sys.exit(msg % (name, command))
 
