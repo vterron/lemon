@@ -429,7 +429,7 @@ def run(xml_offset, aperture, annulus, dannulus,
     """
 
     # The instantiation method of FITSImage makes sure that the image on which
-    # photometry will be done does exist and its standard-conforming.
+    # photometry will be done does exist and is standard-conforming.
     shifted_image = fitsimage.FITSImage(xml_offset.shifted)
 
     # Apply the offset to the coordinates of each star.
