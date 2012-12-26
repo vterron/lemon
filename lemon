@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import difflib
 import sys
 
 LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
@@ -54,4 +55,13 @@ if __name__ == "__main__":
         if command not in LEMON_COMMANDS:
             msg = "%s: '%s' is not a lemon command. See 'lemon --help'."
             sys.exit(msg % (name, command))
+
+            # Show suggestions, if any, when the command does not exist
+            matches = difflib.get_close_matches(command, LEMON_COMMANDS)
+            if matches:
+                print
+                print "Did you mean" ,
+                print len(matches) == 1 and "this?" or "one of these?"
+                for match in matches:
+                    print ' ' * 8 + match
 
