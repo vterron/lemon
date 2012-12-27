@@ -117,8 +117,9 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
             try:
                 os.makedirs(output_directory)
             except OSError:
-                raise("The output directory '%s' could not be created. "
-                      "Is the directory writable?" % output_directory)
+                msg = "The output directory '%s' could not be created. " \
+                      "Is the directory writable?" % output_directory
+                raise IOError(msg)
 
             if not quiet:
                 print "%sThe output directory '%s' did not exist, so it " \
