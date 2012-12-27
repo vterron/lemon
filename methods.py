@@ -20,6 +20,7 @@
 
 import contextlib
 import cStringIO
+import functools
 import math
 import numpy
 import os.path
@@ -136,21 +137,19 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
 def deprecated(func):
     """ Mark a function as deprecated.
 
-    This is a decorator which can be used to mark functions as deprecated. It
-    will result in a warning being emmitted when the function is used. Each
-    function will generate a warning only the first time it is called. [URL]
-    http://code.activestate.com/recipes/391367-deprecated/
+    This is a decorator which can be used to mark functions as deprecated.
+    It results in a DeprecationWarning being issued when the function is used.
+    [URL] http://code.activestate.com/recipes/391367-deprecated/
 
     """
 
-    def newFunc(*args, **kwargs):
-        warnings.warn(style.prefix + "Warning: call to deprecated function '%s'." % func.__name__,
-                      category=DeprecationWarning)
+    @functools.wraps(func)
+    def depre_func(*args, **kwargs):
+        msg = "call to deprecated function '%s'." % func.__name__
+        warnings.warn(msg, category = DeprecationWarning, stacklevel = 2)
         return func(*args, **kwargs)
-    newFunc.__name__ = func.__name__
-    newFunc.__doc__ = func.__doc__
-    newFunc.__dict__.update(func.__dict__)
-    return newFunc
+
+    return depre_func
 
 def DMS_to_DD(degrees, arcminutes, arcseconds):
     """ Degrees, arcminutes, arcseconds to decimal degrees conversion. """
