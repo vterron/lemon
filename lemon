@@ -65,3 +65,12 @@ if __name__ == "__main__":
                 for match in matches:
                     print ' ' * 8 + match
 
+        else:
+
+            # The 'import' statement cannot be used as the name of the module
+            # is only known at runtime. We need to manually invoke __import__
+            # to import the module by name and then run its main() function.
+
+            module = __import__(command)
+            module.main(args)
+
