@@ -51,7 +51,6 @@ import os.path
 import optparse
 import pyfits
 import sys
-import time
 
 # LEMON modules
 import keywords

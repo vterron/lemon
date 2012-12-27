@@ -29,7 +29,6 @@ this file is located, so it does not depend on where it is executed from.
 """
 
 import os
-import sys
 import shutil
 import subprocess
 

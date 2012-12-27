@@ -48,7 +48,6 @@ will be ignored.
 
 import collections
 import fnmatch
-import operator
 import optparse
 import os
 import os.path
@@ -56,7 +55,6 @@ import re
 import shutil
 import stat
 import sys
-import time
 
 # LEMON modules
 import keywords

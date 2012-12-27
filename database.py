@@ -36,7 +36,6 @@ import operator
 import random
 import string
 import sqlite3
-import time
 
 # LEMON modules
 import methods

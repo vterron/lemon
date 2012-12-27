@@ -59,7 +59,6 @@ if pyraf_version < (2, 0):
 # executable, which could sometimes result in the most arcane of errors.
 pyraf.iraf.prcacheOff()
 
-import copy
 import logging
 import math
 import os.path
@@ -69,7 +68,6 @@ import tempfile
 import astromatic
 import fitsimage
 import methods
-import seeing
 
 class QPhotResult(object):
     """ This class simply encapsulates the photometry of a star. In other

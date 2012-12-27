@@ -70,7 +70,6 @@ import tempfile
 
 # LEMON modules
 import diffphot
-import fitsimage
 import keywords
 import mining
 import photometry

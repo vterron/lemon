@@ -22,7 +22,6 @@ import calendar
 import collections
 import lxml.etree
 import operator
-import os.path
 import time
 
 # LEMON modules
