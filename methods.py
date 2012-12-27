@@ -333,7 +333,7 @@ def load_file_list(path, warn = True):
                 if len(splitted_line) != 2:
                     raise IndexError
                 x, y = float(splitted_line[0]), float(splitted_line[1])
-                list_of_pixels.append((x,y))
+                list_of_pixels.append((x, y))
 
             # We may attemp to cast something that is not a real number
             except (ValueError, IndexError):
