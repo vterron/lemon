@@ -389,6 +389,7 @@ def memoize(f):
     http://code.activestate.com/recipes/577219-minimalistic-memoization/ """
 
     cache = {}
+    @functools.wraps(f)
     def memf(*x):
         if x not in cache:
             cache[x] = f(*x)
