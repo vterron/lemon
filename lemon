@@ -67,6 +67,12 @@ if __name__ == "__main__":
 
         else:
 
+            # Add the name of the command to the script name so that the brief
+            # summary of the imported script options includes it (for example,
+            # "lemon photometry" instead of just "lemon".
+
+            sys.argv[0] = "%s %s" % (name, command)
+
             # The 'import' statement cannot be used as the name of the module
             # is only known at runtime. We need to manually invoke __import__
             # to import the module by name and then run its main() function.
