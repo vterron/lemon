@@ -465,7 +465,17 @@ class FITSImage(object):
         for index in xrange(len(characters) - 1):
             if not characters[:index+1].isdigit():
                 break
-        return characters[:index]
+
+        # The variable 'index' will not be defined when the basename of the
+        # image, without its prefix, is less than two characters long. If that
+        # is the case, the for loop does not iterate over any value, and thus
+        # the return statement in the try clause raises UnboundLocalError.
+
+        try:
+            return characters[:index]
+        except UnboundLocalError:
+            assert len(characters) < 2
+            return ''
 
     @property
     def x_size(self):
