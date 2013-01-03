@@ -413,8 +413,7 @@ class FITSImage(object):
 
         """
 
-        root, ext = os.path.splitext(self.path)
-        return ext
+        return os.path.splitext(self.path)[1]
 
     @property
     def prefix(self):
