@@ -399,8 +399,7 @@ class FITSImage(object):
 
         """
 
-        root, ext = os.path.splitext(self.basename)
-        return root
+        return os.path.splitext(self.basename)[0]
 
     @property
     def extension(self):
