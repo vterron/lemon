@@ -1136,7 +1136,7 @@ class FITSet(list):
         if iterable is None:
             iterable = []
 
-        super(list, self).__init__()
+        super(FITSet, self).__init__()
         for img in iterable:
             if isinstance(img, FITSImage):
                 self.append(img)
