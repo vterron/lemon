@@ -136,7 +136,7 @@ class Weights(numpy.ndarray):
 
     @classmethod
     def random(cls, size):
-        weights = cls([random.uniform(0, 1) for x in xrange(size)])
+        weights = cls([random.uniform(0, 1) for _ in xrange(size)])
         return weights.normalize()
 
 
