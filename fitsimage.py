@@ -1098,9 +1098,9 @@ class FITSImage(object):
 
             # Redirect SExtractor output to the null device
             with open(os.devnull, 'wt') as fd:
-                retcode, catalog_path = \
-                astromatic.sextractor(self.path, options = sextractor_options,
-                                      stdout = fd, stderr = fd)
+                kwargs = dict(options = sextractor_options,
+                              stdout = fd, stderr = fd)
+                catalog_path = astromatic.sextractor(self.path, **kwargs)
             return FITSImage(check_path)
 
         finally:
