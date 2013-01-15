@@ -130,8 +130,8 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         # Compute the MD5 hash of the SExtractor configuration files and this
         # saturation level, which overrides the definition of SATUR_LEVEL.
-        options = ['-SATUR_LEVEL', '%d' % self.saturation]
-        sex_md5sum = astromatic.sextractor_md5sum(options)
+        options = dict(SATUR_LEVEL = str(self.saturation))
+        sex_md5sum = astromatic.sextractor_md5sum(options = options)
         msg = "%s: SExtractor MD5 hash: %s" % (self.path, sex_md5sum)
         logging.debug(msg)
 

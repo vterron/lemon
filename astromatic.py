@@ -346,7 +346,7 @@ class Catalog(tuple):
         """
         return [star.img_coords for star in self]
 
-def sextractor_md5sum(options):
+def sextractor_md5sum(options = None):
     """ Return the MD5 hash of the SExtractor configuration.
 
     This method returns the MD5 hash of the concatenation of the four
@@ -381,8 +381,17 @@ def sextractor_md5sum(options):
             for line in fd:
                 md5.update(line)
 
-    for opt in options:
-        md5.update(opt)
+    if options:
+        # CPython returns the elements of a dictionary in an arbitrary order,
+        # so it is necessary to sort the items to guarantee that two different
+        # dictionaries with the same (key, value) pairs return the same hash.
+        try:
+            for key, value in sorted(options.items()):
+                md5.update(key)
+                md5.update(value)
+        except AttributeError:
+            msg = "'options' must be a dictionary"
+            raise TypeError(msg)
 
     return md5.hexdigest()
 
