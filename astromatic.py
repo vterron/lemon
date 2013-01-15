@@ -351,16 +351,17 @@ def sextractor_md5sum(options = None):
 
     This method returns the MD5 hash of the concatenation of the four
     configuration files (.sex, .param, .conv and .nnw) used by SExtractor, as
-    well as the command-line configuration parameters (given in 'options' as
-    a sequence of strings) that override the corresponding definition in the
-    configuration files or any default value.  The hash is returned expressed
-    as a 32-digit hexadecimal number.
+    well as the command-line configuration parameters (given in 'options', a
+    dictionary that maps each parameter to its value, both strings) that
+    override the corresponding definition in the configuration files or any
+    default value. The hash is returned expressed as a 32-digit hexadecimal
+    number.
 
     Note that the returned MD5 hash is just that of the input SExtractor
     configuration files and the overriding command-line options, not those
     values that were used in the end by SExtractor. This means that, for
     example, a SATUR_LEVEL of 50000 in the configuration file overridden by a
-    -SATUR_LEVEL option with a value of 45000 returns a different hash than a
+    SATUR_LEVEL option with a value of 45000 returns a different hash than a
     SATUR_LEVEL of 45000 in the configuration file and no command-line option,
     although in practical terms they are the same configuration.
 
@@ -369,6 +370,13 @@ def sextractor_md5sum(options = None):
     is 128 bits long, so assuming all hashes have an equal chance of occuring,
     the odds of any two random strings hashing to the same value are 1 in 2^128
     [http://ask.metafilter.com/50343/MD5-and-the-probability-of-collisions]
+
+    The IOError exception is raised if any of the four SExtractor configuration
+    files does not exist or is not readable. TypeError is raised if 'options'
+    is not a dictionary or any of its keys or values is not a string. The
+    latter means that, to compute the hash overriding the saturation level
+    specified in the configuration file, something like {'SATUR_LEVEL' :
+    '45000'}, for example, must be used.
 
     """
 
