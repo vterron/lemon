@@ -20,13 +20,17 @@
 
 import copy
 import functools
+import mock
 import numpy
 import os
 import os.path
 import random
+import shutil
+import stat
 import tempfile
 import unittest
 
+import astromatic
 from astromatic import Pixel, Star, Catalog
 
 NITERS = 100
@@ -359,4 +363,134 @@ class CatalogTest(unittest.TestCase):
         for pixel, star in zip(pixels, catalog):
             self.assertEqual(pixel.x, star.x)
             self.assertEqual(pixel.y, star.y)
+
+
+class SExtractorFunctionsTest(unittest.TestCase):
+
+    def test_sextractor_md5sum(self):
+
+        # Testing that astromatic.sextractor_md5sum() works as expected means,
+        # by extension, checking that the four SExtractor configuration files
+        # (.sex, .param, .conv and .nnw) defined in the 'astromatic' module
+        # exist and are readable.
+
+        # If the SExtractor configuration files are not modified in between,
+        # two different executions of the function must yield the same hash.
+        checksum  = astromatic.sextractor_md5sum()
+        identical = astromatic.sextractor_md5sum()
+        self.assertEqual(checksum, identical)
+
+        # The MD5 hash is that of the concatenation of the lines of the four
+        # configuration files and the overriding SExtractor options (i.e., the
+        # sequence of strings that are optionally passed to the method). If any
+        # of the files is modified, or if an overriding option is given, the
+        # MD5 hash returned by the function must be different.
+        #
+        # In order to test this we are not going to temporarily modify the
+        # SExtractor configuration files: although we could make a copy of
+        # them, something beyond our control (e.g., the SIGKILL signal or a
+        # power outage) could prevent the original file from being restored.
+        # Instead, what we will temporarily modify are the module-level
+        # variables, so that they refer to a modified copy of the files.
+
+        sextractor_module_vars = \
+           ('SEXTRACTOR_CONFIG',
+            'SEXTRACTOR_PARAMS',
+            'SEXTRACTOR_FILTER',
+            'SEXTRACTOR_STARNNW')
+
+        for variable in sextractor_module_vars:
+
+            # The variable must exist and refer to an existing file
+            path = eval('astromatic.%s' % variable)
+            self.assertTrue(os.path.exists(path))
+
+            # Make a temporary copy of the configuration file and modify it,
+            # appending a comment to it. Then, mock the module-level variable
+            # so that it refers to the modified configuration file. Although
+            # such an irrelevant change does not alter how SExtractor works (as
+            # the settings are still the same), the MD5 hash must be different.
+
+            ext = os.path.splitext(path)[1]
+            fd, copy_path = tempfile.mkstemp(suffix = ext)
+            os.close(fd)
+
+            try:
+                shutil.copy2(path, copy_path)
+                with open(copy_path, 'at') as fd:
+                    fd.write("# useless comment\n")
+
+                with mock.patch_object(astromatic, variable, copy_path):
+                    different = astromatic.sextractor_md5sum()
+                    self.assertNotEqual(checksum, different)
+
+            finally:
+                os.unlink(copy_path)
+
+        # If overriding options are given, they are also used to compute the
+        # MD5 hash. Thus, the hash will be different even if the options have
+        # the same value as those defined in the configuration file (although
+        # that means that we are not actually overriding anything). Test this
+        # for all the options defined in the configuration file: in all cases
+        # the returned checksum must be different.
+
+        with open(astromatic.SEXTRACTOR_CONFIG) as fd:
+
+            for line in fd:
+                stripped = line.strip()
+                if stripped and stripped[0] != '#': # ignore comment lines
+                    key, value = stripped.split()[:2]
+                    options = {key : value}
+                    different = astromatic.sextractor_md5sum(options)
+                    self.assertNotEqual(checksum, different)
+
+                    # Try also overriding the option with a different value
+                    # (the result of incrementing it by one). Again, this must
+                    # result in a different MD5 hash.
+
+                    try:
+                        options[key] = str(int(options[key]) + 1)
+                        also_different = astromatic.sextractor_md5sum(options)
+                        self.assertNotEqual(checksum,  also_different)
+                        self.assertNotEqual(different, also_different)
+
+                    except ValueError:
+                        pass # non-numeric option
+
+        # IOError is raised if any of the SExtractor configuration files is not
+        # readable or does not exist. To test that, mock again the module-level
+        # variables so that they refer to temporary copies of the configuration
+        # files, but which are unreadable by the user, first, and then removed.
+
+        for variable in sextractor_module_vars:
+
+            path = eval('astromatic.%s' % variable)
+            ext = os.path.splitext(path)[1]
+            fd, copy_path = tempfile.mkstemp(suffix = ext)
+            os.close(fd)
+            shutil.copy2(path, copy_path)
+
+            with mock.patch_object(astromatic, variable, copy_path):
+
+                # chmod u-r
+                mode = stat.S_IMODE(os.stat(copy_path)[stat.ST_MODE])
+                mode ^= stat.S_IRUSR
+                os.chmod(copy_path, mode)
+
+                args = IOError, astromatic.sextractor_md5sum
+                self.assertFalse(os.access(copy_path, os.R_OK))
+                self.assertRaises(*args)
+
+                os.unlink(copy_path)
+                self.assertFalse(os.path.exists(copy_path))
+                self.assertRaises(*args)
+
+        # TypeError raised if 'options' is not a dictionary
+        args = TypeError, astromatic.sextractor_md5sum
+        kwargs = dict(options = ['DETECT_MINAREA', '5'])
+        self.assertRaises(*args, **kwargs)
+
+        # ... or if any of its elements is not a string
+        kwargs['options'] = {'DETECT_MINAREA' : 125}
+        self.assertRaises(*args, **kwargs)
 
