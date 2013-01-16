@@ -444,6 +444,22 @@ def sextractor(path, options = None, stdout = None, stderr = None):
         tempfile.mkstemp(prefix = '%s_' % root, suffix = '.cat')
     os.close(catalog_fd)
 
+    # Raise IOError if any of the configuration files is nonexistent or not
+    # readable. We cannot trust that SExtractor will fail when this happens as
+    # it may not abort the execution, but instead just issue a warning and use
+    # the internal defaults. As of version 2.8.6, only -PARAMETERS_NAME and
+    # -FILTER_NAME, if unreadable, cause the execution of SExtractor to fail.
+
+    for config_file in (SEXTRACTOR_CONFIG, SEXTRACTOR_PARAMS,
+                        SEXTRACTOR_FILTER, SEXTRACTOR_STARNNW):
+
+        if not os.path.exists(config_file):
+            msg = "configuration file %s not found"
+            raise IOError(msg % config_file)
+        if not os.access(config_file, os.R_OK):
+            msg = "configuration file %s cannot be read"
+            raise IOError(msg % config_file)
+
     args = [executable, path,
             '-c', SEXTRACTOR_CONFIG,
             '-PARAMETERS_NAME', SEXTRACTOR_PARAMS,
