@@ -26,9 +26,9 @@ tools philosophy ("*write programs that do one thing and do it well*"), LEMON ca
 Installation
 ============
 
-LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for many of them there are not (yet?) GNU/Debian packages available, so they have to be installed manually — the configuration of IRAF and PyRAF, although heavily simplified in recent versions, is particularly tedious and painful.
+LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for many of them there are not (yet?) Debian packages available, so they have to be installed manually — the configuration of IRAF and PyRAF, although heavily simplified in recent versions, is particularly tedious and painful.
 
-These are the steps to install LEMON on a clean GNU/Debian machine:
+These are the steps to install LEMON on a clean Debian machine:
 
 1. ``apt-get install python-numpy python-scipy python-pyfits python-lxml python-uncertainties python-mock plplot-bin sextractor``
 #. Install `IRAF <http://iraf.noao.edu/>`_
