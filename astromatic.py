@@ -468,7 +468,12 @@ def sextractor(path, options = None, stdout = None, stderr = None):
             '-CATALOG_NAME', catalog_path]
 
     if options:
-        args += options
+        try:
+            for key, value in options.iteritems():
+                args += ['-%s' % key, value]
+        except AttributeError:
+            msg = "'options' must be a dictionary"
+            raise TypeError(msg)
 
     try:
         subprocess.check_call(args, stdout = stdout, stderr = stderr)
@@ -530,8 +535,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
         marged_path = '%s.cat' % tmp_path
 
         # Use the FITS LDAC' format and image saturation level
-        options = ['-CATALOG_TYPE', 'FITS_LDAC',
-                   '-SATUR_LEVEL', '%d' % saturation]
+        options = dict(CATALOG_TYPE = 'FITS_LDAC',
+                       SATUR_LEVEL = str(saturation))
 
         # The SExtractor catalog is saved to a temporary file, which
         # we have to move to our temporary, working directory.

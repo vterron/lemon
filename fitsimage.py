@@ -1093,8 +1093,8 @@ class FITSImage(object):
 
         try:
 
-            sextractor_options = ['-CHECKIMAGE_NAME', check_path,
-                                  '-CHECKIMAGE_TYPE', check_type]
+            sextractor_options = dict(CHECKIMAGE_NAME = check_path,
+                                      CHECKIMAGE_TYPE = check_type)
 
             # Redirect SExtractor output to the null device
             with open(os.devnull, 'wt') as fd:
