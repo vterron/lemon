@@ -406,26 +406,30 @@ def sextractor_md5sum(options = None):
 def sextractor(path, options = None, stdout = None, stderr = None):
     """ Run SExtractor on the image and return the path to the output catalog.
 
-    The method rus SExtractor (which is assumed to be installed on the system)
-    on the input image, using the .sex, .param, .conv and .nnw configuration
-    files defined by the global variables SEXTRACTOR_CONFIG, SEXTRACTOR_PARAMS,
-    SEXTRACTOR_FILTER and SEXTRACTOR_STARNNW. It returns the path to its output
-    catalog, saved to a temporary file, for whose deletion when it is no longer
-    needed the user is responsible.
+    This function runs SExtractor on 'path', using the configuration files
+    defined in the module-level variables SEXTRACTOR_CONFIG, SEXTRACTOR_PARAMS,
+    SEXTRACTOR_FILTER and SEXTRACTOR_STARNNW. It returns the path to the output
+    catalog, which is saved to a temporary location and for whose deletion when
+    it is no longer needed the user is responsible.
+
+    The SExtractorNotInstalled exception is raised if a SExtractor executable
+    cannot be found, and IOError if any of the four SExtractor configuration
+    files does not exist or is not readable. Any errors thrown by SExtractor
+    are propagated as SExtractorError exceptions. Lastly, TypeEror is raised if
+    'options' is not a dictionary or any of its keys or values is not a string.
 
     Keyword arguments:
-    options - sequence of parameters and their corresponding values, which
-              override their definition in the configuration files or any
-              default value. In this manner, it is possible to execute
-              SExtractor with different values without having to modify the
-              configuration files. For example, ['-CLEAN', 'N', '-CLEAN_PARAM',
-              1.1], would make SExtractor run with the paramters 'CLEAN' set to
-              'N' and 'CLEAN_PARAM' set to 1.1, regardless of what the
-              configuration files say.
-    stdout - the SExtractor standard output file handle. If set to None, no
-             redirection will occur.
-    stderr - the SExtractor standard error file handle. If set to None, no
-             redirection will occur.
+    options - a dictionary mapping each SExtractor parameter to its value, and
+              that will override their definition in the configuration files or
+              any default value. In this manner, it is possible to execute
+              SExtractor with different parameters without having to modify the
+              configuration files. For example, {'CLEAN' : 'N', 'CLEAN_PARAM' :
+              '1.1'}, would make SExtractor run with the parameters 'CLEAN' set
+              to 'N' and 'CLEAN_PARAM' set to 1.1, regardless of what the
+              configuration files say. All the keys and values in this
+              dictionary must be strings.
+    stdout - standard output file handle. If None, no redirection will occur.
+    stderr - standard error file handle. If None, no redirection will occur.
 
     """
 
