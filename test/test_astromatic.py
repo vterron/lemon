@@ -31,6 +31,8 @@ import unittest
 
 import astromatic
 from astromatic import Pixel, Star, Catalog
+import dss_images
+import methods
 
 NITERS = 100
 
@@ -366,6 +368,19 @@ class CatalogTest(unittest.TestCase):
 
 class SExtractorFunctionsTest(unittest.TestCase):
 
+    SEXTRACTOR_MODULE_VARS = \
+      ('SEXTRACTOR_CONFIG',
+       'SEXTRACTOR_PARAMS',
+       'SEXTRACTOR_FILTER',
+       'SEXTRACTOR_STARNNW')
+
+    @staticmethod
+    def get_nonexistent_path(ext = None):
+        """ Return the path to a nonexistent file """
+
+        with tempfile.NamedTemporaryFile(suffix = ext) as fd:
+            return fd.name
+
     def test_sextractor_md5sum(self):
 
         # Testing that astromatic.sextractor_md5sum() works as expected means,
@@ -392,13 +407,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # Instead, what we will temporarily modify are the module-level
         # variables, so that they refer to a modified copy of the files.
 
-        sextractor_module_vars = \
-           ('SEXTRACTOR_CONFIG',
-            'SEXTRACTOR_PARAMS',
-            'SEXTRACTOR_FILTER',
-            'SEXTRACTOR_STARNNW')
-
-        for variable in sextractor_module_vars:
+        for variable in self.SEXTRACTOR_MODULE_VARS:
 
             # The variable must exist and refer to an existing file
             path = eval('astromatic.%s' % variable)
@@ -411,8 +420,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
             # the settings are still the same), the MD5 hash must be different.
 
             ext = os.path.splitext(path)[1]
-            fd, copy_path = tempfile.mkstemp(suffix = ext)
-            os.close(fd)
+            copy_path = self.get_nonexistent_path(ext = ext)
 
             try:
                 shutil.copy2(path, copy_path)
@@ -461,12 +469,11 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # variables so that they refer to temporary copies of the configuration
         # files, but which are unreadable by the user, first, and then removed.
 
-        for variable in sextractor_module_vars:
+        for variable in self.SEXTRACTOR_MODULE_VARS:
 
             path = eval('astromatic.%s' % variable)
             ext = os.path.splitext(path)[1]
-            fd, copy_path = tempfile.mkstemp(suffix = ext)
-            os.close(fd)
+            copy_path = self.get_nonexistent_path(ext = ext)
             shutil.copy2(path, copy_path)
 
             with mock.patch_object(astromatic, variable, copy_path):
@@ -492,4 +499,98 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # ... or if any of its elements is not a string
         kwargs['options'] = {'DETECT_MINAREA' : 125}
         self.assertRaises(*args, **kwargs)
+
+    def test_sextractor(self):
+
+        # Note that, being a third-party program, we cannot write a unit test
+        # to check that SExtractor works as it should (i.e., that it correctly
+        # detects astronomical sources on FITS images): that is something that
+        # Emmanuel Bertin, its developer, certainly takes care of. What we must
+        # test for is whether astromatic.sextractor(), our Python wrapper to
+        # call SExtractor, works as we expect and raises the appropriate errors
+        # when something goes wrong. Nothing less, nothing more.
+
+        # First, the most probable scenario: our wrapper should run SExtractor
+        # on any FITS image that it receives (here we use some downloaded from
+        # the STScI Digitized Sky Survey) and return the path to the output
+        # catalog, which astromatic.Catalog should be always able to parse.
+
+        kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
+        for img_path in dss_images.TEST_IMAGES:
+            catalog_path = astromatic.sextractor(img_path, **kwargs)
+            try:
+                Catalog(catalog_path)
+            finally:
+                os.unlink(catalog_path)
+
+        # SExtractorNotInstalled must be raised if no SExtractor executable is
+        # detected. In order to simulate this, mock methods.check_command()
+        # (which astromatic.sextractor() uses to determine whether a command
+        # can be found in the current environment) and make it always return
+        # False. In this manner, within the following context manager,
+        # SExtractor will appear as not installed to astromatic.sextractor().
+
+        with mock.patch('methods.check_command') as mocked:
+            mocked.return_value = False
+            args = astromatic.sextractor, img_path
+            self.assertRaises(astromatic.SExtractorNotInstalled, *args)
+
+        # IOError is raised if any of the four SExtractor configuration files
+        # is not readable or does no exist. To test that, mock the module-level
+        # variables so that they first refer to an unreadable file and later to
+        # a nonexistent one.
+
+        for variable in self.SEXTRACTOR_MODULE_VARS:
+
+            path = eval('astromatic.%s' % variable)
+            ext = os.path.splitext(path)[1]
+            copy_path = self.get_nonexistent_path(ext = ext)
+            shutil.copy2(path, copy_path)
+
+            with mock.patch_object(astromatic, variable, copy_path):
+
+                # chmod u-r
+                mode = stat.S_IMODE(os.stat(copy_path)[stat.ST_MODE])
+                mode ^= stat.S_IRUSR
+                os.chmod(copy_path, mode)
+
+                args = IOError, astromatic.sextractor, img_path
+                self.assertFalse(os.access(copy_path, os.R_OK))
+                self.assertRaises(*args)
+
+                os.unlink(copy_path)
+                self.assertFalse(os.path.exists(copy_path))
+                self.assertRaises(*args)
+
+
+        # The SExtractorError exception is raised if anything goes wrong during
+        # the execution of SExtractor (in more technical terms, if its return
+        # code is other than zero). For example, the FITS image may not exist,
+        # or a non-numerical value may be assigned to a parameter that expects
+        # one. These two cases are just examples: SExtractor may fail for many
+        # different reasons that we cannot even foresee.
+
+        # (1) Try to run SExtractor on a non-existent image
+        kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
+        nonexistent_path = self.get_nonexistent_path(ext = '.fits')
+        args = astromatic.sextractor, nonexistent_path
+        self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
+
+        # (2) The DETECT_MINAREA parameter (minimum number of pixels above the
+        # threshold needed to trigger detection) expects an integer. Assigning
+        # to it a string will cause SExtractor to complain ("keyword out of
+        # range") and abort its execution.
+
+        kwargs['options'] = dict(DETECT_MINAREA = 'Y')
+        args = astromatic.sextractor, img_path
+        self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
+
+        # TypeError raised if 'options' is not a dictionary
+        args = astromatic.sextractor, img_path
+        kwargs = dict(options = ['DETECT_MINAREA', '5'])
+        self.assertRaises(TypeError, *args, **kwargs)
+
+        # ... or if any of its elements is not a string
+        kwargs['options'] = {'DETECT_MINAREA' : 125}
+        self.assertRaises(TypeError, *args, **kwargs)
 
