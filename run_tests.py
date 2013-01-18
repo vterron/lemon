@@ -31,6 +31,12 @@ the first error or failure.
 import os
 import unittest
 
+# This import checks whether the FITS images used by some tests are where
+# expected and, if that is not the case, automatically downloads them from the
+# STScI Digitized Sky Survey. In this manner, any image retrieval will be done
+# before running the unit tests, never halfway through their execution.
+import test.dss_images
+
 TESTS_PACKAGE = 'test'
 TESTS_PREFIX = 'test_'
 TESTS_EXTENSION = '.py'
