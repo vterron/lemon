@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+
 """ This module provides access to a series of FITS images that can be used in
 the unit tests. In order to keep the size of the repository as small as
 possible, these images are not included along with the source code, but instead
@@ -30,6 +32,7 @@ transparently downloaded from the Digitized Sky Survey.
 
 """
 
+import functools
 import re
 import os
 import os.path
@@ -62,12 +65,25 @@ def get_dss_image(path, ra, dec):
     base_url = "http://archive.stsci.edu/cgi-bin/dss_search?"
     parameters = dict(v = 'poss2ukstu_ir', ra = ra, dec = dec)
     url = base_url + urllib.urlencode(parameters)
+
+    # For example, "Downloading test/test_data/fits/IC_5146.fits: 87 %"
+    status = functools.partial(("Downloading %s: {0:d} %%" % path).format)
+    sys.stdout.write(status(0))
+    sys.stdout.flush()
+
+    def update_status(count, block_size, total_size):
+        percent = int(count * block_size / total_size * 100)
+        sys.stdout.write('\r' + status(percent))
+        sys.stdout.flush()
+
     try:
-        urllib.urlretrieve(url, filename = path)
+        urllib.urlretrieve(url, filename = path, reporthook = update_status)
     except:
         try: os.unlink(path)
         except: pass
         raise
+    finally:
+        print
 
 # Map each object to its right ascension and declination
 TEST_OBJECTS = {'IC 5070' : (312.75, 44.37),
@@ -100,9 +116,6 @@ TEST_IMAGES = set()
 for name, (ra, dec) in sorted(TEST_OBJECTS.items()):
     path = get_image_path(name)
     if not os.path.exists(path):
-        print "Downloading %s " % path ,
-        sys.stdout.flush()
         get_dss_image(path, ra, dec)
-        print 'done'
     TEST_IMAGES.add(path)
 
