@@ -69,6 +69,23 @@ import astromatic
 import fitsimage
 import methods
 
+# Decorate pyraf.subproc.Subprocess.__del__() to catch the SubprocessError
+# exception that it occasionally raises (when the process is not gone after
+# sending the TERM and KILL signals to it) and log it with level DEBUG on the
+# root logger. As explained in the Python data model, uncaught exceptions in
+# __del__() are ignored and a warning message, which we want to get rid of,
+# such as the following, printed to the standard error instead:
+#
+# Exception pyraf.subproc.SubprocessError: SubprocessError("Failed
+# kill of subproc 24600, '/iraf/iraf/bin.linux/x_images.e -c', with
+# signals ['TERM', 'KILL']",) in <bound method Subprocess.__del__
+# of <Subprocess '/iraf/iraf/bin.linux/x_images.e -c', at
+# 7f9f3f408710>> ignored
+
+func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
+pyraf.subproc.Subprocess.__del__ = func
+
+
 class QPhotResult(object):
     """ This class simply encapsulates the photometry of a star. In other
         words, each one of the lines that for each star will be outputted by
@@ -281,23 +298,7 @@ class QPhot(list):
                           output = qphot_output, exposure = exptimek,
                           interactive = 'no')
 
-            # Ignore the annoying warning message that is, from time to time,
-            # printed to the standard error, and that look like what follows:
-            #
-            # Exception pyraf.subproc.SubprocessError: SubprocessError("Failed
-            # kill of subproc 24600, '/iraf/iraf/bin.linux/x_images.e -c', with
-            # signals ['TERM', 'KILL']",) in <bound method Subprocess.__del__
-            # of <Subprocess '/iraf/iraf/bin.linux/x_images.e -c', at
-            # 7f9f3f408710>> ignored
-            #
-            # This message is printed because of an uncaught exception in the
-            # __del__() method of the PyRAF's Subprocess class. As explained in
-            # the Python data model, those exceptions are ignored and a warning
-            # message printed to stderr instead. Using this context manager we
-            # can get rid of these messages.
-
-            with methods.ignore_del_exceptions():
-                apphot.qphot(self.path, **kwargs)
+            apphot.qphot(self.path, **kwargs)
 
             # Make sure the outpout was written to where we said
             assert os.path.exists(qphot_output)
