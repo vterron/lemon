@@ -21,6 +21,7 @@
 import contextlib
 import cStringIO
 import functools
+import logging
 import math
 import numpy
 import os.path
@@ -476,4 +477,26 @@ def ignore_del_exceptions():
             if not re.match(pattern, line):
                 sys.stderr.write(line)
         tmp_stderr.close()
+
+def log_uncaught_exceptions(func):
+    """ Decorator to log uncaught exceptions with level DEBUG.
+
+    This decorator catches any exception raised by the decorated function and
+    logs it with level DEBUG on the root logger. Only subclasses of Exception
+    are caught, as we do not want to log SystemExit or KeyboardInterrupt. The
+    usage of this decorator makes probably only sense when the function raising
+    the uncaught exception cannot be fixed, for example when working with a
+    third-party library.
+
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            type, value, traceback = sys.exc_info()
+            msg = "%s raised %s('%s')" % (func.__name__, type.__name__, value)
+            logging.debug(msg)
+    return wrapper
 
