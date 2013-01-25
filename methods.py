@@ -18,14 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import contextlib
-import cStringIO
 import functools
 import logging
 import math
 import numpy
 import os.path
-import re
 import stat
 import subprocess
 import sys
@@ -437,46 +434,6 @@ def utctime(seconds = None, suffix = True):
     if suffix:
         utc_ctime += ' UTC'
     return utc_ctime
-
-@contextlib.contextmanager
-def ignore_del_exceptions():
-    """ A context manager to ignore exceptions printed to stderr by __del__()
-
-    Due to the precarious circumstances under which __del__() methods are
-    invoked, uncaught exceptions that occur during their execution are ignored,
-    and a warning is printed to sys.stderr instead. This is an example of how
-    these warning messages look like: 'Exception ZeroDivisionError: 'integer
-    division or modulo by zero' in <bound method Foo.__del__ of <__main__.Foo
-    object at 0x7f20aeb49050>> ignored'.
-
-    This context manager uses a regular expression to filter out those lines,
-    like the one above, that are printed to standard error because of uncaught
-    exceptions in a __del__() method. The usage of this context manager makes
-    only sense, of course, when the code raising the uncaught exception cannot
-    be fixed, for example when working with a third-party library.
-
-    """
-
-    try:
-        stderr_orig = sys.stderr
-        tmp_stderr = cStringIO.StringIO()
-        sys.stderr = tmp_stderr
-
-        yield
-
-    finally:
-        sys.stderr = stderr_orig
-        tmp_stderr.seek(0)
-
-        # Loop over the lines of the StringIO, which now contains all what was
-        # sent to standard error, and print everything except those messages
-        # caused by an uncaught exception in a __del__() method.
-
-        pattern = "^Exception (.*?): (.*) in (.*)\.__del__ of (.*) ignored$"
-        for line in tmp_stderr.readlines():
-            if not re.match(pattern, line):
-                sys.stderr.write(line)
-        tmp_stderr.close()
 
 def log_uncaught_exceptions(func):
     """ Decorator to log uncaught exceptions with level DEBUG.
