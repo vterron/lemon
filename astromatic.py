@@ -522,7 +522,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
         raise CDSclientNotInstalled(emsg % aclient_command)
 
     if not methods.check_command(scamp_command):
-        raise CDSclientNotInstalled(emsg % scamp_command)
+        raise SCAMPNotInstalled(emsg % scamp_command)
 
     # Do all the work in a temporary directory and remove it
     # (and thus all the involved files) upon the method exit.
@@ -562,10 +562,6 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
                 '-MERGEDOUTCAT_NAME', marged_path,
                 '-MERGEDOUTCAT_TYPE', 'ASCII_HEAD',
                 '-HEADER_SUFFIX', HEADER_SUFFIX]
-
-        scamp_command = args[0]
-        if not methods.check_command(scamp_command):
-            raise SCAMPNotInstalled(emsg % scamp_command)
 
         try:
             subprocess.check_call(args, stdout = stdout, stderr = stderr)
