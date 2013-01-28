@@ -514,15 +514,15 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
 
     """
 
-    aclient_command = 'aclient'
-    scamp_command = 'scamp'
+    ACLIENT_COMMAND = 'aclient'
+    SCAMP_COMMAND = 'scamp'
 
     emsg = "'%s' not found in the current environment"
-    if not methods.check_command(aclient_command):
-        raise CDSclientNotInstalled(emsg % aclient_command)
+    if not methods.check_command(ACLIENT_COMMAND):
+        raise CDSclientNotInstalled(emsg % ACLIENT_COMMAND)
 
-    if not methods.check_command(scamp_command):
-        raise SCAMPNotInstalled(emsg % scamp_command)
+    if not methods.check_command(SCAMP_COMMAND):
+        raise SCAMPNotInstalled(emsg % SCAMP_COMMAND)
 
     # Do all the work in a temporary directory and remove it
     # (and thus all the involved files) upon the method exit.
@@ -557,7 +557,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
         # file will override their counterparts in the original FITS header.
         # The output catalog will be saved in ASCII format, preceded with
         # comment lines listing column labels.
-        args = ['scamp', ldac_path,
+        args = [SCAMP_COMMAND, ldac_path,
                 '-c', SCAMP_CONFIG,
                 '-MERGEDOUTCAT_NAME', marged_path,
                 '-MERGEDOUTCAT_TYPE', 'ASCII_HEAD',
