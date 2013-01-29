@@ -416,7 +416,8 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     cannot be found, and IOError if any of the four SExtractor configuration
     files does not exist or is not readable. Any errors thrown by SExtractor
     are propagated as SExtractorError exceptions. Lastly, TypeEror is raised if
-    'options' is not a dictionary or any of its keys or values is not a string.
+    (a) 'ext' is not an integer or (b) 'options' is not a dictionary or any of
+    its keys or values is not a string.
 
     Keyword arguments:
     ext - for multi-extension FITS images, the index of the extension on which
@@ -437,6 +438,15 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     stderr - standard error file handle. If None, no redirection will occur.
 
     """
+
+    # It is easier to ask forgiveness than permission, yes, but checking the
+    # type here helps avoid some subtle errors. If, say, 'ext' is assigned a
+    # value of 3.8, we do not want it to be silently casted (and truncated)
+    # to three; it is much better (and safer) to have TypeError raised and
+    # let the user know that an invalid, non-integer index was given.
+
+    if not isinstance(ext, (int, long)):
+        raise TypeError("'ext' must be an integer")
 
     for executable in ['sextractor', 'sex']:
         if methods.check_command(executable):
