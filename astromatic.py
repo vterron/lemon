@@ -647,13 +647,14 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
 
         # The SExtractor catalog is saved to a temporary file, which
         # we have to move to our temporary, working directory.
-        output_path = sextractor(img.path, ext = ext, options = options,
-                                 stdout = stdout, stderr = stderr)
+        kwargs = dict(ext = ext, options = options,
+                      stdout = stdout, stderr = stderr)
+        output_path = sextractor(img.path, **kwargs)
         shutil.move(output_path, ldac_path)
 
         # Then, create the SCAMP .ahead file
-        ahead_file(img, ahead_path, scale, equinox, radecsys,
-                   ra_keyword = ra_keyword, dec_keyword = dec_keyword)
+        kwargs = dict(ra_keyword = ra_keyword, dec_keyword = dec_keyword)
+        ahead_file(img, ahead_path, scale, equinox, radecsys, **kwargs)
 
         # Finally, run SCAMP on the image. Those keywords defined in the .ahead
         # file will override their counterparts in the original FITS header.
