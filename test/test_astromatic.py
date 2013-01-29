@@ -23,6 +23,7 @@ import mock
 import numpy
 import os
 import os.path
+import pyfits
 import random
 import shutil
 import stat
@@ -567,8 +568,9 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # the execution of SExtractor (in more technical terms, if its return
         # code is other than zero). For example, the FITS image may not exist,
         # or a non-numerical value may be assigned to a parameter that expects
-        # one. These two cases are just examples: SExtractor may fail for many
-        # different reasons that we cannot even foresee.
+        # one, or we could try to run SExtractor on a FITS extension that does
+        # not exist. These three are just examples: SExtractor may fail for
+        # many different reasons that we cannot even foresee.
 
         # (1) Try to run SExtractor on a non-existent image
         kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
@@ -584,13 +586,29 @@ class SExtractorFunctionsTest(unittest.TestCase):
         kwargs['options'] = dict(DETECT_MINAREA = 'Y')
         args = astromatic.sextractor, img_path
         self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
+        del kwargs['options']
+
+        # (3) Try to run SExtractor on a nonexistent FITS extension.
+        with pyfits.open(img_path, mode = 'readonly') as hdulist:
+            nextensions = len(hdulist)
+        kwargs['ext'] = nextensions + 1
+        self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
 
         # TypeError raised if 'options' is not a dictionary
         args = astromatic.sextractor, img_path
         kwargs = dict(options = ['DETECT_MINAREA', '5'])
         self.assertRaises(TypeError, *args, **kwargs)
 
-        # ... or if any of its elements is not a string
+        # ... or if any of its elements is not a string.
         kwargs['options'] = {'DETECT_MINAREA' : 125}
+        self.assertRaises(TypeError, *args, **kwargs)
+
+        # TypeError also raised if 'ext' is not an integer...
+        kwargs = dict(ext = 0.56)
+        self.assertRaises(TypeError, *args, **kwargs)
+
+        # ... even if it is a float but has nothing after the decimal point
+        # (for which the built-in is_integer() function would return True).
+        kwargs = dict(ext = 0.0)
         self.assertRaises(TypeError, *args, **kwargs)
 
