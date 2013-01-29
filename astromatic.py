@@ -443,7 +443,7 @@ def sextractor(path, options = None, stdout = None, stderr = None):
     # If the loop did not break (and thus SExtractorNotInstalled was not
     # raised), 'executable' contains the first command that was found
 
-    root, ext = os.path.splitext(os.path.basename(path))
+    root, _ = os.path.splitext(os.path.basename(path))
     catalog_fd, catalog_path = \
         tempfile.mkstemp(prefix = '%s_' % root, suffix = '.cat')
     os.close(catalog_fd)
