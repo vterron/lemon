@@ -502,8 +502,8 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
 
-def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
-          dec_keyword = 'DEC', stdout = None, stderr = None):
+def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
+          ra_keyword = 'RA', dec_keyword = 'DEC', stdout = None, stderr = None):
     """ Run SCAMP to create a FITS-like image header that SWarp can read.
 
     The method runs SExtractor on the image, outputting a catalog in the
@@ -520,6 +520,12 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
     saturation - the number of ADUs at which arises saturation.
 
     Keyword arguments:
+    ext - for multi-extension FITS images, the index of the extension on which
+          SExtractor will be run and that therefore will determine the updated
+          astrometric information saved to the FITS-like image header. It
+          defaults to zero, which means that the first extension of the FITS
+          image is used. If a nonexistent extension is specified, the execution
+          of SExtractor fails and the SExtractorError exception is raised.
     ra_keyword - FITS keyword for the right ascension, in decimal degrees.
     dec_keyword - FITS keyword for the declination, in decimal degrees.
     stdout - the SExtractor and SCAMP standard output file handle. If set
@@ -559,7 +565,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ra_keyword = 'RA',
 
         # The SExtractor catalog is saved to a temporary file, which
         # we have to move to our temporary, working directory.
-        output_path = sextractor(img.path, options = options,
+        output_path = sextractor(img.path, ext = ext, options = options,
                                  stdout = stdout, stderr = stderr)
         shutil.move(output_path, ldac_path)
 
