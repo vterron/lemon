@@ -537,7 +537,7 @@ def ahead_file(img, output_path, scale, equinox, radecsys,
 
     img - FITSImage object for which to generate the .ahead file.
     output_path - path to which the .ahead file will be saved.
-    scale - scale of the image, in degrees per pixel
+    scale - scale of the image, in arcseconds per pixel
     equinox - equinox in years (e.g., 2000)
     radecsys - reference system (e.g., ICRS)
 
@@ -567,6 +567,7 @@ def ahead_file(img, output_path, scale, equinox, radecsys,
         # computation if the axes are skewed. This model has been used by HST
         # and IRAF for several years.
 
+        scale /= 3600 # arcsec/pixel to deg/pixel
         fd.write("CD1_1   = %f\n" % scale)
         fd.write("CD1_2   = 0.0\n")
         fd.write("CD2_1   = 0.0\n")
@@ -643,9 +644,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
                                  stdout = stdout, stderr = stderr)
         shutil.move(output_path, ldac_path)
 
-        # Then, create the SCAMP .ahead file. Note the conversion
-        # from arcsec/pixel to degrees/pix, as expected by SCAMP.
-        ahead_file(img, ahead_path, scale / 3600, equinox, radecsys,
+        # Then, create the SCAMP .ahead file
+        ahead_file(img, ahead_path, scale, equinox, radecsys,
                    ra_keyword = ra_keyword, dec_keyword = dec_keyword)
 
         # Finally, run SCAMP on the image. Those keywords defined in the .ahead
