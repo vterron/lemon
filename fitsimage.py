@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# encoding:UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -903,79 +902,6 @@ class FITSImage(object):
             os.close(fd)
 
         return self.imarith('/', central_value, output_path = path)
-
-    def ahead_file(self, path_to_ahead_file, scale, equinox, radecsys,
-                   ra_keyword = 'RA', dec_keyword = 'DEC'):
-        """ Generate the .ahead file needed by SCAMP in order to do astrometry.
-
-        The method creates the .ahead file that ensures that the required FITS
-        keywords, which define an initial guess of the astrometic solution,
-        needed by Emmanuel Bertin's SCAMP are present. These keywords could
-        also be direclty added or updated in the FITS image, but using the
-        .ahead file allows us not to modify the original file. On successful
-        completion, the method returns the path to the generated .ahead file.
-
-        [From the SCAMP user guide, page 4] 'The binary catalogues in 'FITS
-        LDAC' format read by SCAMP contain a copy of the original FITS image
-        headers. These headers provide fundamental information such as frame
-        dimensions, World Coordinate System (WCS) data and many other FITS
-        keywords which SCAMP uses to derive a full astrometric and photometric
-        calibration. It is often needed to change or add keywords in some
-        headers. Editing FITS files is not convenient, so SCAMP provides read
-        (and write) support for 'external' header files. External headers may
-        either be real FITS header cards (no carriage-return), or ASCII files
-        containing lines in FITS-like format, with the final line starting with
-        'END⊔⊔⊔⊔⊔'. Multiple extensions must be separated by an 'END⊔⊔⊔⊔⊔'
-        line. External “headers” need not contain all the FITS keywords
-        normally required. The keywords present in external headers are only
-        there to override their counterparts in the original image headers or
-        to add new ones. Hence for every input (say, xxxx.cat) FITS catalogue,
-        SCAMP looks for a xxxx.ahead header file, loads it if present, and
-        overrides or adds to image header keywords those found there.'
-
-        For further information on the World Coordinate System (WCS), refer to
-        http://tdc-www.harvard.edu/software/wcstools/wcstools.wcs.html
-
-        path_to_ahead_file - path to wich the ahead file will be saved.
-        scale - scale of the image, in degrees per pixel
-        equinox - equinox in years (e.g., 2000)
-        radecsys - reference system (e.g., ICRS)
-
-        Keyword arguments:
-        ra_keyword - FITS keyword for the right ascension, in decimal degrees.
-        dec_keyword - FITS keyword for the declination, in decimal degrees.
-
-        """
-
-        with open(path_to_ahead_file, 'wt') as fd:
-
-            # Pixel coordinates of the reference point
-            xcenter, ycenter = self.center
-            fd.write("CRPIX1  = %d\n" % xcenter)
-            fd.write("CRPIX2  = %d\n" % ycenter)
-
-            ra  = self.read_keyword(ra_keyword)
-            dec = self.read_keyword(dec_keyword)
-
-            fd.write("CRVAL1  = %s\n" % ra)    # RA at reference point
-            fd.write("CRVAL2  = %s\n" % dec)   # DEC at reference point
-            fd.write("CTYPE1  = 'RA---TAN'\n") # Gnomonic projection
-            fd.write("CTYPE2  = 'DEC--TAN'\n")
-
-            # The FITS WCS standard uses a rotation matrix, CD1_1, CD1_2,
-            # CD2_1, and CD2_2 to indicate both rotation and scale, allowing a
-            # more intuitive computation if the axes are skewed. This model has
-            # been used by HST and IRAF for several years.
-
-            fd.write("CD1_1   = %f\n" % scale)
-            fd.write("CD1_2   = 0.0\n")
-            fd.write("CD2_1   = 0.0\n")
-            fd.write("CD2_2   = %f\n" % -scale)
-            fd.write("EQUINOX = %d\n" % equinox)  # equinox in years
-            fd.write("RADECSYS= '%s'\n" % radecsys)  # reference system
-
-            fd.write("END⊔⊔⊔⊔⊔")
-            return path_to_ahead_file
 
     def add_margin(self, left_margin, right_margin, bottom_margin, top_margin):
         """ Add a blank margin to the FITS image.

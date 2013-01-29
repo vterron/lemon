@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# encoding:UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -502,6 +503,79 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
 
+def ahead_file(img, output_path, scale, equinox, radecsys,
+               ra_keyword = 'RA', dec_keyword = 'DEC'):
+    """ Generate the .ahead file needed by SCAMP in order to do astrometry.
+
+    This function receives a fitsimage.FITSImage object, which encapsulates
+    an astronomical image, and creates the .ahead file that guarantees that
+    the required FITS keywords needed by Emmanuel Bertin's SCAMP (defining
+    an initial guess of the astrometic solution) are present. Although the
+    keywords could also be directly added or updated in the FITS image,
+    using the .ahead file allows us not to modify the file.
+
+    [From the SCAMP user guide, page 4] 'The binary catalogues in 'FITS
+    LDAC' format read by SCAMP contain a copy of the original FITS image
+    headers. These headers provide fundamental information such as frame
+    dimensions, World Coordinate System (WCS) data and many other FITS
+    keywords which SCAMP uses to derive a full astrometric and photometric
+    calibration. It is often needed to change or add keywords in some
+    headers. Editing FITS files is not convenient, so SCAMP provides read
+    (and write) support for 'external' header files. External headers may
+    either be real FITS header cards (no carriage-return), or ASCII files
+    containing lines in FITS-like format, with the final line starting with
+    'END⊔⊔⊔⊔⊔'. Multiple extensions must be separated by an 'END⊔⊔⊔⊔⊔'
+    line. External 'headers' need not contain all the FITS keywords
+    normally required. The keywords present in external headers are only
+    there to override their counterparts in the original image headers or
+    to add new ones. Hence for every input (say, xxxx.cat) FITS catalogue,
+    SCAMP looks for a xxxx.ahead header file, loads it if present, and
+    overrides or adds to image header keywords those found there.'
+
+    For further information on the World Coordinate System (WCS), refer to
+    http://tdc-www.harvard.edu/software/wcstools/wcstools.wcs.html
+
+    img - FITSImage object for which to generate the .ahead file.
+    output_path - path to which the .ahead file will be saved.
+    scale - scale of the image, in degrees per pixel
+    equinox - equinox in years (e.g., 2000)
+    radecsys - reference system (e.g., ICRS)
+
+    Keyword arguments:
+    ra_keyword - FITS keyword for the right ascension, in decimal degrees.
+    dec_keyword - FITS keyword for the declination, in decimal degrees.
+
+    """
+
+    with open(output_path, 'wt') as fd:
+
+        # Pixel coordinates of the reference point
+        xcenter, ycenter = img.center
+        fd.write("CRPIX1  = %d\n" % xcenter)
+        fd.write("CRPIX2  = %d\n" % ycenter)
+
+        ra  = img.read_keyword(ra_keyword)
+        dec = img.read_keyword(dec_keyword)
+
+        fd.write("CRVAL1  = %s\n" % ra)    # RA at reference point
+        fd.write("CRVAL2  = %s\n" % dec)   # DEC at reference point
+        fd.write("CTYPE1  = 'RA---TAN'\n") # Gnomonic projection
+        fd.write("CTYPE2  = 'DEC--TAN'\n")
+
+        # The FITS WCS standard uses a rotation matrix, CD1_1, CD1_2, CD2_1 and
+        # CD2_2 to indicate both rotation and scale, allowing a more intuitive
+        # computation if the axes are skewed. This model has been used by HST
+        # and IRAF for several years.
+
+        fd.write("CD1_1   = %f\n" % scale)
+        fd.write("CD1_2   = 0.0\n")
+        fd.write("CD2_1   = 0.0\n")
+        fd.write("CD2_2   = %f\n" % -scale)
+        fd.write("EQUINOX = %d\n" % equinox)    # equinox in years
+        fd.write("RADECSYS= '%s'\n" % radecsys) # reference system
+
+        fd.write("END⊔⊔⊔⊔⊔")
+
 def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
           ra_keyword = 'RA', dec_keyword = 'DEC', stdout = None, stderr = None):
     """ Run SCAMP to create a FITS-like image header that SWarp can read.
@@ -571,8 +645,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
 
         # Then, create the SCAMP .ahead file. Note the conversion
         # from arcsec/pixel to degrees/pix, as expected by SCAMP.
-        img.ahead_file(ahead_path, scale / 3600, equinox, radecsys,
-                       ra_keyword = ra_keyword, dec_keyword = dec_keyword)
+        ahead_file(img, ahead_path, scale / 3600, equinox, radecsys,
+                   ra_keyword = ra_keyword, dec_keyword = dec_keyword)
 
         # Finally, run SCAMP on the image. Those keywords defined in the .ahead
         # file will override their counterparts in the original FITS header.
