@@ -635,11 +635,11 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
         img = fitsimage.FITSImage(path)
 
         # Determine the paths to the FITS LDAC SExtractor catalog, the
-        # '.ahead' header file and the marged catalogue produced by SCAMP.
+        # '.ahead' header file and the merged catalogue produced by SCAMP.
         tmp_path = os.path.join(tmp_dir, img.basename_woe)
         ldac_path = '%s.ldac' % tmp_path
         ahead_path = '%s.ahead' % tmp_path
-        marged_path = '%s.cat' % tmp_path
+        merged_path = '%s.cat' % tmp_path
 
         # Use the FITS LDAC' format and image saturation level
         options = dict(CATALOG_TYPE = 'FITS_LDAC',
@@ -661,7 +661,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
         # comment lines listing column labels.
         args = [SCAMP_COMMAND, ldac_path,
                 '-c', SCAMP_CONFIG,
-                '-MERGEDOUTCAT_NAME', marged_path,
+                '-MERGEDOUTCAT_NAME', merged_path,
                 '-MERGEDOUTCAT_TYPE', 'ASCII_HEAD',
                 '-HEADER_SUFFIX', HEADER_SUFFIX]
 
