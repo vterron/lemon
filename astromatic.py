@@ -403,7 +403,7 @@ def sextractor_md5sum(options = None):
 
     return md5.hexdigest()
 
-def sextractor(path, options = None, stdout = None, stderr = None):
+def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     """ Run SExtractor on the image and return the path to the output catalog.
 
     This function runs SExtractor on 'path', using the configuration files
@@ -419,6 +419,11 @@ def sextractor(path, options = None, stdout = None, stderr = None):
     'options' is not a dictionary or any of its keys or values is not a string.
 
     Keyword arguments:
+    ext - for multi-extension FITS images, the index of the extension on which
+          SExtractor will be run. It defaults to zero, meaning that sources are
+          detected on the first extension of the FITS image. If a nonexistent
+          extension is specified, the execution of SExtractor fails and the
+          SExtractorError exception is raised.
     options - a dictionary mapping each SExtractor parameter to its value, and
               that will override their definition in the configuration files or
               any default value. In this manner, it is possible to execute
@@ -464,7 +469,7 @@ def sextractor(path, options = None, stdout = None, stderr = None):
             msg = "configuration file %s cannot be read"
             raise IOError(msg % config_file)
 
-    args = [executable, path,
+    args = [executable, path + '[%d]' % ext,
             '-c', SEXTRACTOR_CONFIG,
             '-PARAMETERS_NAME', SEXTRACTOR_PARAMS,
             '-FILTER_NAME', SEXTRACTOR_FILTER,
