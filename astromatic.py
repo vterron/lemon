@@ -620,6 +620,13 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
     if not methods.check_command(SCAMP_COMMAND):
         raise SCAMPNotInstalled(emsg % SCAMP_COMMAND)
 
+    if not os.path.exists(SCAMP_CONFIG):
+        msg = "configuration file %s not found"
+        raise IOError(msg % SCAMP_CONFIG)
+    if not os.access(SCAMP_CONFIG, os.R_OK):
+        msg = "configuration file %s cannot be read"
+        raise IOError(msg % SCAMP_CONFIG)
+
     # Do all the work in a temporary directory and remove it
     # (and thus all the involved files) upon the method exit.
     tmp_dir = tempfile.mkdtemp(suffix = '_scamp')
