@@ -450,7 +450,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         raise TypeError("'ext' must be an integer")
 
     for executable in ['sextractor', 'sex']:
-        if methods.check_command(executable):
+        if methods.which(executable):
             break
     else:
         msg = "SExtractor not found in the current environment"
@@ -614,10 +614,10 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
     SCAMP_COMMAND = 'scamp'
 
     emsg = "'%s' not found in the current environment"
-    if not methods.check_command(ACLIENT_COMMAND):
+    if not methods.which(ACLIENT_COMMAND):
         raise CDSclientNotInstalled(emsg % ACLIENT_COMMAND)
 
-    if not methods.check_command(SCAMP_COMMAND):
+    if not methods.which(SCAMP_COMMAND):
         raise SCAMPNotInstalled(emsg % SCAMP_COMMAND)
 
     if not os.path.exists(SCAMP_CONFIG):
@@ -749,7 +749,7 @@ def swarp(img_path, head_path, copy_keywords = None,
             args.append(','.join(copy_keywords))
 
         swarp_command = args[0]
-        if not methods.check_command(swarp_command):
+        if not methods.which(swarp_command):
             msg = "'%s' not found in the current environment" % swarp_command
             raise SWarpNotInstalled(msg)
 

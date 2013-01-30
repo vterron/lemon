@@ -24,7 +24,6 @@ import math
 import numpy
 import os.path
 import stat
-import subprocess
 import sys
 import tempfile
 import time
@@ -343,19 +342,27 @@ def load_file_list(path, warn = True):
 
     return list_of_pixels
 
-def check_command(executable):
-    """ Return True if the command could be located, False otherwise """
+def which(name):
+    """ Search PATH for executable files with the given name.
 
-    # The 'which' command prints the pathnames of the files which would be
-    # executed in the current environment and, as its exit status, returns zero
-    # if all the specified commands were found and executable. Some versions of
-    # it, such as that which comes with RHEL, print PATH to standard error if
-    # the command was not found while others, such as GNU/Debian fail silently.
+    Replicate the functionality of Unix which, returning a list of the full
+    paths to the executables that would be executed in the current environment
+    if the argument were given as command in a strictly POSIX-conformant shell.
+    This is done by searching, in the directories listed in the environment
+    variable PATH, for executable files matching the name of the argument. If
+    the command is nonexistent or not executable, an empty list is returned.
 
-    with open(os.devnull, 'wt') as fd:
-        kwargs = dict(stdout = fd, stderr = fd)
-        retcode = subprocess.call(['which', executable], **kwargs)
-        return not retcode
+    The code in this function is largely ripped from Twister's repository:
+    https://twistedmatrix.com/trac/browser/trunk/twisted/python/procutils.py
+
+    """
+
+    result = []
+    for directory in os.environ.get('PATH', '').split(os.pathsep):
+        path = os.path.join(directory, name)
+        if os.access(path, os.X_OK):
+            result.append(path)
+    return result
 
 def split_by_diff(iterable, delta = 3):
     """ Split a sequence by the difference between consecutive elements.
