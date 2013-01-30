@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import functools
 import mock
 import numpy
@@ -33,7 +34,6 @@ import unittest
 import astromatic
 from astromatic import Pixel, Star, Catalog
 import dss_images
-import methods
 
 NITERS = 100
 
@@ -525,14 +525,14 @@ class SExtractorFunctionsTest(unittest.TestCase):
                 os.unlink(catalog_path)
 
         # SExtractorNotInstalled must be raised if no SExtractor executable is
-        # detected. In order to simulate this, mock methods.check_command()
-        # (which astromatic.sextractor() uses to determine whether a command
-        # can be found in the current environment) and make it always return
-        # False. In this manner, within the following context manager,
-        # SExtractor will appear as not installed to astromatic.sextractor().
+        # detected. In order to simulate this, mock os.environ and clear the
+        # 'PATH' environment variable. In this manner, as the list of paths to
+        # directories where executables may be found is empty, SExtractor (and
+        # any other command) will appear as not installed on the system.
 
-        with mock.patch('methods.check_command') as mocked:
-            mocked.return_value = False
+        environment_copy = copy.deepcopy(os.environ)
+        with mock.patch_object(os, 'environ', environment_copy) as mocked:
+            mocked['PATH'] = ''
             args = astromatic.sextractor, img_path
             self.assertRaises(astromatic.SExtractorNotInstalled, *args)
 
