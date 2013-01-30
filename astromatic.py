@@ -40,8 +40,14 @@ SEXTRACTOR_CONFIG = os.path.join(ASTROMATIC_FILES, 'sextractor.sex')
 SEXTRACTOR_PARAMS = os.path.join(ASTROMATIC_FILES, 'sextractor.param')
 SEXTRACTOR_FILTER = os.path.join(ASTROMATIC_FILES, 'sextractor.conv')
 SEXTRACTOR_STARNNW = os.path.join(ASTROMATIC_FILES, 'sextractor.nnw')
+SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
+
 SCAMP_CONFIG = os.path.join(ASTROMATIC_FILES, 'scamp.conf')
+SCAMP_COMMAND = 'scamp'
+ACLIENT_COMMAND = 'aclient'
+
 SWARP_CONFIG = os.path.join(ASTROMATIC_FILES, 'swarp.conf')
+SWARP_COMMAND = 'swarp'
 
 # Filename extension of header files returned by SCAMP
 HEADER_SUFFIX = '.head'
@@ -449,7 +455,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     if not isinstance(ext, (int, long)):
         raise TypeError("'ext' must be an integer")
 
-    for executable in ['sextractor', 'sex']:
+    for executable in SEXTRACTOR_COMMANDS:
         if methods.which(executable):
             break
     else:
@@ -610,9 +616,6 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
 
     """
 
-    ACLIENT_COMMAND = 'aclient'
-    SCAMP_COMMAND = 'scamp'
-
     emsg = "'%s' not found in the current environment"
     if not methods.which(ACLIENT_COMMAND):
         raise CDSclientNotInstalled(emsg % ACLIENT_COMMAND)
@@ -737,7 +740,7 @@ def swarp(img_path, head_path, copy_keywords = None,
         os.close(output_fd)
 
         os.chdir(tmp_dir)
-        args = ['swarp', img_basename,
+        args = [SWARP_COMMAND, img_basename,
                 '-c', SWARP_CONFIG,
                 '-IMAGEOUT_NAME', output_path,
                 '-HEADER_SUFFIX', HEADER_SUFFIX]
