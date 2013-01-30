@@ -342,15 +342,15 @@ def load_file_list(path, warn = True):
 
     return list_of_pixels
 
-def which(name):
-    """ Search PATH for executable files with the given name.
+def which(*names):
+    """ Search PATH for executable files with the given names.
 
-    Replicate the functionality of Unix which, returning a list of the full
+    Replicate the functionality of Unix 'which', returning a list of the full
     paths to the executables that would be executed in the current environment
-    if the argument were given as command in a strictly POSIX-conformant shell.
-    This is done by searching, in the directories listed in the environment
-    variable PATH, for executable files matching the name of the argument. If
-    the command is nonexistent or not executable, an empty list is returned.
+    if the arguments were given as commands in a POSIX-conformant shell. This
+    is done by searching, in the directories listed in the environment variable
+    PATH, for executable files matching the names of the arguments. If all the
+    command are nonexistent or not executable, an empty list is returned.
 
     The code in this function is largely ripped from Twister's repository:
     https://twistedmatrix.com/trac/browser/trunk/twisted/python/procutils.py
@@ -359,9 +359,10 @@ def which(name):
 
     result = []
     for directory in os.environ.get('PATH', '').split(os.pathsep):
-        path = os.path.join(directory, name)
-        if os.access(path, os.X_OK):
-            result.append(path)
+        for name in names:
+            path = os.path.join(directory, name)
+            if os.access(path, os.X_OK):
+                result.append(path)
     return result
 
 def split_by_diff(iterable, delta = 3):
