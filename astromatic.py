@@ -43,14 +43,13 @@ SEXTRACTOR_STARNNW = os.path.join(ASTROMATIC_FILES, 'sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 
 SCAMP_CONFIG = os.path.join(ASTROMATIC_FILES, 'scamp.conf')
+SCAMP_HEADER_SUFFIX = '.head' # extension of header files
 SCAMP_COMMAND = 'scamp'
 ACLIENT_COMMAND = 'aclient'
 
 SWARP_CONFIG = os.path.join(ASTROMATIC_FILES, 'swarp.conf')
 SWARP_COMMAND = 'swarp'
 
-# Filename extension of header files returned by SCAMP
-HEADER_SUFFIX = '.head'
 
 class CDSclientNotInstalled(StandardError):
     """ Raised if F.Ochsenbein's CDSclient package is not installed """
@@ -667,7 +666,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
                 '-c', SCAMP_CONFIG,
                 '-MERGEDOUTCAT_NAME', merged_path,
                 '-MERGEDOUTCAT_TYPE', 'ASCII_HEAD',
-                '-HEADER_SUFFIX', HEADER_SUFFIX]
+                '-HEADER_SUFFIX', SCAMP_HEADER_SUFFIX]
 
         try:
             subprocess.check_call(args, stdout = stdout, stderr = stderr)
@@ -676,8 +675,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
 
         # Move the output 'head' file to a different, temporary location
         # (as this directory is going to be deleted when we are done)
-        src_head_path = tmp_path + HEADER_SUFFIX
-        dst_head_fd, dst_head_path = tempfile.mkstemp(suffix = HEADER_SUFFIX)
+        src_head_path = tmp_path + SCAMP_HEADER_SUFFIX
+        dst_head_fd, dst_head_path = tempfile.mkstemp(suffix = SCAMP_HEADER_SUFFIX)
         os.close(dst_head_fd)
         shutil.move(src_head_path, dst_head_path)
         return dst_head_path
@@ -731,7 +730,7 @@ def swarp(img_path, head_path, copy_keywords = None,
         img_basename = os.path.basename(img_path)
         image_dest = os.path.join(tmp_dir, img_basename)
         root, ext = os.path.splitext(img_basename)
-        header_dst = os.path.join(tmp_dir, '%s%s' % (root, HEADER_SUFFIX))
+        header_dst = os.path.join(tmp_dir, '%s%s' % (root, SCAMP_HEADER_SUFFIX))
         os.symlink(img_path, image_dest)
         os.symlink(head_path, header_dst)
 
@@ -743,7 +742,7 @@ def swarp(img_path, head_path, copy_keywords = None,
         args = [SWARP_COMMAND, img_basename,
                 '-c', SWARP_CONFIG,
                 '-IMAGEOUT_NAME', output_path,
-                '-HEADER_SUFFIX', HEADER_SUFFIX]
+                '-HEADER_SUFFIX', SCAMP_HEADER_SUFFIX]
 
         if copy_keywords:
             # Coma-separated list of FITS keywords that will be propagated from
