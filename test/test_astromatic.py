@@ -367,6 +367,12 @@ class CatalogTest(unittest.TestCase):
             self.assertEqual(pixel.y, star.y)
 
 
+def get_nonexistent_path(ext = None):
+    """ Return the path to a nonexistent file """
+    with tempfile.NamedTemporaryFile(suffix = ext) as fd:
+        return fd.name
+
+
 class SExtractorFunctionsTest(unittest.TestCase):
 
     SEXTRACTOR_MODULE_VARS = \
@@ -374,13 +380,6 @@ class SExtractorFunctionsTest(unittest.TestCase):
        'SEXTRACTOR_PARAMS',
        'SEXTRACTOR_FILTER',
        'SEXTRACTOR_STARNNW')
-
-    @staticmethod
-    def get_nonexistent_path(ext = None):
-        """ Return the path to a nonexistent file """
-
-        with tempfile.NamedTemporaryFile(suffix = ext) as fd:
-            return fd.name
 
     def test_sextractor_md5sum(self):
 
@@ -421,7 +420,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
             # the settings are still the same), the MD5 hash must be different.
 
             ext = os.path.splitext(path)[1]
-            copy_path = self.get_nonexistent_path(ext = ext)
+            copy_path = get_nonexistent_path(ext = ext)
 
             try:
                 shutil.copy2(path, copy_path)
@@ -474,7 +473,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
             path = eval('astromatic.%s' % variable)
             ext = os.path.splitext(path)[1]
-            copy_path = self.get_nonexistent_path(ext = ext)
+            copy_path = get_nonexistent_path(ext = ext)
             shutil.copy2(path, copy_path)
 
             with mock.patch_object(astromatic, variable, copy_path):
@@ -545,7 +544,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
             path = eval('astromatic.%s' % variable)
             ext = os.path.splitext(path)[1]
-            copy_path = self.get_nonexistent_path(ext = ext)
+            copy_path = get_nonexistent_path(ext = ext)
             shutil.copy2(path, copy_path)
 
             with mock.patch_object(astromatic, variable, copy_path):
@@ -574,7 +573,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
         # (1) Try to run SExtractor on a non-existent image
         kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
-        nonexistent_path = self.get_nonexistent_path(ext = '.fits')
+        nonexistent_path = get_nonexistent_path(ext = '.fits')
         args = astromatic.sextractor, nonexistent_path
         self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
 
