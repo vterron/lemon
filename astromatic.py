@@ -584,19 +584,28 @@ def ahead_file(img, output_path, scale, equinox, radecsys,
 
 def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
           ra_keyword = 'RA', dec_keyword = 'DEC', stdout = None, stderr = None):
-    """ Run SCAMP to create a FITS-like image header that SWarp can read.
+    """ Return a FITS-like image header with updated astrometric information.
 
-    The method runs SExtractor on the image, outputting a catalog in the
-    'FITS LDAC' binary format, and then uses SCAMP to read it and produce
-    the FITS-like image header (the '.head' header file), containing updated
-    astrometric and photometric information, than SWarp can read and use for
-    image stacking. Returns the path to the .head file, which is saved to a
-    temporary file and for whose deletion when it is no longer needed the
-    user is responsible.
+    This function runs SExtractor on the input FITS image, creating a catalog
+    in the FITS_LDAC binary format which is then read by SCAMP to compute the
+    astrometric projection parameters. This is achieved by automatically
+    downloading a catalog of astrometric standards from the VizieR database and
+    cross-matching them with the sources detected by SExtractor in the image.
+    The result of this calibration is a FITS-like image header which contains
+    updated astrometric information and that SWarp can read and use for image
+    stacking. The function returns the path to the .head file, which is saved
+    to a temporary file.
 
-    scale - scale of the image, in degrees per pixel
+    The process of computing the astrometric solution is very dependent on the
+    preliminary, approximate astrometric data of the FITS image. Therefore, it
+    is extremely important that the FITS keywords with the right ascension and
+    declination have the right values, so that the astrometric standards
+    downloaded from VizieR correspond to stars in the image.
+
+    Arguments:
+    scale - scale of the image, in degrees per pixel.
     equinox - equinox in years (e.g., 2000)
-    radecsys - reference system (e.g., ICRS)
+    radecsys - celestial reference system (e.g., ICRS)
     saturation - the number of ADUs at which arises saturation.
 
     Keyword arguments:
@@ -616,10 +625,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
               and values in this dictionary must be strings.
     ra_keyword - FITS keyword for the right ascension, in decimal degrees.
     dec_keyword - FITS keyword for the declination, in decimal degrees.
-    stdout - the SExtractor and SCAMP standard output file handle. If set
-             to None, no redirection will occur.
-    stderr - the SExtractor and SCAMP standard error file handle. If set
-             to None, no redirection will occur.
+    stdout - standard output file handle. If None, no redirection will occur.
+    stderr - standard error file handle. If None, no redirection will occur.
 
     """
 
