@@ -508,8 +508,8 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
 
-def ahead_file(img, output_path, scale, equinox, radecsys,
-               ra_keyword = 'RA', dec_keyword = 'DEC'):
+def _ahead_file(img, output_path, scale, equinox, radecsys,
+                ra_keyword = 'RA', dec_keyword = 'DEC'):
     """ Generate the .ahead file needed by SCAMP in order to do astrometry.
 
     This function receives a fitsimage.FITSImage object, which encapsulates
@@ -671,7 +671,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
 
         # Then, create the SCAMP .ahead file
         kwargs = dict(ra_keyword = ra_keyword, dec_keyword = dec_keyword)
-        ahead_file(img, ahead_path, scale, equinox, radecsys, **kwargs)
+        _ahead_file(img, ahead_path, scale, equinox, radecsys, **kwargs)
 
         # Finally, run SCAMP on the image. Those keywords defined in the .ahead
         # file will override their counterparts in the original FITS header.
