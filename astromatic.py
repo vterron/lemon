@@ -582,7 +582,7 @@ def ahead_file(img, output_path, scale, equinox, radecsys,
 
         fd.write("END⊔⊔⊔⊔⊔")
 
-def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
+def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
           ra_keyword = 'RA', dec_keyword = 'DEC', stdout = None, stderr = None):
     """ Run SCAMP to create a FITS-like image header that SWarp can read.
 
@@ -606,6 +606,14 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
           defaults to zero, which means that the first extension of the FITS
           image is used. If a nonexistent extension is specified, the execution
           of SExtractor fails and the SExtractorError exception is raised.
+    options - a dictionary mapping each SCAMP parameter to its value, and that
+              will override their definition in the configuration file or any
+              default value. In this manner, it is possible to execute SCAMP
+              with different parameters without having to modify the
+              configuration file. For example, {'POSANGLE_MAXERR' : '2.5'}
+              would make SCAMP run with the parameter 'POSANGLE_MAXERR' set to
+              2.5, regardless of what the configuration file says. All the keys
+              and values in this dictionary must be strings.
     ra_keyword - FITS keyword for the right ascension, in decimal degrees.
     dec_keyword - FITS keyword for the declination, in decimal degrees.
     stdout - the SExtractor and SCAMP standard output file handle. If set
@@ -644,12 +652,12 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
         merged_path = '%s.cat' % tmp_path
 
         # Use the FITS LDAC' format and image saturation level
-        options = dict(CATALOG_TYPE = 'FITS_LDAC',
-                       SATUR_LEVEL = str(saturation))
+        sextractor_options = dict(CATALOG_TYPE = 'FITS_LDAC',
+                                  SATUR_LEVEL = str(saturation))
 
         # The SExtractor catalog is saved to a temporary file, which
         # we have to move to our temporary, working directory.
-        kwargs = dict(ext = ext, options = options,
+        kwargs = dict(ext = ext, options = sextractor_options,
                       stdout = stdout, stderr = stderr)
         output_path = sextractor(img.path, **kwargs)
         shutil.move(output_path, ldac_path)
@@ -667,6 +675,14 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0,
                 '-MERGEDOUTCAT_NAME', merged_path,
                 '-MERGEDOUTCAT_TYPE', 'ASCII_HEAD',
                 '-HEADER_SUFFIX', SCAMP_HEADER_SUFFIX]
+
+        if options:
+            try:
+                for key, value in options.iteritems():
+                    args += ['-%s' % key, value]
+            except AttributeError:
+                msg = "'options' must be a dictionary"
+                raise TypeError(msg)
 
         try:
             subprocess.check_call(args, stdout = stdout, stderr = stderr)
