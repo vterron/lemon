@@ -6,3 +6,6 @@ pyraf
 
 # User login file for IRAF
 login.cl
+
+# IRAF user parameter directory
+uparm
