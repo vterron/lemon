@@ -699,6 +699,7 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
 
         args = [SCAMP_COMMAND, ldac_path,
                 '-c', SCAMP_CONFIG,
+                '-CDSCLIENT_EXEC', CDSCLIENT_COMMAND,
                 '-AHEADER_SUFFIX', SCAMP_AHEADER_SUFFIX,
                 '-HEADER_SUFFIX', SCAMP_HEADER_SUFFIX,
                 '-MERGEDOUTCAT_TYPE', 'NONE']
