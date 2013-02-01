@@ -34,6 +34,8 @@ import unittest
 import astromatic
 from astromatic import Pixel, Star, Catalog
 import dss_images
+import fitsimage
+import methods
 
 NITERS = 100
 
@@ -610,4 +612,183 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # (for which the built-in is_integer() function would return True).
         kwargs = dict(ext = 0.0)
         self.assertRaises(TypeError, *args, **kwargs)
+
+
+class SCAMPFunctionsTest(unittest.TestCase):
+
+    # The FITS keyword with the right ascension and declination, respectively,
+    # of the images downloaded from the STScI Digitized Sky Survey.
+    DSS_RA_KEYWORD = 'PLATERA'
+    DSS_DEC_KEYWORD = 'PLATEDEC'
+
+    DSS_SCALE = 1 # arcsec/pixel
+    DSS_EQUINOX = 2000
+    DSS_RADECSYS = 'ICRS'
+    DSS_SATURLEVEL = 30000 # ADUs
+
+    def test_scamp(self):
+
+        # As it occurs with SExtractor, we cannot write a unit test to check
+        # that SCAMP, a third-party program, works as it should (i.e., that it
+        # correctly computes the astrometric solution for a FITS image): that
+        # is beyond our control and the responsibility of its developer. What
+        # we test for here is whether our wrapper, astromatic.scamp(), calls
+        # SCAMP properly.
+
+        # First, the most probable scenario: our wrapper should run SExtractor
+        # (generating a FITS LDAC catalog) and then SCAMP (doing astrometry) on
+        # any FITS image that it receives (here, again, we use those downloaded
+        # from the STScI Digitized Sky Survey) and return the path to the
+        # output header file, which must always be readable and have the
+        # extension defined in astromatic.SCAMP_HEADER_SUFFIX.
+
+        default_args = (self.DSS_SCALE, self.DSS_EQUINOX,
+                        self.DSS_RADECSYS, self.DSS_SATURLEVEL)
+
+        default_kwargs = dict(ra_keyword = self.DSS_RA_KEYWORD,
+                              dec_keyword = self.DSS_DEC_KEYWORD,
+                              stdout = open(os.devnull),
+                              stderr = open(os.devnull))
+
+        for img_path in dss_images.TEST_IMAGES:
+            path = astromatic.scamp(img_path, *default_args, **default_kwargs)
+            try:
+                self.assertTrue(os.access(path, os.R_OK))
+                ext = os.path.splitext(path)[1]
+                self.assertEqual(ext, astromatic.SCAMP_HEADER_SUFFIX)
+            finally:
+                os.unlink(path)
+
+        # The SCAMPError exception is raised if anything goes wrong during the
+        # execution of SCAMP (in more technical terms, if its return code is
+        # other than zero). For example, we could try to download the reference
+        # catalogs from a nonexistent Vizier server (a scenario in which SCAMP
+        # complains "unknown host" and "No source found in reference catalog(s)
+        # [...] wrong sky zone?") or a non-numerical value may be assigned to a
+        # parameter that expects one. These two are just examples: the
+        # execution of SCAMP could fail for many other reasons.
+
+        # (1) Nonexistent Vizier server
+        kwargs = copy.copy(default_kwargs)
+        kwargs['options'] = dict(REF_SERVER = 'nonexistenthost.com')
+        args = (astromatic.scamp, img_path) + default_args
+        self.assertRaises(astromatic.SCAMPError, *args, **kwargs)
+
+        # (2) The PIXSCALE_MAXERR (search range of the pixel scale factor used
+        # in the astrometric matching procedure) expects a float. Assigning to
+        # it a string will cause SCAMP to complain ("keyword out of range") and
+        # abort its execution.
+
+        kwargs['options'] = dict(PIXSCALE_MAXERR = 'Y')
+        self.assertRaises(astromatic.SCAMPError, *args, **kwargs)
+
+        # IOError raised if the input FITS image does not exist...
+        nonexistent_fits = get_nonexistent_path(ext = '.fits')
+        args = (nonexistent_fits,) + default_args
+        self.assertRaises(IOError, astromatic.scamp, *args, **default_kwargs)
+
+        # ... or if the SCAMP configuration file is not readable or does not
+        # exist. In order to test that, we mock the variable in the astrometric
+        # module so that it first refers to an unreadable file and later to a
+        # nonexistent one.
+
+        path = astromatic.SCAMP_CONFIG
+        ext = os.path.splitext(path)[1]
+        copy_path = get_nonexistent_path(ext = ext)
+        shutil.copy2(path, copy_path)
+
+        args = (astromatic.scamp, img_path) + default_args
+        with mock.patch_object(astromatic, 'SCAMP_CONFIG', copy_path):
+
+            # chmod u-r
+            mode = stat.S_IMODE(os.stat(copy_path)[stat.ST_MODE])
+            mode ^= stat.S_IRUSR
+            os.chmod(copy_path, mode)
+
+            self.assertFalse(os.access(copy_path, os.R_OK))
+            self.assertRaises(IOError, *args, **default_kwargs)
+
+            os.unlink(copy_path)
+            self.assertFalse(os.path.exists(copy_path))
+            self.assertRaises(IOError, *args, **default_kwargs)
+
+        # KeyError raised if either the keyword with the right ascension or
+        # that with the declination are not present in the FITS header.
+
+        missing_keyword = 'NONEXISTENT_KEYWORD'
+        img = fitsimage.FITSImage(img_path)
+        # Make sure that the image does not contain this keyword
+        self.assertRaises(KeyError, img.read_keyword, missing_keyword)
+
+        # (a) RA keyword missing
+        kwargs = copy.copy(default_kwargs)
+        kwargs['ra_keyword'] = missing_keyword
+        self.assertRaises(KeyError, *args, **kwargs)
+
+        # (b) DEC keyword missing
+        kwargs = copy.copy(default_kwargs)
+        kwargs['dec_keyword'] = missing_keyword
+        self.assertRaises(KeyError, *args, **kwargs)
+
+        # TypeError raised if 'options' is not a dictionary
+        kwargs = copy.copy(default_kwargs)
+        kwargs['options'] = ['POSITION_MAXERR', '1.5']
+        self.assertRaises(TypeError, *args, **kwargs)
+
+        # ... or if any of its elements is not a string.
+        kwargs['options'] = {'POSITION_MAXERR' : 125}
+        self.assertRaises(TypeError, *args, **kwargs)
+
+        # There is no need to check that TypeError is raised when 'ext' is not
+        # an integer: this exception is propagated from astromatic.sextractor()
+        # (called in order to create the FITS LDAC catalog), so this is already
+        # tested for in SExtractorFunctionsTest.test_sextractor()
+
+        # Apart from SExtractor, both SCAMP and the CDSclient package must be
+        # installed; otherwise the SCAMPNotInstalled and CDSclientNotInstalled
+        # exceptions, respectively, must be raised. In order to simulate this,
+        # create in a temporary directory symlinks to the three executables
+        # (SExtractor, SCAMP and the CDSclient). Then, mock os.environ and set
+        # the 'PATH' environment variable to this directory. In this manner,
+        # only these three commands will appear as installed on the system.
+
+        fake_path_dir = tempfile.mkdtemp()
+
+        try:
+
+            # Get the path to SExtractor, SCAMP and the CDSclient
+            sex_path = methods.which(*astromatic.SEXTRACTOR_COMMANDS)[0]
+            scamp_path = methods.which(astromatic.SCAMP_COMMAND)[0]
+            cdsclient_path = methods.which(astromatic.CDSCLIENT_COMMAND)[0]
+
+            # Determine the path where the symlinks will be created
+            get_path = functools.partial(os.path.join, fake_path_dir)
+            sex_symlink = get_path(os.path.basename(sex_path))
+            scamp_symlink = get_path(os.path.basename(scamp_path))
+            cdsclient_symlink = get_path(os.path.basename(cdsclient_path))
+
+            environment_copy = copy.deepcopy(os.environ)
+            with mock.patch_object(os, 'environ', environment_copy) as mocked:
+                mocked['PATH'] = fake_path_dir
+
+                # (1) Missing SExtractor executable
+                os.symlink(scamp_path, scamp_symlink)
+                os.symlink(cdsclient_path, cdsclient_symlink)
+                e = astromatic.SExtractorNotInstalled
+                self.assertRaises(e, *args, **default_kwargs)
+
+                # (2) Missing SCAMP executable
+                os.symlink(sex_path, sex_symlink)
+                os.unlink(scamp_symlink)
+                e = astromatic.SCAMPNotInstalled
+                self.assertRaises(e, *args, **default_kwargs)
+
+                # (3) Missing SCDclient executable
+                os.symlink(scamp_path, scamp_symlink)
+                os.unlink(cdsclient_symlink)
+                e = astromatic.CDSclientNotInstalled
+                self.assertRaises(e, *args, **default_kwargs)
+
+        finally:
+            shutil.rmtree(fake_path_dir)
 
