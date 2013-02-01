@@ -511,15 +511,15 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
 
 def _ahead_file(img, scale, equinox, radecsys,
                 ra_keyword = 'RA', dec_keyword = 'DEC'):
-    """ Generate the .ahead file needed by SCAMP in order to do astrometry.
+    """ Generate an external header file in the format expected by SCAMP.
 
-    This function receives a fitsimage.FITSImage object, which encapsulates
-    an astronomical image, and creates the .ahead file that guarantees that
-    the required FITS keywords needed by Emmanuel Bertin's SCAMP (defining
-    an initial guess of the astrometic solution) are present. Although the
-    keywords could also be directly added or updated in the FITS image,
-    using the .ahead file allows us not to modify the file. The path to
-    the .ahead file, which is saved to a temporary file, is returned.
+    This function receives a fitsimage.FITSImage object and creates the
+    external header file that guarantees that the required FITS keywords
+    (defining an initial guess of the astrometric solution) needed by Emmanuel
+    Bertin's SCAMP are present. Although the keywords could also be directly
+    added or updated in the FITS image, the use of the external header file
+    allows us not to modify the file. The path to the header file, saved to
+    a temporary file with the SCAMP_AHEADER_SUFFIX extension, is returned.
 
     [From the SCAMP user guide, page 4] 'The binary catalogues in 'FITS
     LDAC' format read by SCAMP contain a copy of the original FITS image
@@ -542,7 +542,7 @@ def _ahead_file(img, scale, equinox, radecsys,
     For further information on the World Coordinate System (WCS), refer to
     http://tdc-www.harvard.edu/software/wcstools/wcstools.wcs.html
 
-    img - FITSImage object for which to generate the .ahead file.
+    img - FITSImage object for which to generate the external header file.
     scale - scale of the image, in arcseconds per pixel
     equinox - equinox in years (e.g., 2000)
     radecsys - reference system (e.g., ICRS)
@@ -554,7 +554,7 @@ def _ahead_file(img, scale, equinox, radecsys,
     """
 
     prefix = '%s_' % img.basename_woe
-    suffix = '.ahead'
+    suffix = SCAMP_AHEADER_SUFFIX
     kwargs = dict(prefix = prefix, suffix = suffix, delete = False)
 
     with tempfile.NamedTemporaryFile(**kwargs) as fd:
