@@ -508,7 +508,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
 
-def _ahead_file(img, output_path, scale, equinox, radecsys,
+def _ahead_file(img, scale, equinox, radecsys,
                 ra_keyword = 'RA', dec_keyword = 'DEC'):
     """ Generate the .ahead file needed by SCAMP in order to do astrometry.
 
@@ -517,7 +517,8 @@ def _ahead_file(img, output_path, scale, equinox, radecsys,
     the required FITS keywords needed by Emmanuel Bertin's SCAMP (defining
     an initial guess of the astrometic solution) are present. Although the
     keywords could also be directly added or updated in the FITS image,
-    using the .ahead file allows us not to modify the file.
+    using the .ahead file allows us not to modify the file. The path to
+    the .ahead file, which is saved to a temporary file, is returned.
 
     [From the SCAMP user guide, page 4] 'The binary catalogues in 'FITS
     LDAC' format read by SCAMP contain a copy of the original FITS image
@@ -541,7 +542,6 @@ def _ahead_file(img, output_path, scale, equinox, radecsys,
     http://tdc-www.harvard.edu/software/wcstools/wcstools.wcs.html
 
     img - FITSImage object for which to generate the .ahead file.
-    output_path - path to which the .ahead file will be saved.
     scale - scale of the image, in arcseconds per pixel
     equinox - equinox in years (e.g., 2000)
     radecsys - reference system (e.g., ICRS)
@@ -552,7 +552,11 @@ def _ahead_file(img, output_path, scale, equinox, radecsys,
 
     """
 
-    with open(output_path, 'wt') as fd:
+    prefix = '%s_' % img.basename_woe
+    suffix = '.ahead'
+    kwargs = dict(prefix = prefix, suffix = suffix, delete = False)
+
+    with tempfile.NamedTemporaryFile(**kwargs) as fd:
 
         # Pixel coordinates of the reference point
         xcenter, ycenter = img.center
@@ -581,6 +585,8 @@ def _ahead_file(img, output_path, scale, equinox, radecsys,
         fd.write("RADECSYS= '%s'\n" % radecsys) # reference system
 
         fd.write("END⊔⊔⊔⊔⊔")
+
+    return fd.name
 
 def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
           ra_keyword = 'RA', dec_keyword = 'DEC', stdout = None, stderr = None):
