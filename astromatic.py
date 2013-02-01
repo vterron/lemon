@@ -43,7 +43,8 @@ SEXTRACTOR_STARNNW = os.path.join(ASTROMATIC_FILES, 'sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 
 SCAMP_CONFIG = os.path.join(ASTROMATIC_FILES, 'scamp.conf')
-SCAMP_HEADER_SUFFIX = '.head' # extension of header files
+SCAMP_AHEADER_SUFFIX = '.ahead'
+SCAMP_HEADER_SUFFIX = '.head'
 SCAMP_COMMAND = 'scamp'
 ACLIENT_COMMAND = 'aclient'
 
@@ -599,8 +600,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
     cross-matching them with the sources detected by SExtractor in the image.
     The result of this calibration is a FITS-like image header which contains
     updated astrometric information and that SWarp can read and use for image
-    stacking. The function returns the path to the .head file, which is saved
-    to a temporary file.
+    stacking. The function returns the path to the header file, which is saved
+    to a temporary file with the SCAMP_HEADER_SUFFIX extension.
 
     The process of computing the astrometric solution is very dependent on the
     preliminary, approximate astrometric data of the FITS image. Therefore, it
@@ -650,44 +651,57 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
         msg = "configuration file %s cannot be read"
         raise IOError(msg % SCAMP_CONFIG)
 
-    # Do all the work in a temporary directory and remove it
-    # (and thus all the involved files) upon the method exit.
-    tmp_dir = tempfile.mkdtemp(suffix = '_scamp')
+    # The latest version of SCAMP does not allow to specify the path to the
+    # output header file, but only its extension. We need to do all the work
+    # in a temporary directory, so that the path to the header file can be
+    # automatically determined: it will have the same basename as the input
+    # FITS LDAC catalog and the SCAMP_HEADER_SUFFIX extension.
+
+    img = fitsimage.FITSImage(path)
+    tempfile_prefix = '%s_' % img.basename_woe
+    tmp_dir = tempfile.mkdtemp(prefix = tempfile_prefix, suffix = '_scamp')
 
     try:
-        img = fitsimage.FITSImage(path)
 
-        # Determine the paths to the FITS LDAC SExtractor catalog, the
-        # '.ahead' header file and the merged catalogue produced by SCAMP.
-        tmp_path = os.path.join(tmp_dir, img.basename_woe)
-        ldac_path = '%s.ldac' % tmp_path
-        ahead_path = '%s.ahead' % tmp_path
-        merged_path = '%s.cat' % tmp_path
+        # Path to the FITS LDAC catalog and the external header file, both in
+        # the temporary directory. They must have the same 'root' (basename
+        # without extension), as for every input (say, xxxx.cat) catalog
+        # SCAMP looks for a xxxx.ahead (or whatever extension is defined in
+        # SCAMP_AHEADER_SUFFIX), loads it if present, and overrides or adds
+        # to the image header those keywords found there.
+        abs_path = os.path.join(tmp_dir, img.basename_woe)
+        ldac_path = '%s.ldac' % abs_path
+        ahead_path = abs_path + SCAMP_AHEADER_SUFFIX
 
-        # Use the FITS LDAC' format and image saturation level
-        sextractor_options = dict(CATALOG_TYPE = 'FITS_LDAC',
-                                  SATUR_LEVEL = str(saturation))
+        def move(src, dst):
+            """ Move the file or directory 'src' to 'dst'. If anything goes
+            wrong (i.e., an exception is raised), 'src' is deleted before the
+            exception is allowed to propagate. """
 
-        # The SExtractor catalog is saved to a temporary file, which
-        # we have to move to our temporary, working directory.
-        kwargs = dict(ext = ext, options = sextractor_options,
-                      stdout = stdout, stderr = stderr)
-        output_path = sextractor(img.path, **kwargs)
-        shutil.move(output_path, ldac_path)
+            try:
+                shutil.move(src, dst)
+            except:
+                os.unlink(src)
+                raise
 
-        # Then, create the SCAMP .ahead file
+        # sextractor() saves the output SExtractor catalog to a temporary
+        # file, which we have to move to our temporary working directory.
+        kwargs = dict(ext = ext, stdout = stdout, stderr = stderr,
+                      options = dict(CATALOG_TYPE = 'FITS_LDAC',
+                                     SATUR_LEVEL = str(saturation)))
+        path = sextractor(img.path, **kwargs)
+        move(path, ldac_path)
+
+        # The same goes for the SCAMP external header file
         kwargs = dict(ra_keyword = ra_keyword, dec_keyword = dec_keyword)
-        _ahead_file(img, ahead_path, scale, equinox, radecsys, **kwargs)
+        path = _ahead_file(img, scale, equinox, radecsys, **kwargs)
+        move(path, ahead_path)
 
-        # Finally, run SCAMP on the image. Those keywords defined in the .ahead
-        # file will override their counterparts in the original FITS header.
-        # The output catalog will be saved in ASCII format, preceded with
-        # comment lines listing column labels.
         args = [SCAMP_COMMAND, ldac_path,
                 '-c', SCAMP_CONFIG,
-                '-MERGEDOUTCAT_NAME', merged_path,
-                '-MERGEDOUTCAT_TYPE', 'ASCII_HEAD',
-                '-HEADER_SUFFIX', SCAMP_HEADER_SUFFIX]
+                '-AHEADER_SUFFIX', SCAMP_AHEADER_SUFFIX,
+                '-HEADER_SUFFIX', SCAMP_HEADER_SUFFIX,
+                '-MERGEDOUTCAT_TYPE', 'NONE']
 
         if options:
             try:
@@ -696,27 +710,23 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
             except AttributeError:
                 msg = "'options' must be a dictionary"
                 raise TypeError(msg)
-
         try:
             subprocess.check_call(args, stdout = stdout, stderr = stderr)
         except subprocess.CalledProcessError, e:
             raise SCAMPError(e.returncode, e.cmd)
 
-        # Move the output 'head' file to a different, temporary location
-        # (as this directory is going to be deleted when we are done)
-        src_head_path = tmp_path + SCAMP_HEADER_SUFFIX
-        dst_head_fd, dst_head_path = tempfile.mkstemp(suffix = SCAMP_HEADER_SUFFIX)
-        os.close(dst_head_fd)
-        shutil.move(src_head_path, dst_head_path)
+        # Move the output header file somewhere else, as the temporary working
+        # directory will be deleted as soon as we are done (neither the FITS
+        # LDAC catalog nor the external header files are needed anymore).
+        src_head_path = abs_path + SCAMP_HEADER_SUFFIX
+        kwargs = dict(prefix = tempfile_prefix, suffix = SCAMP_HEADER_SUFFIX)
+        fd, dst_head_path = tempfile.mkstemp(**kwargs)
+        os.close(fd)
+        move(src_head_path, dst_head_path)
         return dst_head_path
 
     finally:
-        # Needed if it could not be moved to the temporary directory
-        try: os.unlink(output_path)
-        except (NameError, IOError, OSError): pass
-
-        try: shutil.rmtree(tmp_dir)
-        except (IOError, OSError): pass
+        shutil.rmtree(tmp_dir, ignore_errors = True)
 
 def swarp(img_path, head_path, copy_keywords = None,
           stdout = None, stderr = None):
