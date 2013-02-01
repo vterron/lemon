@@ -46,7 +46,7 @@ SCAMP_CONFIG = os.path.join(ASTROMATIC_FILES, 'scamp.conf')
 SCAMP_AHEADER_SUFFIX = '.ahead'
 SCAMP_HEADER_SUFFIX = '.head'
 SCAMP_COMMAND = 'scamp'
-ACLIENT_COMMAND = 'aclient'
+CDSCLIENT_COMMAND = 'aclient'
 
 SWARP_CONFIG = os.path.join(ASTROMATIC_FILES, 'swarp.conf')
 SWARP_COMMAND = 'swarp'
@@ -638,8 +638,8 @@ def scamp(path, scale, equinox, radecsys, saturation, ext = 0, options = None,
     """
 
     emsg = "'%s' not found in the current environment"
-    if not methods.which(ACLIENT_COMMAND):
-        raise CDSclientNotInstalled(emsg % ACLIENT_COMMAND)
+    if not methods.which(CDSCLIENT_COMMAND):
+        raise CDSclientNotInstalled(emsg % CDSCLIENT_COMMAND)
 
     if not methods.which(SCAMP_COMMAND):
         raise SCAMPNotInstalled(emsg % SCAMP_COMMAND)
