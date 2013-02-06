@@ -26,6 +26,7 @@ import functools
 import hashlib
 import os
 import os.path
+import re
 import math
 import shutil
 import tempfile
@@ -409,6 +410,39 @@ def sextractor_md5sum(options = None):
             raise TypeError(msg)
 
     return md5.hexdigest()
+
+def sextractor_version():
+    """ Return the SExtractor version as a tuple.
+
+    Run SExtractor with the --version option as its sole argument, capture the
+    standard output and parse it. The version number of SExtractor is returned
+    as a tuple (major, minor, micro), such as (2, 8, 6). SExtractorNotInstalled
+    is raised if its executable cannot be found in the current environment.
+
+    """
+
+    # For example: "SExtractor version 2.8.6 (2009-04-09)"
+    PATTERN = "^SExtractor version (\d\.\d\.\d) \(\d{4}-\d{2}-\d{2}\)$"
+
+    for executable in SEXTRACTOR_COMMANDS:
+        if methods.which(executable):
+            break
+    else:
+        msg = "SExtractor not found in the current environment"
+        raise SExtractorNotInstalled(msg)
+
+    try:
+        with tempfile.TemporaryFile() as fd:
+            args = [executable, '--version']
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            output = fd.readline()
+        version = re.match(PATTERN, output).group(1)
+        # From, for example, '2.8.6' to (2, 8, 6)
+        return tuple(int(x) for x in version.split('.'))
+
+    except subprocess.CalledProcessError, e:
+        raise SExtractorError(e.returncode, e.cmd)
 
 def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     """ Run SExtractor on the image and return the path to the output catalog.
