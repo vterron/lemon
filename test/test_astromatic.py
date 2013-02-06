@@ -590,8 +590,10 @@ class SExtractorFunctionsTest(unittest.TestCase):
         del kwargs['options']
 
         # (3) Try to run SExtractor on a nonexistent FITS extension.
-        with pyfits.open(img_path, mode = 'readonly') as hdulist:
-            nextensions = len(hdulist)
+        hdulist = pyfits.open(img_path, mode = 'readonly')
+        nextensions = len(hdulist)
+        hdulist.close()
+
         kwargs['ext'] = nextensions + 1
         self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
 
