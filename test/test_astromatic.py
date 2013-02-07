@@ -28,6 +28,7 @@ import pyfits
 import random
 import shutil
 import stat
+import subprocess
 import tempfile
 import unittest
 
@@ -501,6 +502,47 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # ... or if any of its elements is not a string
         kwargs['options'] = {'DETECT_MINAREA' : 125}
         self.assertRaises(*args, **kwargs)
+
+    def test_sextractor_version(self):
+
+        # We have no other way of knowing the SExtractor version that is
+        # installed on the system than running it ourselves with the --version
+        # option and examine its output: if sextractor_version() returns the
+        # tuple (2, 8, 6), for example, that means that the SExtractor version
+        # number must contain the string '2.8.6'. What we are doing, basically,
+        # is to test the functionality the other way around: we take the tuple
+        # that sextractror_version() outputs, transform it back to a string and
+        # verify that it corresponds to what the --version option prints.
+
+        try:
+            executable = methods.which(*astromatic.SEXTRACTOR_COMMANDS)[0]
+        except IndexError:
+            msg = "SExtractor not found in the current environment"
+            raise astromatic.SExtractorNotInstalled(msg)
+
+        with tempfile.TemporaryFile() as fd:
+            args = [executable, '--version']
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            # For example: "SExtractor version 2.5.0 (2006-07-14)"
+            stdout = '\n'.join(fd.readlines())
+
+        version = astromatic.sextractor_version()
+        # From, for example, (2, 5, 0) to '2.5.0'
+        version_str = '.'.join(str(x) for x in version)
+        self.assertTrue(version_str in stdout)
+
+        # SExtractorNotInstalled must be raised if no SExtractor executable is
+        # detected. In order to simulate this, mock os.environ and clear the
+        # 'PATH' environment variable. In this manner, as the list of paths to
+        # directories where executables may be found is empty, SExtractor (and
+        # any other command) will appear as not installed on the system.
+
+        environment_copy = copy.deepcopy(os.environ)
+        with mock.patch_object(os, 'environ', environment_copy) as mocked:
+            mocked['PATH'] = ''
+            func = astromatic.sextractor_version
+            self.assertRaises(astromatic.SExtractorNotInstalled, func)
 
     def test_sextractor(self):
 
