@@ -37,5 +37,6 @@ These are the steps to install LEMON on a clean Debian machine:
 #. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer), `SCAMP <http://www.astromatic.net/software/scamp>`_ and `SWarp <http://www.astromatic.net/software/swarp>`_
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``python ~/lemon/setup.py``
+#. ``cd ~/lemon; ./run_tests.py`` — optional, although recommended!
 
 Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation in GNU/Linux systems in the near future, which would enormously simplify the process of installing LEMON. Until then, please bear with us.
