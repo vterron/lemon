@@ -30,13 +30,12 @@ LEMON stands on the shoulders of many giants, using excellent, robust programs d
 
 These are the steps to install LEMON on a clean Debian machine:
 
-1. ``apt-get install python-numpy python-scipy python-pyfits python-lxml python-uncertainties python-mock plplot-bin sextractor``
+1. ``apt-get install python-numpy python-scipy python-pyfits python-lxml python-uncertainties python-mock``
 #. Install `IRAF <http://iraf.noao.edu/>`_
 #. Install `STSDAS/TABLES <http://www.stsci.edu/institute/software_hardware/stsdas/download-stsdas/>`_, followed by `PyRAF <http://www.stsci.edu/institute/software_hardware/pyraf/current/download/>`_ version 2.0 or newer.
 #. Install the `CDSClient <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_ package
-#. Install `SCAMP <http://www.astromatic.net/software/scamp>`_ and `SWarp <http://www.astromatic.net/software/swarp>`_
+#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer), `SCAMP <http://www.astromatic.net/software/scamp>`_ and `SWarp <http://www.astromatic.net/software/swarp>`_
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``python ~/lemon/setup.py``
 
 Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation in GNU/Linux systems in the near future, which would enormously simplify the process of installing LEMON. Until then, please bear with us.
-
