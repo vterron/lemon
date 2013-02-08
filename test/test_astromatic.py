@@ -606,6 +606,21 @@ class SExtractorFunctionsTest(unittest.TestCase):
                 self.assertFalse(os.path.exists(copy_path))
                 self.assertRaises(*args)
 
+        # SExtractorUpgradeRequired must be raised if the version of SExtractor
+        # that is installed on the system is older than that defined in the
+        # SEXTRACTOR_REQUIRED_VERSION module-level variable. We cannot (easily,
+        # at least) change the version that is installed, but we can test for
+        # this by changing the value of the required version, setting it to a
+        # tuple that is greater than the installed version of SExtractor.
+
+        # From, for example, (2, 8, 6) to (2, 8, 7)
+        version = list(astromatic.sextractor_version())
+        version[-1] += 1
+        version = tuple(version)
+
+        with mock.patch_object(astromatic, 'SEXTRACTOR_REQUIRED_VERSION', version):
+            args = astromatic.sextractor, img_path
+            self.assertRaises(astromatic.SExtractorUpgradeRequired, *args)
 
         # The SExtractorError exception is raised if anything goes wrong during
         # the execution of SExtractor (in more technical terms, if its return
