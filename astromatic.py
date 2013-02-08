@@ -42,6 +42,7 @@ SEXTRACTOR_PARAMS = os.path.join(ASTROMATIC_FILES, 'sextractor.param')
 SEXTRACTOR_FILTER = os.path.join(ASTROMATIC_FILES, 'sextractor.conv')
 SEXTRACTOR_STARNNW = os.path.join(ASTROMATIC_FILES, 'sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
+SEXTRACTOR_REQUIRED_VERSION = (2, 8, 6)
 
 SCAMP_CONFIG = os.path.join(ASTROMATIC_FILES, 'scamp.conf')
 SCAMP_AHEADER_SUFFIX = '.ahead'
@@ -52,12 +53,15 @@ CDSCLIENT_COMMAND = 'aclient'
 SWARP_CONFIG = os.path.join(ASTROMATIC_FILES, 'swarp.conf')
 SWARP_COMMAND = 'swarp'
 
-
 class CDSclientNotInstalled(StandardError):
     """ Raised if F.Ochsenbein's CDSclient package is not installed """
     pass
 
 class SExtractorNotInstalled(StandardError):
+    pass
+
+class SExtractorUpgradeRequired(StandardError):
+    """ Raised if a too-old version of SExtractor is installed """
     pass
 
 class SExtractorError(subprocess.CalledProcessError):
@@ -455,10 +459,13 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
 
     The SExtractorNotInstalled exception is raised if a SExtractor executable
     cannot be found, and IOError if any of the four SExtractor configuration
-    files does not exist or is not readable. Any errors thrown by SExtractor
-    are propagated as SExtractorError exceptions. Lastly, TypeEror is raised if
-    (a) 'ext' is not an integer or (b) 'options' is not a dictionary or any of
-    its keys or values is not a string.
+    files does not exist or is not readable. If a SExtractor version earlier
+    than SEXTRACTOR_REQUIRED_VERSION is installed, SExtractorUpgradeRequired
+    is raised; this is necessary because the syntax that allows us to select on
+    which extension sources are detected was not added until version 2.8.6. Any
+    errors thrown by SExtractor are propagated as SExtractorError exceptions.
+    Lastly, TypeEror is raised if (a) 'ext' is not an integer or (b) 'options'
+    is not a dictionary or any of its keys or values is not a string.
 
     Keyword arguments:
     ext - for multi-extension FITS images, the index of the extension on which
@@ -495,6 +502,12 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     else:
         msg = "SExtractor not found in the current environment"
         raise SExtractorNotInstalled(msg)
+
+    if sextractor_version() < SEXTRACTOR_REQUIRED_VERSION:
+        # From, for example, (2, 8, 6) to '2.8.6'
+        version_str = '.'.join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION)
+        msg = "SExtractor version %s or newer is needed" % version_str
+        raise SExtractorUpgradeRequired(msg)
 
     # If the loop did not break (and thus SExtractorNotInstalled was not
     # raised), 'executable' contains the first command that was found
