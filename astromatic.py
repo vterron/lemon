@@ -91,7 +91,7 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
 
 class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
            "mag, saturated, snr, fwhm, elongation")):
-    """ An immutable class with a sourced detected by SExtractor. """
+    """ An immutable class with a source detected by SExtractor. """
 
     def __new__(cls, x, y, alpha, delta, area, mag, satur, snr, fwhm, elong):
         """ Customize the creation of a Star instance: encapsulate the (x, y)
