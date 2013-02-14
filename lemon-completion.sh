@@ -14,6 +14,12 @@
 
 FITS_EXTS="@(fit?(s)|FIT?(S))"
 
+# Match the current word against the list given as argument
+_match()
+{
+    COMPREPLY=( $(compgen -W "${1}" -- ${cur}) )
+}
+
 _lemon_import()
 {
     local opts
@@ -23,7 +29,22 @@ _lemon_import()
     if [[ ${cur} != -* ]]; then
         _filedir $FITS_EXTS
     else
-	COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+	_match "${opts}"
+    fi
+}
+
+_lemon_seeing()
+{
+    local opts
+
+    opts="--filename --maximum --margin --snr-percentile --mean
+    --sources-percentile --suffix --cores --verbose --fsigma
+    --fwhm_dir --esigma --elong_dir --coaddk --fwhmk"
+
+    if [[ ${cur} != -* ]]; then
+        _filedir $FITS_EXTS
+    else
+	_match "${opts}"
     fi
 }
 
@@ -33,7 +54,7 @@ _lemon()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import"
+    commands="import seeing"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -45,9 +66,14 @@ _lemon()
         _lemon_import
         return 0
 	;;
+    seeing)
+	_lemon_seeing
+	return 0
+        ;;
     esac
 
-    COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+    _match "${commands}"
+
 }
 
 complete -F _lemon lemon
