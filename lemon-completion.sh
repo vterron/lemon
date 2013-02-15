@@ -13,6 +13,7 @@
 
 
 FITS_EXTS="@(fit?(s)|FIT?(S))"
+XML_EXTS="@(xml|XML)"
 
 # Match the current word against the list given as argument
 _match()
@@ -48,13 +49,28 @@ _lemon_seeing()
     fi
 }
 
+_lemon_offsets()
+{
+    local opts
+    opts="--output --overwrite --cores= --maximum --margin --objectk
+    --percentile --filterk --datek --fwhmk --airmk --expk --coaddk"
+
+    if [[ ${prev} == --output ]]; then
+	_filedir $XML_EXTS
+    elif [[ ${cur} == -* ]]; then
+	_match "${opts}"
+    else
+        _filedir $FITS_EXTS
+    fi
+}
+
 _lemon()
 {
     local cur prev commands
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing"
+    commands="import seeing offsets"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -70,6 +86,9 @@ _lemon()
 	_lemon_seeing
 	return 0
         ;;
+    offsets)
+	_lemon_offsets
+	return 0
     esac
 
     _match "${commands}"
