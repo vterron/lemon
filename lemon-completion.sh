@@ -157,6 +157,22 @@ _lemon_diffphot()
     fi
 }
 
+_lemon_periods()
+{
+
+    local opts
+    opts="--output --overwrite --initial-step --exhaustive-step
+    --cores --verbose"
+
+    if [[ ${prev} == --output ]]; then
+	_filedir $LEMONDB_EXTS
+    elif [[ ${cur} == -* ]]; then
+	_match "${opts}"
+    else
+        _filedir $LEMONDB_EXTS
+    fi
+}
+
 _lemon()
 {
     local cur prev commands
@@ -164,7 +180,7 @@ _lemon()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     commands="import seeing offsets mosaic astrometry photometry
-    diffphot"
+    diffphot periods"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -198,6 +214,10 @@ _lemon()
 	;;
     diffphot)
 	_lemon_diffphot
+	return 0
+	;;
+    periods)
+	_lemon_periods
 	return 0
 	;;
     esac
