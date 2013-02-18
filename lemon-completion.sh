@@ -64,13 +64,43 @@ _lemon_offsets()
     fi
 }
 
+_lemon_mosaic()
+{
+    local opts checktypes
+
+    opts="--scale --output --overwrite --fraction --name --check-type
+    --min --max --rak --deck --objectk"
+
+    # The different types of check-image available in SExtractor
+    checktypes="NONE IDENTICAL BACKGROUND BACKGROUND_RMS MINIBACK_RMS
+    MINIBACKGROUND -BACKGROUND FILTERED OBJECTS -OBJECTS APERTURES
+    SEGMENTATION"
+
+    case $prev in
+	--output)
+	    _filedir $FITS_EXTS
+	    return 0
+	    ;;
+	--check-type)
+	    _match "${checktypes}"
+	    return 0
+	    ;;
+    esac
+
+    if [[ ${cur} == -* ]]; then
+	_match "${opts}"
+    else
+        _filedir $XML_EXTS
+    fi
+}
+
 _lemon()
 {
     local cur prev commands
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing offsets"
+    commands="import seeing offsets mosaic"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -89,6 +119,11 @@ _lemon()
     offsets)
 	_lemon_offsets
 	return 0
+	;;
+    mosaic)
+	_lemon_mosaic
+	return 0
+	;;
     esac
 
     _match "${commands}"
