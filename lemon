@@ -22,7 +22,7 @@ import difflib
 import sys
 
 LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
-                  'annuli', 'photometry', 'diffphot', 'periods']
+                  'annuli', 'photometry', 'diffphot', 'periods', 'juicer']
 
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
@@ -39,6 +39,7 @@ def show_help(name):
     print "   photometry   Perform aperture photometry"
     print "   diffphot     Generate light curves"
     print "   periods      Dworetsky's string-length method"
+    print "   juicer       LEMONdB browser and variability analyzer"
     print
     print "See '%s COMMAND' for more information on a specific command." % name
 
@@ -66,6 +67,10 @@ if __name__ == "__main__":
                     print ' ' * 8 + match
 
             sys.exit(1)
+
+        elif command == 'juicer':
+            import juicer.main
+            juicer.main.main()
 
         else:
 
