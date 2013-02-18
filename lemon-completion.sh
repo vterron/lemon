@@ -94,13 +94,29 @@ _lemon_mosaic()
     fi
 }
 
+_lemon_astrometry()
+{
+    local opts
+    opts="--output --overwrite --update --scale --equinox --radecsys
+    --maximum --margin --verbose --objectk --filterk --rak --deck
+    --datek --expk --airmk --coadk --gaink --uik --fwhmk"
+
+    if [[ ${prev} == --output ]]; then
+	_filedir $FITS_EXTS
+    elif [[ ${cur} == -* ]]; then
+	_match "${opts}"
+    else
+        _filedir $FITS_EXTS
+    fi
+}
+
 _lemon()
 {
     local cur prev commands
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing offsets mosaic"
+    commands="import seeing offsets mosaic astrometry"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -122,6 +138,10 @@ _lemon()
 	;;
     mosaic)
 	_lemon_mosaic
+	return 0
+	;;
+    astrometry)
+	_lemon_astrometry
 	return 0
 	;;
     esac
