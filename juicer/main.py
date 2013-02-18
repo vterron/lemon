@@ -20,7 +20,10 @@
 
 import app
 
-if __name__ == "__main__":
+def main():
     juicer = app.LEMONJuicerGUI()
     juicer.run()
+
+if __name__ == "__main__":
+    main()
 
