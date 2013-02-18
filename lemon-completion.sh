@@ -198,7 +198,7 @@ _lemon()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     commands="import seeing offsets mosaic astrometry annuli
-    photometry diffphot periods"
+    photometry diffphot periods juicer"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
