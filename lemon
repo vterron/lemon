@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         if command not in LEMON_COMMANDS:
             msg = "%s: '%s' is not a lemon command. See 'lemon --help'."
-            sys.exit(msg % (name, command))
+            print msg % (name, command)
 
             # Show suggestions, if any, when the command does not exist
             matches = difflib.get_close_matches(command, LEMON_COMMANDS)
@@ -64,6 +64,8 @@ if __name__ == "__main__":
                 print len(matches) == 1 and "this?" or "one of these?"
                 for match in matches:
                     print ' ' * 8 + match
+
+            sys.exit(1)
 
         else:
 
