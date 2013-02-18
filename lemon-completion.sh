@@ -14,6 +14,7 @@
 
 FITS_EXTS="@(fit?(s)|FIT?(S))"
 XML_EXTS="@(xml|XML)"
+LEMONDB_EXTS="@(LEMONdB|lemondb)"
 
 # Match the current word against the list given as argument
 _match()
@@ -110,13 +111,43 @@ _lemon_astrometry()
     fi
 }
 
+_lemon_photometry()
+{
+    local opts
+    opts="--output --overwrite --passband --maximum --margin --gain
+    --annuli --cores --verbose --pixels --min-sky --aperture --annulus
+    --dannulus --aperture-pix --annulus-pix --dannulus-pix --expk
+    --coaddk --gaink --uik"
+
+    case $prev in
+	--output)
+	    _filedir $LEMONDB_EXTS
+	    return 0
+	    ;;
+	--annuli)
+	    _filedir $XML_EXTS
+	    return 0
+	    ;;
+	--pixels)
+	    _filedir
+	    return 0
+	    ;;
+    esac
+
+    if [[ ${cur} == -* ]]; then
+	_match "${opts}"
+    else
+        _filedir $XML_EXTS
+    fi
+}
+
 _lemon()
 {
     local cur prev commands
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing offsets mosaic astrometry"
+    commands="import seeing offsets mosaic astrometry photometry"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -142,6 +173,10 @@ _lemon()
 	;;
     astrometry)
 	_lemon_astrometry
+	return 0
+	;;
+    photometry)
+	_lemon_photometry
 	return 0
 	;;
     esac
