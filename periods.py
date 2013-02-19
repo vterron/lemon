@@ -33,7 +33,6 @@ a certain frequency.
 
 import copy
 import logging
-import optparse
 import multiprocessing
 import numpy
 import os
@@ -44,6 +43,7 @@ import sys
 import time
 
 # LEMON modules
+import customparser
 import database
 import defaults
 import methods
@@ -224,9 +224,7 @@ class StringLengthFinder(object):
                                                      exhaustive_upper, exhaustive_step)
 
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DB"
 
 parser.add_option('-o', action = 'store', type = 'str',

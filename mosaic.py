@@ -53,6 +53,7 @@ import pyfits
 import sys
 
 # LEMON modules
+import customparser
 import keywords
 import fitsimage
 import methods
@@ -614,9 +615,7 @@ class Mosaic(object):
         return updated_ra, updated_dec
 
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 
 # CCD SITE#2b focus scale = 0.50209205 arcsec/pixel

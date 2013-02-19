@@ -57,6 +57,7 @@ import warnings
 
 # LEMON modules
 import astromatic
+import customparser
 import database
 import defaults
 import fitsimage
@@ -143,9 +144,7 @@ def parallel_photometry(args):
     queue.put((pimage, img_offset, qphot_result))
 
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('-o', action = 'store', type = 'str',
                   dest = 'output_db', default = 'photometry.LEMONdB',

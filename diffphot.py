@@ -47,6 +47,7 @@ import sys
 import time
 
 # LEMON modules
+import customparser
 import database
 import defaults
 import methods
@@ -704,9 +705,7 @@ def parallel_light_curves(args):
     queue.put((star.id, light_curve))
 
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DB"
 parser.add_option('-o', action = 'store', type = 'str',
                   dest = 'output_db', default = 'diffphot.LEMONdB',

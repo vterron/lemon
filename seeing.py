@@ -47,6 +47,7 @@ import time
 
 # LEMON modules
 import astromatic
+import customparser
 import defaults
 import fitsimage
 import keywords
@@ -652,9 +653,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 # See http://stackoverflow.com/a/3217427/184363
 queue   = multiprocessing.Queue()
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
 parser.add_option('-f', action = 'store', type = 'str',
                   dest = 'bseeingfn', default = 'best_seeing.fits',

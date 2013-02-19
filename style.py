@@ -18,9 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import optparse
-import textwrap
-
 # Used to change the format with which the logging module displays messages
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -29,24 +26,4 @@ prefix = ">> "
 
 # The error message to be printed if the execution is aborted.w
 error_exit_message = "%sExecution aborted." % prefix
-
-class NewlinesFormatter(optparse.IndentedHelpFormatter):
-    """ This quick-and-dirty trick prevents optparse from stripping newlines
-    (using textwrap) when the description of the module is printed. This should
-    be acceptable enough until the transition to argparse is made. """
-
-    def _format_text(self, text):
-        text_width = self.width - self.current_indent
-        indent = ' ' * self.current_indent
-        # Wrap one paragraph at a time, then concatenate them
-        formatted_text = ""
-        for paragraph in text.split('\n\n'):
-
-            formatted_text += textwrap.fill(paragraph.strip(),
-                                            text_width,
-                                            initial_indent=indent,
-                                            subsequent_indent=indent)
-            formatted_text += '\n\n'
-
-        return formatted_text.rstrip()
 

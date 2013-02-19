@@ -33,16 +33,17 @@ parsed by LEMON at the next stages.
 """
 
 import multiprocessing
+import optparse
 import os
 import os.path
 import sys
 import time
 
 # LEMON modules
+import customparser
 import defaults
 import keywords
 import fitsimage
-import optparse
 import passband
 import methods
 import seeing
@@ -174,9 +175,7 @@ def parallel_offset(args):
     queue.put(img_offset)
 
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... REFERENCE_IMAGE  REST_OF_IMAGES..."
 parser.add_option('-o', action = 'store', type = 'str',
                   dest = 'output_xml', default = 'offsets.xml',

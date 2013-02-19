@@ -69,6 +69,7 @@ import sys
 import tempfile
 
 # LEMON modules
+import customparser
 import diffphot
 import keywords
 import mining
@@ -82,9 +83,8 @@ class NotEnoughImages(ValueError):
 class NotEnoughConstantStars(ValueError):
     pass
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
 
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('-o', action = 'store', type = 'str',
                   dest = 'xml_output', default = 'annuli.xml',

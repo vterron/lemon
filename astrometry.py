@@ -31,6 +31,7 @@ import tempfile
 
 # LEMON modules
 import astromatic
+import customparser
 import defaults
 import keywords
 import fitsimage
@@ -104,9 +105,7 @@ def astrometry(img_path, scale, equinox, radecsys, saturation,
         except (IOError, OSError): pass
 
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... FITS_IMAGE"
 
 parser.add_option('-o', action = 'store', type = 'str',

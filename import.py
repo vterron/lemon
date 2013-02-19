@@ -57,15 +57,15 @@ import stat
 import sys
 
 # LEMON modules
+import customparser
 import keywords
 import fitsimage
 import methods
 import style
 
-parser = optparse.OptionParser(description = description,
-                               formatter = style.NewlinesFormatter())
-
+parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DIRS... OUTPUT_DIR"
+
 parser.add_option('--object', action = 'callback', type = 'str',
                   dest = 'objectn', default = ['*'],
                   callback = methods.str_split_callback,
