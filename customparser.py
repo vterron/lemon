@@ -49,11 +49,12 @@ def get_parser(description):
     Its 'description' argument (a paragraph of text giving a brief overview of
     the program) is set to the value of the argument of the same name, while
     the NewlinesFormatter class is used for printing help text ('formatter'
-    argument).
+    argument). This parser does not include the default -h and --help options.
 
     """
 
     kwargs = dict(description = description,
+                  add_help_option = False,
                   formatter = NewlinesFormatter())
     parser = optparse.OptionParser(**kwargs)
     return parser
