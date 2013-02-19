@@ -655,13 +655,13 @@ queue   = multiprocessing.Queue()
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
-parser.add_option('-f', action = 'store', type = 'str',
+parser.add_option('--filename', action = 'store', type = 'str',
                   dest = 'bseeingfn', default = 'best_seeing.fits',
                   help = "filename with which the FITS image with the best "
                   "full width at half-maximum (FWHM) will be saved to "
                   "OUTPUT_DIR [default: %default]")
 
-parser.add_option('-m', action = 'store', type = 'int',
+parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
                   help = defaults.desc['maximum'])
 
@@ -669,7 +669,7 @@ parser.add_option('--margin', action = 'store', type = 'int',
                   dest = 'margin', default = defaults.margin,
                   help = defaults.desc['margin'])
 
-parser.add_option('--per', action = 'store', type = 'float',
+parser.add_option('--snr-percentile', action = 'store', type = 'float',
                   dest = 'per', default = 25,
                   help = "the score at the given percentile of the "
                   "signal-to-noise ratio of the stars that are to be included "
@@ -685,7 +685,7 @@ parser.add_option('--mean', action = 'store_true', dest = 'mean',
                   "the FWHM / elongation of the stars on it detected. Do "
                   "you prefer a non-robust statistic?")
 
-parser.add_option('--sper', action = 'store', type = 'float',
+parser.add_option('--sources-percentile', action = 'store', type = 'float',
                   dest = 'stars_per', default = 75.0,
                   help = "the best-seeing image is identified by finding the "
                   "one with the best (lowest) FWHM among the non-discarded "
@@ -694,7 +694,7 @@ parser.add_option('--sper', action = 'store', type = 'float',
                   "could not work as we need the image to also be one of the "
                   "most populated [default: %default]")
 
-parser.add_option('-s', action = 'store', type = 'str',
+parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 's',
                   help = "string to be appended to output images, before "
                   "the file extension, of course [default: %default]")
