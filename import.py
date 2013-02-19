@@ -97,7 +97,7 @@ parser.add_option('--filename', action = 'store', type = 'str',
                   "automatically detected by finding the most common "
                   "filename among the input images.")
 
-parser.add_option('-f', '--follow', action = 'store_true', default = False,
+parser.add_option('--follow', action = 'store_true', default = False,
                   dest = 'followlinks',
                   help = "walk down into symbolic links that resolve to "
                   "directories, on systems that support them. This can lead "
