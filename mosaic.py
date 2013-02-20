@@ -619,19 +619,19 @@ parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 
 # CCD SITE#2b focus scale = 0.50209205 arcsec/pixel
-parser.add_option('-s', action = 'store', type = 'float',
+parser.add_option('--scale', action = 'store', type = 'float',
                   dest = 'scale', default = 0.50,
                   help = "the scale of the images, in arcsec/pixel"
                   "[default: %default]")
 
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_path', default = 'mosaic.fits',
                   help = "path to the output FITS image [default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-parser.add_option('-f', action = 'store', type = 'float',
+parser.add_option('--fraction', action = 'store', type = 'float',
                   dest = 'fraction', default = 0.85,
                   help = "the minimum fraction of data pixels (not "
                   "corresponding to the margins that were added to each image "
@@ -639,7 +639,7 @@ parser.add_option('-f', action = 'store', type = 'float',
                   "each pixel if it is not to be zeroed in the output mosaic "
                   "[default: %default]")
 
-parser.add_option('-n', action = 'store', type = 'str',
+parser.add_option('--name', action = 'store', type = 'str',
                   dest = 'name', default = 'Reference Mosaic',
                   help = "name of the observed object. The OBJECT keyword of "
                   "the output mosaic will be set to this value, as according "
