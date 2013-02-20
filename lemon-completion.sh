@@ -111,6 +111,24 @@ _lemon_astrometry()
     fi
 }
 
+_lemon_annuli()
+{
+    local opts
+    opts="--output --overwrite --margin --gain --cores --verbose
+    --aperture --annulus --dannulus --min-sky --constant
+    --minimum-constant --lower --upper --step --sky --width --maximum
+    --minimum-images --minimum-stars --pct --weights-threshold
+    --max-iters --worst-fraction --expk --coaddk --gaink --uik"
+
+    if [[ ${prev} == --output ]]; then
+	_filedir $XML_EXTS
+    elif [[ ${cur} == -* ]]; then
+	_match "${opts}"
+    else
+        _filedir $XML_EXTS
+    fi
+}
+
 _lemon_photometry()
 {
     local opts
@@ -179,8 +197,8 @@ _lemon()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing offsets mosaic astrometry photometry
-    diffphot periods"
+    commands="import seeing offsets mosaic astrometry annuli
+    photometry diffphot periods"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -207,6 +225,10 @@ _lemon()
     astrometry)
 	_lemon_astrometry
 	return 0
+	;;
+    annuli)
+	_lemon_annuli
+        return 0
 	;;
     photometry)
 	_lemon_photometry
