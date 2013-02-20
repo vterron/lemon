@@ -86,7 +86,7 @@ class NotEnoughConstantStars(ValueError):
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'xml_output', default = 'annuli.xml',
                   help = "path of the XML file to which the evaluated "
                   "photometric parameters will be saved. This file can be "
@@ -94,11 +94,11 @@ parser.add_option('-o', action = 'store', type = 'str',
                   "optimal parameters for each photometric band "
                   "[default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output XML file if it already exists")
 
 parser.add_option(photometry.parser.get_option('--margin'))
-parser.add_option(photometry.parser.get_option('-g'))
+parser.add_option(photometry.parser.get_option('--gain'))
 parser.add_option(photometry.parser.get_option('--cores'))
 parser.add_option(photometry.parser.get_option('--verbose'))
 
@@ -116,11 +116,12 @@ qphot_group = optparse.OptionGroup(parser, "Initial Photometry",
               "terms of the FWHM, initially specified. Kind of paradoxical, "
               "we know.")
 
-qphot_group.add_option(photometry.parser.get_option('-p'))
-qphot_group.add_option(photometry.parser.get_option('-i'))
-qphot_group.add_option(photometry.parser.get_option('-k'))
+qphot_group.add_option(photometry.parser.get_option('--aperture'))
+qphot_group.add_option(photometry.parser.get_option('--annulus'))
+qphot_group.add_option(photometry.parser.get_option('--dannulus'))
 
-qphot_group.add_option('--min', action = 'store', type = 'float', dest = 'min',
+qphot_group.add_option('--min-sky', action = 'store',
+                       type = 'float', dest = 'min',
                        default = photometry.parser.defaults['min'],
                        help ="the minimum width of the sky annulus, in "
                        "pixels, regardless of the value derived from the "
@@ -150,7 +151,7 @@ stats_group = optparse.OptionGroup(parser, "Comparison stars",
               "light curves are used to compute the median are not "
               "necessarily always the same.")
 
-stats_group.add_option('--const', action = 'store', type = 'float',
+stats_group.add_option('--constant', action = 'store', type = 'float',
                        dest = 'nconstant', default = 20,
                        help = "the number of stars used in order to "
                        "compare each set of photometric parameters. For "
@@ -158,7 +159,7 @@ stats_group.add_option('--const', action = 'store', type = 'float',
                        "generated using all the other as comparison "
                        "(-n option at diffphot.py) [default: %default]")
 
-stats_group.add_option('--pminimum', action = 'store', type = int,
+stats_group.add_option('--minimum-constant', action = 'store', type = int,
                        dest = 'pminimum', default = 5,
                        help = "the minimum number of constant stars which "
                        "must have had their light curves for the percentile "
@@ -218,19 +219,19 @@ const_group = optparse.OptionGroup(parser, "Stars eligibility",
               "constant star. Note that this means that the candidates to "
               "constant stars are those that are below the saturation level "
               "for all the images")
-const_group.add_option(photometry.parser.get_option('-m'))
+const_group.add_option(photometry.parser.get_option('--maximum'))
 parser.add_option_group(const_group)
 
 diffphot_group = optparse.OptionGroup(parser, "Differential Photometry",
                  "These options, the same that can be found in the "
                  "diffphot.py, determine how light curves are generated.")
 
-diffphot_group.add_option(diffphot.parser.get_option('--mimages'))
-diffphot_group.add_option(diffphot.parser.get_option('--mincstars'))
+diffphot_group.add_option(diffphot.parser.get_option('--minimum-images'))
+diffphot_group.add_option(diffphot.parser.get_option('--minimum-stars'))
 diffphot_group.add_option(diffphot.parser.get_option('--pct'))
-diffphot_group.add_option(diffphot.parser.get_option('--wminimum'))
+diffphot_group.add_option(diffphot.parser.get_option('--weights-threshold'))
 diffphot_group.add_option(diffphot.parser.get_option('--max-iters'))
-diffphot_group.add_option(diffphot.parser.get_option('--wfraction'))
+diffphot_group.add_option(diffphot.parser.get_option('--worst-fraction'))
 parser.add_option_group(diffphot_group)
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
@@ -327,25 +328,25 @@ def main(arguments = None):
     os.close(phot_db_handle)
 
     args = [offsets_xml_path,
-            '-o', phot_db_path, '-w',
-            '-m', options.maximum,
+            '--output', phot_db_path, '--overwrite',
+            '--maximum', options.maximum,
             '--margin', options.margin,
             '--cores', options.ncores,
-            '-p', options.aperture,
-            '-i', options.annulus,
-            '-k', options.dannulus,
-            '--min', options.min,
+            '--aperture', options.aperture,
+            '--annulus', options.annulus,
+            '--dannulus', options.dannulus,
+            '--min-sky', options.min,
             '--expk', options.exptimek,
             '--coaddk', options.coaddk,
             '--gaink', options.gaink,
             '--uik', options.uncimgk]
 
-    # The -g option defaults to None, so we add it to the list of arguments
-    # only if it was given by the user. Otherwise, it would be given a value
-    # od 'None', a string, which would result in an error when attempted to
-    # be converted to float by optparse.
+    # The --gain option defaults to None, so we add it to the list of arguments
+    # only if it was given by the user. Otherwise, it would be given a value od
+    # 'None', a string, which would result in an error when attempted to be
+    # converted to float by optparse.
     if options.gain:
-        args += ['-g', options.gain]
+        args += ['--gain', options.gain]
 
     # Pass as many '-v' options as we have received here
     [args.append('-v') for x in xrange(options.verbose)]
@@ -369,15 +370,15 @@ def main(arguments = None):
         os.close(diffphot_db_handle)
 
         args = [phot_db_path,
-                '-o', diffphot_db_path, '-w',
+                '--output', diffphot_db_path, '--overwrite',
                 '--cores', options.ncores,
-                '--mimages', options.min_images,
-                '-n', options.nconstant,
-                '--mincstars', options.min_cstars,
+                '--minimum-images', options.min_images,
+                '--stars', options.nconstant,
+                '--minimum-stars', options.min_cstars,
                 '--pct', options.pct,
-                '--wminimum', options.wminimum,
+                '--weights-threshold', options.wminimum,
                 '--max-iters', options.max_iters,
-                '--wfraction', options.worst_fraction]
+                '--worst-fraction', options.worst_fraction]
 
         [args.append('-v') for x in xrange(options.verbose)]
 
@@ -517,23 +518,23 @@ def main(arguments = None):
                 os.close(aper_phot_db_handle)
 
                 args = [offsets_xml_path,
-                        '-o', aper_phot_db_path, '-w',
+                        '--output', aper_phot_db_path, '--overwrite',
                         '--passband', pfilter.letter,
                         '--pixels', pixels_files[pfilter],
-                        '-m', options.maximum,
+                        '--maximum', options.maximum,
                         '--margin', options.margin,
                         '--cores', options.ncores,
-                        '--pp', aperture,
-                        '--ip', annulus,
-                        '--kp', dannulus,
-                        '--min', options.min,
+                        '--aperture-pix', aperture,
+                        '--annulus-pix', annulus,
+                        '--dannulus-pix', dannulus,
+                        '--min-sky', options.min,
                         '--expk', options.exptimek,
                         '--coaddk', options.coaddk,
                         '--gaink', options.gaink,
                         '--uik', options.uncimgk]
 
                 if options.gain:
-                    args += ['-g', options.gain]
+                    args += ['--gain', options.gain]
 
                 [args.append('-v') for x in xrange(options.verbose)]
 
@@ -546,15 +547,15 @@ def main(arguments = None):
                     os.close(aper_diff_db_handle)
 
                     args = [aper_phot_db_path,
-                            '-o', aper_diff_db_path, '-w',
+                            '--output', aper_diff_db_path, '--overwrite',
                             '--cores', options.ncores,
-                            '--mimages', options.min_images,
-                            '-n', options.nconstant,
-                            '--mincstars', options.min_cstars,
+                            '--minimum-images', options.min_images,
+                            '--stars', options.nconstant,
+                            '--minimum-stars', options.min_cstars,
                             '--pct', options.pct,
-                            '--wminimum', options.wminimum,
+                            '--weights-threshold', options.wminimum,
                             '--max-iters', options.max_iters,
-                            '--wfraction', options.worst_fraction]
+                            '--worst-fraction', options.worst_fraction]
 
                     [args.append('-v') for x in xrange(options.verbose)]
 
