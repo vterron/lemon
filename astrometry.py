@@ -108,33 +108,33 @@ def astrometry(img_path, scale, equinox, radecsys, saturation,
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... FITS_IMAGE"
 
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_path', default = 'astrometry.fits',
                   help = "path to the output image [default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-parser.add_option('-u', action = 'store_true', dest = 'update',
+parser.add_option('--update', action = 'store_true', dest = 'update',
                   help = "do not output a FITS image; instead, update the "
                   "input image with the astrometric solution. This causes "
-                  "the -o and -w options to be ignored")
+                  "the --output and --overwrite options to be ignored")
 
 # CCD SITE#2b focus scale = 0.50209205 arcsec/pixel
-parser.add_option('-s', action = 'store', type = 'float',
+parser.add_option('--scale', action = 'store', type = 'float',
                   dest = 'scale', default = 0.50,
                   help = "the scale of the images, in arcsec/pixel "
                   "[default: %default]")
 
-parser.add_option('-e', action = 'store', type = 'int',
+parser.add_option('--equinox', action = 'store', type = 'int',
                   dest = 'equinox', default = '2000',
                   help = "mean equinox, in years [default: %default]")
 
-parser.add_option('-a', action = 'store', type = 'str',
+parser.add_option('--radecsys', action = 'store', type = 'str',
                   dest = 'radecsys', default = 'ICRS',
                   help = "WCS astrometric system [default: %default]")
 
-parser.add_option('-m', action = 'store', type = 'int',
+parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
                   help = defaults.desc['maximum'])
 
