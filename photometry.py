@@ -146,11 +146,11 @@ def parallel_photometry(args):
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_db', default = 'photometry.LEMONdB',
                   help = "path to output database [default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
 parser.add_option('--passband', action = 'store', type = str,
@@ -160,7 +160,7 @@ parser.add_option('--passband', action = 'store', type = str,
                   "those whose passband (i.e., the filter with which they were "
                   "observed) matches the value specified by this option")
 
-parser.add_option('-m', action = 'store', type = 'int',
+parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
                   help = defaults.desc['maximum'])
 
@@ -168,7 +168,7 @@ parser.add_option('--margin', action = 'store', type = 'int',
                   dest = 'margin', default = defaults.margin,
                   help = defaults.desc['margin'])
 
-parser.add_option('-g', action = 'store', type = 'float',
+parser.add_option('--gain', action = 'store', type = 'float',
                   dest = 'gain', default = None,
                   help = "the gain of the CCD, in e-/ADU. Needed in order to "
                   "accurately calculate the SNR of each measurement. In case "
@@ -231,22 +231,22 @@ qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
               "'median FWHM' is computed for each passband on which "
               "photometry is done.")
 
-qphot_group.add_option('-p', action = 'store', type = 'float',
+qphot_group.add_option('--aperture', action = 'store', type = 'float',
                        dest = 'aperture', default = 3.0,
                        help = "the aperture radius, in number of times the "
                        "median FWHM [default: %default]")
 
-qphot_group.add_option('-i', action = 'store', type = 'float',
+qphot_group.add_option('--annulus', action = 'store', type = 'float',
                        dest = 'annulus', default = 4.5,
                        help = "the inner radius of the sky annulus, in "
                        "number of times the median FWHM [default: %default]")
 
-qphot_group.add_option('-k', action = 'store', type = 'float',
+qphot_group.add_option('--dannulus', action = 'store', type = 'float',
                        dest = 'dannulus', default = 1.0,
                        help = "the width of the sky annulus, in number "
                        "of times the median FWHM [default: %default]")
 
-qphot_group.add_option('--min', action = 'store', type = 'float',
+qphot_group.add_option('--min-sky', action = 'store', type = 'float',
                        dest = 'min', default = 3.0,
                        help ="the minimum width of the sky annulus, in "
                        "pixels, regardless of the value specified in the "
@@ -270,15 +270,15 @@ qphot_fixed = optparse.OptionGroup(parser, "Aperture Photometry (pixels)",
               "probably always use these options in conjunction with "
               "--passband, in order to to photometry one filter at a time.")
 
-qphot_fixed.add_option('--pp', action = 'store', type = 'float',
+qphot_fixed.add_option('--aperture-pix', action = 'store', type = 'float',
                        dest = 'aperture_pix', default = None,
                        help = "the aperture radius, in pixels")
 
-qphot_fixed.add_option('--ip', action = 'store', type = 'float',
+qphot_fixed.add_option('--annulus-pix', action = 'store', type = 'float',
                        dest = 'annulus_pix', default = None,
                        help = "the inner radius of the sky annulus, in pixels")
 
-qphot_fixed.add_option('--kp', action = 'store', type = 'float',
+qphot_fixed.add_option('--dannulus-pix', action = 'store', type = 'float',
                        dest = 'dannulus_pix', default = None,
                        help = "the width of the sky annulus, in pixels")
 parser.add_option_group(qphot_fixed)
