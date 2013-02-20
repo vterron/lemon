@@ -197,6 +197,7 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = keywords.desc['fwhmk'])
 parser.add_option_group(key_group)
+customparser.clear_metavars(parser)
 
 def main(arguments = None):
     """ main() function, encapsulated in a method to allow for easy invokation.

@@ -59,3 +59,27 @@ def get_parser(description):
     parser = optparse.OptionParser(**kwargs)
     return parser
 
+def clear_metavars(parser):
+    """ Set all the meta-variables of an OptionParser to a whitespace.
+
+    This is a hackish convenience function to set the meta-variables of all the
+    options of an OptionParser, independently of whether they are contained in
+    option groups, to the string ' '. This is not an empty string, but a string
+    consisting of a whitespace: this is necessary because if the meta-variable
+    evaluates to False the OptionParser converts the destination variable name
+    to uppercase and uses that instead.
+
+    Using this function on an OptionParser instance clears the meta-variables,
+    which means that where the help message showed '--filename=FILE' now only
+    '--filename=' will be displayed, with the equals sign indicating the fact
+    that the option takes a value.
+
+    """
+
+    EMPTY_VALUE = ' '
+    for option in parser.option_list:
+        option.metavar = EMPTY_VALUE
+    for group in parser.__dict__['option_groups']:
+        for option in group.option_list:
+            option.metavar = EMPTY_VALUE
+

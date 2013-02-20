@@ -789,6 +789,7 @@ best_group.add_option('--worst-fraction', action = 'store', type = 'float',
                       "the field will be, but also more CPU-expensive "
                       "[default: %default]")
 parser.add_option_group(best_group)
+customparser.clear_metavars(parser)
 
 def main(arguments = None):
     """ main() function, encapsulated in a method to allow for easy invokation.

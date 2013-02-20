@@ -259,6 +259,8 @@ parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
                   help = defaults.desc['verbosity'])
 
+customparser.clear_metavars(parser)
+
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363

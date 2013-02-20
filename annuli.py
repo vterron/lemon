@@ -242,6 +242,7 @@ key_group.add_option(photometry.parser.get_option('--coaddk'))
 key_group.add_option(photometry.parser.get_option('--gaink'))
 key_group.add_option(photometry.parser.get_option('--uik'))
 parser.add_option_group(key_group)
+customparser.clear_metavars(parser)
 
 def check_run(function, *args):
     """ Run the function and raise CalledProcessError for non-zero retcodes.

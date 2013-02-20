@@ -766,6 +766,7 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      "of of the image. This value is needed by subsequent "
                      "modules of the pipeline [default: %default]")
 parser.add_option_group(key_group)
+customparser.clear_metavars(parser)
 
 def parallel_sextractor(args):
     """ Run SExtractor and compute the FWHM and elongation of a FITS image.
