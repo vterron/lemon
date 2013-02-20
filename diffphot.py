@@ -707,11 +707,11 @@ def parallel_light_curves(args):
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DB"
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_db', default = 'diffphot.LEMONdB',
                   help = "path to output database [default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
 parser.add_option('--cores', action = 'store', type = 'int',
@@ -723,7 +723,7 @@ parser.add_option('-v', '--verbose', action = 'count',
                   help = defaults.desc['verbosity'])
 
 curves_group = optparse.OptionGroup(parser, "Light Curves", "")
-curves_group.add_option('--mimages', action = 'store', type = 'int',
+curves_group.add_option('--minimum-images', action = 'store', type = 'int',
                         dest = 'min_images', default = 10,
                         help = "the minimum number of images in which a star "
                         "must have been observed; the light curve will not be "
@@ -731,7 +731,7 @@ curves_group.add_option('--mimages', action = 'store', type = 'int',
                         "observed a number of times lower than this value "
                         "[default: %default]")
 
-curves_group.add_option('-n', action = 'store', type = 'int',
+curves_group.add_option('--stars', action = 'store', type = 'int',
                         dest = 'ncstars', default = 20,
                         help = "number of complete stars that will be used as "
                         "the artificial comparison star. For each star, its "
@@ -739,17 +739,17 @@ curves_group.add_option('-n', action = 'store', type = 'int',
                         "photometric information in at least each of the "
                         "images in which it was observed [default: %default]")
 
-curves_group.add_option('--mincstars', action = 'store', type = 'int',
-                        dest = 'min_cstars', default = 8,
+curves_group.add_option('--minimum-stars', action = 'store',
+                        type = 'int', dest = 'min_cstars', default = 8,
                         help = "the minimum number of stars used to compute "
                         "the artificial comparison star, regarless of the "
-                        "value of the -n option. The light curve will not be "
-                        "generated if this minimum value cannot be reached. "
-                        "It follows that if this option is set to a value "
-                        "greater than that of -n, no curve is generated, so "
-                        "the module exits with an error. Although acceptable, "
-                        "a value equal to that of -n, is not recommended. "
-                        "[default: %default]")
+                        "value of the --stars option. The light curve will "
+                        "not be generated if this minimum value cannot be "
+                        "reached. It follows that if this option is set to a "
+                        "value greater than that of --stars, no curve is "
+                        "generated, so the module exits with an error. "
+                        "Although acceptable, a value equal to that of "
+                        "--stars is not recommended. [default: %default]")
 parser.add_option_group(curves_group)
 
 broeg_group = optparse.OptionGroup(parser, "Broeg's Algorithm", "")
@@ -761,8 +761,8 @@ broeg_group.add_option('--pct', action = 'store', type = 'float',
                        "change between the last two weights is less than or "
                        "equal to this value [default: %default]")
 
-broeg_group.add_option('--wminimum', action = 'store', type = 'float',
-                       dest = 'wminimum', default = 0.0001,
+broeg_group.add_option('--weights-threshold', action = 'store',
+                       type = 'float', dest = 'wminimum', default = 0.0001,
                        help = "the minimum value for a coefficient to be "
                        "taken into account when calculating the percentage "
                        "change between two Weights; needed to prevent "
@@ -780,7 +780,7 @@ broeg_group.add_option('--max-iters', action = 'store', type = 'int',
 parser.add_option_group(broeg_group)
 
 best_group = optparse.OptionGroup(parser, "Worst and Best Stars", "")
-best_group.add_option('--wfraction', action = 'store', type = 'float',
+best_group.add_option('--worst-fraction', action = 'store', type = 'float',
                       dest = 'worst_fraction', default = 0.75,
                       help = "the fraction of the stars that will be "
                       "discarded at each step when identifying which are the "
@@ -828,7 +828,7 @@ def main(arguments = None):
         input_db_path = args[0]
 
     if options.min_cstars > options.ncstars:
-        print "%sError. The value of --mincstars must be <= -n." % style.prefix
+        print "%sError. The value of --min-stars must be <= --stars." % style.prefix
         print style.error_exit_message
         return 1
 
