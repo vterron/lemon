@@ -177,11 +177,11 @@ def parallel_offset(args):
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... REFERENCE_IMAGE  REST_OF_IMAGES..."
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_xml', default = 'offsets.xml',
                   help = "path to the output XML file [default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output XML file if it already exists")
 
 parser.add_option('--cores', action = 'store', type = 'int',
@@ -204,7 +204,7 @@ mask_group = optparse.OptionGroup(parser, "Single-point-masks",
 # Although we could pass any other value, using the same saturation level as in
 # other stages of the pipeline allows us to reuse the on-disk cached SExtractor
 # catalog.
-parser.add_option('-m', action = 'store', type = 'int',
+parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
                   help = defaults.desc['maximum'])
 
@@ -212,7 +212,7 @@ parser.add_option('--margin', action = 'store', type = 'int',
                   dest = 'margin', default = defaults.margin,
                   help = defaults.desc['margin'])
 
-mask_group.add_option('--per', action = 'store', type = 'int',
+mask_group.add_option('--percentile', action = 'store', type = 'int',
                       dest = 'percentile', default = 50,
                       help = "the score at the given percentile of the "
                       "signal-to-noise ratio of the stars that are to be "
