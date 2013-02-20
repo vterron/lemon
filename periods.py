@@ -227,15 +227,15 @@ class StringLengthFinder(object):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DB"
 
-parser.add_option('-o', action = 'store', type = 'str',
+parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_db', default = None,
                   help = "path to the output LEMON database "
                   "[default: %default]")
 
-parser.add_option('-w', action = 'store_true', dest = 'overwrite',
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
-parser.add_option('--is', action = 'store', type = 'int',
+parser.add_option('--initial-step', action = 'store', type = 'int',
                   dest = 'initial_step', default = 300,
                   help = "first step for the string-length method, in number "
                   "of seconds. This step will be used to determine the "
@@ -243,7 +243,7 @@ parser.add_option('--is', action = 'store', type = 'int',
                   "sum of the lengths of line segments joining successive "
                   "points in a phase diagram [default: %default]")
 
-parser.add_option('--es', action = 'store', type = 'int',
+parser.add_option('--exhaustive-step', action = 'store', type = 'int',
                   dest = 'exhaustive_step', default = 30,
                   help = "secondary step for the string-length method, in "
                   "number of seconds. A secondary, exhaustive search will "
