@@ -114,7 +114,7 @@ def offset(reference_path, shifted_path, maximum, margin, per,
                   detector dead time, vignetting, or other effects.
     coaddk_keyword - FITS keyword that stores the number of effective coadds.
                      If the keyword is missing, we assume a value of one (that
-                     is, that the observation consisted in a single exposure).
+                     is, that the observation consisted of a single exposure).
 
     """
 
