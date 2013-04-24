@@ -352,14 +352,12 @@ class FITSImage(object):
             # [Fix Wed Feb 8 2012: allow up to four decimals in the seconds
             # [.ssss]. Although this is not standard, it is the information
             # used in the header of O2K (Calar Alto Observatory) images]
-            matched = re.match("^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})"
-                               "(\.\d{0,4})?$", obs_date_string)
-            if matched:
-                obs_date = time.strptime(matched.group(1), '%Y-%m-%dT%H:%M:%S')
             else:
-                raise NonStandardFITS
+                matched = re.match("^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})"
+                                   "(\.\d{0,4})?$", obs_date_string)
+                obs_date = time.strptime(matched.group(1), '%Y-%m-%dT%H:%M:%S')
 
-        except (TypeError, ValueError, NonStandardFITS):
+        except (TypeError, ValueError, AttributeError):
             msg = "'%s' keyword does not follow the FITS standard" % date_keyword
             raise NonStandardFITS(msg)
 
