@@ -968,7 +968,7 @@ def main(arguments = None):
     for path, elong in elongs.iteritems():
         # Ignore FWHM-discarded images
         if path in fwhm_discarded:
-            logging.debug("%s inored (already discarded by FWHM)" % path)
+            logging.debug("%s ignored (already discarded by FWHM)" % path)
             continue
         elif elong > maximum_elong:
             elong_discarded.add(path)
