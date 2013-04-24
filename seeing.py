@@ -929,7 +929,7 @@ def main(arguments = None):
           (style.prefix, mu, options.fwhm_sigma, sigma, maximum_fwhm)
 
     # Exclude images by adding them to the FWHM-discarded set
-    for path, fwhm in fwhms.iteritems():
+    for path, fwhm in sorted(fwhms.iteritems()):
         if fwhm > maximum_fwhm:
             fwhm_discarded.add(path)
             logging.debug("%s discarded (FWHM = %.3f > %.3f" % \
@@ -965,7 +965,7 @@ def main(arguments = None):
     print "%sDiscarding images with an elongation > %.3f + %.1f x %.3f = %.3f ..." % \
           (style.prefix, mu, options.elong_sigma, sigma, maximum_elong)
 
-    for path, elong in elongs.iteritems():
+    for path, elong in sorted(elongs.iteritems()):
         # Ignore FWHM-discarded images
         if path in fwhm_discarded:
             logging.debug("%s ignored (already discarded by FWHM)" % path)
