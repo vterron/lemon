@@ -339,7 +339,7 @@ class FITSImage(object):
         try:
             # yy/mm/dd; deprecated, old date format
             if re.match('^\d{2}/\d{2}/\d{2}$', obs_date_string):
-                obs_date = time.strptime(obs_date_string, '%y-%m-%d')
+                obs_date = time.strptime(obs_date_string, '%y/%m/%d')
             # yyyy-mm-dd
             elif re.match('^\d{4}-\d{2}-\d{2}$', obs_date_string):
                 obs_date = time.strptime(obs_date_string, '%Y-%m-%d')
