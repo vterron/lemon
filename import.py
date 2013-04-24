@@ -395,7 +395,7 @@ def main(arguments = None):
         shutil.copy2(fits_file.path, dest_path)
 
         # The permission bits have been copied, but we need to make sure
-        # that the copy of the FITS file is always writable, no matter that
+        # that the copy of the FITS file is always writable, no matter what
         # the original permissions were. This is equivalent to `chmod u+w`
         mode = os.stat(dest_path)[stat.ST_MODE] | stat.S_IWUSR
         os.chmod(dest_path, mode)
