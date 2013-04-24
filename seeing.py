@@ -850,11 +850,12 @@ def main(arguments = None):
         input_paths = args[:-1]
         output_dir = args[-1]
 
-    # Make sure that the output directory exists, and create it if it doesn't,
-    # as well as the subdirectories to which discarded images will be saved.
+    # Make sure that the output directory exists, and create it if it doesn't.
+    # The subdirectories for discarded images are not yet created; we put this
+    # off until we know that at least one image is indeed going to be excluded.
     methods.determine_output_dir(output_dir)
-    methods.determine_output_dir(os.path.join(output_dir, options.fwhm_dir), quiet = True)
-    methods.determine_output_dir(os.path.join(output_dir, options.elong_dir), quiet = True)
+    fwhm_dir = os.path.join(output_dir, options.fwhm_dir)
+    elong_dir = os.path.join(output_dir, options.elong_dir)
 
     print "%s%d paths given as input, on which sources will be detected." % \
           (style.prefix, len(input_paths))
@@ -1034,6 +1035,16 @@ def main(arguments = None):
     print "%sBest-seeing image = %s, with %d sources and a FWHM of %.3f pixels" % \
           (style.prefix, best_seeing, nstars[best_seeing], fwhms[best_seeing])
 
+    # The subdirectories are created only if at least one image is going to be
+    # discarded. We do not want empty directories in case no image is discarded
+    # because of its full-width at half maximum (FWHM) or elongation.
+
+    if fwhm_discarded:
+        methods.determine_output_dir(fwhm_dir, quiet = True)
+
+    if elong_discarded:
+        methods.determine_output_dir(elong_dir, quiet = True)
+
     # Finally, copy all the FITS images to the output directory
     processed = 0
     for path in sorted(all_images):
@@ -1044,17 +1055,17 @@ def main(arguments = None):
                      (path, options.suffix, output_filename))
 
         if path in fwhm_discarded:
-            output_path = os.path.join(output_dir, options.fwhm_dir, output_filename)
+            output_path = os.path.join(fwhm_dir, output_filename)
             logging.debug("%s was discarded because of its FWHM" % path)
-            logging.debug("%s to be copied to subdirectory %s" % (path, options.fwhm_dir))
+            logging.debug("%s to be copied to subdirectory %s" % (path, fwhm_dir))
             history_msg1 = "Image discarded by LEMON on %s" % methods.utctime()
             history_msg2 = "[Discarded] FWHM = %.3f pixels, maximum allowed value = %.3f" % \
                            (fwhms[path], maximum_fwhm)
 
         elif path in elong_discarded:
-            output_path = os.path.join(output_dir, options.elong_dir, output_filename)
+            output_path = os.path.join(elong_dir, output_filename)
             logging.debug("%s was discarded because of its elongation ratio" % path)
-            logging.debug("%s to be copied to subdirectory %s" % (path, options.elong_dir))
+            logging.debug("%s to be copied to subdirectory %s" % (path, elong_dir))
             history_msg1 = "Image discarded by LEMON on %s" % methods.utctime()
             history_msg2 = "[Discarded] Elongation = %.3f, maximum allowed value = %.3f" % \
                            (elongs[path], maximum_elong)
