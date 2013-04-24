@@ -337,25 +337,29 @@ class FITSImage(object):
         # according to format, or if it has excess data after parsing.
 
         try:
-            # yy/mm/dd; deprecated, old date format
+            # yy/mm/dd; deprecated, old date format (only for dates 1900-1999)
             if re.match('^\d{2}/\d{2}/\d{2}$', obs_date_string):
                 obs_date = time.strptime(obs_date_string, '%y/%m/%d')
-            # yyyy-mm-dd
-            elif re.match('^\d{4}-\d{2}-\d{2}$', obs_date_string):
-                obs_date = time.strptime(obs_date_string, '%Y-%m-%d')
 
-            # yyyy-mm-ddTHH:MM:SS[.sss] Note that we discard the decimals of
-            # the seconds (by parsing the first parenthesized group instead of
-            # the entire matching string) as time.strptime raises ValueError if
-            # the string has excess data after the parsing
+            # The new Y2K compliant date format is 'yyyy-mm-dd' or
+            # 'yyyy-mm-ddTHH:MM:SS[.sss]. The two formats can be combined into
+            # a single one and are equivalent to: yyyy-mm-dd[THH:MM:SS[.sss]]
             #
             # [Fix Wed Feb 8 2012: allow up to four decimals in the seconds
             # [.ssss]. Although this is not standard, it is the information
             # used in the header of O2K (Calar Alto Observatory) images]
+
             else:
-                matched = re.match("^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})"
-                                   "(\.\d{0,4})?$", obs_date_string)
-                obs_date = time.strptime(matched.group(1), '%Y-%m-%dT%H:%M:%S')
+                regexp = "^(?P<date>\d{4}-\d{2}-\d{2})" \
+                         "(?P<time>T\d{2}:\d{2}:\d{2}" \
+                         "(?P<seconds_fraction>\.\d{0,4})?)?$"
+                match = re.match(regexp, obs_date_string)
+                format_str = '%Y-%m-%d'
+                if match.group('time'):
+                    format_str += 'T%H:%M:%S'
+                    if match.group('seconds_fraction'):
+                        format_str += '.%f'
+                obs_date = time.strptime(obs_date_string, format_str)
 
         except (TypeError, ValueError, AttributeError):
             msg = "'%s' keyword does not follow the FITS standard" % date_keyword
