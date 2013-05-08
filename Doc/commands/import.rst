@@ -98,6 +98,94 @@ does not exist.
 .. _the FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
 
 
+Options
+=======
+
+.. program:: lemon import
+
+.. cmdoption:: --object <patterns>
+
+  List of case-insensitive patterns, according to `the rules used by the Unix
+  shell`_, and separated by commas, of the object names of the FITS files to
+  import. Those FITS files whose object name (see ``--objectk`` option) matches
+  one or more of these patterns are imported, while the rest are ignored. There
+  cannot be spaces around the commas that separate the patterns, as if that is
+  case what follows a whitespace is considered a different argument to the
+  program. By default, all object names are matched (pattern ``*``).
+
+  Examples: ``--object Andromeda`` imports only those FITS files whose object
+  name is exactly that. A pattern such as ``Trumpler 37`` must be either
+  quoted, ``'Trumpler 37'``, or have its whitespace escaped, ``Trumpler\
+  37``. Finally, ``--object 'skyflat*,lampflat*'`` imports those FITS files
+  whose object name starts with ``skyflat`` or ``lamplat``.
+
+.. cmdoption:: --pattern <pattern>
+
+  The case-insensitive, `Unix-style pattern`_ that the filename of a FITS file
+  must match to be detected when the input directory trees are walked down.
+  Files with a non-matching filename are ignored. The pattern must be quoted or
+  escaped to prevent wildcard expansion, if any. We use the term *filename*
+  because that is what it means for an end user, but the technical term would
+  be *basename*: the name of the file along with its extension, such as
+  ``GJ436-006V.fits``. By default, all filenames are imported.
+
+  Examples: ``--object '*.fit'`` imports only those FITS files with the
+  ``.fit`` extension, while ``'GJ436*.fits'`` imports those whose name starts
+  with ``GJ436`` and have the ``.fits`` extension.
+
+  .. _the rules used by the Unix shell:
+  .. _Unix-style pattern:
+     https://en.wikipedia.org/wiki/Glob_(programming)#Syntax
+
+.. cmdoption:: --counts <ADUs>
+
+   Number of :abbr:`ADUs (Analog-to-digital unit)` at which saturation occurs.
+   The median of the pixel distribution is computed for each FITS file, and
+   those with a value above this threshold are discarded. If this option is not
+   used, no file is discarded no matter what its median number of ADUs is.
+
+   Example: ``--counts 50000`` imports only those FITS files whose median
+   number of ADUs is equal to or less than 50,000.
+
+.. cmdoption:: --filename <prefix>
+
+   The base name common to the copies, made in the output directory, of all the
+   imported files. The sequence number, once the FITS files are sorted by their
+   date of observation, is appended to this prefix before the extension.
+   Leading zeros are used so that the filenames of the copies of the imported
+   FITS files are all of equal length. If we import 100 FITS files, for
+   example, sequence numbers can be written with no more than two digits, so
+   the first file will be assigned the sequence number ``00`` and the last
+   ``99``.
+
+   Example: ``--filename WASP-44b_``, assuming that we are importing a total of
+   437 files with the ``.fit`` extension, makes the first file copied to the
+   output directory have the name ``WASP-44b_000.fit``, while the last one is
+   named ``WASP-44b_436.fit``.
+
+.. cmdoption:: --follow
+
+   By default, when detecting FITS files we do not walk down into symbolic
+   links that resolve to directories. Use this option to visit directories
+   pointed to by symlinks, on systems that support them. This can lead to
+   infinite recursion if a link points to a parent directory of itself.
+
+.. cmdoption:: --exact
+
+   For each imported FITS file, the HISTORY keyword is used to store both the
+   path to the original file and the date at which it was imported. In
+   addition, the copy of each imported file has its own path stored in the
+   keyword specified with the ``--uik`` option.
+
+   Use this option in case you do not want to modify the FITS files, but
+   instead prefer to work with an exact copy. The FITS headers will be left
+   untouched and, so that even the most paranoid among us can rest assured that
+   the copy of each file is identical, the `SHA-1 hash`_ is used to verify
+   their integrity.
+
+   .. _SHA-1 hash: https://en.wikipedia.org/wiki/SHA-1
+
+
 .. _import-historical-note:
 
 A historical note
