@@ -95,8 +95,6 @@ with *M101_* and have the *.fits* extension, provided that they conform to the
 FITS standard. The files are copied to ``~/M101_raw``, which is created if it
 does not exist.
 
-.. _the FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
-
 
 Options
 =======
@@ -172,8 +170,8 @@ Options
 
 .. cmdoption:: --exact
 
-   For each imported FITS file, the HISTORY keyword is used to store both the
-   path to the original file and the date at which it was imported. In
+   For each imported FITS file, the `HISTORY`_ keyword is used to store both
+   the path to the original file and the date at which it was imported. In
    addition, the copy of each imported file has its own path stored in the
    keyword specified with the ``--uik`` option.
 
@@ -184,6 +182,62 @@ Options
    their integrity.
 
    .. _SHA-1 hash: https://en.wikipedia.org/wiki/SHA-1
+
+
+.. _import-keywords:
+
+FITS keywords
+-------------
+
+In order to correctly process the FITS files, access is needed to some of the
+information stored in their headers. The default keywords where the necessary
+values are looked for are those used by `PANIC`_, so you do not need to tinker
+with these options if your data was taken at that instrument. If that is not
+the case, you **must** make sure that the keywords here defined exactly match
+those present in your FITS files.  Failing to do so will result in apocalyptic
+consequences — the least severe of them being LEMON aborting its execution.
+
+.. _PANIC: https://w3.iaa.csic.es/PANIC/
+
+.. program:: lemon import
+
+.. cmdoption:: --datek <keyword>
+
+   The date of the observation, in the Y2K compliant date format specified in
+   `the FITS standard`_: ``yyyy-mm-dd`` or ``yyyy-mm-ddTHH:MM:SS[.sss]``
+   (default: ``DATE-OBS``)
+
+   .. _the FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
+
+.. cmdoption:: --expk <keyword>
+
+   The exposure time in seconds (default: ``EXPTIME``)
+
+.. cmdoption:: --objectk <keyword>
+
+   The name of the object observed (default: ``OBJECT``)
+
+.. cmdoption:: --uik <keyword>
+
+   Along with some book-keeping information using the `HISTORY`_ keyword, the
+   copies of the imported FITS files also have their own path stored in their
+   headers, using the keyword defined by this option. This provides, since
+   keywords propagate when FITS file are manipulated, a means of getting the
+   path to the original file in case they are calibrated or modified in any
+   other way. In case you do not want the path to be saved to the header, set
+   this option to an empty string (``''``) to disable it (default: ``UNCIMG``)
+
+   .. note::
+
+      The path to the original FITS file is needed when we do aperture
+      photometry, in order to check which pixels are saturated: calibration
+      steps such as bias subtraction or, particularly, flat-fielding may cause
+      a pixel to go below the saturation level when, in actuality, before the
+      calibration took place it was above, or vice versa. This keyword, thus,
+      allows LEMON to do this check in the original file, which is the one that
+      matters.
+
+   .. _HISTORY: http://archive.stsci.edu/fits/fits_standard/node40.html#SECTION00942420000000000000
 
 
 .. _import-historical-note:
