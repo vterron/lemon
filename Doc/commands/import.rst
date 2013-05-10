@@ -5,11 +5,68 @@ import
 ######
 
 The purpose of :command:`import` is to automatically detect all the FITS files
-belonging to an observation campaign, get rid of those that are saturated or
-irrelevant for the data reduction (e.g., test images that were taken when
-centering the field) and copy them sequentially to the working directory. To
-put it more simply, this command walks down a directory tree and makes a copy
-of all the FITS files that are of our interest.
+belonging to an observation campaign and copy them to our working directory.
+This is particularly needed when reducing data taken at observatories that
+enforce :ref:`specific naming conventions <import-historical-note>`, where the
+astronomer may easily end up with hundreds of images scattered over dozens of
+directories, many times with duplicate filenames.
+
+
+Overview
+========
+
+This command walks down a series of directory trees, detects the FITS files,
+gets rid of those that are saturated or irrelevant for the data reduction and
+saves a copy of the remaining to an output directory. But this is just a very
+succinct explanation. Let's take a closer look at what :command:`import` does:
+
+#. The input directories are recursively walked down and all the FITS files
+   contained in them are automatically detected. LEMON considers a FITS file
+   anything that conforms to `the FITS standard`_, regardless of its
+   extension. Note that, among many other things, this means that the `SIMPLE
+   keyword`_, containing a logical constant with the value ``T``, is required
+   to be the first one in the primary header of your files — do not worry, this
+   is almost certainly the case.
+
+   .. _SIMPLE keyword: http://archive.stsci.edu/fits/fits_standard/node39.html#SECTION00941110000000000000
+
+#. Then, saturated files are discarded. The saturation is defined in terms of
+   the entire FITS file: if the median number of counts (:abbr:`ADUs
+   (Analog-to-digital unit)`) of all the pixels is above a certain saturation
+   threshold (see the ``--counts`` option), the file is marked as saturated and
+   discarded. This allows for a reasonable number of saturated pixels while at
+   the same time excluding those FITS files that are essentially useless for
+   any scientific purpose, such as skyflats that went out of hand.
+
+#. Although not used by default, is it possible to define a Unix-style pattern
+   that the object name of the FITS files must match in order to be
+   imported. This is useful if you are interested in working only with specific
+   sets of FITS files contained in a directory tree. For example, the pattern
+   ``NGC2264*`` only imports those whose object name starts with *NGC2264*. For
+   more information, see the ``--pattern`` option.
+
+#. The remaining FITS files are sorted by their date of observation, which is
+   defined as the date at the start of observation plus half of the total
+   exposure time — in other words, the exact date at the middle of the
+   observation.
+
+#. The FITS files are copied to the output directory and renamed
+   sequentially. The first FITS file in chronological order is `assigned the
+   number zero`_ and the following numbers go from there. The most common
+   filename among the imported files is used to determine the basename to which
+   these sequence numbers are appended, but this behavior can be changed with
+   the ``--filename`` option. Please refer to its documentation for further
+   details.
+
+   .. _assigned the number zero: `would have disagreed`_
+
+.. note::
+
+   Due to the algorithms used for image alignment and source detection, LEMON
+   requires that all the FITS files of an observation campaign have the same
+   size (number of pixels along the x- and y-axes). In case there are multiple
+   sizes among the input FITS files, only those with the most common size will
+   be imported.
 
 
 Usage
