@@ -11,6 +11,38 @@ centering the field) and copy them sequentially to the working directory. To
 put it more simply, this command walks down a directory tree and makes a copy
 of all the FITS files that are of our interest.
 
+
+Usage
+=====
+
+The :command:`import` command accepts a variable number of arguments: FITS
+files are detected by recursively walking through all the paths except the
+last one, which is used as the output directory: ::
+
+  $ lemon import [OPTION]... INPUT_DIRS... OUTPUT_DIR
+
+The extension of the FITS files is irrelevant, as LEMON does not pay attention
+to it. The only thing that matters is whether they conform to `the FITS
+standard`_. If the output directory does not exist, it is created for you.
+
+Input paths may be directories or individual files. Therefore, it is possible
+to import whole directories, specific sets of FITS files or a combination of
+both. Non-existent paths and non-standard FITS files are silently ignored. For
+example: ::
+
+  $ lemon import ~/2013-01-22/ ~/2012-01-23/M101_*fits ~/M101_raw
+
+This will import all the FITS files in the directory tree that starts at
+``~/2013-01-22/`` and, in addition, those in ``~/2012-01-23`` whose name begins
+with *M101_* and have the *.fits* extension, provided that they conform to the
+FITS standard. The files are copied to ``~/M101_raw``, which is created if it
+does not exist.
+
+.. _the FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
+
+
+.. _import-historical-note:
+
 A historical note
 =================
 
