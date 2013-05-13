@@ -240,6 +240,51 @@ consequences — the least severe of them being LEMON aborting its execution.
    .. _HISTORY: http://archive.stsci.edu/fits/fits_standard/node40.html#SECTION00942420000000000000
 
 
+Examples
+========
+
+Let's see three examples very similar to what you may need to use::
+
+  lemon import /root/data/2013-03-28/ ~/Trumpler37/ --counts 45000 --filename "Trumpler_37_" --exact
+
+This first example detects all the FITS files in ``/root/data/2013-03-28/`` or
+any of its subdirectories, and saves a copy of them to ``~/Trumpler37/``, which
+is created if it does not exist. Because of ``--counts 45000``, files whose
+median number of ADUs is greater than this number are discarded. The name of
+the files copied to the output directory starts with the value of
+``--filename``, to which the sequence number is appended: the first one,
+therefore, could be named, for example, ``Trumpler_37_0000.fits`` — note that
+how many zeros are used depends on the number of files imported. Finally,
+``--exact`` guarantees that the FITS files copied to the output directory are
+an identical copy of the original, with no book-keeping information added to
+their headers.
+
+::
+
+  lemon import ~/ ~/exoplanets --object "WASP*b,HD*b,Gliese*b" --follow
+
+In this second example, LEMON scans your entire home directory, copying to
+``~/exoplanets/`` those FITS files whose object name matches any of these
+patterns: ``WASP*b``, ``HD*b`` and ``Gliese*b``. Examples of object names that
+would be matched are ``WASP-44b``, ``WASP-1 B`` (patterns are
+case-insensitive), ``HD 100655 b`` and ``Gliese 876 d``, while others such as
+``HAT-P-30-WASP-51 b``, ``HD 10180 g`` or ``Gliese 876 e`` would not be so. Due
+to the presence of ``--follow``, LEMON will walk down into symbolic links that
+point to directories.
+
+::
+
+  lemon import /disk-b/obs12_images/ /data/ --pattern "*.fit[s]"
+
+Here LEMON walks down the directory ``/disk-b/obs12_images``, detecting all the
+FITS files contained there or in any of its subdirectories and making a copy of
+them to ``/data/``. Thanks to ``--pattern "*.fit[s]"``, the search for these
+FITS files is restricted to those with the extensions ``.fit`` and ``.fits``.
+This illustrates how ``--pattern`` may be used to considerably speed up the
+execution time of this command, as by default it checks whether all the regular
+files it comes across are standard-conforming FITS files.
+
+
 .. _import-historical-note:
 
 A historical note
