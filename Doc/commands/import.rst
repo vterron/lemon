@@ -33,17 +33,18 @@ succinct explanation. Let's take a closer look at what :command:`import` does:
 #. Then, saturated files are discarded. The saturation is defined in terms of
    the entire FITS file: if the median number of counts (:abbr:`ADUs
    (Analog-to-digital unit)`) of all the pixels is above a certain saturation
-   threshold (see the ``--counts`` option), the file is marked as saturated and
-   discarded. This allows for a reasonable number of saturated pixels while at
-   the same time excluding those FITS files that are essentially useless for
-   any scientific purpose, such as skyflats that went out of hand.
+   threshold (see the :option:`--counts` option), the file is marked as
+   saturated and discarded. This allows for a reasonable number of saturated
+   pixels while at the same time excluding those FITS files that are
+   essentially useless for any scientific purpose, such as skyflats that went
+   out of hand.
 
 #. Although not used by default, is it possible to define a Unix-style pattern
    that the object name of the FITS files must match in order to be
    imported. This is useful if you are interested in working only with specific
    sets of FITS files contained in a directory tree. For example, the pattern
    ``NGC2264*`` only imports those whose object name starts with *NGC2264*. For
-   more information, see the ``--pattern`` option.
+   more information, see the :option:`--pattern` option.
 
 #. The remaining FITS files are sorted by their date of observation, which is
    defined as the date at the start of observation plus half of the total
@@ -55,8 +56,7 @@ succinct explanation. Let's take a closer look at what :command:`import` does:
    number zero`_ and the following numbers go from there. The most common
    filename among the imported files is used to determine the basename to which
    these sequence numbers are appended, but this behavior can be changed with
-   the ``--filename`` option. Please refer to its documentation for further
-   details.
+   the :option:`--filename` option.
 
    .. _assigned the number zero: `would have disagreed`_
 
@@ -99,17 +99,16 @@ does not exist.
 Options
 =======
 
-.. program:: lemon import
-
 .. cmdoption:: --object <patterns>
 
   List of case-insensitive patterns, according to `the rules used by the Unix
   shell`_, and separated by commas, of the object names of the FITS files to
-  import. Those FITS files whose object name (see ``--objectk`` option) matches
-  one or more of these patterns are imported, while the rest are ignored. There
-  cannot be spaces around the commas that separate the patterns, as if that is
-  case what follows a whitespace is considered a different argument to the
-  program. By default, all object names are matched (pattern ``*``).
+  import. Those FITS files whose object name (see the :option:`--objectk`
+  option) matches one or more of these patterns are imported, while the rest
+  are ignored. There cannot be spaces around the commas that separate the
+  patterns, as if that is case what follows a whitespace is considered a
+  different argument to the program. By default, all object names are matched
+  (pattern ``*``).
 
   Examples: ``--object Andromeda`` imports only those FITS files whose object
   name is exactly that. A pattern such as ``Trumpler 37`` must be either
@@ -173,7 +172,7 @@ Options
    For each imported FITS file, the `HISTORY`_ keyword is used to store both
    the path to the original file and the date at which it was imported. In
    addition, the copy of each imported file has its own path stored in the
-   keyword specified with the ``--uik`` option.
+   keyword specified with the :option:`--uik` option.
 
    Use this option in case you do not want to modify the FITS files, but
    instead prefer to work with an exact copy. The FITS headers will be left
@@ -198,8 +197,6 @@ those present in your FITS files.  Failing to do so will result in apocalyptic
 consequences — the least severe of them being LEMON aborting its execution.
 
 .. _PANIC: https://w3.iaa.csic.es/PANIC/
-
-.. program:: lemon import
 
 .. cmdoption:: --datek <keyword>
 
@@ -252,12 +249,12 @@ any of its subdirectories, and saves a copy of them to ``~/Trumpler37/``, which
 is created if it does not exist. Because of ``--counts 45000``, files whose
 median number of ADUs is greater than this number are discarded. The name of
 the files copied to the output directory starts with the value of
-``--filename``, to which the sequence number is appended: the first one,
+:option:`--filename`, to which the sequence number is appended: the first one,
 therefore, could be named, for example, ``Trumpler_37_0000.fits`` — note that
 how many zeros are used depends on the number of files imported. Finally,
-``--exact`` guarantees that the FITS files copied to the output directory are
-an identical copy of the original, with no book-keeping information added to
-their headers.
+:option:`--exact` guarantees that the FITS files copied to the output directory
+are an identical copy of the original, with no book-keeping information added
+to their headers.
 
 ::
 
@@ -269,8 +266,8 @@ patterns: ``WASP*b``, ``HD*b`` and ``Gliese*b``. Examples of object names that
 would be matched are ``WASP-44b``, ``WASP-1 B`` (patterns are
 case-insensitive), ``HD 100655 b`` and ``Gliese 876 d``, while others such as
 ``HAT-P-30-WASP-51 b``, ``HD 10180 g`` or ``Gliese 876 e`` would not be so. Due
-to the presence of ``--follow``, LEMON will walk down into symbolic links that
-point to directories.
+to the presence of :option:`--follow`, LEMON will walk down into symbolic links
+that point to directories.
 
 ::
 
@@ -280,9 +277,9 @@ Here LEMON walks down the directory ``/disk-b/obs12_images``, detecting all the
 FITS files contained there or in any of its subdirectories and making a copy of
 them to ``/data/``. Thanks to ``--pattern "*.fit[s]"``, the search for these
 FITS files is restricted to those with the extensions ``.fit`` and ``.fits``.
-This illustrates how ``--pattern`` may be used to considerably speed up the
-execution time of this command, as by default it checks whether all the regular
-files it comes across are standard-conforming FITS files.
+This illustrates how :option:`--pattern` may be used to considerably speed up
+the execution time of this command, as by default it checks whether all the
+regular files it comes across are standard-conforming FITS files.
 
 
 .. _import-historical-note:
