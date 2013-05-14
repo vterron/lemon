@@ -87,13 +87,13 @@ to import whole directories, specific sets of FITS files or a combination of
 both. Non-existent paths and non-standard FITS files are silently ignored. For
 example: ::
 
-  $ lemon import ~/2013-01-22/ ~/2012-01-23/M101_*fits ~/M101_raw
+  $ lemon import ~/2013-01-22/ ~/2012-01-23/M101_*fits ~/M101_raw/
 
 This will import all the FITS files in the directory tree that starts at
-``~/2013-01-22/`` and, in addition, those in ``~/2012-01-23`` whose name begins
-with *M101_* and have the *.fits* extension, provided that they conform to the
-FITS standard. The files are copied to ``~/M101_raw``, which is created if it
-does not exist.
+``~/2013-01-22/`` and, in addition, those in ``~/2012-01-23/`` whose name
+begins with *M101_* and have the *.fits* extension, provided that they conform
+to the FITS standard. The files are copied to ``~/M101_raw/``, which is created
+if it does not exist.
 
 
 Options
@@ -258,7 +258,7 @@ to their headers.
 
 ::
 
-  lemon import ~/ ~/exoplanets --object "WASP*b,HD*b,Gliese*b" --follow
+  lemon import ~/ ~/exoplanets/ --object "WASP*b,HD*b,Gliese*b" --follow
 
 In this second example, LEMON scans your entire home directory, copying to
 ``~/exoplanets/`` those FITS files whose object name matches any of these
@@ -273,13 +273,14 @@ that point to directories.
 
   lemon import /disk-b/obs12_images/ /data/ --pattern "*.fit[s]"
 
-Here LEMON walks down the directory ``/disk-b/obs12_images``, detecting all the
-FITS files contained there or in any of its subdirectories and making a copy of
-them to ``/data/``. Thanks to ``--pattern "*.fit[s]"``, the search for these
-FITS files is restricted to those with the extensions ``.fit`` and ``.fits``.
-This illustrates how :option:`--pattern` may be used to considerably speed up
-the execution time of this command, as by default it checks whether all the
-regular files it comes across are standard-conforming FITS files.
+Here LEMON walks down the directory ``/disk-b/obs12_images/``, detecting all
+the FITS files contained there or in any of its subdirectories and making a
+copy of them to ``/data/``. Thanks to ``--pattern "*.fit[s]"``, the search for
+these FITS files is restricted to those with the extensions ``.fit`` and
+``.fits``.  This illustrates how :option:`--pattern` may be used to
+considerably speed up the execution time of this command, as by default it
+checks whether all the regular files it comes across are standard-conforming
+FITS files.
 
 
 .. _import-historical-note:
