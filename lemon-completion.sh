@@ -69,8 +69,8 @@ _lemon_mosaic()
 {
     local opts checktypes
 
-    opts="--scale --output --overwrite --fraction --name --check-type
-    --min --max --rak --deck --objectk"
+    opts="--scale --output --overwrite --fraction --name --tempdir
+    --check-type --min --max --rak --deck --objectk"
 
     # The different types of check-image available in SExtractor
     checktypes="NONE IDENTICAL BACKGROUND BACKGROUND_RMS MINIBACK_RMS
