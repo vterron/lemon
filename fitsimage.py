@@ -178,7 +178,11 @@ class FITSImage(object):
             raise TypeError("keyword cannot be None")
         if not keyword:
             raise ValueError("keyword cannot be empty")
-        return self.header[keyword.upper()]
+        try:
+            return self.header[keyword.upper()]
+        except KeyError:
+            msg = "%s: keyword '%s' not found" % (self.path, keyword)
+            raise KeyError(msg)
 
     def update_keyword(self, keyword, value, comment = None):
         """ Updates the value of a FITS keyword, adding it if it does not exist.
