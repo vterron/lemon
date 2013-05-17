@@ -383,7 +383,10 @@ class Mosaic(object):
         try:
             margin_img = shifted_img.add_margin(self.left, self.right,
                                                 self.bottom, self.top)
-            aligned_img = margin_img.imshift(x_offset, y_offset)
+
+            prefix = '%s_aligned_' % shifted_img.basename_woe
+            kwargs = dict(prefix = prefix)
+            aligned_img = margin_img.imshift(x_offset, y_offset, **kwargs)
             self._set_aligned(index, aligned_img)
 
         finally:
