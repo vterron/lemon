@@ -48,6 +48,7 @@ import warnings
 # LEMON modules
 import astromatic
 import methods
+import passband
 import style
 
 class NonFITSFile(TypeError):
@@ -376,6 +377,27 @@ class FITSImage(object):
 
         # conversion from struct_time in UTC to seconds since the Unix epoch
         return calendar.timegm(obs_date) + half_exp_time
+
+    def pfilter(self, keyword):
+        """ Return the photometric filter of the image as a Passband instance.
+
+        Read the 'keyword' keyword from the header of the FITS image and
+        encapsulate it as a passband.Passband object. For user's convenience,
+        the keyword is case-insensitive. This method can raise four different
+        exceptions: TypeError if 'keyword' is None, ValueError if it is left
+        empty, KeyError if it cannot be found in the FITS header and, lastly,
+        passband.NonRecognizedPassband if the name of the photometric filter
+        cannot be parsed.
+
+        """
+
+        try:
+            pfilter_str = self.read_keyword(keyword)
+            return passband.Passband(pfilter_str)
+        except passband.NonRecognizedPassband:
+            msg = "%s: unknown filter '%s' ('%s' keyword)"
+            args = (self.path, pfilter_str, keyword)
+            raise passband.NonRecognizedPassband(msg % args)
 
     @property
     def basename(self):
