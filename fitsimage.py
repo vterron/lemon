@@ -988,7 +988,7 @@ class FITSImage(object):
 
         return output_image
 
-    def imshift(self, xshift, yshift, interp_type = 'linear'):
+    def imshift(self, xshift, yshift, interp_type = 'linear', prefix = None):
         """ Shift an image in the x- and y-axes.
 
         This method, a high-level wrapper around IRAF's imshift, shifts an
@@ -1005,10 +1005,13 @@ class FITSImage(object):
                       image. Defaults to 'linear' (bilinear interpolation in
                       x and y, although any of the other values accepted by
                       IRAF's imshift may be used.
+        prefix - if specified, the file name of the output image will begin
+                 with this prefix; otherwise, a default prefix is used.
 
         """
 
-        output_fd, output_path = tempfile.mkstemp(suffix = '.fits')
+        kwargs = dict(prefix = prefix, suffix = '.fits')
+        output_fd, output_path = tempfile.mkstemp(**kwargs)
         os.close(output_fd)
 
         os.unlink(output_path) # IRAF will refuse to overwrite it
