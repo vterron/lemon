@@ -818,6 +818,7 @@ def main(arguments = None):
     # from which we extract all the XMLOffsets and save them in a list.
     xml_offsets = xmlparse.XMLOffsetFile.load(xml_path)
     print 'done.'
+    print "%s%d offsets were read." % (style.prefix, len(xml_offsets))
 
     if not xml_offsets:
         print "%sError. At least one offset is needed." % style.prefix
