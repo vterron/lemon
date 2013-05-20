@@ -389,6 +389,26 @@ class Mosaic(object):
             aligned_img = margin_img.imshift(x_offset, y_offset, **kwargs)
             self._set_aligned(index, aligned_img)
 
+            comment_msgs = (
+                "Image shifted by LEMON on %s" % methods.utctime(),
+                "[imshift] xout = xin + xshift",
+                "[imshift] yout = yin + yshift",
+                "[imshift] Blank frames were added before the shift")
+
+            history_msgs = (
+                "[imshift] Original image: %s" % shifted_img.path,
+                "[imshift] Pixel shift in x-axis: %.3f" % x_offset,
+                "[imshift] Pixel shift in y-axis: %.3f" % y_offset,
+                "[imshift] Left frame, width (pixels): %d" % self.left,
+                "[imshift] Right frame, width (pixels): %d" % self.right,
+                "[imshift] Bottom frame, width (pixels): %d" % self.bottom,
+                "[imshift] Top frame, width (pixels): %d" % self.top)
+
+            for msg in comment_msgs:
+                aligned_img.add_comment(msg)
+            for msg in history_msgs:
+                aligned_img.add_history(msg)
+
         finally:
             try:
                 margin_img.unlink()
