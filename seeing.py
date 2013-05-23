@@ -659,7 +659,10 @@ parser.add_option('--filename', action = 'store', type = 'str',
                   dest = 'bseeingfn', default = 'best_seeing.fits',
                   help = "filename with which the FITS image with the best "
                   "full width at half-maximum (FWHM) will be saved to "
-                  "OUTPUT_DIR [default: %default]")
+                  "OUTPUT_DIR. If set to an empty string (''), the image "
+                  "will retain its original filename, although --suffix will"
+                  "still be appended (in other words, it is treated as all "
+                  "the other images) [default: %default]")
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
@@ -1071,7 +1074,14 @@ def main(arguments = None):
                            (elongs[path], maximum_elong)
 
         elif path == best_seeing:
-            output_path = os.path.join(output_dir, options.bseeingfn)
+
+            # Retain original name if --filename is an empty string
+            if not options.bseeingfn:
+                filename = output_filename
+            else:
+                filename = options.bseeingfn
+
+            output_path = os.path.join(output_dir, filename)
             logging.debug("%s is the best-seeing image" % path)
             logging.debug("%s to be copied to directory %s with name %s" % \
                          (path, output_dir, options.bseeingfn))
