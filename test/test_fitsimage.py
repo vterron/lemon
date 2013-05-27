@@ -101,3 +101,61 @@ class FITSImageTest(unittest.TestCase):
         path = cls.mkfits(x_size, y_size, **keywords)
         return FITSTestImage(path)
 
+    def test_read_keyword(self):
+
+        # Read a character string
+        keyword = 'OBSERVER'
+        observer = 'Winnie-the-Pooh'
+        kwargs = {keyword : observer}
+        with self.random(**kwargs) as img:
+            self.assertEqual(img.read_keyword(keyword), observer)
+
+        # Read a floating-point number
+        keyword = 'AIRMASS'
+        airmass = 1.231
+        kwargs = {keyword : airmass}
+        with self.random(**kwargs) as img:
+            self.assertAlmostEqual(img.read_keyword(keyword), airmass)
+
+        # Read a keyword longer than eight characters. These have to use the
+        # special keyword HIERARCH internally, with the actual long keyword
+        # following, but can be accessed by using the keyword name directly,
+        # with or without the 'hierarch' prepended.
+
+        keyword = "CAHA GEN AMBI WIND SPEED"
+        wind_speed = 6.1
+        kwargs = {keyword : wind_speed}
+        with self.random(**kwargs) as img:
+            # Try both ways, with and without 'HIERARCH'
+            self.assertAlmostEqual(img.read_keyword(keyword), wind_speed)
+            keyword = 'HIERARCH' + keyword
+            self.assertAlmostEqual(img.read_keyword(keyword), wind_speed)
+
+        # Keywords are case-insensitive
+        keyword = 'FILTER'
+        img_filter = 'Johnson R'
+        kwargs = {keyword.lower() : img_filter}
+        with self.random(**kwargs) as img:
+            self.assertEqual(img.read_keyword(keyword), img_filter)
+
+        # Read several keywords from the FITS header
+        instrument = "3.5m CAHA"
+        image_type = 'science'
+        ccd_temperature = -115.4
+        keywords = {'INSTRUMENT' : instrument,
+                    'IMAGE_TYPE' : image_type,
+                    'CCDTEMP' : ccd_temperature}
+        with self.random(**keywords) as img:
+            self.assertEqual(img.read_keyword('INSTRUMENT'), instrument)
+            self.assertEqual(img.read_keyword('IMAGE_TYPE'), image_type)
+            self.assertEqual(img.read_keyword('CCDTEMP'), ccd_temperature)
+
+        # TypeError is raised if the value of the 'keyword' argument is None,
+        # ValueError if it is an empty string and, finally, KeyError if the
+        # keyword cannot be found in the FITS header.
+
+        with self.random() as img:
+            self.assertRaises(TypeError, img.read_keyword, None)
+            self.assertRaises(ValueError, img.read_keyword, '')
+            self.assertRaises(KeyError, img.read_keyword, 'EXPTIME')
+
