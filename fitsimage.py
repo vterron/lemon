@@ -33,6 +33,7 @@ import pyraf.iraf
 from pyraf.iraf import noao, artdata  # 'noao.artdata' package
 
 import calendar
+import datetime
 import fnmatch
 import hashlib
 import logging
@@ -42,7 +43,6 @@ import re
 import shutil
 import stat
 import tempfile
-import time
 import warnings
 
 # LEMON modules
@@ -338,13 +338,14 @@ class FITSImage(object):
         # The new Y2K compliant date format is 'yyyy-mm-dd' or
         # 'yyyy-mm-ddTHH:MM:SS[.sss]'.
         #
-        # time.strptime raises ValueError if the string cannot be parsed
-        # according to format, or if it has excess data after parsing.
+        # datetime.strptime() raises ValueError if the date string and format
+        # can't be parsed by time.strptime() or if it returns a value which
+        # isn't a time tuple.
 
         try:
             # yy/mm/dd; deprecated, old date format (only for dates 1900-1999)
             if re.match('^\d{2}/\d{2}/\d{2}$', obs_date_string):
-                obs_date = time.strptime(obs_date_string, '%y/%m/%d')
+                obs_date = datetime.strptime(obs_date_string, '%y/%m/%d')
 
             # The new Y2K compliant date format is 'yyyy-mm-dd' or
             # 'yyyy-mm-ddTHH:MM:SS[.sss]. The two formats can be combined into
@@ -362,9 +363,17 @@ class FITSImage(object):
                 format_str = '%Y-%m-%d'
                 if match.group('time'):
                     format_str += 'T%H:%M:%S'
+
+                    # Note that '%s' is not a documented option to strftime()
+                    # for a reason: it is OS dependent! It will probably work
+                    # on any decent system, however, as it seems that Python
+                    # just calls through to the libc function to do the work.
+                    # [http://stackoverflow.com/a/7000121/184363]
+
                     if match.group('seconds_fraction'):
                         format_str += '.%f'
-                obs_date = time.strptime(obs_date_string, format_str)
+
+                obs_date = datetime.datetime.strptime(obs_date_string, format_str)
 
         except (TypeError, ValueError, AttributeError):
             msg = "'%s' keyword does not follow the FITS standard" % date_keyword
@@ -379,8 +388,12 @@ class FITSImage(object):
             msg = "'%s' keyword must be a real number" % exp_keyword
             raise NonStandardFITS(msg)
 
-        # conversion from struct_time in UTC to seconds since the Unix epoch
-        return calendar.timegm(obs_date) + half_exp_time
+        # Needed as struct_time does not store milliseconds
+        # [http://stackoverflow.com/a/698279/184363]
+        seconds_fraction = float(obs_date.strftime('.%f'))
+        start_struct_time = obs_date.utctimetuple()
+        start_date = calendar.timegm(start_struct_time) + seconds_fraction
+        return start_date + half_exp_time
 
     def pfilter(self, keyword):
         """ Return the photometric filter of the image as a Passband instance.
