@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
+import calendar
 import numpy.random
 import os
 import pyfits
@@ -158,4 +160,184 @@ class FITSImageTest(unittest.TestCase):
             self.assertRaises(TypeError, img.read_keyword, None)
             self.assertRaises(ValueError, img.read_keyword, '')
             self.assertRaises(KeyError, img.read_keyword, 'EXPTIME')
+
+    def test_date(self):
+
+        def strptime_utc(str):
+            """ Parse a string representing a UTC time according to strptime's
+            format '%Y-%m-%d %H:%M:%S.%f' and return it in seconds since the
+            Unix epoch. Note that '%s' is not a documented option to strftime()
+            as it is OS dependent, but it should work on any decent system."""
+
+            format_ = "%Y-%m-%d %H:%M:%S.%f"
+            dt = datetime.datetime.strptime(str, format_)
+            struct_time = dt.utctimetuple()
+            # strftime('.%f') because struct_time does not store fractions
+            return calendar.timegm(struct_time) + float(dt.strftime('.%f'))
+
+        def unstrip(str, max_whitespaces = 5):
+            """ Return a copy of 'str' with leading and trailing whitespaces.
+            The number of whitespaces on each side is a random number in the
+            range [1, max_whitespaces] """
+
+            leading  = ' ' * random.randint(1, max_whitespaces)
+            trailing = ' ' * random.randint(1, max_whitespaces)
+            return '%s%s%s' % (leading, str, trailing)
+
+        # (1) The ideal case: date format 'yyyy-mm-ddTHH:MM:SS.sss'
+        # Start of observation = 2009-06-12 21:12:47.238, EXPTIME = 1505
+        # 2009-06-12 21:12:47.238 + (00:25:05 / 2) =
+        # 2009-06-12 21:12:47.238 + 00:12:32.5 =
+        # 2009-06-12 21:25:19.738 UTC
+        keywords = {'DATE-OBS' : '2009-06-12T21:12:47.238',
+                    'EXPTIME' : 1505}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("2009-06-12 21:25:19.738")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # (2) Format 'yyyy-mm-ddTHH:MM:SS', without fractions of a second
+        # Start of observation = 1998-11-29 02:53:21, EXPTIME = 1834
+        # 1998-11-29 02:53:21 + (0:30:34 / 2) =
+        # 1998-11-29 02:53:21 + 0:15:17 =
+        # 1998-11-29 03:08:38 UTC
+        keywords = {'DATE-OBS' : '1998-11-29T02:53:21',
+                    'EXPTIME' : 1834}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("1998-11-29 03:08:38.0")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # Repeat (2) with leading and trailing whitespaces
+        keywords['DATE-OBS'] = unstrip(keywords['DATE-OBS'])
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # (3) Another one with fractions of a second, turn to a new year
+        # Start of observation = 1999-12-31 23:53:12.565, EXPTIME = 4312.56
+        # 1999-12-31 23:53:12.565 + (1:11:52.56 / 2) =
+        # 1999-12-31 23:53:12.565 + 0:35:56.28 =
+        # 2000-01-01 00:29:08.845 UTC
+        keywords = {'DATE-OBS' : '1999-12-31T23:53:12.565',
+                    'EXPTIME' : 4312.56}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("2000-01-01 00:29:08.845")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # (4) Format 'yyyy-mm-dd', HH:MM:SS.sss read from TIME-OBS
+        # Start of observation = 2003-03-28 04:23:17.87, EXPTIME = 1357.25
+        # 2003-03-28 04:23:17.87 + (0:22:37.25 / 2) =
+        # 2003-03-28 04:23:17.87 + 0:11:18.625 =
+        # 2003-03-28 04:34:36.495 UTC
+        keywords = {'DATE-OBS' : '2003-03-28',
+                    'TIME-OBS' : '04:23:17.87',
+                    'EXPTIME' : 1357.25}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("2003-03-28 04:34:36.495")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # Repeat (4) with leading and trailing whitespaces
+        keywords['DATE-OBS'] = unstrip(keywords['DATE-OBS'])
+        keywords['TIME-OBS'] = unstrip(keywords['TIME-OBS'])
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # (5) Another 'yyyy-mm-dd', HH:MM:SS (no fractions) read from TIME-OBS
+        # Start of observation = 2011-06-13 19:04:28, EXPTIME = 2341
+        # 2011-06-13 19:04:28 + (0:39:01 / 2) =
+        # 2011-06-13 19:04:28 + 0:19:30.5 =
+        # 2011-06-13 19:23:58.5 UTC
+        keywords = {'DATE-OBS' : '2011-06-13',
+                    'TIME-OBS' : '19:04:28',
+                    'EXPTIME' : 2341}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("2011-06-13 19:23:58.5")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # (6) Repeat (5), but using different, non-standard keywords
+        keywords['DATE'] = keywords.pop('DATE-OBS')
+        keywords['TIME'] = keywords.pop('TIME-OBS')
+        keywords['EXPOSURE'] = keywords.pop('EXPTIME')
+        with self.random(**keywords) as img:
+            kwargs = dict(date_keyword = 'DATE',
+                          time_keyword = 'TIME',
+                          exp_keyword = 'EXPOSURE')
+            self.assertAlmostEqual(expected_date, img.date(**kwargs))
+
+        # (7) Format 'yy/mm/dd' (only for dates from 1900 through 1999)
+        # The year 13, when this format is used, is interpreted as 1913
+        # Start of observation = 1913-04-20 22:58:12.1, EXPTIME = 1328
+        # 1913-04-20 22:58:12.1 + (0:22:08 / 2) =
+        # 1913-04-20 22:58:12.1 + 0:11:04 =
+        # 1913-04-20 23:09:16.1 UTC
+        keywords = {
+            'DATE-OBS' : '13/04/20',
+            'TIME-OBS' : '22:58:12.1',
+            'EXPTIME' : 1328}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("1913-04-20 23:09:16.1")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        # (8) Another 'yy/mm/dd' format: year 89 means here 1989
+        # Start of observation = 1989-08-30 01:32:22.14, EXPTIME = 83.55
+        # 1989-08-30 01:32:22.14 + (0:01:23.55 / 2) =
+        # 1989-08-30 01:32:22.14 + 0:00:41.775 =
+        # 1989-08-30 01:33:03.915
+        keywords =  {
+            'DATE-OBS' : '89/08/30',
+            'TIME-OBS' : '01:32:22.14',
+            'EXPTIME' : 83.55}
+        with self.random(**keywords) as img:
+            expected_date = strptime_utc("1989-08-30 01:33:03.915")
+            self.assertAlmostEqual(expected_date, img.date())
+
+        def assertRaised(exception, keywords):
+            """ Assert that a random FITS image with the 'keywords' FITS
+            keywords raises 'exception' when its date() method is called."""
+            with self.random(**keywords) as img:
+                self.assertRaises(exception, img.date)
+
+        # Keyword DATE-OBS not found
+        keywords = {'EXPTIME' : 1500}
+        assertRaised(KeyError, keywords)
+
+        # Keyword EXPTIME not found
+        keywords = {'DATE-OBS' : '1988-09-13T21:45:19'}
+        assertRaised(KeyError, keywords)
+
+        # DATE-OBS in the 'yyyy-mm-dd' format, so the time at the start of
+        # the observation must be read from TIME-OBS (which is not found)
+        keywords = {'DATE-OBS' : '1993-04-29', 'EXPTIME' : 1200}
+        assertRaised(KeyError, keywords)
+
+        # Both DATE-OBS and EXPTIME exist, but the latter does not contain a
+        # floating-point number giving the exposure time in units of seconds.
+        keywords = {'DATE-OBS' : '1988-09-13T21:45:19', 'EXPTIME' : 'unknown'}
+        assertRaised(fitsimage.NonStandardFITS, keywords)
+
+        # Several non-standard DATE-OBS formats
+        nonstandard_dates = [
+            '1993/04/29T12:42:23',      # slashes, not dashes
+            '1993-04-29 T 12:42:23',    # 'T' surrounded by whitespaces
+            '1993-04-29 12:42:23',      # no 'T' between date and time
+            '1993-04-29T12 42 23',      # whitespaces, not colons
+            '1993-04-29T',              # nothing after the 'T'
+            '04-29T12:42:23',           # year missing
+            '12:42:23',                 # time, but not date
+            'Thu Apr 29 12:42:23 1993'] # ctime() format
+
+        for wrong_date in nonstandard_dates:
+            keywords['DATE-OBS'] = wrong_date
+            assertRaised(fitsimage.NonStandardFITS, keywords)
+
+        # Several non-standard TIME-OBS formats
+        nonstandard_times = [
+            '12/42/23',  # slashes, not colons
+            '12 42 23',  # whitespaces, not colons
+            '12:42',     # seconds missing
+            '12h42m23s', # 'h', 'm' and 's' instead of colons
+            '']          # empty
+
+        keywords = {'DATE-OBS' : '1993-04-29', 'EXPTIME' : 1200}
+        for wrong_time in nonstandard_times:
+            keywords['TIME-OBS'] = wrong_time
+            assertRaised(fitsimage.NonStandardFITS, keywords)
 
