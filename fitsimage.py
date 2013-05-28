@@ -298,21 +298,26 @@ class FITSImage(object):
         finally:
             handler.close(output_verify = 'ignore')
 
-    def date(self, date_keyword = 'DATE-OBS', exp_keyword = 'EXPTIME'):
-        """ Return the date of observation, in Unix time.
+    def date(self, date_keyword = 'DATE-OBS', time_keyword = 'TIME-OBS',
+             exp_keyword = 'EXPTIME'):
+        """ Return the date of observation (UTC), in Unix time.
 
         This method returns, in seconds after the Unix epoch (the time 00:00:00
-        UTC on 1 January 1970), the date of the 'midpoint' of the exposure;
-        i.e., the time of the start of the observation of plus one-half the
-        duration of the exposure.
+        UTC on 1 January 1970), the date at the 'midpoint' of the observation.
+        This is defined as the time of the start of the exposure plus one-half
+        the exposure duration. It must be pointed out that these dates are
+        *always* interpreted as Coordinated Universal Time (UTC).
 
         The KeyError exception is raised if any of the specified keywords
         cannot be found in the FITS header. NonStandardFITS is thrown if the
-        keywords exist but the date they represent does not follow the FITS
-        standard. See the URL below for more information on the standard.
+        keywords exist but they do not follow the FITS standard. See the URLs
+        below for more information on the standard and other popular keywords:
 
         Definition of the Flexible Image Transport System (FITS):
         http://archive.stsci.edu/fits/fits_standard/
+
+        Dictionary of Commonly Used FITS Keywords:
+        http://heasarc.gsfc.nasa.gov/docs/fcg/common_dict.html
 
         Keyword arguments:
         date_kewyord - the FITS keyword in which the date of the observation is
@@ -320,6 +325,11 @@ class FITSImage(object):
                        old date format was 'yy/mm/dd' and may be used only for
                        dates from 1900 through 1999. The new Y2K compliant date
                        format is 'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss]'.
+        time_keyword - FITS keyword storing the time at which the observation
+                       started, in the format HH:MM:SS[.sss]. This keyword is
+                       ignored (and, thus, should not be used) if the time is
+                       included directly as part of the 'date_keyword' keyword
+                       value with the format 'yyyy-mm-ddTHH:MM:SS[.sss]'.
         exp_keyword - the FITS keyword in which the duration of the exposure is
                       stored. It is expected to be a floating-point number which
                       gives the duration in seconds. The exact definition of
@@ -330,68 +340,94 @@ class FITSImage(object):
         """
 
         # Throws KeyError is the specified keyword is not found in the header
-        obs_date_string = self.read_keyword(date_keyword)
+        start_date_str = self.read_keyword(date_keyword).strip()
 
-        # Parse the string representation of the observation date according to
-        # the format specified in the FITS Standard. The old date format was
-        # 'yy/mm/dd' and may be used only for dates from 1900 through 1999.
-        # The new Y2K compliant date format is 'yyyy-mm-dd' or
-        # 'yyyy-mm-ddTHH:MM:SS[.sss]'.
-        #
-        # datetime.strptime() raises ValueError if the date string and format
-        # can't be parsed by time.strptime() or if it returns a value which
-        # isn't a time tuple.
+        # Time format string, needed by strptime()
+        format_str = '%Y-%m-%dT%H:%M:%S'
 
-        try:
-            # yy/mm/dd; deprecated, old date format (only for dates 1900-1999)
-            if re.match('^\d{2}/\d{2}/\d{2}$', obs_date_string):
-                obs_date = datetime.strptime(obs_date_string, '%y/%m/%d')
+        # There are two formats which only store the date, without the time:
+        # 'yy/dd/dd' (deprecated, may be used only for dates 1900-1999) and
+        # 'yyyy-mm-dd' (new, Y2K-compliant format).
+        old_date_regexp = '\d{2}/\d{2}/\d{2}'
+        date_regexp = '\d{4}-\d{2}-\d{2}' # 'yyyy-mm-dd'
 
-            # The new Y2K compliant date format is 'yyyy-mm-dd' or
-            # 'yyyy-mm-ddTHH:MM:SS[.sss]. The two formats can be combined into
-            # a single one and are equivalent to: yyyy-mm-dd[THH:MM:SS[.sss]]
-            #
-            # [Fix Wed Feb 8 2012: allow up to four decimals in the seconds
-            # [.ssss]. Although this is not standard, it is the information
-            # used in the header of O2K (Calar Alto Observatory) images]
+        # 'HH:MM:SS[.sss]': the time format. Note that we allow up to four
+        # decimals in the seconds [.ssss], instead of three. This is not
+        # standard, but used anyway in the header of O2K CAHA FITS images.
+        time_regexp = '\d{2}:\d{2}:\d{2}(?P<secs_fraction>\.\d{0,4})?'
+
+        # 'yyyy-mm-ddTHH:MM:SS[.sss]: the format that ideally we would always
+        # come across. It contains both the date and time at the start of the
+        # observation, so there is no need to read a second keyword (TIME-OBS,
+        # for example) to extract the time.
+        complete_regexp = '%sT%s' % (date_regexp, time_regexp)
+        match = re.match(complete_regexp, start_date_str)
+        if match:
+            if match.group('secs_fraction'):
+                format_str += '.%f'
+
+        # Non-ideal scenario: 'date_keyword' (e.g., DATE-OBS) does not include
+        # the time, so we need to read it from a second keyword, 'time_keyword'
+        # (e.g., TIME-OBS).
+
+        else:
+
+            # Must be either 'yy/mm/dd' or 'yyyy-mm-dd'
+            args = old_date_regexp, date_regexp
+            regexp = '^((?P<old>%s)|(?P<new>%s))$' % args
+            match = re.match(regexp, start_date_str)
+
+            if match:
+
+                # Translate 'yy/mm/dd' dates to the 'yyyy-mm-dd' format. Note
+                # that, according to the standard, dates using the old format
+                # may be used only for years [1900, 1999]. Therefore, a date
+                # such as '02/04/21' *will* be interpreted as '1902/04/21'.
+                if match.group('old'):
+                    start_date_str = '19' + start_date_str.replace('/', '-')
+
+                # At this point the format of the date must be 'yyyy-mm-dd'
+                assert re.match('^%s$' % date_regexp, start_date_str)
+
+                # Read the time from its keyword. Does it follow the standard?
+                start_time_str = self.read_keyword(time_keyword).strip()
+                regexp = '^%s$' % time_regexp
+                time_match = re.match(regexp, start_time_str)
+
+                if not time_match:
+                    args = time_keyword, start_time_str
+                    msg = ("'%s' keyword (%s) does not follow the FITS "
+                           "standard: 'HH:MM:SS[.sss]'")
+                    raise NonStandardFITS(msg % args)
+
+                start_date_str += 'T%s' % start_time_str
+                if time_match.group('secs_fraction'):
+                    format_str += '.%f'
 
             else:
-                regexp = "^(?P<date>\d{4}-\d{2}-\d{2})" \
-                         "(?P<time>T\d{2}:\d{2}:\d{2}" \
-                         "(?P<seconds_fraction>\.\d{0,4})?)?$"
-                match = re.match(regexp, obs_date_string)
-                format_str = '%Y-%m-%d'
-                if match.group('time'):
-                    format_str += 'T%H:%M:%S'
+                args = date_keyword, start_date_str
+                msg = ("'%s' keyword (%s) does not follow the FITS standard: "
+                       "yyyy-mm-dd[THH:MM:SS[.sss]] or yy/dd/mm (deprecated)")
+                raise NonStandardFITS(msg % args)
 
-                    # Note that '%s' is not a documented option to strftime()
-                    # for a reason: it is OS dependent! It will probably work
-                    # on any decent system, however, as it seems that Python
-                    # just calls through to the libc function to do the work.
-                    # [http://stackoverflow.com/a/7000121/184363]
-
-                    if match.group('seconds_fraction'):
-                        format_str += '.%f'
-
-                obs_date = datetime.datetime.strptime(obs_date_string, format_str)
-
-        except (TypeError, ValueError, AttributeError):
-            msg = "'%s' keyword does not follow the FITS standard" % date_keyword
-            raise NonStandardFITS(msg)
+        start_date = datetime.datetime.strptime(start_date_str, format_str)
 
         try:
             # Divide the duration of the exposure, in seconds, by two
-            half_exp_time = self.read_keyword(exp_keyword) / 2
+            exposure_time = self.read_keyword(exp_keyword)
+            half_exp_time = float(exposure_time) / 2
         except KeyError:    # if the keyword is not found
             raise
         except ValueError:  # if the casting to float fails
-            msg = "'%s' keyword must be a real number" % exp_keyword
-            raise NonStandardFITS(msg)
+            args = exp_keyword, exposure_time
+            msg = "'%s' keyword (%s) is not a floating-point number"
+            raise NonStandardFITS(msg % args)
 
-        # Needed as struct_time does not store milliseconds
-        # [http://stackoverflow.com/a/698279/184363]
-        seconds_fraction = float(obs_date.strftime('.%f'))
-        start_struct_time = obs_date.utctimetuple()
+        # strftime('.%f') is needed because struct_time does not store
+        # fractions of second: we need to add it after the conversion from
+        # datetime to seconds [http://stackoverflow.com/a/698279/184363]
+        seconds_fraction = float(start_date.strftime('.%f'))
+        start_struct_time = start_date.utctimetuple()
         start_date = calendar.timegm(start_struct_time) + seconds_fraction
         return start_date + half_exp_time
 
