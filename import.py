@@ -119,6 +119,10 @@ key_group.add_option('--datek', action = 'store', type = 'str',
                      dest = 'datek', default = keywords.datek,
                      help = keywords.desc['datek'])
 
+key_group.add_option('--timek', action = 'store', type = 'str',
+                     dest = 'timek', default = keywords.timek,
+                     help = keywords.desc['timek'])
+
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
@@ -325,6 +329,7 @@ def main(arguments = None):
           "[keyword: %s]..." % (style.prefix, options.datek) ,
 
     sorted_set = object_set.date_sort(date_keyword = options.datek,
+                                      time_keyword = options.timek,
                                       exp_keyword = options.exptimek)
 
     # Let the user know if one or more images could not be sorted (because of

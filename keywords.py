@@ -48,6 +48,16 @@ desc['datek'] = \
 "date format: 'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss] " \
 "[default: %default]"
 
+timek = 'TIME-OBS'
+desc['timek']  = \
+"keyword for the time at which the observation started, in the format " \
+"HH:MM:SS[.sss]. This keyword is used in conjunction with --datek to " \
+"determine the starting time of the observation: --datek gives the " \
+"starting calendar date and this keyword the time within that day. This " \
+"keyword is not necessary (and thus this option ignored) if the time is " \
+"included directly as part of the --datek keyword value with the format " \
+"yyyy-mm-ddTHH:MM:SS[.sss] [default: %default]"
+
 exptimek = 'EXPTIME'
 desc['exptimek'] = \
 "keyword for the exposure time [default: %default]"

@@ -50,8 +50,8 @@ import style
 import xmlparse
 
 def offset(reference_path, shifted_path, maximum, margin, per,
-           object_keyword, filter_keyword, date_keyword, fwhm_keyword,
-           airmass_keyword, exp_keyword, coadd_keyword):
+           object_keyword, filter_keyword, date_keyword, time_keyword,
+           fwhm_keyword, airmass_keyword, exp_keyword, coadd_keyword):
     """ Calculate the offset between two FITS images.
 
     The method returns an instance of xmlparse.XMLOffset, which encapsulates
@@ -103,6 +103,11 @@ def offset(reference_path, shifted_path, maximum, margin, per,
                    was 'yy/mm/dd' and may be used only for dates from 1900
                    through 1999.  The new Y2K compliant date format is
                    'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss]'.
+    time_keyword - FITS keyword storing the time at which the observation
+                   started, in the format HH:MM:SS[.sss]. This keyword is
+                   ignored if the time is included directly as part of the
+                   'date_keyword' keyword value with the format
+                   'yyyy-mm-ddTHH:MM:SS[.sss]'.
     fwhm_keyword - FITS keyword for the full width at half maximum (FWHM)
     airmass_keyword - FITS keyword for the airmass.
     exp_keyword - the FITS keyword in which the duration of the exposure is
@@ -127,6 +132,7 @@ def offset(reference_path, shifted_path, maximum, margin, per,
     shifted_object = shifted.read_keyword(object_keyword)
     shifted_filter = shifted.pfilter(filter_keyword)
     shifted_date   = shifted.date(date_keyword = date_keyword,
+                                  time_keyword = time_keyword,
                                   exp_keyword = exp_keyword)
     shifted_fwhm = shifted.read_keyword(fwhm_keyword)
     shifted_airmass = shifted.read_keyword(airmass_keyword)
@@ -169,8 +175,9 @@ def parallel_offset(args):
 
     img_offset = offset(reference.path, shifted_path, options.maximum,
                         options.margin, options.percentile, options.objectk,
-                        options.filterk, options.datek, options.fwhmk,
-                        options.airmassk, options.exptimek, options.coaddk)
+                        options.filterk, options.datek, options.timek,
+                        options.fwhmk, options.airmassk, options.exptimek,
+                        options.coaddk)
     queue.put(img_offset)
 
 
@@ -238,6 +245,10 @@ key_group.add_option('--filterk', action = 'store', type = 'str',
 key_group.add_option('--datek', action = 'store', type = 'str',
                      dest = 'datek', default = keywords.datek,
                      help = keywords.desc['datek'])
+
+key_group.add_option('--timek', action = 'store', type = 'str',
+                     dest = 'timek', default = keywords.timek,
+                     help = keywords.desc['timek'])
 
 key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
@@ -358,7 +369,9 @@ def main(arguments = None):
     sys.stdout.flush()
 
     # The XML file also contains information on the reference image
-    kwargs = dict(date_keyword = options.datek, exp_keyword = options.exptimek)
+    kwargs = dict(date_keyword = options.datek,
+                  time_keyword = options.timek,
+                  exp_keyword = options.exptimek)
     date = reference_img.date(**kwargs)
     filter_ = reference_img.pfilter(options.filterk)
     object_ = reference_img.read_keyword(options.objectk)

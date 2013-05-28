@@ -173,6 +173,10 @@ key_group.add_option('--datek', action = 'store', type = 'str',
                      dest = 'datek', default = keywords.datek,
                      help = keywords.desc['datek'])
 
+key_group.add_option('--timek', action = 'store', type = 'str',
+                     dest = 'timek', default = keywords.timek,
+                     help = keywords.desc['timek'])
+
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
@@ -283,8 +287,8 @@ def main(arguments = None):
     # image, as subsequent modules of the pipeline need access to them.
     propagated = \
         [options.objectk, options.filterk, options.rak, options.deck,
-         options.datek, options.exptimek, options.airmassk, keywords.coaddk,
-         options.gaink, options.uncimgk, options.fwhmk]
+         options.datek, options.timek, options.exptimek, options.airmassk,
+         keywords.coaddk, options.gaink, options.uncimgk, options.fwhmk]
 
     print "%sRunning SExtractor, SCAMP and SWarp on the image..." % \
           style.prefix ,
