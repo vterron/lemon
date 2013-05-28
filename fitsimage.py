@@ -1274,7 +1274,8 @@ class FITSet(list):
 
         return selected.sort()
 
-    def date_sort(self, date_keyword = 'DATE-OBS', exp_keyword = 'EXPTIME'):
+    def date_sort(self, date_keyword = 'DATE-OBS', time_keyword = 'TIME-OBS',
+                  exp_keyword = 'EXPTIME'):
         """ Sort the images in the set by their observation date.
 
         The method returns a new instance of FITSet, which images are sorted
@@ -1290,6 +1291,11 @@ class FITSet(list):
                        old date format was 'yy/mm/dd' and may be used only for
                        dates from 1900 through 1999. The new Y2K compliant date
                        format is 'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss]'.
+        time_keyword - FITS keyword storing the time at which the observation
+                       started, in the format HH:MM:SS[.sss]. This keyword is
+                       ignored (and, thus, should not be used) if the time is
+                       included directly as part of the 'date_keyword' keyword
+                       value with the format 'yyyy-mm-ddTHH:MM:SS[.sss]'.
         exp_keyword - the FITS keyword in which the duration of the exposure is
                       stored. It is expected to be a floating-point number which
                       gives the duration in seconds. The exact definition of
@@ -1310,6 +1316,7 @@ class FITSet(list):
         for img in self:
             try:
                 obs_date = img.date(date_keyword = date_keyword,
+                                    time_keyword = time_keyword,
                                     exp_keyword = exp_keyword)
                 dates_cache[img] = obs_date
             except (KeyError, NonStandardFITS):
