@@ -30,6 +30,8 @@ import unittest
 # LEMON modules
 import fitsimage
 
+NITERS = 10  # How many times random-data tests case are run
+
 class FITSTestImage(fitsimage.FITSImage):
     """ Delete FITSImage on exit from the body of the with statement.
 
@@ -102,6 +104,15 @@ class FITSImageTest(unittest.TestCase):
         y_size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         path = cls.mkfits(x_size, y_size, **keywords)
         return FITSTestImage(path)
+
+    def test_unlink(self):
+        for _ in xrange(NITERS):
+            img = self.random()
+            path = img.path
+            self.assertTrue(os.path.exists(path))
+            img.unlink()
+            self.assertFalse(os.path.exists(path))
+            self.assertEqual(img.path, None)
 
     def test_read_keyword(self):
 
