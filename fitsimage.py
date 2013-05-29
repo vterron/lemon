@@ -125,12 +125,14 @@ class FITSImage(object):
         pass
 
     def unlink(self):
-        """ Remove the FITS Image to which the instance is linked.
+        """ Remove the FITS image.
 
-        The method deletes the file to which the instance is currently linked.
-        Be careful! It is not the instance that is deleted, but the _file_!
-        This method should _only_ by called right before the instance deletion,
-        as otherwise further operations may, understandably, fail.
+        Delete the FITS file encapsulated by this object. Be careful! This
+        removes the file, not the object! If something goes wrong, this method
+        raises the same exceptions as os.unlink(). The 'path' attribute is set
+        to None after the deletion. No method of the class is guaranteed to
+        work properly (and, most probably, will not work at all) after
+        FITSImage.unlink() is called, as the file does not exist anymore.
 
         """
 
