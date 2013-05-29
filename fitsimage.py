@@ -1278,7 +1278,7 @@ class FITSet(list):
                   exp_keyword = 'EXPTIME'):
         """ Sort the images in the set by their observation date.
 
-        The method returns a new instance of FITSet, which images are sorted
+        The method returns a new instance of FITSet, whose images are sorted
         into ascending order by the date in which they were taken. In other
         words, the order of the FITS images in the returned set is determined
         by their observation date, as returned by FITSImage.date. Images for
