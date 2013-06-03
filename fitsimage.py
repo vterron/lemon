@@ -106,7 +106,7 @@ class FITSImage(object):
                 # it synchronize, if you wish) the header.
 
                 self.size = handler[0].data.shape[::-1]
-                self.header = handler[0].header
+                self._header = handler[0].header
             finally:
                 handler.close(output_verify = 'ignore')
 
@@ -181,7 +181,7 @@ class FITSImage(object):
         if not keyword:
             raise ValueError("keyword cannot be empty")
         try:
-            return self.header[keyword.upper()]
+            return self._header[keyword.upper()]
         except KeyError:
             msg = "%s: keyword '%s' not found" % (self.path, keyword)
             raise KeyError(msg)
@@ -232,7 +232,7 @@ class FITSImage(object):
                 logging.debug(msg)
 
             # Update in-memory copy of the FITS header
-            self.header = header
+            self._header = header
 
         except Exception, e:
             msg = "%s: keyword '%s' could not be updated (%s)"
@@ -259,7 +259,7 @@ class FITSImage(object):
             header = handler[0].header
             del header[keyword]
             # Update in-memory copy of the FITS header
-            self.header = header
+            self._header = header
         finally:
             handler.close(output_verify = 'ignore')
 
