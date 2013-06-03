@@ -88,21 +88,34 @@ class FITSImageTest(unittest.TestCase):
         return path
 
     @classmethod
-    def random(cls, **keywords):
+    def random_data(cls, **keywords):
         """ Return a random, temporary FITS image.
 
-        This method returns a temporary FITS image (see FITSImageTest.mkfits),
-        encapsulated as a FITSTestImage object -- which means that the file is
-        automatically deleted on exit from the body of a with statement. The
-        dimensions of the FITS image along the x- and y- axes are random
-        numbers in the range [MIN_SIZE, MAX_SIZE]. Keyword/value pairs are
-        passed down to mkfits() and stored in the header of the FITS image.
+        Return a three-element tuple containing a random temporary FITS image
+        (see the FITSImageTest.mkfits() class method) and its dimensions along
+        the x- and y- axes -- which are random numbers in the range [MIN_SIZE,
+        MAX_SIZE]. Keyword/value pairs are passed down to mkfits() and stored
+        in the header of the FITS image.
 
         """
 
         x_size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         y_size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         path = cls.mkfits(x_size, y_size, **keywords)
+        return path, x_size, y_size
+
+    @classmethod
+    def random(cls, **keywords):
+        """ Return a random FITSTestImage object.
+
+        Return a temporary FITS image encapsulated as a FITSTestImage object,
+        which means that the file is automatically deleted on exit from the
+        body of a with statement. See the FITSImageTest.random_data() class
+        method for further information on how the random image is created.
+
+        """
+
+        path = cls.random_data(**keywords)[0]
         return FITSTestImage(path)
 
     def test_unlink(self):
