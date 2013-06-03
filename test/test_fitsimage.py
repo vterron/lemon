@@ -73,7 +73,7 @@ class FITSImageTest(unittest.TestCase):
 
         kwargs = dict(low = cls.MIN_PIXEL_VALUE,
                       high = cls.MAX_PIXEL_VALUE,
-                      size = (x_size, y_size))
+                      size = (y_size, x_size))
         pixels = numpy.random.random_integers(**kwargs)
         hdu = pyfits.PrimaryHDU(pixels)
 
