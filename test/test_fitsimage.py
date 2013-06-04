@@ -24,6 +24,7 @@ import numpy.random
 import os
 import pyfits
 import random
+import stat
 import tempfile
 import unittest
 
@@ -117,6 +118,60 @@ class FITSImageTest(unittest.TestCase):
 
         path = cls.random_data(**keywords)[0]
         return FITSTestImage(path)
+
+    def test_init(self):
+        for _ in xrange(NITERS):
+            path, x_size, y_size = self.random_data()
+            with FITSTestImage(path) as img:
+                self.assertEqual(img.path, path)
+                self.assertEqual(img.size, (x_size, y_size))
+
+        # IOError raised if we do not have permission to open the file...
+        with self.random() as img:
+            nonreadable_path = img.path
+            mode = stat.S_IMODE(os.stat(nonreadable_path)[stat.ST_MODE])
+            mode ^= stat.S_IRUSR
+            os.chmod(nonreadable_path, mode)
+            self.assertRaises(IOError, FITSTestImage, nonreadable_path)
+
+        # ... or if it simply does not exist
+        nonexistent_path = path
+        self.assertFalse(os.path.exists(nonexistent_path))
+        self.assertRaises(IOError, FITSTestImage, nonexistent_path)
+
+        # NonStandardFITS raised if the FITS file does not conform to the FITS
+        # standard. When this is the case, the 'SIMPLE' keyword is expected to
+        # be False (as, according to the Standard, "A [logical constant] of F
+        # signifies that the file does not conform to this standard").
+        nonstandard_path = self.random_data(SIMPLE = False)[0]
+        args = FITSTestImage, nonstandard_path
+        self.assertRaises(fitsimage.NonStandardFITS, *args)
+        os.unlink(nonstandard_path)
+
+        # It may also happen that the 'SIMPLE' keyword does not exist
+        nonstandard_path = self.random_data()[0]
+        handler = pyfits.open(nonstandard_path, mode = 'update')
+        del handler[0].header['SIMPLE']
+        handler.close(output_verify = 'ignore')
+
+        args = FITSTestImage, nonstandard_path
+        self.assertRaises(fitsimage.NonStandardFITS, *args)
+        os.unlink(nonstandard_path)
+
+        # Test that the NonFITSFile exception is raised when we try to open
+        # anything that is not a FITS file. Among the countless kinds of file
+        # types that could be used for this, try to open (a) an empty file...
+        with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
+            empty_path = fd.name
+            self.assertRaises(fitsimage.NonFITSFile, FITSTestImage, empty_path)
+
+        # ... and (b) a non-empty text file.
+        with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
+            fd.write("Lorem ipsum dolor sit amet,\n")
+            fd.write("consectetur adipisicing elit\n")
+            fd.flush()
+            text_path = fd.name
+            self.assertRaises(fitsimage.NonFITSFile, FITSTestImage, text_path)
 
     def test_unlink(self):
         for _ in xrange(NITERS):
