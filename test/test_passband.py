@@ -20,7 +20,6 @@
 
 from __future__ import division
 
-import copy
 import string
 import unittest
 
