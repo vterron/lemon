@@ -77,6 +77,9 @@ class FITSImage(object):
 
         self.path = path
 
+        nonstandard_emsg = "file '%s' does not follow the FITS standard" % path
+        nonfits_emsg = "file '%s' is not a FITS file" % path
+
         try:
             # The file must be opened to make sure it is a standard FITS.
             # We would rather use the with statement, but in that case we
@@ -86,17 +89,8 @@ class FITSImage(object):
             handler = pyfits.open(self.path, mode = 'readonly')
             try:
 
-                # The SIMPLE keyword is required to be the first keyword in
-                # the primary header of all FITS files. It contains a logical
-                # constant with the value 'T' if the file conforms to this
-                # standard. This keyword is mandatory for the primary header
-                # and is not permitted in extension headers. A value of 'F'
-                # signifies that the file does not conform to this standard.
-                # [URL] http://archive.stsci.edu/fits/fits_standard/node39.html
-
                 if not handler[0].header['SIMPLE']:
-                    msg = "file '%s' does not conform to the FITS standard" % self.path
-                    raise NonStandardFITS(msg)
+                    raise NonStandardFITS(nonstandard_emsg)
 
                 # A copy of the FITS header is kept in memory and the file is
                 # closed; otherwise we may run into trouble when working with
@@ -110,14 +104,25 @@ class FITSImage(object):
             finally:
                 handler.close(output_verify = 'ignore')
 
-        # PyFITS raises IOError if we attempt to open a non-FITS file. However,
-        # catching the IndexError exception is also necessary, as it seems that
-        # PyFITS does not throw the IOError exception when opening an empty
-        # file, but instead waits until the header or data are accessed to
-        # raise IndexError.
+        # PyFITS raises IOError if we do not have permission to open the file,
+        # if we attempt to open a non-FITS file, and also if we open one whose
+        # first keyword is not either SIMPLE or XTENSION. Nothing is raised if
+        # the value of SIMPLE is 'F'; that is why we had to specifically make
+        # sure it was 'T' a few lines above.
+        except IOError, e:
+            pyfits_msg = "Block does not begin with SIMPLE or XTENSION"
+            if str(e) == pyfits_msg:
+                raise NonStandardFITS(nonstandard_emsg)
+            elif "Permission denied" in str(e):
+                raise
+            else:
+                raise NonFITSFile(nonfits_emsg)
 
-        except (IOError, IndexError, AttributeError):
-            raise NonFITSFile("file '%s' is not a FITS file" % self.path)
+        # Catching IndexError is also necessary, as PyFITS does not throw the
+        # IOError exception when opening an empty file, but instead waits until
+        # the header or data are accessed to raise IndexError.
+        except (IndexError, AttributeError):
+            raise NonFITSFile(nonfits_emsg)
         except NonStandardFITS:
             raise
 
