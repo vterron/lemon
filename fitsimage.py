@@ -95,7 +95,6 @@ class FITSImage(object):
 
         self.path = path
 
-        nonstandard_emsg = "file '%s' does not follow the FITS standard" % path
         nonfits_emsg = "file '%s' is not a FITS file" % path
 
         try:
@@ -108,7 +107,8 @@ class FITSImage(object):
             try:
 
                 if not handler[0].header['SIMPLE']:
-                    raise NonStandardFITS(nonstandard_emsg)
+                    msg = "%s: value of 'SIMPLE' keyword is not 'T'"
+                    raise NonStandardFITS(msg % self.path)
 
                 # A copy of the FITS header is kept in memory and the file is
                 # closed; otherwise we may run into trouble when working with
@@ -130,7 +130,8 @@ class FITSImage(object):
         except IOError, e:
             pyfits_msg = "Block does not begin with SIMPLE or XTENSION"
             if str(e) == pyfits_msg:
-                raise NonStandardFITS(nonstandard_emsg)
+                msg = "%s: 'SIMPLE' keyword missing from primary header"
+                raise NonStandardFITS(msg % self.path)
             elif "Permission denied" in str(e):
                 raise
             else:
