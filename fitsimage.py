@@ -65,10 +65,28 @@ class FITSImage(object):
     def __init__(self, path):
         """ Instantiation method for the FITSImage class.
 
-        The method creates an instance of a FITS image, whose header is cached
-        into memory for fast access to its keywords. The NonFITSFile exception
-        is raised in case 'path' is not a FITS file, while NonStardarFITS is
-        raised if it is but does not conform to the FITS standard.
+        A copy of the header of the FITS file is kept in memory for fast access
+        to its keywords. IOError is raised if 'path' does not exist or is not
+        readable, NonFITSFile if it is not a FITS file, and NonStardardFITS in
+        case that, although a FITS file, it does not conform to the standard.
+
+        FITS Standard Document:
+        http://fits.gsfc.nasa.gov/fits_standard.html
+
+        An image is considered to follow the FITS standard if it has 'SIMPLE'
+        as its first keyword of the primary header. According to the standard,
+        it contains a logical constant with the value 'T' if the file conforms
+        to it. This keyword is mandatory for the primary header and is not
+        permitted in extension headers. A value of 'F', on the other hand,
+        means that the file does not conform to the standard.
+
+        We trust the 'SIMPLE' keyword blindly: if is says that the FITS image
+        follows the standard, we believe it. Period. We do not consider the
+        possibility (although this may change in the future, if we begin to
+        work with much less reliable data) that the keyword has a value of 'T'
+        while at the same time there are violations of the standard. That is
+        why we instruct PyFITS to ignore any FITS standard violations we come
+        across (output_verify = 'ignore').
 
         """
 
