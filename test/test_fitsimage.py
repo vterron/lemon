@@ -33,7 +33,7 @@ import fitsimage
 
 NITERS = 10  # How many times random-data tests case are run
 
-class FITSTestImage(fitsimage.FITSImage):
+class FITSImage(fitsimage.FITSImage):
     """ Delete FITSImage on exit from the body of the with statement.
 
     This class does not alter the functionality of the fitsimage.FITSImage
@@ -107,9 +107,9 @@ class FITSImageTest(unittest.TestCase):
 
     @classmethod
     def random(cls, **keywords):
-        """ Return a random FITSTestImage object.
+        """ Return a random FITSImage object.
 
-        Return a temporary FITS image encapsulated as a FITSTestImage object,
+        Return a temporary FITS image encapsulated as a FITSImage object,
         which means that the file is automatically deleted on exit from the
         body of a with statement. See the FITSImageTest.random_data() class
         method for further information on how the random image is created.
@@ -117,12 +117,12 @@ class FITSImageTest(unittest.TestCase):
         """
 
         path = cls.random_data(**keywords)[0]
-        return FITSTestImage(path)
+        return FITSImage(path)
 
     def test_init(self):
         for _ in xrange(NITERS):
             path, x_size, y_size = self.random_data()
-            with FITSTestImage(path) as img:
+            with FITSImage(path) as img:
                 self.assertEqual(img.path, path)
                 self.assertEqual(img.size, (x_size, y_size))
 
@@ -132,19 +132,19 @@ class FITSImageTest(unittest.TestCase):
             mode = stat.S_IMODE(os.stat(nonreadable_path)[stat.ST_MODE])
             mode ^= stat.S_IRUSR
             os.chmod(nonreadable_path, mode)
-            self.assertRaises(IOError, FITSTestImage, nonreadable_path)
+            self.assertRaises(IOError, FITSImage, nonreadable_path)
 
         # ... or if it simply does not exist
         nonexistent_path = path
         self.assertFalse(os.path.exists(nonexistent_path))
-        self.assertRaises(IOError, FITSTestImage, nonexistent_path)
+        self.assertRaises(IOError, FITSImage, nonexistent_path)
 
         # NonStandardFITS raised if the FITS file does not conform to the FITS
         # standard. When this is the case, the 'SIMPLE' keyword is expected to
         # be False (as, according to the Standard, "A [logical constant] of F
         # signifies that the file does not conform to this standard").
         nonstandard_path = self.random_data(SIMPLE = False)[0]
-        args = FITSTestImage, nonstandard_path
+        args = FITSImage, nonstandard_path
         self.assertRaises(fitsimage.NonStandardFITS, *args)
         os.unlink(nonstandard_path)
 
@@ -154,7 +154,7 @@ class FITSImageTest(unittest.TestCase):
         del handler[0].header['SIMPLE']
         handler.close(output_verify = 'ignore')
 
-        args = FITSTestImage, nonstandard_path
+        args = FITSImage, nonstandard_path
         self.assertRaises(fitsimage.NonStandardFITS, *args)
         os.unlink(nonstandard_path)
 
@@ -163,7 +163,7 @@ class FITSImageTest(unittest.TestCase):
         # types that could be used for this, try to open (a) an empty file...
         with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
             empty_path = fd.name
-            self.assertRaises(fitsimage.NonFITSFile, FITSTestImage, empty_path)
+            self.assertRaises(fitsimage.NonFITSFile, FITSImage, empty_path)
 
         # ... and (b) a non-empty text file.
         with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
@@ -171,7 +171,7 @@ class FITSImageTest(unittest.TestCase):
             fd.write("consectetur adipisicing elit\n")
             fd.flush()
             text_path = fd.name
-            self.assertRaises(fitsimage.NonFITSFile, FITSTestImage, text_path)
+            self.assertRaises(fitsimage.NonFITSFile, FITSImage, text_path)
 
     def test_unlink(self):
         for _ in xrange(NITERS):
