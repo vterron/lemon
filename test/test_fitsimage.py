@@ -242,26 +242,26 @@ class FITSImageTest(unittest.TestCase):
 
     def test_date(self):
 
-        def strptime_utc(str):
+        def strptime_utc(date_string):
             """ Parse a string representing a UTC time according to strptime's
             format '%Y-%m-%d %H:%M:%S.%f' and return it in seconds since the
             Unix epoch. Note that '%s' is not a documented option to strftime()
             as it is OS dependent, but it should work on any decent system."""
 
             format_ = "%Y-%m-%d %H:%M:%S.%f"
-            dt = datetime.datetime.strptime(str, format_)
+            dt = datetime.datetime.strptime(date_string, format_)
             struct_time = dt.utctimetuple()
             # strftime('.%f') because struct_time does not store fractions
             return calendar.timegm(struct_time) + float(dt.strftime('.%f'))
 
-        def unstrip(str, max_whitespaces = 5):
+        def unstrip(str_, max_whitespaces = 5):
             """ Return a copy of 'str' with leading and trailing whitespaces.
             The number of whitespaces on each side is a random number in the
             range [1, max_whitespaces] """
 
             leading  = ' ' * random.randint(1, max_whitespaces)
             trailing = ' ' * random.randint(1, max_whitespaces)
-            return '%s%s%s' % (leading, str, trailing)
+            return '%s%s%s' % (leading, str_, trailing)
 
         # (1) The ideal case: date format 'yyyy-mm-ddTHH:MM:SS.sss'
         # Start of observation = 2009-06-12 21:12:47.238, EXPTIME = 1505
