@@ -145,9 +145,6 @@ class FITSImage(object):
         except NonStandardFITS:
             raise
 
-    def __del__(self):
-        pass
-
     def unlink(self):
         """ Remove the FITS image.
 
