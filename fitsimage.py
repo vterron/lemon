@@ -164,10 +164,6 @@ class FITSImage(object):
         """ The 'official' string representation of the FITS image """
         return "%s(%r)" % (self.__class__.__name__, self.path)
 
-    def __str__(self):
-        """ The 'informal' string representation of the FITS image. """
-        return repr(self)
-
     def __eq__(self, other):
         """ Test if both FITSImage instances encapsulate the same FITS image.
 
