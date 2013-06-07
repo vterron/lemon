@@ -162,7 +162,7 @@ class FITSImage(object):
 
     def __repr__(self):
         """ The 'official' string representation of the FITS image """
-        return "%s('%s')" % (self.__class__.__name__, self.path)
+        return "%s(%r)" % (self.__class__.__name__, self.path)
 
     def __str__(self):
         """ The 'informal' string representation of the FITS image. """

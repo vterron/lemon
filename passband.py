@@ -112,7 +112,7 @@ class Passband(object):
 
     def __repr__(self):
         """ The 'formal' string representation of the filter. """
-        return "%s('%s')" % (self.__class__.__name__,  self.name)
+        return "%s(%r)" % (self.__class__.__name__,  self.name)
 
     def __cmp__(self, other):
         """ Called by comparison operations if rich comparison is not defined.
