@@ -432,6 +432,7 @@ class CandidateAnnuli(object):
         return not self == other
 
     def __repr__(self):
+        """ The unambiguous string representation of a CandidateAnnuli """
         return "%s(%r, %r, %r, %r)" % (self.__class__.__name__, self.aperture,
                                        self.annulus, self.dannulus, self.stdev)
 

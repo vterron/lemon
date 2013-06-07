@@ -161,7 +161,7 @@ class FITSImage(object):
         self.path = None
 
     def __repr__(self):
-        """ The 'official' string representation of the FITS image """
+        """ The unambiguous string representation of a FITSImage object """
         return "%s(%r)" % (self.__class__.__name__, self.path)
 
     def __eq__(self, other):

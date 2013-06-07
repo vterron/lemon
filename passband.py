@@ -111,7 +111,7 @@ class Passband(object):
         return self.name
 
     def __repr__(self):
-        """ The 'formal' string representation of the filter. """
+        """ The unambiguous string representation of a Passband object """
         return "%s(%r)" % (self.__class__.__name__,  self.name)
 
     def __cmp__(self, other):
