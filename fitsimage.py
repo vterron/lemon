@@ -183,6 +183,9 @@ class FITSImage(object):
         odevice = os.stat(other.path)[stat.ST_DEV]
         return sinode == oinode and sdevice == odevice
 
+    def __ne__(self, other):
+        return not self == other
+
     def read_keyword(self, keyword):
         """ Read a keyword from the header of the FITS image.
 
