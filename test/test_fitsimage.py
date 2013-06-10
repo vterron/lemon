@@ -183,6 +183,10 @@ class FITSImageTest(unittest.TestCase):
             self.assertFalse(os.path.exists(path))
             self.assertEqual(img.path, None)
 
+    def test_repr(self):
+        with self.random() as img1:
+            self.assertEqual(img1, eval(repr(img1)))
+
     def test_eq_and_ne(self):
 
         with self.random() as img1:
