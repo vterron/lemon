@@ -51,6 +51,7 @@ from database import \
 
 from diffphot import Weights
 from xmlparse import CandidateAnnuli
+import test.test_fitsimage
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 25   # Minimum number of items for random collections of DBStars
@@ -2181,4 +2182,22 @@ class LEMONdBTest(unittest.TestCase):
         db.author = new_host = 'github.com' # now update it
         self.assertEqual(db.author, new_host)
         self.assertRaises(ValueError, setattr, db, 'hostname', None)
+
+    def test_mosaic(self):
+
+        db = LEMONdB(':memory:')
+        self.assertEqual(db.mosaic, None)
+
+        # test.test_fitsimage.FITSImage is a subclass of fitsimage.FITSImage
+        # which deletes the file on exit from the body of the with statement.
+        with test.test_fitsimage.FITSImageTest.random() as mosaic:
+            db.mosaic = mosaic.path
+            with test.test_fitsimage.FITSImage(db.mosaic) as output:
+                self.assertEqual(mosaic.sha1sum, output.sha1sum)
+
+        # Now update the mosaic to a different FITS file
+        with test.test_fitsimage.FITSImageTest.random() as new_mosaic:
+            db.mosaic = new_mosaic.path
+            with test.test_fitsimage.FITSImage(db.mosaic) as output:
+                self.assertEqual(new_mosaic.sha1sum, output.sha1sum)
 
