@@ -33,9 +33,11 @@ import copy
 import math
 import numpy
 import operator
+import os
 import random
 import string
 import sqlite3
+import tempfile
 
 # LEMON modules
 import methods
@@ -531,6 +533,18 @@ class LEMONdB(object):
 
         self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_time "
                       "ON images(wavelength, unix_time)")
+
+        # This table stores as a blob entire FITS files. The 'id' value should
+        # be that of the FITS file in the IMAGES table. However, we do not use
+        # a foreign key constraint here because the reference image is stored
+        # in a different table, RIMAGE. For it we will use zero as the ID.
+
+        self._execute('''
+        CREATE TABLE IF NOT EXISTS raw_images (
+            id   INTEGER PRIMARY KEY,
+            fits BLOB NOT NULL,
+            UNIQUE (id, fits))
+        ''')
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS photometry (
@@ -1472,4 +1486,32 @@ class LEMONdB(object):
         self._set_metadata(self._METADATA_ID_KEY, id_)
 
     id = property(_get_id, _set_id)
+
+    @property
+    def mosaic(self):
+        """ Save to disk the FITS file used as reference frame.
+
+        The method saves to disk the FITS file, stored as a blob in the
+        database, that was used as a reference frame. The file is copied to a
+        temporary location with the '.fits' extension. Returns the path to the
+        FITS file, or None if the reference frame has no FITS file associated.
+        It is important to note that the FITS file is saved to a *different*
+        temporary location every time this method is called, so accessing the
+        LEMONdB.mosaic attribute multiple times means that the same number of
+        copies of the file will be copied to disk.
+
+        """
+
+        self._execute("SELECT fits FROM raw_images WHERE id = 0")
+        rows = list(self._rows)
+        if not rows:
+            return None
+        else:
+            assert len(rows) == 1
+            assert len(rows[0]) == 1
+            blob = rows[0][0]
+            fd, path = tempfile.mkstemp(suffix = '.fits')
+            os.write(fd, blob)
+            os.close(fd)
+            return path
 
