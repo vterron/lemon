@@ -1515,3 +1515,13 @@ class LEMONdB(object):
             os.close(fd)
             return path
 
+    @mosaic.setter
+    def mosaic(self, path):
+        """ Insert in the LEMONdB the FITS file of the reference frame """
+
+        with open(path, 'rb') as fd:
+            blob = fd.read()
+        t = (0, buffer(blob))
+        self._execute("DELETE FROM raw_images WHERE id = 0")
+        self._execute("INSERT INTO raw_images VALUES (?, ?)", t)
+
