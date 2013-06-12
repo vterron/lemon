@@ -46,6 +46,7 @@ path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(path)
 
 # LEMON modules
+import chart
 import config
 import glade
 import methods
@@ -1438,4 +1439,11 @@ class LEMONJuicerGUI(object):
             kwargs = dict(msg_type = gtk.MESSAGE_WARNING,
                           buttons = gtk.BUTTONS_CLOSE)
             util.show_message_dialog(*args, **kwargs)
+
+    def view_finding_chart(self, widget):
+        """ Display the reference frame in a new dialog """
+
+        args = self._main_window, self._builder, self.db
+        dialog = chart.FindingChartDialog(*args)
+        dialog.run()
 

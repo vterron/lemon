@@ -33,4 +33,5 @@ AMPLITUDES_DIALOG = get('amplitudes-search-dialog.glade')
 AMPLITUDES_RESULTS = get('amplitudes-search-results.glade')
 SNR_THRESHOLD_DIALOG = get('snr-threshold-dialog.glade')
 EXPORT_CURVE_DIALOG = get('curve-dump-dialog.glade')
+FINDING_CHART_DIALOG = get('finding-chart-dialog.glade')
 
