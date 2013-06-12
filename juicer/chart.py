@@ -46,7 +46,7 @@ class FindingChartDialog(object):
         self.builder.add_from_file(glade.FINDING_CHART_DIALOG)
         self.dialog = self.builder.get_object('finding-chart-dialog')
         self.dialog.set_resizable(True)
-        self.dialog.set_title("Finding Chart")
+        self.dialog.set_title("Finding Chart: %s" % db.field_name)
         self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
 
