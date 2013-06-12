@@ -24,6 +24,7 @@ Lemon Juicer is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
     <property name="authors">V&#xED;ctor Terr&#xF3;n &lt;vterron@iaa.es&gt;
 Matilde Fern&#xE1;ndez &lt;matilde@iaa.es&gt;</property>
+    <property name="artists">Asher Abbasi (compass icon, CC BY-ND 3.0)</property>
     <property name="wrap_license">True</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
