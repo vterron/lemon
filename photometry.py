@@ -806,6 +806,9 @@ def main(arguments = None):
     args = reference_img.path, pfilter, date, object_, airmass, gain
     output_db.rimage = database.ReferenceImage(*args)
 
+    # Insert FITS file (as blob) into the LEMONdB
+    output_db.mosaic = reference_img.path
+
     # Determine how many different filters there are among the images contained
     # in the list of offsets. Then, sort the filters by their wavelength, so
     # that, e.g., photometry for the images observed in the Johnson V band (551
