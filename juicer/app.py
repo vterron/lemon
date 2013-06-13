@@ -706,6 +706,12 @@ class LEMONJuicerGUI(object):
         self.finding_chart_button.set_stock_id('Compass')
         self.finding_chart_button.set_sensitive(False)
 
+        # The dialog window with the finding chart is kept in memory, hidden
+        # (instead of destroyed) when the user closes the window. The dialog
+        # can in this manner be shown repeatedly, and it remembers its size,
+        # location and any Matplotlib panning and zooming.
+        self.finding_chart_dialog = None
+
         self.amplitudes_search_button = builder.get_object('amplitudes-search-button')
         self.amplitudes_search_menuitem = builder.get_object('amplitudes-search-item')
 
@@ -795,6 +801,7 @@ class LEMONJuicerGUI(object):
 
             if really_close:
                 self.db = None # forget about this LEMONdB
+                self.finding_chart_dialog = None
                 while self._notebook.get_n_pages():
                     self._notebook.remove_page(-1)
 
@@ -1443,7 +1450,11 @@ class LEMONJuicerGUI(object):
     def view_finding_chart(self, widget):
         """ Display the reference frame in a new dialog """
 
-        args = self._main_window, self._builder, self.db
-        dialog = chart.FindingChartDialog(*args)
-        dialog.run()
+        # Create the FindingChartDialog the first time this method is called,
+        # hiding the dialog when run() exits. In this manner, we can run() as
+        # many times as we want to display the dialog again.
+        if self.finding_chart_dialog is None:
+            args = self._main_window, self._builder, self.db
+            self.finding_chart_dialog = chart.FindingChartDialog(*args)
+        self.finding_chart_dialog.run()
 

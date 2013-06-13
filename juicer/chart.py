@@ -90,8 +90,9 @@ class FindingChartDialog(object):
         self.dialog.resize(*new_size)
 
     def run(self):
+        """ Call the dialog's run(), then hide the dialog """
         try:
             self.dialog.run()
         finally:
-            self.dialog.destroy()
+            self.dialog.hide()
 
