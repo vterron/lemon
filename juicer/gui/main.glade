@@ -173,6 +173,19 @@
                         </child>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="separatormenuitem2">
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="finding-chart-item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Finding chart</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="view_finding_chart"/>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>

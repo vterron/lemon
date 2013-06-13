@@ -702,8 +702,10 @@ class LEMONJuicerGUI(object):
         self.close_menu_item = builder.get_object('close-menu-item')
 
         self._add_custom_stock_icons()
+        self.finding_chart_menuitem = builder.get_object('finding-chart-item')
         self.finding_chart_button = builder.get_object('finding-chart-button')
         self.finding_chart_button.set_stock_id('Compass')
+        self.finding_chart_menuitem.set_sensitive(False)
         self.finding_chart_button.set_sensitive(False)
 
         # The dialog window with the finding chart is kept in memory, hidden
@@ -824,6 +826,7 @@ class LEMONJuicerGUI(object):
         npages_left = self._notebook.get_n_pages()
         self.close_button.set_sensitive(npages_left)
         self.close_menu_item.set_sensitive(npages_left)
+        self.finding_chart_menuitem.set_sensitive(npages_left)
         self.finding_chart_button.set_sensitive(npages_left)
         self.amplitudes_search_button.set_sensitive(npages_left)
         self.amplitudes_search_menuitem.set_sensitive(npages_left)
@@ -1242,6 +1245,7 @@ class LEMONJuicerGUI(object):
                 # widgets that need an open database with which interact.
                 self.close_button.set_sensitive(True)
                 self.close_menu_item.set_sensitive(True)
+                self.finding_chart_menuitem.set_sensitive(True)
                 self.finding_chart_button.set_sensitive(True)
                 self.amplitudes_search_button.set_sensitive(True)
                 self.amplitudes_search_menuitem.set_sensitive(True)
