@@ -2201,3 +2201,62 @@ class LEMONdBTest(unittest.TestCase):
             with test.test_fitsimage.FITSImage(db.mosaic) as output:
                 self.assertEqual(new_mosaic.sha1sum, output.sha1sum)
 
+    def test_star_closest_to_image_coords(self):
+
+        db = LEMONdB(':memory:')
+
+        point = (100, 100) # or any other value
+        self.assertRaises(ValueError, db.star_closest_to_image_coords, *point)
+
+        star_1 = list(self.random_star_info(id_ = 1))
+        star_1[1:3] = (156.32, 569.31) # x and y-coordinates
+        db.add_star(*star_1)
+
+        star_2 = list(self.random_star_info(id_ = 2))
+        star_2[1:3] = (727.93, 98.234)
+        db.add_star(*star_2)
+
+        star_3 = list(self.random_star_info(id_ = 3))
+        star_3[1:3] = (564.018, 213.216)
+        db.add_star(*star_3)
+
+        star_4 = list(self.random_star_info(id_ = 4))
+        star_4[1:3] = (592.11, 782.441)
+        db.add_star(*star_4)
+
+        # First point: x = 230, y = 450
+        # Euclidean distances from (230, 450) to:
+        # Star 1 (156.32, 569.31)   = 140.2270248561239 <- (shortest)
+        # Star 2 (727.93, 98.234)   = 609.65039461645551
+        # Star 3 (564.018, 213.216) = 409.43215186401761
+        # Star 4 (592.11, 782.441)  = 491.56959891860691
+
+        point_1 = (230, 450)
+        star_id, distance = db.star_closest_to_image_coords(*point_1)
+        self.assertEqual(star_id, 1)
+        self.assertEqual(distance, 140.2270248561239)
+
+        # Second point: x = 551.43, y = 455.43
+        # Euclidean distances from (551.43, 455.43) to:
+        # Star 1 (156.32, 569.31)   = 411.1940740088553
+        # Star 2 (727.93, 98.234)   = 398.42343356785631
+        # Star 3 (564.018, 213.216) = 242.54088220339267 <- (shortest)
+        # Star 4 (592.11, 782.441)  = 329.53157135697944
+
+        point_2 = (551.43, 455.43)
+        star_id, distance = db.star_closest_to_image_coords(*point_2)
+        self.assertEqual(star_id, 3)
+        self.assertEqual(distance, 242.54088220339267)
+
+        # Third point: x = 913.5, y = 490.65509920608827
+        # Euclidean distances from (913.5, 490.65509920608827) to:
+        # Star 1 (156.32, 569.31)   = 761.25432400670149
+        # Star 2 (727.93, 98.234)   = 434.08587169143692
+        # Star 3 (564.018, 213.216) = 446.21757259467682
+        # Star 4 (592.11, 782.441)) = 434.08587169143675 <- (shortest)
+
+        point_3 = (913.5, 490.65509920608827)
+        star_id, distance = db.star_closest_to_image_coords(*point_3)
+        self.assertEqual(star_id, 4)
+        self.assertEqual(distance, 434.08587169143675)
+
