@@ -1525,3 +1525,29 @@ class LEMONdB(object):
         self._execute("DELETE FROM raw_images WHERE id = 0")
         self._execute("INSERT INTO raw_images VALUES (?, ?)", t)
 
+    def star_closest_to_image_coords(self, x, y):
+        """ Find the star closest to the image x- and y-coordinates.
+
+        Compute the Euclidean distance from the x- and y-coordinates of each
+        star in the LEMONdB to the coordinates (x, y). Returns a two-element
+        tuple containing the ID of the closest star to these coordinates and
+        its Euclidean distance, respectively. Raises ValueError if there are
+        no stars in the LEMONdB when this method is called.
+
+        """
+
+        if not len(self):
+            raise ValueError("database is empty")
+
+        self._execute("SELECT id, x, y FROM stars")
+
+        closest_id = None
+        closest_distance = float('inf')
+        for star_id, star_x, star_y in self._rows:
+            star_distance = math.sqrt((star_x - x) ** 2 + (star_y - y) ** 2)
+            if star_distance < closest_distance:
+                closest_id = star_id
+                closest_distance = star_distance
+
+        return closest_id, closest_distance
+
