@@ -848,6 +848,13 @@ class LEMONJuicerGUI(object):
         self._builder.add_from_file(glade.GUI_ABOUT)
         about = self._builder.get_object('about-dialog')
         about.set_transient_for(self._main_window)
+
+        # Replace 'YYYY' in copyright notice with the current year
+        copyright = about.get_copyright()
+        now = datetime.datetime.now()
+        copyright = copyright.replace('YYYY', str(now.year))
+        about.set_copyright(copyright)
+
         about.run()
         about.destroy()
 
