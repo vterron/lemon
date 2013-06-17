@@ -1324,18 +1324,8 @@ class LEMONJuicerGUI(object):
             msg = "star %d is not being shown" % star_id
             raise ValueError(msg)
 
-    def handle_row_activated(self, view, row, column, id_index = 0):
-        """ Open the details of the star, or switch to them if already open.
-
-        Keyword arguments:
-
-        id_index - the column of the model to which the view is associated
-        which contains the ID of the star.
-
-        """
-
-        # Determine the ID of the star on which the user has clicked
-        star_id = view.get_model()[row][id_index]
+    def view_star(self, star_id, view = None):
+        """ Open the details of the star, or switch to them if already open. """
 
         # If we clicked on the star not in the main window (with all the stars
         # in the database) but in a list of reference stars, we want to open
@@ -1351,6 +1341,19 @@ class LEMONJuicerGUI(object):
         else:
             details = self.show_star(star_id, pfilter = pfilter)
             self.open_stars[star_id] = details
+
+    def handle_row_activated(self, view, row, column, id_index = 0):
+        """ Handler for when the user double-clicks on a star.
+
+        Keyword arguments:
+        id_index - the column of the model to which the view is associated
+        which contains the ID of the star.
+
+        """
+
+        # Determine the ID of the star on which the user has clicked
+        star_id = view.get_model()[row][id_index]
+        self.view_star(star_id, view)
 
     def append_amplitudes_search(self, result, connect):
         """ Append an AmplitudesSearchPage to the gtk.Notebook.
