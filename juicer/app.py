@@ -1266,7 +1266,7 @@ class LEMONJuicerGUI(object):
         finally:
             dialog.destroy()
 
-    def show_star(self, star_id, pfilter = None):
+    def add_star_page(self, star_id, pfilter = None):
         """ Append a page with the star whose ID is 'star_id'.
         Returns the StarDetailsGUI instance which encapsulates all the
         information of the star.
@@ -1339,7 +1339,7 @@ class LEMONJuicerGUI(object):
             self.switch_to_tab(star_id, pfilter = pfilter)
 
         else:
-            details = self.show_star(star_id, pfilter = pfilter)
+            details = self.add_star_page(star_id, pfilter = pfilter)
             self.open_stars[star_id] = details
 
     def handle_row_activated(self, view, row, column, id_index = 0):
