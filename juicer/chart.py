@@ -98,18 +98,24 @@ class FindingChartDialog(object):
         """ Callback function for 'button_press_event'.
 
         Find the closest star to the x- and y- image coordinates where the user
-        has clicked and overlay a red marker of radius MARK_RADIUS on the APLpy
-        plot. This marker disappears when the user clicks again, so only one
-        marker is displayed at all times. This method must be connected to the
-        Matplotlib event manager, which is part of the FigureCanvasBase.
+        has right-clicked and overlay a red marker of radius MARK_RADIUS on the
+        APLpy plot. This marker disappears when the user clicks again, so only
+        one marker is displayed at all times. This method must be connected to
+        the Matplotlib event manager, which is part of the FigureCanvasBase.
 
         """
 
-        click_coords = (event.xdata, event.ydata)
-        star_id = self.db.star_closest_to_image_coords(*click_coords)[0]
-        x, y = self.db.get_star(star_id)[:2] # Returns (x, y, ra, dec, imag)
-        kwargs = dict(layer = 'markers', edgecolor = 'red', s = self.MARK_RADIUS)
-        self.aplpy_plot.show_markers(x, y, **kwargs)
+        # The attribute 'button' from event is an integer. A left-click is
+        # mapped to 1, a middle-click to 2 and a right-click to 3.
+        if event.button == 3:
+            click = (event.xdata, event.ydata)
+            star_id = self.db.star_closest_to_image_coords(*click)[0]
+            # LEMONdB.get_star() returns (x, y, ra, dec, imag)
+            x, y = self.db.get_star(star_id)[:2]
+            kwargs = dict(layer = 'markers',
+                          edgecolor = 'red',
+                          s = self.MARK_RADIUS)
+            self.aplpy_plot.show_markers(x, y, **kwargs)
 
     def run(self):
         """ Call the dialog's run(), then hide the dialog """
