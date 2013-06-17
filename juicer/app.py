@@ -1468,7 +1468,6 @@ class LEMONJuicerGUI(object):
         # hiding the dialog when run() exits. In this manner, we can run() as
         # many times as we want to display the dialog again.
         if self.finding_chart_dialog is None:
-            args = self._main_window, self._builder, self.db
-            self.finding_chart_dialog = chart.FindingChartDialog(*args)
+            self.finding_chart_dialog = chart.FindingChartDialog(self)
         self.finding_chart_dialog.run()
 

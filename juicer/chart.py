@@ -43,11 +43,14 @@ class FindingChartDialog(object):
     # For markers plotted with FITSFigure.show_markers()
     MARK_RADIUS = 60
 
-    def __init__(self, parent_window, builder, db):
+    def __init__(self, parent):
 
-        self.builder = builder
+        self.db = parent.db
+        parent_window = parent._main_window
+        self.view_star = parent.view_star # LEMONJuicerGUI.view_star()
+
+        self.builder = gtk.Builder()
         self.builder.add_from_file(glade.FINDING_CHART_DIALOG)
-        self.db = db
         self.dialog = self.builder.get_object('finding-chart-dialog')
         self.dialog.set_resizable(True)
         self.dialog.set_title("Finding Chart: %s" % self.db.field_name)
@@ -97,6 +100,7 @@ class FindingChartDialog(object):
         # Button to, when a star is selected, view its details.
         args = gtk.STOCK_GO_FORWARD, gtk.RESPONSE_APPLY
         self.goto_button = self.dialog.add_button(*args)
+        self.goto_button.connect('button-press-event', self.goto_star)
         self.goto_button.set_sensitive(False)
 
         # We want to render a stock button, STOCK_GO_FORWARD, but with a
@@ -135,7 +139,19 @@ class FindingChartDialog(object):
                           edgecolor = 'red',
                           s = self.MARK_RADIUS)
             self.aplpy_plot.show_markers(x, y, **kwargs)
+            self.selected_star_id = star_id
             self.goto_button.set_sensitive(True)
+
+    def goto_star(self, widget, event):
+        """ Show the details of the selected star.
+
+        This method calls the parent LEMONdB.view_star() with the ID of the
+        star currently selected in the finding chart. It adds a notebook page
+        with the details of the star, or switches to it if it already exists.
+
+        """
+
+        self.view_star(self.selected_star_id)
 
     def run(self):
         """ Call the dialog's run(), then hide the dialog """
