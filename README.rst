@@ -30,7 +30,9 @@ LEMON stands on the shoulders of many giants, using excellent, robust programs d
 
 These are the steps to install LEMON on a clean Debian machine:
 
-1. ``apt-get install python-numpy python-scipy python-pyfits python-lxml python-uncertainties python-mock``
+1. ``apt-get install python-pip python-numpy python-scipy python-pyfits python-lxml python-uncertainties python-mock``
+#. ``pip install astropy``
+#. ``pip install aplpy``
 #. Install `IRAF <http://iraf.noao.edu/>`_
 #. Install `STSDAS/TABLES <http://www.stsci.edu/institute/software_hardware/stsdas/download-stsdas/>`_, followed by `PyRAF <http://www.stsci.edu/institute/software_hardware/pyraf/current/download/>`_ version 2.0 or newer.
 #. Install the `CDSClient <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_ package
