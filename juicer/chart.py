@@ -94,6 +94,22 @@ class FindingChartDialog(object):
         new_size = self.WIDTH, int(self.WIDTH * size_ratio)
         self.dialog.resize(*new_size)
 
+        # Button to, when a star is selected, view its details.
+        args = gtk.STOCK_GO_FORWARD, gtk.RESPONSE_APPLY
+        self.goto_button = self.dialog.add_button(*args)
+        self.goto_button.set_sensitive(False)
+
+        # We want to render a stock button, STOCK_GO_FORWARD, but with a
+        # different label. Achieve this getting the label child of the stock
+        # button and setting the text directly, as seen in the PyGTK FAQ:
+        # http://faq.pygtk.org/index.py?req=show&file=faq09.005.htp
+
+        alignment = self.goto_button.get_children()[0]
+        hbox = alignment.get_children()[0]
+        image, label = hbox.get_children()
+        label.set_text('Go to Star')
+
+
     def mark_star(self, event):
         """ Callback function for 'button_press_event'.
 
@@ -119,11 +135,17 @@ class FindingChartDialog(object):
                           edgecolor = 'red',
                           s = self.MARK_RADIUS)
             self.aplpy_plot.show_markers(x, y, **kwargs)
+            self.goto_button.set_sensitive(True)
 
     def run(self):
         """ Call the dialog's run(), then hide the dialog """
         try:
-            self.dialog.run()
+            while True:
+                response = self.dialog.run()
+                if response == gtk.RESPONSE_APPLY:
+                    pass # show star details
+                else:
+                    break
         finally:
             self.dialog.hide()
 
