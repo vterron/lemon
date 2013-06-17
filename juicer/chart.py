@@ -40,13 +40,17 @@ class FindingChartDialog(object):
     # Width of the window, in pixels
     WIDTH = 650
 
+    # For markers plotted with FITSFigure.show_markers()
+    MARK_RADIUS = 60
+
     def __init__(self, parent_window, builder, db):
 
         self.builder = builder
         self.builder.add_from_file(glade.FINDING_CHART_DIALOG)
+        self.db = db
         self.dialog = self.builder.get_object('finding-chart-dialog')
         self.dialog.set_resizable(True)
-        self.dialog.set_title("Finding Chart: %s" % db.field_name)
+        self.dialog.set_title("Finding Chart: %s" % self.db.field_name)
         self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
 
@@ -71,7 +75,7 @@ class FindingChartDialog(object):
         ax1.get_yaxis().set_visible(False)
 
         # Temporarily save to disk the FITS file used as a reference frame
-        path = db.mosaic
+        path = self.db.mosaic
 
         try:
             with pyfits.open(path) as hdu:
@@ -80,6 +84,7 @@ class FindingChartDialog(object):
             os.unlink(path)
 
         self.aplpy_plot = aplpy.FITSFigure(data, figure = self.figure)
+        self.figure.canvas.mpl_connect('button_press_event', self.mark_star)
         self.aplpy_plot.show_grayscale()
 
         # The dialog has always the same width; the height is adjusted
@@ -88,6 +93,23 @@ class FindingChartDialog(object):
         size_ratio = size[1] / size[0]
         new_size = self.WIDTH, int(self.WIDTH * size_ratio)
         self.dialog.resize(*new_size)
+
+    def mark_star(self, event):
+        """ Callback function for 'button_press_event'.
+
+        Find the closest star to the x- and y- image coordinates where the user
+        has clicked and overlay a red marker of radius MARK_RADIUS on the APLpy
+        plot. This marker disappears when the user clicks again, so only one
+        marker is displayed at all times. This method must be connected to the
+        Matplotlib event manager, which is part of the FigureCanvasBase.
+
+        """
+
+        click_coords = (event.xdata, event.ydata)
+        star_id = self.db.star_closest_to_image_coords(*click_coords)[0]
+        x, y = self.db.get_star(star_id)[:2] # Returns (x, y, ra, dec, imag)
+        kwargs = dict(layer = 'markers', edgecolor = 'red', s = self.MARK_RADIUS)
+        self.aplpy_plot.show_markers(x, y, **kwargs)
 
     def run(self):
         """ Call the dialog's run(), then hide the dialog """
