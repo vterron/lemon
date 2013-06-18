@@ -708,6 +708,14 @@ class LEMONJuicerGUI(object):
         self.finding_chart_menuitem.set_sensitive(False)
         self.finding_chart_button.set_sensitive(False)
 
+        # Manually connect to the 'toggled' signal, storing the handler ID. We
+        # need it in order to suppress the signal that is emitted when we set
+        # the state of the gtk.ToggleToolButton with set_active(), but there
+        # is no way to get the signal handler IDs if they are connected by
+        # Gtk.Builder. [http://stackoverflow.com/a/11803778/184363]
+        args = 'toggled', self.view_finding_chart
+        self.chart_handler_id = self.finding_chart_button.connect(*args)
+
         # The dialog window with the finding chart is kept in memory, hidden
         # (instead of destroyed) when the user closes the window. The dialog
         # can in this manner be shown repeatedly, and it remembers its size,
@@ -1479,6 +1487,13 @@ class LEMONJuicerGUI(object):
         it. Subsequent calls to this method will alternate between hide()'ing
         and show()'ing the dialog.
 
+        The status of the 'Finding Chart' button (a gtk.ToggleToolButton) in
+        the toolbar is toggled or untoggled to reflect whether the chart is
+        being shown. Note that this happens independently on where the user
+        clicked: showing or hiding the chart through the appropriate item in
+        the View menu or with the <Control>F accelerator also causes the
+        ToggleToolButton to be updated accordingly.
+
         """
 
         # Create the FindingChartDialog the first time this method is called,
@@ -1487,10 +1502,30 @@ class LEMONJuicerGUI(object):
         if self.finding_chart_dialog is None:
             self.finding_chart_dialog = chart.FindingChartDialog(self)
 
-        if not self.finding_chart_dialog.is_visible():
+        is_visible = self.finding_chart_dialog.is_visible()
+        if not is_visible:
             self.finding_chart_dialog.show()
+            self.set_finding_chart_button_active(True)
         else:
             self.finding_chart_dialog.hide()
+            self.set_finding_chart_button_active(False)
+
+    def set_finding_chart_button_active(self, active):
+        """ Update state of 'Finding Chart' button without emitting a signal.
+
+        The 'Finding Chart' button is a gtk.ToggleToolButton, but its status
+        can change from other events than just clicking it: (a) the item with
+        the same name in the View menu and (b) the <Control>F accelerator. When
+        the chart is shown or hidden using these other two options, we want to
+        update the status of the button in the toolbar accordingly. Use this
+        method to toggle or untoggle the 'Finding Chart' without emitting the
+        'toggled' signal, thanks to gobject.GObject.handler_block().
+
+        """
+
+        self.finding_chart_button.handler_block(self.chart_handler_id)
+        self.finding_chart_button.set_active(active)
+        self.finding_chart_button.handler_unblock(self.chart_handler_id)
 
     def chart_callback(self, accel_group, acceleratable, keyval, modifier):
         """ Callback function for the <Ctrl>F accelerator.

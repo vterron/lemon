@@ -49,6 +49,8 @@ class FindingChartDialog(object):
         if response == gtk.RESPONSE_APPLY:
             self.goto_star()
         elif response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
+            # Untoggle gtk.ToggleToolButton in toolbar (main window)
+            self.toggle_toolbar_button(False)
             self.hide()
         else:
             raise ValueError("unexpected dialog response")
@@ -58,6 +60,7 @@ class FindingChartDialog(object):
         self.db = parent.db
         parent_window = parent._main_window
         self.view_star = parent.view_star # LEMONJuicerGUI.view_star()
+        self.toggle_toolbar_button = parent.set_finding_chart_button_active
 
         self.builder = gtk.Builder()
         self.builder.add_from_file(glade.FINDING_CHART_DIALOG)

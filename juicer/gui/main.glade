@@ -284,12 +284,11 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkToolButton" id="finding-chart-button">
+                  <object class="GtkToggleToolButton" id="finding-chart-button">
                     <property name="visible">True</property>
                     <property name="is_important">True</property>
                     <property name="label" translatable="yes">Finding _Chart</property>
                     <property name="use_underline">True</property>
-                    <signal name="clicked" handler="view_finding_chart"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
