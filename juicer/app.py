@@ -717,6 +717,17 @@ class LEMONJuicerGUI(object):
         self.amplitudes_search_button = builder.get_object('amplitudes-search-button')
         self.amplitudes_search_menuitem = builder.get_object('amplitudes-search-item')
 
+        # Create an accelerator group and add it to the toplevel window. These
+        # accelerators will be always available (except when a modal dialog is
+        # active, of course), since they are 'inherited' by the child windows.
+        self.global_accelators = gtk.AccelGroup()
+        self._main_window.add_accel_group(self.global_accelators)
+
+        # Connect <Ctrl>F to LEMONJuicerGUI.chart_callback()
+        key, modifier = gtk.accelerator_parse('<Control>F')
+        args = key, modifier, gtk.ACCEL_VISIBLE, self.chart_callback
+        self.global_accelators.connect_group(*args)
+
         self._main_window.set_size_request(*self.MIN_SIZE)
         self._main_window.show()
         self._builder = builder
@@ -1480,4 +1491,21 @@ class LEMONJuicerGUI(object):
             self.finding_chart_dialog.show()
         else:
             self.finding_chart_dialog.hide()
+
+    def chart_callback(self, accel_group, acceleratable, keyval, modifier):
+        """ Callback function for the <Ctrl>F accelerator.
+
+        This method calls LEMONJuicerGUI.view_finding_chart(), but only if a
+        LEMONdB is open (otherwise, there is no chart to show and, in the same
+        way that the 'Finding Chart' button is disabled, <Ctrl>F should not
+        allow us to display anything either). It returns True because callbacks
+        assigned in connect_group() must return this value if the accelerator
+        was handled by the callback; otherwise GTK+ will segfault sooner or
+        later.
+
+        """
+
+        if self.db is not None:
+            self.view_finding_chart(acceleratable)
+        return True
 

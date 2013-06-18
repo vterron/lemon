@@ -67,6 +67,9 @@ class FindingChartDialog(object):
         self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
 
+        # Connect to the accelerators of the parent window
+        self.dialog.add_accel_group(parent.global_accelators)
+
         # This private variable stores whether the gtk.Dialog is currently
         # visible or not. It is update to True and False when the show() and
         # hide() methods are called, respectively.

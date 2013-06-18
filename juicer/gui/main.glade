@@ -289,7 +289,6 @@
                     <property name="is_important">True</property>
                     <property name="label" translatable="yes">Finding _Chart</property>
                     <property name="use_underline">True</property>
-                    <accelerator key="f" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                     <signal name="clicked" handler="view_finding_chart"/>
                   </object>
                   <packing>
