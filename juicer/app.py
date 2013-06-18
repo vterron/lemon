@@ -1469,5 +1469,5 @@ class LEMONJuicerGUI(object):
         # many times as we want to display the dialog again.
         if self.finding_chart_dialog is None:
             self.finding_chart_dialog = chart.FindingChartDialog(self)
-        self.finding_chart_dialog.run()
+        self.finding_chart_dialog.show()
 

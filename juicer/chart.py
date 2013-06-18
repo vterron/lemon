@@ -43,6 +43,16 @@ class FindingChartDialog(object):
     # For markers plotted with FITSFigure.show_markers()
     MARK_RADIUS = 60
 
+    def handle_response(self, widget, response):
+        """ Handler for the dialog 'response' event """
+
+        if response == gtk.RESPONSE_APPLY:
+            self.goto_star()
+        elif response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
+            self.dialog.hide()
+        else:
+            raise ValueError("unexpected dialog response")
+
     def __init__(self, parent):
 
         self.db = parent.db
@@ -97,10 +107,15 @@ class FindingChartDialog(object):
         new_size = self.WIDTH, int(self.WIDTH * size_ratio)
         self.dialog.resize(*new_size)
 
+        # We cannot run() the dialog because it blocks in a recursive main
+        # loop, while we want it to be non-modal. Therefore, we need to show()
+        # it. But this means that we cannot get the response ID directly from
+        # run(), so we have to connect to the dialog 'response' event.
+        self.dialog.connect('response', self.handle_response)
+
         # Button to, when a star is selected, view its details.
         args = gtk.STOCK_GO_FORWARD, gtk.RESPONSE_APPLY
         self.goto_button = self.dialog.add_button(*args)
-        self.goto_button.connect('button-press-event', self.goto_star)
         self.goto_button.set_sensitive(False)
 
         # We want to render a stock button, STOCK_GO_FORWARD, but with a
@@ -142,7 +157,7 @@ class FindingChartDialog(object):
             self.selected_star_id = star_id
             self.goto_button.set_sensitive(True)
 
-    def goto_star(self, widget, event):
+    def goto_star(self):
         """ Show the details of the selected star.
 
         This method calls the parent LEMONdB.view_star() with the ID of the
@@ -153,15 +168,7 @@ class FindingChartDialog(object):
 
         self.view_star(self.selected_star_id)
 
-    def run(self):
-        """ Call the dialog's run(), then hide the dialog """
-        try:
-            while True:
-                response = self.dialog.run()
-                if response == gtk.RESPONSE_APPLY:
-                    pass # show star details
-                else:
-                    break
-        finally:
-            self.dialog.hide()
+    def show(self):
+        """ Display the GTK.Dialog """
+        self.dialog.show()
 
