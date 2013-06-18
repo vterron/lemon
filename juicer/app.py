@@ -1462,12 +1462,22 @@ class LEMONJuicerGUI(object):
             util.show_message_dialog(*args, **kwargs)
 
     def view_finding_chart(self, widget):
-        """ Display the reference frame in a new dialog """
+        """ Display the reference frame in a new dialog.
+
+        Create a gtk.Dialog() the first time this method is called and show()
+        it. Subsequent calls to this method will alternate between hide()'ing
+        and show()'ing the dialog.
+
+        """
 
         # Create the FindingChartDialog the first time this method is called,
         # hiding the dialog when run() exits. In this manner, we can run() as
         # many times as we want to display the dialog again.
         if self.finding_chart_dialog is None:
             self.finding_chart_dialog = chart.FindingChartDialog(self)
-        self.finding_chart_dialog.show()
+
+        if not self.finding_chart_dialog.is_visible():
+            self.finding_chart_dialog.show()
+        else:
+            self.finding_chart_dialog.hide()
 

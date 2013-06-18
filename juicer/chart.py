@@ -49,7 +49,7 @@ class FindingChartDialog(object):
         if response == gtk.RESPONSE_APPLY:
             self.goto_star()
         elif response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
-            self.dialog.hide()
+            self.hide()
         else:
             raise ValueError("unexpected dialog response")
 
@@ -66,6 +66,11 @@ class FindingChartDialog(object):
         self.dialog.set_title("Finding Chart: %s" % self.db.field_name)
         self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
+
+        # This private variable stores whether the gtk.Dialog is currently
+        # visible or not. It is update to True and False when the show() and
+        # hide() methods are called, respectively.
+        self._currently_shown = False
 
         # The matplotlib figure...
         matplotlib_container = self.builder.get_object('matplotlib-container')
@@ -128,7 +133,6 @@ class FindingChartDialog(object):
         image, label = hbox.get_children()
         label.set_text('Go to Star')
 
-
     def mark_star(self, event):
         """ Callback function for 'button_press_event'.
 
@@ -168,7 +172,17 @@ class FindingChartDialog(object):
 
         self.view_star(self.selected_star_id)
 
+    def hide(self):
+        """ Hide the GTk.Dialog """
+        self.dialog.hide()
+        self._currently_shown = False
+
     def show(self):
         """ Display the GTK.Dialog """
         self.dialog.show()
+        self._currently_shown = True
+
+    def is_visible(self):
+        """ Return True if the gtk.Dialog is shown, False if hidden """
+        return self._currently_shown
 
