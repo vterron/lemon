@@ -124,20 +124,23 @@ class FindingChartDialog(object):
         # run(), so we have to connect to the dialog 'response' event.
         self.dialog.connect('response', self.handle_response)
 
-        # Button to, when a star is selected, view its details.
-        args = gtk.STOCK_GO_FORWARD, gtk.RESPONSE_APPLY
-        self.goto_button = self.dialog.add_button(*args)
-        self.goto_button.set_sensitive(False)
-
-        # We want to render a stock button, STOCK_GO_FORWARD, but with a
-        # different label. Achieve this getting the label child of the stock
-        # button and setting the text directly, as seen in the PyGTK FAQ:
+        # Button to, when a star is selected, view its details. We want to
+        # render a stock button, STOCK_GO_FORWARD, but with a different label.
+        # In order to achieve this, we register our own stock icon, reusing
+        # the image from the existing stock item, as seen in the PyGTK FAQ:
         # http://faq.pygtk.org/index.py?req=show&file=faq09.005.htp
 
-        alignment = self.goto_button.get_children()[0]
-        hbox = alignment.get_children()[0]
-        image, label = hbox.get_children()
-        label.set_text('Go to Star')
+        STOCK_GOTO_STAR = 'goto-star-custom'
+        gtk.stock_add([(STOCK_GOTO_STAR, '_Go to Star', 0, 0, None)])
+        factory = gtk.IconFactory()
+        factory.add_default()
+        style = self.dialog.get_style()
+        icon_set = style.lookup_icon_set(gtk.STOCK_GO_FORWARD)
+        factory.add(STOCK_GOTO_STAR, icon_set)
+
+        args = STOCK_GOTO_STAR, gtk.RESPONSE_APPLY
+        self.goto_button = self.dialog.add_button(*args)
+        self.goto_button.set_sensitive(False)
 
     def mark_star(self, event):
         """ Callback function for 'button_press_event'.
