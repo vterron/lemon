@@ -166,6 +166,8 @@ class FindingChartDialog(object):
             self.aplpy_plot.show_markers(x, y, **kwargs)
             self.selected_star_id = star_id
             self.goto_button.set_sensitive(True)
+            # Pressing Enter activates 'Go to Star'
+            self.dialog.set_default_response(gtk.RESPONSE_APPLY)
 
     def goto_star(self):
         """ Show the details of the selected star.
@@ -177,6 +179,8 @@ class FindingChartDialog(object):
         """
 
         self.view_star(self.selected_star_id)
+        # Now pressing Enter closes the finding chart window
+        self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
 
     def hide(self):
         """ Hide the GTk.Dialog """
@@ -185,6 +189,9 @@ class FindingChartDialog(object):
 
     def show(self):
         """ Display the GTK.Dialog """
+
+        # Until a star is selected, Enter closes the window
+        self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
         self.dialog.show()
         self._currently_shown = True
 
