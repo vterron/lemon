@@ -192,3 +192,7 @@ class FindingChartDialog(object):
         """ Return True if the gtk.Dialog is shown, False if hidden """
         return self._currently_shown
 
+    def destroy(self):
+        """ Destroy the gtk.Dialog """
+        self.dialog.destroy()
+

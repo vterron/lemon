@@ -822,7 +822,10 @@ class LEMONJuicerGUI(object):
 
             if really_close:
                 self.db = None # forget about this LEMONdB
-                self.finding_chart_dialog = None
+                # Destroy the finding chart window, if open
+                if self.finding_chart_dialog:
+                    self.finding_chart_dialog.destroy()
+                    self.finding_chart_dialog = None
                 while self._notebook.get_n_pages():
                     self._notebook.remove_page(-1)
 
