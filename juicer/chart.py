@@ -142,6 +142,14 @@ class FindingChartDialog(object):
         self.goto_button = self.dialog.add_button(*args)
         self.goto_button.set_sensitive(False)
 
+        # <Ctrl>G also activates the 'Go to Star' button
+        accelerators = gtk.AccelGroup()
+        self.dialog.add_accel_group(accelerators)
+        key, modifier = gtk.accelerator_parse('<Control>G')
+        args = 'activate', accelerators, key, modifier, gtk.ACCEL_VISIBLE
+        self.goto_button.add_accelerator(*args)
+
+
     def mark_star(self, event):
         """ Callback function for 'button_press_event'.
 
