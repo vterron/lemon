@@ -275,6 +275,61 @@ class FITSImageTest(unittest.TestCase):
             self.assertRaises(ValueError, img.read_keyword, '')
             self.assertRaises(KeyError, img.read_keyword, 'EXPTIME')
 
+    def test_update_keyword(self):
+
+        def get_comment(image, keyword):
+            """ Return the comment associated with a FITS keyword, or None """
+
+            card = image._header.ascardlist()[keyword]
+            # From "OBSERVER= 'Edwin Hubble' / Cosmologist" to 'Cosmologist'
+            try:
+                comment = str(card).split('/')[1].strip()
+                return comment
+            except IndexError:
+                return None
+
+        keywords = {'INSTRUMENT' : "2.2m CAHA", 'CCD_TEMP' : -129.12}
+        with self.random(**keywords) as img:
+
+            # The keyword is not in the FITS header, so add it.
+            keyword = 'OBSERVER'
+            observer = "Subrahmanyan Chandrasekhar"
+            observer_comment = "1983 Nobel Prize for Physics"
+            kwargs = dict(comment = observer_comment)
+            img.update_keyword(keyword, observer, **kwargs)
+            self.assertEqual(img.read_keyword(keyword), observer)
+            self.assertEqual(get_comment(img, keyword), observer_comment)
+
+            # Update a floating-point number
+            keyword = 'CCD_TEMP'
+            new_temperature = -89.133
+            temperature_comment = "degrees on the Celsius scale"
+            kwargs = dict(comment = temperature_comment)
+            img.update_keyword(keyword, new_temperature, **kwargs)
+            self.assertEqual(img.read_keyword(keyword), new_temperature)
+            self.assertEqual(get_comment(img, keyword), temperature_comment)
+
+            # Update a keyword longer than eight characters.
+            keyword = 'INSTRUMENT'
+            new_instrument = "PANIC (2.2m CAHA)"
+            img.update_keyword(keyword, new_instrument)
+            # Try both ways, with and without 'HIERARCH'.
+            self.assertEqual(img.read_keyword(keyword), new_instrument)
+            keyword = 'HIERARCH' + keyword
+            self.assertEqual(img.read_keyword(keyword), new_instrument)
+            self.assertEqual(get_comment(img, keyword), None) # no comment
+
+            # Keywords are case-insensitive. Also, note that only the name of
+            # the observer is updated here: we are not specifying the comment
+            # associated with the keyword. Thus, it retains its value ("1983
+            # Nobel Prize for Physics", the one we used for Chandrasekha)
+
+            keyword = 'oBSeRVer'
+            new_observer = "William Alfred Fowler"
+            img.update_keyword(keyword.upper(), new_observer)
+            self.assertEqual(img.read_keyword(keyword), new_observer)
+            self.assertEqual(get_comment(img, keyword), observer_comment)
+
     def test_date(self):
 
         def strptime_utc(date_string):
