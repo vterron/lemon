@@ -1345,14 +1345,15 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(star1_B.mag(2), 7.3)
         self.assertEqual(star1_B.snr(2), 200)
 
-        star1_V = db.get_photometry(star1_id, johnson_V)
+        # The star ID can have a data type other than Python's built-in int
+        star1_V = db.get_photometry(numpy.int16(star1_id), johnson_V)
         self.assertEqual(len(star1_V), 1)
 
         self.assertEqual(star1_V.time(0), img3.unix_time)
         self.assertEqual(star1_V.mag(0), 9.5)
         self.assertEqual(star1_V.snr(0), 175)
 
-        star2_B = db.get_photometry(star2_id, johnson_B)
+        star2_B = db.get_photometry(numpy.int32(star2_id), johnson_B)
         self.assertEqual(len(star2_B), 3)
 
         self.assertEqual(star2_B.time(0), img2.unix_time)
@@ -1367,7 +1368,7 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(star2_B.mag(2), 5.9)
         self.assertEqual(star2_B.snr(2), 450)
 
-        star2_V = db.get_photometry(star2_id, johnson_V)
+        star2_V = db.get_photometry(numpy.int64(star2_id), johnson_V)
         self.assertEqual(star2_V.time(0), img3.unix_time)
         self.assertEqual(star2_V.mag(0), 5.8)
         self.assertEqual(star2_V.snr(0), 550)

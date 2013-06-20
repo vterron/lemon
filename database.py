@@ -933,7 +933,10 @@ class LEMONdB(object):
             msg = "star with ID = %d not in database" % star_id
             raise KeyError(msg)
 
-        t = (star_id, pfilter.wavelength)
+        # Note the cast to Python's built-in int. Otherwise, if the method gets
+        # a NumPy integer, SQLite raises "sqlite3.InterfaceError: Error binding
+        # parameter - probably unsupported type"
+        t = (int(star_id), pfilter.wavelength)
         self._execute("SELECT img.unix_time, phot.magnitude, phot.snr "
                       "FROM photometry AS phot INDEXED BY phot_by_star_image, "
                       "     images AS img INDEXED BY img_by_wavelength_time "
