@@ -330,6 +330,15 @@ class FITSImageTest(unittest.TestCase):
             self.assertEqual(img.read_keyword(keyword), new_observer)
             self.assertEqual(get_comment(img, keyword), observer_comment)
 
+            # Create a second FITSImage object referring to the same FITS file.
+            # This reads the image from disk again and thus we can verify that
+            # not only the in-memory copy of the FITS header was updated.
+
+            img2 = FITSImage(img.path)
+            self.assertEqual(img2.read_keyword(keyword), new_observer)
+            self.assertEqual(get_comment(img2, keyword), observer_comment)
+            self.assertEqual(img._header.items(), img2._header.items())
+
     def test_date(self):
 
         def strptime_utc(date_string):
