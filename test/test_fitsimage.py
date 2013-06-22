@@ -339,6 +339,33 @@ class FITSImageTest(unittest.TestCase):
             self.assertEqual(get_comment(img2, keyword), observer_comment)
             self.assertEqual(img._header.items(), img2._header.items())
 
+    def test_delete_keyword(self):
+
+        keywords = {'OBJECT': 'M101', 'INSTRUMENT': 'CanariCam'}
+        with self.random(**keywords) as img:
+
+            # Deleting a non-existing keyword raises no error
+            img.delete_keyword('TELESCOPE')
+
+            # Keywords are case-insensitive
+            keyword = 'oBJeCT'
+            img.delete_keyword(keyword)
+            self.assertRaises(KeyError, img.read_keyword, keyword.upper())
+
+            # Create a second FITSImage object referring to the same file. This
+            # re-reads the image from disk and we can verify that the keyword
+            # was not only removed from the in-memory copy of the FITS header.
+            img2 = FITSImage(img.path)
+            self.assertRaises(KeyError, img2.read_keyword, keyword)
+
+            # Remove a keyword longer than eight characters.
+            keyword = 'INSTRUMENT'
+            img.delete_keyword(keyword)
+            # Try both ways, with and without 'HIERARCH'.
+            self.assertRaises(KeyError, img.read_keyword, keyword)
+            keyword = 'HIERARCH' + keyword
+            self.assertRaises(KeyError, img.read_keyword, keyword)
+
     def test_date(self):
 
         def strptime_utc(date_string):
