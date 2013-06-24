@@ -436,7 +436,7 @@ class StarDetailsGUI(object):
         # GTKTreeView used to display the list of points of the curve; dates
         # are plotted twice: hh:mm:ss and also in Unix time, the latter of
         # which is used to sort the columns by their date.
-        attrs = ('Date', 'Date', 'Mag', 'SNR', 'merr (+)', 'merr (-)')
+        attrs = ('Date', 'Date', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
         self.curve_store = gtk.ListStore(str, float, float, float, float, float)
         self.curve_view = self._builder.get_object('curve-points-view')
         for index, title in enumerate(attrs):
