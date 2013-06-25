@@ -113,7 +113,7 @@ def parallel_photometry(args):
     img_object = img_offset.object
     img_airmass = img_offset.airmass
     img_gain = options.gain or photometry_image.read_keyword(options.gaink)
-    img_xoffset  = img_offset.x
+    img_xoffset = img_offset.x
     img_xoverlap = img_offset.x_overlap
     img_yoffset = img_offset.y
     img_yoverlap = img_offset.y_overlap
@@ -346,7 +346,7 @@ def main(arguments = None):
         return 2 # used for command line syntax errors
     else:
         assert len(args) == 1
-        xml_path      = args[0]
+        xml_path = args[0]
 
     # If the user gives an empty string as the FITS keyword which stores the
     # path to the original image, it is understood as meaning that we want
@@ -368,7 +368,7 @@ def main(arguments = None):
     # annuli.py module, whose path may have been passed with the --annuli
     # option). The use of this file automatically discards whathever was
     # specified with the Aperture Photometry (FWHM and pixels) options.
-    xml_annuli   = None
+    xml_annuli = None
     fixed_annuli = False
 
     if options.xml_annuli:
@@ -406,7 +406,7 @@ def main(arguments = None):
     # numbers. By definition, also, the inner radius of the sky annulus must be
     # greater than or equal to the aperture radius. Obviously!
 
-    fwhm_options  = (options.aperture, options.annulus, options.dannulus)
+    fwhm_options = (options.aperture, options.annulus, options.dannulus)
     pixel_options = (options.aperture_pix, options.annulus_pix, options.dannulus_pix)
 
     if (not fixed_annuli and min(fwhm_options)  <= 0) or \
@@ -654,7 +654,7 @@ def main(arguments = None):
 
         reference_fwhm = xml_offsets.reference['fwhm']
         reference_aperture = options.aperture * reference_fwhm
-        reference_annulus  = options.annulus  * reference_fwhm
+        reference_annulus = options.annulus  * reference_fwhm
         reference_dannulus = options.dannulus * reference_fwhm
 
         print "%sFWHM (reference image) = %.3f pixels, therefore:" % \
@@ -674,7 +674,7 @@ def main(arguments = None):
 
     else:
         reference_aperture = options.aperture_pix
-        reference_annulus  = options.annulus_pix
+        reference_annulus = options.annulus_pix
         reference_dannulus = options.dannulus_pix
 
         print "%sAperture radius = %.3f pixels" % \
@@ -723,8 +723,8 @@ def main(arguments = None):
     for star_index, star_photometry in enumerate(qphot_result):
         imag = star_photometry.magnitude
         if imag is not None:  # NoneType returned for INDEF mags
-            x    = star_photometry.x
-            y    = star_photometry.y
+            x = star_photometry.x
+            y = star_photometry.y
 
             if options.list:
                 ra, dec = None, None
@@ -966,7 +966,7 @@ def main(arguments = None):
                 # least one saturated pixel in the aperture will have infinity.
                 # In both cases the measure is useless for our photometric
                 # purposes and can be ignored -- it won't even be saved.
-                magnitude  = star_photometry.magnitude
+                magnitude = star_photometry.magnitude
                 if magnitude is None:
                     logging.debug("%s: star %d is INDEF (None)" % \
                                   (pimage.path, star_id))

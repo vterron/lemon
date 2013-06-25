@@ -299,7 +299,7 @@ def main(arguments = None):
         print style.error_exit_message
         return 2
     else:
-        reference_path       = args[0]
+        reference_path = args[0]
         rest_of_images_paths = args[1:]
 
     # Do not overwrite an existing XML offsets file unless the user actually

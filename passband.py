@@ -90,7 +90,7 @@ class Passband(object):
         if not 1 <= len(match) <= 2:
             raise NonRecognizedPassband(name)
 
-        self.name  = name
+        self.name = name
         self.letter = match[0][1] # match = [('', 'V', ' ')], e.g.
 
         if self.letter.upper() not in Passband.wavelengths:

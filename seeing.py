@@ -374,7 +374,7 @@ class FITSeeingImage(fitsimage.FITSImage):
         # Find the signal-to-noise ratio of the image at the 'per' percentile.
         # This will be the minimum SNR that a star must have for its FWHM to be
         # taken into account when calculating the FWHM of the image as a whole.
-        snr =  self.snr_percentile(per)
+        snr = self.snr_percentile(per)
 
         fwhms = []
         for star in self:
@@ -435,7 +435,7 @@ class FITSeeingImage(fitsimage.FITSImage):
             raise ValueError("'mode' must be 'median' or 'mean'")
 
         # Find the signal-to-noise ratio of the image at the 'per' percentile.
-        snr =  self.snr_percentile(per)
+        snr = self.snr_percentile(per)
 
         elongations = []
         for star in self:
@@ -651,7 +651,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 # This Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue   = multiprocessing.Queue()
+queue = multiprocessing.Queue()
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"

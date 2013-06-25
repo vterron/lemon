@@ -890,7 +890,7 @@ def main(arguments = None):
         sys.stdout.flush()
         updated_ra, updated_dec = \
             mosaic.update_coordinates(output_img, options.scale,
-                                      ra_keyword  = options.rak,
+                                      ra_keyword = options.rak,
                                       dec_keyword = options.deck)
         print 'done.'
 

@@ -49,7 +49,7 @@ desc['datek'] = \
 "[default: %default]"
 
 timek = 'TIME-OBS'
-desc['timek']  = \
+desc['timek'] = \
 "keyword for the time at which the observation started, in the format " \
 "HH:MM:SS[.sss]. This keyword is used in conjunction with --datek to " \
 "determine the starting time of the observation: --datek gives the " \
