@@ -433,6 +433,19 @@ class StarDetailsGUI(object):
         self.error_msg = self._builder.get_object('error-messages-label')
         self.error_msg.set_visible(False)
 
+        # Button to open the Finding Chart and mark this star on it. Render a
+        # stock button, STOCK_JUMP_TO, but with a different label. Do this by
+        # getting the label child of the stock button and setting the text
+        # directly, as suggested by Christian Reis in the PyGTK FAQ.
+        # http://faq.pygtk.org/index.py?req=show&file=faq09.005.htp
+
+        arg = 'view-star-in-finding-chart-button'
+        self.view_in_chart_button = self._builder.get_object(arg)
+        alignment = self.view_in_chart_button.get_children()[0]
+        hbox = alignment.get_children()[0]
+        image, label = hbox.get_children()
+        label.set_text('View in Finding Chart')
+
         # GTKTreeView used to display the list of points of the curve; dates
         # are plotted twice: hh:mm:ss and also in Unix time, the latter of
         # which is used to sort the columns by their date.
