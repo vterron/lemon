@@ -1496,7 +1496,7 @@ class LEMONJuicerGUI(object):
                           buttons = gtk.BUTTONS_CLOSE)
             util.show_message_dialog(*args, **kwargs)
 
-    def view_finding_chart(self, widget):
+    def view_finding_chart(self, widget, set_visibility = None):
         """ Display the reference frame in a new dialog.
 
         Create a gtk.Dialog() the first time this method is called and show()
@@ -1510,6 +1510,15 @@ class LEMONJuicerGUI(object):
         the View menu or with the <Control>F accelerator also causes the
         ToggleToolButton to be updated accordingly.
 
+        Keyword arguments:
+        set_visibility - if set to a value other than None, the gtk.Dialog() is
+                         show()'n or hide()'n depending on its truth value, nor
+                         on its visibility. In other words: if this argument is
+                         True, the gtk.Dialog is shown if currently hidden, but
+                         nothing happens if it is already visible. If False,
+                         the gtk.Dialog is hidden if visible, and nothing
+                         happens if if is already hidden.
+
         """
 
         # Create the FindingChartDialog the first time this method is called,
@@ -1518,13 +1527,25 @@ class LEMONJuicerGUI(object):
         if self.finding_chart_dialog is None:
             self.finding_chart_dialog = chart.FindingChartDialog(self)
 
-        is_visible = self.finding_chart_dialog.is_visible()
-        if not is_visible:
+        def show():
             self.finding_chart_dialog.show()
             self.set_finding_chart_button_active(True)
-        else:
+
+        def hide():
             self.finding_chart_dialog.hide()
             self.set_finding_chart_button_active(False)
+
+        is_visible = self.finding_chart_dialog.is_visible()
+        if set_visibility is True:
+            if not is_visible:
+                show()
+        elif set_visibility is False:
+            if is_visible:
+                hide()
+        elif not is_visible:
+            show()
+        else:
+            hide()
 
     def set_finding_chart_button_active(self, active):
         """ Update state of 'Finding Chart' button without emitting a signal.
