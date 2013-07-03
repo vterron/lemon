@@ -446,6 +446,9 @@ class StarDetailsGUI(object):
         image, label = hbox.get_children()
         label.set_text('View in Finding Chart')
 
+        args = 'clicked', self.handle_view_star_in_chart
+        self.view_in_chart_button.connect(*args)
+
         # GTKTreeView used to display the list of points of the curve; dates
         # are plotted twice: hh:mm:ss and also in Unix time, the latter of
         # which is used to sort the columns by their date.
@@ -623,6 +626,19 @@ class StarDetailsGUI(object):
                 self.id, self.shown, self.db.field_name, self.curve_store)
         dialog = ExportCurveDialog(*args)
         dialog.run()
+
+    def handle_view_star_in_chart(self, widget):
+        """ Show the Finding Chart window and mark the star on it.
+
+        This is the callback function for the 'View in Finding Chart' button
+        (button_press_event). It shows the finding chart gtk.Dialog, if it's
+        not already visible, and overlays a green marker on this star.
+
+        """
+
+        main_window = self.parent
+        main_window.handle_finding_chart(self, set_visibility = True)
+        main_window.finding_chart_dialog.mark_star(self.id)
 
 
 class SNRThresholdDialog(object):

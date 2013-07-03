@@ -43,6 +43,10 @@ class FindingChartDialog(object):
     # For markers plotted with FITSFigure.show_markers()
     MARK_RADIUS = 60
 
+    # The name of the scatter layer (the 'layer' keyword argument) when
+    # FITSFigure.show_markers() is called to overlay markers on a plot.
+    MARKERS_LAYER = 'markers'
+
     def handle_response(self, widget, response):
         """ Handler for the dialog 'response' event """
 
@@ -87,8 +91,8 @@ class FindingChartDialog(object):
 
         # ... and the navigation toolbar
         self.navigation_box = self.builder.get_object('navigation-toolbar-box')
-        navig = NavigationToolbar(canvas, self.image_box)
-        self.navigation_box.pack_start(navig)
+        self.navig = NavigationToolbar(canvas, self.image_box)
+        self.navigation_box.pack_start(self.navig)
         matplotlib_container.show_all()
 
         self.dialog.set_transient_for(parent_window)
@@ -171,7 +175,7 @@ class FindingChartDialog(object):
             star_id = self.db.star_closest_to_image_coords(*click)[0]
             # LEMONdB.get_star() returns (x, y, ra, dec, imag)
             x, y = self.db.get_star(star_id)[:2]
-            kwargs = dict(layer = 'markers',
+            kwargs = dict(layer = self.MARKERS_LAYER,
                           edgecolor = 'red',
                           s = self.MARK_RADIUS)
             self.aplpy_plot.show_markers(x, y, **kwargs)
@@ -179,6 +183,28 @@ class FindingChartDialog(object):
             self.goto_button.set_sensitive(True)
             # Pressing Enter activates 'Go to Star'
             self.dialog.set_default_response(gtk.RESPONSE_APPLY)
+
+    def mark_star(self, star_id):
+        """ Mark a star in the finding chart.
+
+        Read from the LEMONdB the x- and y-image coordinates of the star whose
+        ID is 'star_id' and overlay a green marker of radius MARK_RADIUS on the
+        APLpy plot. Any existing markers are removed. The original view of the
+        plot is restored (as if the user had clicked the 'Home' button in the
+        navigation toolbar), undoing any zooming and panning and taking us to
+        the first, default view of the FITS image.
+
+        """
+
+        x, y = self.db.get_star(star_id)[:2]
+        kwargs = dict(layer = self.MARKERS_LAYER,
+                      edgecolor = '#24ff29',
+                      s = self.MARK_RADIUS)
+        self.aplpy_plot.show_markers(x, y, **kwargs)
+        self.navig.home()
+
+        self.selected_star_id = star_id
+        self.goto_button.set_sensitive(True)
 
     def goto_star(self):
         """ Show the details of the selected star.
