@@ -726,7 +726,7 @@ class LEMONJuicerGUI(object):
         # the state of the gtk.ToggleToolButton with set_active(), but there
         # is no way to get the signal handler IDs if they are connected by
         # Gtk.Builder. [http://stackoverflow.com/a/11803778/184363]
-        args = 'toggled', self.view_finding_chart
+        args = 'toggled', self.handle_finding_chart
         self.chart_handler_id = self.finding_chart_button.connect(*args)
 
         # The dialog window with the finding chart is kept in memory, hidden
@@ -1496,7 +1496,7 @@ class LEMONJuicerGUI(object):
                           buttons = gtk.BUTTONS_CLOSE)
             util.show_message_dialog(*args, **kwargs)
 
-    def view_finding_chart(self, widget, set_visibility = None):
+    def handle_finding_chart(self, widget, set_visibility = None):
         """ Display the reference frame in a new dialog.
 
         Create a gtk.Dialog() the first time this method is called and show()
@@ -1567,7 +1567,7 @@ class LEMONJuicerGUI(object):
     def chart_callback(self, accel_group, acceleratable, keyval, modifier):
         """ Callback function for the <Ctrl>F accelerator.
 
-        This method calls LEMONJuicerGUI.view_finding_chart(), but only if a
+        This method calls LEMONJuicerGUI.handle_finding_chart(), but only if a
         LEMONdB is open (otherwise, there is no chart to show and, in the same
         way that the 'Finding Chart' button is disabled, <Ctrl>F should not
         allow us to display anything either). It returns True because callbacks
@@ -1578,6 +1578,6 @@ class LEMONJuicerGUI(object):
         """
 
         if self.db is not None:
-            self.view_finding_chart(acceleratable)
+            self.handle_finding_chart(acceleratable)
         return True
 

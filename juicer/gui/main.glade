@@ -183,7 +183,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Finding chart</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="view_finding_chart"/>
+                        <signal name="activate" handler="handle_finding_chart"/>
                       </object>
                     </child>
                   </object>
