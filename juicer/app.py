@@ -765,6 +765,12 @@ class LEMONJuicerGUI(object):
         args = key, modifier, gtk.ACCEL_VISIBLE, self.chart_callback
         self.global_accelators.connect_group(*args)
 
+        # Connect <Ctrl>V to LEMONJuicerGUI.handle_view_in_chart_accelerator()
+        key, modifier = gtk.accelerator_parse('<Control>V')
+        args = (key, modifier, gtk.ACCEL_VISIBLE,
+                self.handle_view_in_chart_accelerator)
+        self.global_accelators.connect_group(*args)
+
         self._main_window.set_size_request(*self.MIN_SIZE)
         self._main_window.show()
         self._builder = builder
@@ -813,6 +819,22 @@ class LEMONJuicerGUI(object):
         # correlation) are numbered sequentially and in Roman numerals: i.e.,
         # the first one is labeled with 'I', the second with 'II', etc.
         self.nampl_searches = 0
+
+    def handle_view_in_chart_accelerator(self, *args):
+        """ Show in the Finding Chart the star in the current StarDetailsGUI.
+
+        If the current page in the gtk.Notebook corresponds to a StarDetailsGUI
+        instance (that is, all pages except for the first one, with index zero,
+        which contains the list of stars), call its handle_view_star_in_chart()
+        method.
+
+        """
+
+        index = self._notebook.get_current_page()
+        if index:
+            star_id = self._notebook.get_nth_page(index).id
+            star_details = self.open_stars[star_id]
+            star_details.view_in_chart_button.activate()
 
     def save_plot_airmasses_checkbox(self, widget):
         """ Airmasses are not plotted here (that is done StarDetailsGUI), but
