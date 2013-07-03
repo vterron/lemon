@@ -108,7 +108,7 @@ class FindingChartDialog(object):
             os.unlink(path)
 
         self.aplpy_plot = aplpy.FITSFigure(data, figure = self.figure)
-        self.figure.canvas.mpl_connect('button_press_event', self.mark_star)
+        self.figure.canvas.mpl_connect('button_press_event', self.mark_closest_star)
         self.aplpy_plot.show_grayscale()
 
         # The dialog has always the same width; the height is adjusted
@@ -150,7 +150,7 @@ class FindingChartDialog(object):
         self.goto_button.add_accelerator(*args)
 
 
-    def mark_star(self, event):
+    def mark_closest_star(self, event):
         """ Callback function for 'button_press_event'.
 
         Find the closest star to the x- and y- image coordinates where the user
