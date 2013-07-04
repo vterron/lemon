@@ -128,6 +128,9 @@ class FindingChartDialog(object):
         # run(), so we have to connect to the dialog 'response' event.
         self.dialog.connect('response', self.handle_response)
 
+        # Don't destroy the gtk.Dialog if we click on the window's close button
+        self.dialog.connect('delete-event', self.on_delete_event)
+
         # Button to, when a star is selected, view its details. We want to
         # render a stock button, STOCK_GO_FORWARD, but with a different label.
         # In order to achieve this, we register our own stock icon, reusing
@@ -235,6 +238,22 @@ class FindingChartDialog(object):
     def is_visible(self):
         """ Return True if the gtk.Dialog is shown, False if hidden """
         return self._currently_shown
+
+    def on_delete_event(self, widget, event):
+        """ Callback handler for the 'delete-event' signal.
+
+        Closing a window using the window manager (i.e., clicking on the
+        window's close button), by default, causes it to be destroyed, so after
+        that there is nothing left to be redisplayed. Instead of destroying it,
+        hide the gtk.Dialog. Returns True in order to indicate that the default
+        handler is *not* to be called.
+
+        [http://faq.pygtk.org/index.py?req=show&file=faq10.006.htp]
+
+        """
+
+        self.hide()
+        return True
 
     def destroy(self):
         """ Destroy the gtk.Dialog """
