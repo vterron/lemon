@@ -426,7 +426,7 @@ class StarDetailsGUI(object):
         self.image_box.pack_start(canvas)
 
         self.navigation_box = self._builder.get_object('navigation-toolbar-box')
-        navig = NavigationToolbar(canvas, self.image_box)
+        navig = NavigationToolbar(canvas, self.image_box.get_window())
         self.navigation_box.pack_start(navig)
         matplotlib_container.show_all()
 

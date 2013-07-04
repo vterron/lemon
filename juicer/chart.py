@@ -91,7 +91,7 @@ class FindingChartDialog(object):
 
         # ... and the navigation toolbar
         self.navigation_box = self.builder.get_object('navigation-toolbar-box')
-        self.navig = NavigationToolbar(canvas, self.image_box)
+        self.navig = NavigationToolbar(canvas, self.image_box.get_window())
         self.navigation_box.pack_start(self.navig)
         matplotlib_container.show_all()
 
