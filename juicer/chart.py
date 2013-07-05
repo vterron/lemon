@@ -95,6 +95,12 @@ class FindingChartDialog(object):
         self.navigation_box.pack_start(self.navig)
         matplotlib_container.show_all()
 
+        # Use the field name as the suggested filename of the FileChooserDialog
+        # when the user clicks on the 'Save' button on the navigation toolbar.
+        # See the docstring of app.StarDetailsGUI.update_file_selector_name()
+        # for an explanation on why we are monkey-patching this method.
+        canvas.get_window_title = lambda: self.db.field_name
+
         self.dialog.set_transient_for(parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 

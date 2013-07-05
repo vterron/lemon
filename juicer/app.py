@@ -329,9 +329,30 @@ class StarDetailsGUI(object):
         curve = self.db.get_light_curve(self.id, self.shown)
         self.update_curve(curve, self.airmasses_visible())
 
+    def update_file_selector_name(self):
+        """ Update the name suggested by the 'Save' button FileChooserDialog.
+
+        When the 'Save' button on the matplotlib navigation toolbar is clicked,
+        the gtk.FileChooserDialog suggests as filename the value returned by
+        NavigationToolbar.canvas.get_default_filename(). If we take a look at
+        its source code, we can see that it returns `self.get_window_title() or
+        'image'`. That is: if the title of the window is undefined, 'image' is
+        used as the default filename.
+
+        Unfortunately, set_window_title() has no effect here because there is
+        no window containing the figure. Work around this by monkey-patching
+        the method, making it return what we want to be the default filename.
+        The string includes the name of the field, the star ID and the filter
+        of the light curve: for example, 'ngc_2264_star_1856_curve_h.png'.
+
+        """
+
+        args = self.db.field_name, self.id, self.shown
+        filename = '%s_star_%d_curve_%s' % args
+        self.canvas.get_window_title = lambda: filename
+
     def show_pfilter(self, button, event, pfilter):
         """ Display the information of the star in this photometric filter """
-
 
         # Ignore clicks on already-pressed buttons (i.e., do not draw the same
         # light curve twice in a row). Note that 'show' is initialized to None,
@@ -348,6 +369,7 @@ class StarDetailsGUI(object):
         # LEMONJuicerGUI.handle_row_activated can know in which filter we
         # were working when we clicked on one of the reference stars
         self.refstars_view.pfilter = pfilter
+        self.update_file_selector_name()
 
     def handle_toggle_view_sexagesimal(self, *args):
         button = self._builder.get_object('radio-view-sexagesimal')
@@ -422,14 +444,14 @@ class StarDetailsGUI(object):
         matplotlib_container = self._builder.get_object('matplotlib-container')
         self.image_box = self._builder.get_object('image-container-box')
         self.figure = matplotlib.figure.Figure()
-        canvas = FigureCanvas(self.figure)
-        self.image_box.pack_start(canvas)
+        self.canvas = FigureCanvas(self.figure)
+        self.image_box.pack_start(self.canvas)
 
         self.navigation_box = self._builder.get_object('navigation-toolbar-box')
-        navig = NavigationToolbar(canvas, self.image_box.get_window())
+        navig = NavigationToolbar(self.canvas, self.image_box.get_window())
+
         self.navigation_box.pack_start(navig)
         matplotlib_container.show_all()
-
         self.error_msg = self._builder.get_object('error-messages-label')
         self.error_msg.set_visible(False)
 
@@ -618,6 +640,7 @@ class StarDetailsGUI(object):
         export_button = self._builder.get_object('save-curve-points-button')
         args = 'clicked', self.save_light_curve_points
         export_button.connect(*args)
+
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
