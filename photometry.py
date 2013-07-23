@@ -910,7 +910,7 @@ def main(arguments = None):
         qphot_params = float(aperture), float(annulus), float(dannulus)
 
         # The task of doing photometry on a series of images is inherently
-        # parallelizable; use a pool of workers to which assign the images.
+        # parallelizable; use a pool of workers to which to assign the images.
         pool = multiprocessing.Pool(options.ncores)
         map_async_args = \
             ((offset, reference_pixels, qphot_params, options)
