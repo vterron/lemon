@@ -660,7 +660,7 @@ parser.add_option('--filename', action = 'store', type = 'str',
                   help = "filename with which the FITS image with the best "
                   "full width at half-maximum (FWHM) will be saved to "
                   "OUTPUT_DIR. If set to an empty string (''), the image "
-                  "will retain its original filename, although --suffix will"
+                  "will retain its original filename, although --suffix will "
                   "still be appended (in other words, it is treated as all "
                   "the other images) [default: %default]")
 
