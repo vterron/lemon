@@ -413,6 +413,36 @@ def main(arguments = None):
     if options.aperture_pix and options.annulus_pix and options.dannulus_pix:
         fixed_annuli = True
 
+    # Abort the execution if the user gives, at the same time, the
+    # --aperture-pix, --annulus-pix, --dannulus-pix and --annuli options. It
+    # does not make sense to set the aperture and sky annuli to a fixed value
+    # and simultaneously specify that these very values must be read from the
+    # XML file. Does not compute.
+    if fixed_annuli and xml_annuli:
+        print ("%sError. The --aperture-pix, --annulus-pix and --dannulus-pix "
+              "options are incompatible with --annuli." % style.prefix)
+        print style.error_exit_message
+        return 1
+
+    if options.individual_fwhms:
+
+        # If the photometric parameters are set to a fixed value, they cannot
+        # be also derived from the FWHM of each image.
+        if fixed_annuli:
+            print "%sError. The --aperture-pix, --annulus-pix and " \
+                  "--dannulus-pix options are incompatible with " \
+                  "--individual." % style.prefix
+            print style.error_exit_message
+            return 1
+
+        # The same applies to --annuli: if the photometric parameters are read
+        # from the XML file, they cannot also depend on the FWHM of the images.
+        if xml_annuli:
+            print "%sError. The --annuli option is incompatible with " \
+                  "--individual." % style.prefix
+            print style.error_exit_message
+            return 1
+
     # The aperture, annulus and dannulus values, whether expressed in number of
     # times the median FWHM or by a fixed number of pixels, must be positive
     # numbers. By definition, also, the inner radius of the sky annulus must be
