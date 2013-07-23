@@ -253,6 +253,16 @@ qphot_group.add_option('--min-sky', action = 'store', type = 'float',
                        "above parameter. This option is intended to prevent "
                        "small FWHMs from resulting in too thin an sky "
                        "annulus. [default = %default]")
+
+qphot_group.add_option('--individual', action = 'store_true',
+                       dest = 'individual_fwhms',
+                       help = "consider FITS images individually when the "
+                       "FWHM (and, therefore, the derived aperture and sky "
+                       "annuli) is computed. That is, instead of using the "
+                       "median FWHM of *all* the images in the same filter, "
+                       "when this option is present the aperture and sky "
+                       "annuli used to do photometry on an image depend "
+                       "exclusively on the FWHM of *that* image.")
 parser.add_option_group(qphot_group)
 
 qphot_fixed = optparse.OptionGroup(parser, "Aperture Photometry (pixels)",
@@ -857,6 +867,16 @@ def main(arguments = None):
             print "%sSky annulus, width = %.3f pixels" % \
                   (style.prefix, dannulus)
 
+        elif options.individual_fwhms:
+            print "%sUsing photometric parameters derived from the FWHM of " \
+                  "each image:" % style.prefix
+            print "%sAperture radius = %.2f x FWHM pixels" % \
+                  (style.prefix, options.aperture)
+            print "%sSky annulus, inner radius = %.2f x FWHM pixels" % \
+                  (style.prefix, options.annulus)
+            print "%sSky annulus, width = %.2f x FWHM pixels" % \
+                  (style.prefix, options.dannulus)
+
         elif not fixed_annuli:
             print "%sCalculating the median FWHM for this filter..." %  \
                   style.prefix ,
@@ -901,19 +921,59 @@ def main(arguments = None):
             print "%sSky annulus, width = %.3f pixels" % \
                   (style.prefix, dannulus)
 
+        # The task of doing photometry on a series of images is inherently
+        # parallelizable; use a pool of workers to which to assign the images.
+        pool = multiprocessing.Pool(options.ncores)
+
         # Stars are stored in 'reference_stars' as database.DBStar instances.
         # However, the photometry function receives the pixels as a sequence
         # of astromatic.Pixel instances; hence the cast. Note that in
         # 'reference_stars' we have a five-element tuple, where the x and y
         # coordinates are the first two values.
         reference_pixels = [astromatic.Pixel(*x[:2]) for x in reference_stars]
-        qphot_params = float(aperture), float(annulus), float(dannulus)
 
-        # The task of doing photometry on a series of images is inherently
-        # parallelizable; use a pool of workers to which to assign the images.
-        pool = multiprocessing.Pool(options.ncores)
+        def fwhm_derived_params(offset):
+            """ Return the FWHM-derived aperture and sky annuli parameters.
+
+            Return a three-element tuple with (1) the aperture radius, (2) the
+            sky annulus inner radius and (3) its width. These are equal to the
+            FWHM of the image (offset.fwhm) times the --aperture, --annulus and
+            --dannulus options, respectively.
+
+            """
+
+            fwhm = offset.fwhm
+
+            aperture = fwhm * options.aperture
+            annulus  = fwhm * options.annulus
+            dannulus = fwhm * options.dannulus
+
+            path = offset.shifted
+            logging.debug("%s: FWHM = %.3f" % (path, fwhm))
+            msg = "%s: FWHM-derived aperture: %.3f x %.2f = %.3f pixels"
+            logging.debug(msg % (path, fwhm, options.aperture, aperture))
+            msg = "%s: FWHM-derived annulus: %.3f x %.2f = %.3f pixels"
+            logging.debug(msg % (path, fwhm, options.annulus, annulus))
+            msg = "%s: FWHM-derived dannulus: %.3f x %.2f = %.3f pixels"
+            logging.debug(msg % (path, fwhm, options.dannulus, dannulus))
+
+            return aperture, annulus, dannulus
+
+        # Define qphot_params either as a function that always returns the same
+        # aperture, annulus and dannulus (since the same photometric parameters
+        # are to be used for all the images in the same filter) *or*, if the
+        # --individual option was given, derives them from the FWHM of each of
+        # the images. This allows us to, in both cases, populate map_async_args
+        # by looping over the images on which photometry is to be done and, for
+        # each one of them, calling qphot_params to get the parameters.
+
+        if not options.individual_fwhms:
+            qphot_params = lambda x: (aperture, annulus, dannulus)
+        else:
+            qphot_params = fwhm_derived_params
+
         map_async_args = \
-            ((offset, reference_pixels, qphot_params, options)
+            ((offset, reference_pixels, qphot_params(offset), options)
              for offset in band_offsets)
         result = pool.map_async(parallel_photometry, map_async_args)
 
