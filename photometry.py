@@ -402,10 +402,12 @@ def main(arguments = None):
     if 0 < bool(options.aperture_pix) + bool(options.annulus_pix) + \
            bool(options.dannulus_pix) < 3:
 
-        msg = ("%(p)sWarning: the --pp, --ip and --kp options must always be "
-               "used in conjunction;\n%(p)sthe sizes of the apertures and sky "
-               "annuli will still be given by the FWHM.") % \
-               {'p': style.prefix}
+        msg = ("%(p)sWarning: the --aperture-pix, --annulus-pix and "
+               "--dannulus-pix options must\n"
+               "%(p)salways be used in conjunction. The sizes of the apertures "
+               "and sky annuli\n"
+               "%(p)swill still be determined by the FWHMs.\n"
+               "%(p)s") % {'p': style.prefix}
         warnings.warn(msg)
 
     if options.aperture_pix and options.annulus_pix and options.dannulus_pix:
