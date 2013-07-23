@@ -248,7 +248,7 @@ qphot_group.add_option('--dannulus', action = 'store', type = 'float',
 
 qphot_group.add_option('--min-sky', action = 'store', type = 'float',
                        dest = 'min', default = 3.0,
-                       help ="the minimum width of the sky annulus, in "
+                       help = "the minimum width of the sky annulus, in "
                        "pixels, regardless of the value specified in the "
                        "above parameter. This option is intended to prevent "
                        "small FWHMs from resulting in too thin an sky "
