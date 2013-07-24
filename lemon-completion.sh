@@ -134,7 +134,7 @@ _lemon_photometry()
     local opts
     opts="--output --overwrite --passband --maximum --margin --gain
     --annuli --cores --verbose --pixels --min-sky --aperture --annulus
-    --dannulus --individual --aperture-pix --annulus-pix
+    --dannulus --individual-fwhm --aperture-pix --annulus-pix
     --dannulus-pix --expk --coaddk --gaink --uik"
 
     case $prev in

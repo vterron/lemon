@@ -254,8 +254,8 @@ qphot_group.add_option('--min-sky', action = 'store', type = 'float',
                        "small FWHMs from resulting in too thin an sky "
                        "annulus. [default = %default]")
 
-qphot_group.add_option('--individual', action = 'store_true',
-                       dest = 'individual_fwhms',
+qphot_group.add_option('--individual-fwhm', action = 'store_true',
+                       dest = 'individual_fwhm',
                        help = "consider FITS images individually when the "
                        "FWHM (and, therefore, the derived aperture and sky "
                        "annuli) is computed. That is, instead of using the "
@@ -424,14 +424,14 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    if options.individual_fwhms:
+    if options.individual_fwhm:
 
         # If the photometric parameters are set to a fixed value, they cannot
         # be also derived from the FWHM of each image.
         if fixed_annuli:
             print "%sError. The --aperture-pix, --annulus-pix and " \
                   "--dannulus-pix options are incompatible with " \
-                  "--individual." % style.prefix
+                  "--individual-fwhm." % style.prefix
             print style.error_exit_message
             return 1
 
@@ -439,7 +439,7 @@ def main(arguments = None):
         # from the XML file, they cannot also depend on the FWHM of the images.
         if xml_annuli:
             print "%sError. The --annuli option is incompatible with " \
-                  "--individual." % style.prefix
+                  "--individual-fwhm." % style.prefix
             print style.error_exit_message
             return 1
 
@@ -899,7 +899,7 @@ def main(arguments = None):
             print "%sSky annulus, width = %.3f pixels" % \
                   (style.prefix, dannulus)
 
-        elif options.individual_fwhms:
+        elif options.individual_fwhm:
             print "%sUsing photometric parameters derived from the FWHM of " \
                   "each image:" % style.prefix
             print "%sAperture radius = %.2f x FWHM pixels" % \
@@ -994,12 +994,13 @@ def main(arguments = None):
         # Define qphot_params either as a function that always returns the same
         # aperture, annulus and dannulus (since the same photometric parameters
         # are to be used for all the images in the same filter) *or*, if the
-        # --individual option was given, derives them from the FWHM of each of
-        # the images. This allows us to, in both cases, populate map_async_args
-        # by looping over the images on which photometry is to be done and, for
-        # each one of them, calling qphot_params to get the parameters.
+        # --individual-fwhm option was given, derives them from the FWHM of
+        # each of the images. This allows us to, in both cases, populate
+        # map_async_args by looping over the images on which photometry is to
+        # be done and, for each one of them, calling qphot_params to get the
+        # parameters.
 
-        if not options.individual_fwhms:
+        if not options.individual_fwhm:
             qphot_params = lambda x: (aperture, annulus, dannulus)
         else:
             qphot_params = fwhm_derived_params
