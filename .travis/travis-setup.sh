@@ -21,7 +21,7 @@ pip install pyraf
 
 ########### Install IRAF ################
 
-DOWNLOADS_SERVER="http://iaa.es/lemon/travis"
+DOWNLOADS_SERVER="http://iaa.es/lemon/travis/"
 IRAF_TAR="iraf.lnux.x86_64.tar.gz"
 IRAF_URL=$DOWNLOADS_SERVER$IRAF_TAR
 
