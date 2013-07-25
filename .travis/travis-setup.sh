@@ -47,7 +47,7 @@ cd ~
 wget $DOWNLOADS_SERVER$CDSCLIENT_TAR
 tar xvfz $CDSCLIENT_TAR
 
-cd cdsclient-* # e.g., cdsclient.tar.gz
+cd cdsclient-* # e.g., cdsclient-3.72/
 ./configure
 make
 make install
