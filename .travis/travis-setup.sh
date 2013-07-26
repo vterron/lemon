@@ -10,7 +10,7 @@ cd ~
 
 apt-get install git python-dev python-pip python-scipy python-pyfits \
         python-lxml python-uncertainties python-mock libfreetype6-dev \
-        libpng-dev csh libx11-dev libplplot9 alien realpath -qq
+        libpng12-dev csh libx11-dev libplplot11 alien realpath -qq
 
 pip install numpy
 pip install matplotlib
