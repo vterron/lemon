@@ -46,7 +46,7 @@ IRAF_DIR=`realpath $IRAF_DIR`
 cd $IRAF_DIR
 
 wget $IRAF_URL
-tar xvfz $IRAF_TAR
+tar xfz $IRAF_TAR
 
 iraf=$IRAF_DIR
 export $iraf
@@ -59,7 +59,7 @@ CDSCLIENT_TAR="cdsclient.tar.gz"
 
 cd ~
 wget $DOWNLOADS_SERVER$CDSCLIENT_TAR
-tar xvfz $CDSCLIENT_TAR
+tar xfz $CDSCLIENT_TAR
 
 cd cdsclient-* # e.g., cdsclient-3.72/
 ./configure
