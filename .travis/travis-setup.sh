@@ -20,12 +20,11 @@ CWD=$(pwd)
 
 cd ~
 
-apt-get install git python-dev python-pip python-scipy python-pyfits \
-        python-lxml python-uncertainties python-mock libfreetype6-dev \
-        libpng12-dev csh libx11-dev libplplot11 alien realpath
+apt-get install git python-dev python-pip python-numpy python-matplotlib \
+        python-scipy python-pyfits python-lxml python-uncertainties \
+        python-mock libfreetype6-dev libpng12-dev csh libx11-dev \
+        libplplot11 alien realpath
 
-pip install numpy
-pip install matplotlib
 pip install astropy
 pip install aplpy
 pip install d2to1
