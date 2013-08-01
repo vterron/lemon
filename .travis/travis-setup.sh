@@ -16,19 +16,16 @@ else
     echo "32-bit"
 fi
 
+apt-get install git python-dev python-pip libfreetype6-dev libpng12-dev \
+                csh libx11-dev libplplot11 alien realpath
+
+pip install -I numpy>=1.7.1
+pip install -Ir pre-requirements.txt
+pip install -Ir requirements.txt
+
 CWD=$(pwd)
 
 cd ~
-
-apt-get install git python-dev python-pip python-numpy python-matplotlib \
-        python-scipy python-pyfits python-lxml python-uncertainties \
-        python-mock libfreetype6-dev libpng12-dev csh libx11-dev \
-        libplplot11 alien realpath
-
-pip install astropy
-pip install aplpy
-pip install d2to1
-pip install pyraf
 
 ########### Install IRAF ################
 
