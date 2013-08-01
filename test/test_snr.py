@@ -129,7 +129,7 @@ class SNRTest(unittest.TestCase):
             # randomly added or subtracted, as snr.diference_error supports
             # subtraction of errors, addition or a combination of them.
 
-            ufloats = [uncertainties.ufloat(x) for x in stars]
+            ufloats = [uncertainties.ufloat(*x) for x in stars]
 
             total = 0
             for number in ufloats:
@@ -138,7 +138,7 @@ class SNRTest(unittest.TestCase):
                 else:
                     total -= number
 
-            self.assertAlmostEqual(total.std_dev(), our_err)
+            self.assertAlmostEqual(total.std_dev, our_err)
 
 
     def test_difference_snr(self):
@@ -225,8 +225,8 @@ class SNRTest(unittest.TestCase):
 
             # Now let NumPy calculate the average of the 'ufloat' instances
             # with wich 'uncertainties' represents numbers and their error.
-            ufloats = numpy.array([uncertainties.ufloat(x) for x in stars])
-            self.assertAlmostEqual(ufloats.mean().std_dev(), our_err)
+            ufloats = numpy.array([uncertainties.ufloat(*x) for x in stars])
+            self.assertAlmostEqual(ufloats.mean().std_dev, our_err)
 
     def _random_weight(self):
         """ Return a random float in the range [MIN_WEIGHT, MAX_WEIGHT] """
