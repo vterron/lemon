@@ -57,7 +57,7 @@ import style
 # https://github.com/geminiutil/geminiutil/commit/9aa46fd9cd3
 warnings.filterwarnings('ignore', message=".+ a HIERARCH card will be created.")
 
-class NonStandardFITS(ValueError):
+class NonStandardFITS(IOError):
     """ Raised when a non-standard file is attempted to be opened."""
     pass
 
