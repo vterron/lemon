@@ -28,6 +28,7 @@ import shutil
 import stat
 import tempfile
 import unittest
+import warnings
 
 # LEMON modules
 import fitsimage
@@ -80,9 +81,7 @@ class FITSImageTest(unittest.TestCase):
         hdu = pyfits.PrimaryHDU(pixels)
 
         for keyword, value in keywords.iteritems():
-            if len(keyword) > 8:
-                keyword = 'HIERARCH' + keyword
-            hdu.header.update(keyword, value)
+            hdu.header[keyword] = value
 
         fd, path = tempfile.mkstemp(suffix = '.fits')
         os.close(fd)
@@ -155,9 +154,18 @@ class FITSImageTest(unittest.TestCase):
         del handler[0].header['SIMPLE']
         handler.close(output_verify = 'ignore')
 
-        args = FITSImage, nonstandard_path
-        self.assertRaises(fitsimage.NonStandardFITS, *args)
-        os.unlink(nonstandard_path)
+        # Ignore PyFITS warning: "Error validating header for HDU #0 (note:
+        # PyFITS uses zero-based indexing). Block does not begin with SIMPLE or
+        # XTENSION. There may be extra bytes after the last HDU or the file is
+        # corrupted".
+
+        with warnings.catch_warnings():
+            msg = "(?s)Error validating header for .+ file is corrupted."
+            warnings.filterwarnings('ignore', message=msg)
+
+            args = FITSImage, nonstandard_path
+            self.assertRaises(fitsimage.NonStandardFITS, *args)
+            os.unlink(nonstandard_path)
 
         # Test that the NonFITSFile exception is raised when we try to open
         # anything that is not a FITS file. Among the countless kinds of file
@@ -244,8 +252,9 @@ class FITSImageTest(unittest.TestCase):
         with self.random(**kwargs) as img:
             # Try both ways, with and without 'HIERARCH'
             self.assertAlmostEqual(img.read_keyword(keyword), wind_speed)
-            keyword = 'HIERARCH' + keyword
-            self.assertAlmostEqual(img.read_keyword(keyword), wind_speed)
+            self.assertAlmostEqual(img.read_keyword('HIERARCH ' + keyword), wind_speed)
+            # KeyError raised if 'HIERARCH' does not include a whitespace
+            self.assertRaises(KeyError, img.read_keyword, 'HIERARCH' + keyword)
 
         # Keywords are case-insensitive
         keyword = 'FILTER'
@@ -278,15 +287,8 @@ class FITSImageTest(unittest.TestCase):
     def test_update_keyword(self):
 
         def get_comment(image, keyword):
-            """ Return the comment associated with a FITS keyword, or None """
-
-            card = image._header.ascardlist()[keyword]
-            # From "OBSERVER= 'Edwin Hubble' / Cosmologist" to 'Cosmologist'
-            try:
-                comment = str(card).split('/')[1].strip()
-                return comment
-            except IndexError:
-                return None
+            """ Return the comment associated with a FITS keyword """
+            return image._header.comments[keyword]
 
         keywords = {'INSTRUMENT' : "2.2m CAHA", 'CCD_TEMP' : -129.12}
         with self.random(**keywords) as img:
@@ -315,9 +317,8 @@ class FITSImageTest(unittest.TestCase):
             img.update_keyword(keyword, new_instrument)
             # Try both ways, with and without 'HIERARCH'.
             self.assertEqual(img.read_keyword(keyword), new_instrument)
-            keyword = 'HIERARCH' + keyword
-            self.assertEqual(img.read_keyword(keyword), new_instrument)
-            self.assertEqual(get_comment(img, keyword), None) # no comment
+            self.assertEqual(img.read_keyword('HIERARCH ' + keyword), new_instrument)
+            self.assertEqual(get_comment(img, keyword), '') # no comment
 
             # Keywords are case-insensitive. Also, note that only the name of
             # the observer is updated here: we are not specifying the comment
@@ -345,7 +346,12 @@ class FITSImageTest(unittest.TestCase):
         with self.random(**keywords) as img:
 
             # Deleting a non-existing keyword raises no error
-            img.delete_keyword('TELESCOPE')
+            with warnings.catch_warnings():
+                # Warning emitted until PyFITS 3.2 or 3.3, apparently
+                msg = "(?s).+ Please update your code so that KeyErrors are " \
+                      "caught and handled when deleting non-existent keywords."
+                warnings.filterwarnings('ignore', message=msg)
+                img.delete_keyword('TELESCOPE')
 
             # Keywords are case-insensitive
             keyword = 'oBJeCT'
@@ -363,8 +369,7 @@ class FITSImageTest(unittest.TestCase):
             img.delete_keyword(keyword)
             # Try both ways, with and without 'HIERARCH'.
             self.assertRaises(KeyError, img.read_keyword, keyword)
-            keyword = 'HIERARCH' + keyword
-            self.assertRaises(KeyError, img.read_keyword, keyword)
+            self.assertRaises(KeyError, img.read_keyword, 'HIERARCH ' + keyword)
 
     def test_date(self):
 

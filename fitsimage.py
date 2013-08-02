@@ -51,6 +51,12 @@ import methods
 import passband
 import style
 
+# Ignore the "adding a HIERARCH keyword" PyFITS warning that is emitted when
+# the keyword name does not start with 'HIERARCH' and is greater than eight
+# characters or contains spaces. This solution is taken from:
+# https://github.com/geminiutil/geminiutil/commit/9aa46fd9cd3
+warnings.filterwarnings('ignore', message=".+ a HIERARCH card will be created.")
+
 class NonFITSFile(TypeError):
     """ Raised when a non-FITS file is opened by the FITSImage class """
     pass
@@ -194,6 +200,12 @@ class FITSImage(object):
         the keyword is None, ValueError if it is left empty and KeyError if the
         keyword cannot be found in the header.
 
+        There is no need to prepend 'HIERARCH' to the keyword name when it is
+        longer than eight characters, since PyFITS handles this transparently.
+        You may nevertheless use it, but note in that case there *must* be a
+        whitespace between 'HIERARCH' and the keyword name: e.g., you must
+        write 'HIERARCH AMBI WIND SPEED', never 'HIERARCHAMBI WIND SPEED'.
+
         """
 
         if keyword is None:
@@ -219,19 +231,10 @@ class FITSImage(object):
 
         """
 
-        # [From the PyFits Handbook, page 20] For keywords longer than 8
-        # characters, there is a convention originated at ESO to facilitate
-        # such use. It uses a special keyword HIERARCH with the actual long
-        # keyword following. [...] When creating or updating using the
-        # header.update() method, it is necessary to prepend 'hierarch'.
-
         if len(keyword) > 8:
-            msg = "%s: keyword '%s' is longer than eight characters"
+            msg = "%s: keyword '%s' is longer than eight characters or " \
+                  "contains spaces; a HIERARCH card will be created"
             logging.debug(msg % (self.path, keyword))
-            hierarch_keyword = 'HIERARCH ' + keyword
-            msg = "%s: keyword '%s' became '%s'"
-            logging.debug(msg % (self.path, keyword, hierarch_keyword))
-            keyword = hierarch_keyword
 
         handler = pyfits.open(self.path, mode = 'update')
         msg = "%s: file opened to update '%s' keyword" % (self.path, keyword)
@@ -244,7 +247,7 @@ class FITSImage(object):
             # printed by PyRAF in case, well, the comment is too long.
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
-                header.update(keyword, value, comment = comment)
+                header[keyword] = (value, comment)
                 args = self.path, keyword, value
                 msg = "%s: keyword '%s' updated to '%s'" % args
                 if comment:
@@ -277,9 +280,16 @@ class FITSImage(object):
         handler = pyfits.open(self.path, mode = 'update')
         try:
             header = handler[0].header
-            del header[keyword]
-            # Update in-memory copy of the FITS header
-            self._header = header
+            try:
+                del header[keyword]
+                # Update in-memory copy of the FITS header
+                self._header = header
+
+            # Future versions of PyFITS (by 3.2 or 3.3, most probably) will
+            # raise KeyError when a non-existent keyword is deleted, just
+            # like a dictionary would, so we better get ready for this.
+            except KeyError:
+                pass
         finally:
             handler.close(output_verify = 'ignore')
 
