@@ -430,7 +430,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
                 with open(copy_path, 'at') as fd:
                     fd.write("# useless comment\n")
 
-                with mock.patch_object(astromatic, variable, copy_path):
+                with mock.patch.object(astromatic, variable, copy_path):
                     different = astromatic.sextractor_md5sum()
                     self.assertNotEqual(checksum, different)
 
@@ -479,7 +479,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
             copy_path = get_nonexistent_path(ext = ext)
             shutil.copy2(path, copy_path)
 
-            with mock.patch_object(astromatic, variable, copy_path):
+            with mock.patch.object(astromatic, variable, copy_path):
 
                 # chmod u-r
                 mode = stat.S_IMODE(os.stat(copy_path)[stat.ST_MODE])
@@ -539,7 +539,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # any other command) will appear as not installed on the system.
 
         environment_copy = copy.deepcopy(os.environ)
-        with mock.patch_object(os, 'environ', environment_copy) as mocked:
+        with mock.patch.object(os, 'environ', environment_copy) as mocked:
             mocked['PATH'] = ''
             func = astromatic.sextractor_version
             self.assertRaises(astromatic.SExtractorNotInstalled, func)
@@ -574,7 +574,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # any other command) will appear as not installed on the system.
 
         environment_copy = copy.deepcopy(os.environ)
-        with mock.patch_object(os, 'environ', environment_copy) as mocked:
+        with mock.patch.object(os, 'environ', environment_copy) as mocked:
             mocked['PATH'] = ''
             args = astromatic.sextractor, img_path
             self.assertRaises(astromatic.SExtractorNotInstalled, *args)
@@ -591,7 +591,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
             copy_path = get_nonexistent_path(ext = ext)
             shutil.copy2(path, copy_path)
 
-            with mock.patch_object(astromatic, variable, copy_path):
+            with mock.patch.object(astromatic, variable, copy_path):
 
                 # chmod u-r
                 mode = stat.S_IMODE(os.stat(copy_path)[stat.ST_MODE])
@@ -618,7 +618,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         version[-1] += 1
         version = tuple(version)
 
-        with mock.patch_object(astromatic, 'SEXTRACTOR_REQUIRED_VERSION', version):
+        with mock.patch.object(astromatic, 'SEXTRACTOR_REQUIRED_VERSION', version):
             args = astromatic.sextractor, img_path
             self.assertRaises(astromatic.SExtractorUpgradeRequired, *args)
 
@@ -757,7 +757,7 @@ class SCAMPFunctionsTest(unittest.TestCase):
         shutil.copy2(path, copy_path)
 
         args = (astromatic.scamp, img_path) + default_args
-        with mock.patch_object(astromatic, 'SCAMP_CONFIG', copy_path):
+        with mock.patch.object(astromatic, 'SCAMP_CONFIG', copy_path):
 
             # chmod u-r
             mode = stat.S_IMODE(os.stat(copy_path)[stat.ST_MODE])
@@ -827,7 +827,7 @@ class SCAMPFunctionsTest(unittest.TestCase):
             cdsclient_symlink = get_path(os.path.basename(cdsclient_path))
 
             environment_copy = copy.deepcopy(os.environ)
-            with mock.patch_object(os, 'environ', environment_copy) as mocked:
+            with mock.patch.object(os, 'environ', environment_copy) as mocked:
                 mocked['PATH'] = fake_path_dir
 
                 # (1) Missing SExtractor executable
