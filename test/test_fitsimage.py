@@ -167,12 +167,12 @@ class FITSImageTest(unittest.TestCase):
             self.assertRaises(fitsimage.NonStandardFITS, *args)
             os.unlink(nonstandard_path)
 
-        # Test that the NonFITSFile exception is raised when we try to open
+        # NonStandardFITS exception must also be raised when we try to open
         # anything that is not a FITS file. Among the countless kinds of file
         # types that could be used for this, try to open (a) an empty file...
         with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
             empty_path = fd.name
-            self.assertRaises(fitsimage.NonFITSFile, FITSImage, empty_path)
+            self.assertRaises(fitsimage.NonStandardFITS, FITSImage, empty_path)
 
         # ... and (b) a non-empty text file.
         with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
@@ -180,7 +180,7 @@ class FITSImageTest(unittest.TestCase):
             fd.write("consectetur adipisicing elit\n")
             fd.flush()
             text_path = fd.name
-            self.assertRaises(fitsimage.NonFITSFile, FITSImage, text_path)
+            self.assertRaises(fitsimage.NonStandardFITS, FITSImage, text_path)
 
     def test_unlink(self):
         for _ in xrange(NITERS):

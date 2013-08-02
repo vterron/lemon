@@ -57,10 +57,6 @@ import style
 # https://github.com/geminiutil/geminiutil/commit/9aa46fd9cd3
 warnings.filterwarnings('ignore', message=".+ a HIERARCH card will be created.")
 
-class NonFITSFile(TypeError):
-    """ Raised when a non-FITS file is opened by the FITSImage class """
-    pass
-
 class NonStandardFITS(ValueError):
     """ Raised when a non-standard file is attempted to be opened."""
     pass
@@ -73,8 +69,8 @@ class FITSImage(object):
 
         A copy of the header of the FITS file is kept in memory for fast access
         to its keywords. IOError is raised if 'path' does not exist or is not
-        readable, NonFITSFile if it is not a FITS file, and NonStardardFITS in
-        case that, although a FITS file, it does not conform to the standard.
+        readable, and NonStardardFITS in case that it does not conform to the
+        FITS standard or it simply is not a FITS file at all.
 
         FITS Standard Document:
         http://fits.gsfc.nasa.gov/fits_standard.html
@@ -141,15 +137,7 @@ class FITSImage(object):
             elif "Permission denied" in str(e):
                 raise
             else:
-                raise NonFITSFile(nonfits_emsg)
-
-        # Catching IndexError is also necessary, as PyFITS does not throw the
-        # IOError exception when opening an empty file, but instead waits until
-        # the header or data are accessed to raise IndexError.
-        except (IndexError, AttributeError):
-            raise NonFITSFile(nonfits_emsg)
-        except NonStandardFITS:
-            raise
+                raise NonStandardFITS(e)
 
     def unlink(self):
         """ Remove the FITS image.
