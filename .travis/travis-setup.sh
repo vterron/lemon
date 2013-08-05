@@ -16,10 +16,9 @@ else
     echo "32-bit"
 fi
 
-apt-get install python-dev python-pip libfreetype6-dev libpng12-dev \
-                csh libx11-dev libplplot11 alien realpath
+apt-get install python-dev python-pip python-numpy libfreetype6-dev \
+                libpng12-dev csh libx11-dev libplplot11 alien realpath
 
-pip install -I numpy>=1.7.1
 pip install -Ir pre-requirements.txt
 pip install -Ir requirements.txt
 
