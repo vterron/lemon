@@ -21,8 +21,8 @@ fi
 apt-get install python-dev python-pip python-numpy libfreetype6-dev \
                 libpng12-dev csh libx11-dev libplplot11 alien realpath
 
-pip install -Ir pre-requirements.txt
-pip install -Ir requirements.txt
+pip install -r pre-requirements.txt
+pip install -r requirements.txt
 
 CWD=$(pwd)
 
