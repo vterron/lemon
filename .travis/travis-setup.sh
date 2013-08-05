@@ -4,6 +4,8 @@
 # Author: Victor Terron (c) 2013
 # License: GNU GPLv3
 
+set -e # exit if any statement returns a non-true return value
+
 REGEXP=".*64$"
 HARDWARE_NAME=`uname -m`
 
