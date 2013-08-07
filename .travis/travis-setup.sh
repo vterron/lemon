@@ -18,11 +18,21 @@ else
     echo "32-bit"
 fi
 
-apt-get install python-dev python-pip python-numpy libfreetype6-dev \
+# Use apt-get, instead of pip, in order to install as many Python dependencies
+# as possible: some packages, like NumPY and SciPy, contain a lot of C code,
+# which would otherwise have to be compiled every time the Travis tests are run.
+# The binary packages allow us to avoid this, resulting in an enormous speed-up.
+
+apt-get install python-dev python-pip python-numpy python-scipy \
+                python-matplotlib python-lxml python-mock libfreetype6-dev \
                 libpng12-dev csh libx11-dev libplplot11 alien realpath
 
-pip install -r pre-requirements.txt
-pip install -r requirements.txt
+pip install astropy>=0.2.4
+pip install d2to1>=0.2.10
+pip install APLpy>=0.9.9
+pip install pyfits>=3.1.2
+pip install pyraf>=2.1.1
+pip install uncertainties>=2.4.1
 
 CWD=$(pwd)
 
