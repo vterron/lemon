@@ -57,7 +57,7 @@ wget $IRAF_URL
 tar xfz $IRAF_TAR
 
 iraf=$IRAF_DIR
-export $iraf
+export iraf
 yes "" | $iraf/unix/hlib/install
 rm $IRAF_TAR
 
