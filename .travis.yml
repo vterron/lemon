@@ -11,6 +11,10 @@ virtualenv:
   system_site_packages: true
 
 before_install:
+  # Fix "Permission denied" errors in tests involving multiprocessing
+  # http://github.com/travis-ci/travis-core/issues/187
+  - sudo rmdir /dev/shm
+  - sudo ln -Tsf /{run,dev}/shm
   - sudo ./.travis/travis-setup.sh
 
 script:
