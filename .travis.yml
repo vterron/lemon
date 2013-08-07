@@ -1,7 +1,8 @@
 language: python
 
 python:
-    - "2.6"
+    # Don't test against 2.6. We use apt-get to install many dependencies, but
+    # Python system packages only include Python 2.7 libraries on Ubuntu 12.04.
     - "2.7"
 
 install: true
