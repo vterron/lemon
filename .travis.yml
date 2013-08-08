@@ -16,6 +16,7 @@ before_install:
   - sudo rmdir /dev/shm
   - sudo ln -Tsf /{run,dev}/shm
   - sudo ./.travis/travis-setup.sh
+  - python ./setup.py
 
 script:
   - ./run_tests.py
