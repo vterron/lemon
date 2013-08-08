@@ -51,7 +51,12 @@ if __name__ == "__main__":
             names.append(module)
 
     suite = unittest.TestLoader().loadTestsFromNames(names)
-    result = unittest.TextTestRunner(verbosity = 2).run(suite)
+    runner = unittest.TextTestRunner(verbosity = 2)
+
+    if sys.version_info[:2] == (2, 7):
+        runner.failfast = True
+
+    result = runner.run(suite)
     how_many_errors = len(result.errors) + len(result.failures)
     sys.exit(how_many_errors)
 
