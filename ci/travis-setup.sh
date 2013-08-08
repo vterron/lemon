@@ -104,6 +104,25 @@ wget $SWARP_URL
 alien -i $SWARP_RPM
 rm $SWARP_RPM
 
+cd $PWD # back to the LEMON directory
+
+# The unit tests use several FITS images that are downloaded from the
+# STScI Digitized Sky Survey to test/test_data/fits/. Be considerate
+# and, instead of downloading them every time the tests are run, keep
+# a copy on our server.
+
+CWD=$(pwd)
+
+TEST_FITS_DIR="test/test_data/fits"
+DOWNLOADS_SERVER="http://iaa.es/lemon/travis/"
+DSS_IMAGES_TAR="DSS-fits-images.tar"
+DSS_IMAGES_URL=$DOWNLOADS_SERVER$DSS_IMAGES_TAR
+
+cd $TEST_FITS_DIR
+wget $DSS_IMAGES_URL
+tar xf $DSS_IMAGES_TAR
+rm $DSS_IMAGES_TAR
+
 cd $PWD
 
 exit 0
