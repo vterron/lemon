@@ -15,6 +15,10 @@ before_install:
   # http://github.com/travis-ci/travis-core/issues/187
   - sudo rmdir /dev/shm
   - sudo ln -Tsf /{run,dev}/shm
+
+  # SCAMP requires libplplotd.so.9, but Ubuntu 12.04 installs libplplotd.so.11
+  - sudo ln -s /usr/lib/libplplotd.so.{11,9}
+
   - sudo ./.travis/travis-setup.sh
   - python ./setup.py
 
