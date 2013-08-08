@@ -23,12 +23,12 @@ This is a convenience script for loading all the unit tests in the test/
 directory and running them. Test modules are automatically detected: those
 files which start with 'test_' and have the '.py' extension (such as
 test/test_passband.py) are treated as such. For Python 2.6 compatibility,
-we cannot use the 'failfast' option, which causes the test run to stop on
-the first error or failure.
+we cannot use TestLoader.discover(), which is not available until 2.7.
 
 """
 
 import os
+import sys
 import unittest
 
 # This import checks whether the FITS images used by some tests are where
@@ -43,18 +43,15 @@ TESTS_EXTENSION = '.py'
 
 if __name__ == "__main__":
 
+    names = []
     for path in os.listdir(TESTS_PACKAGE):
         if path.startswith(TESTS_PREFIX) and path.endswith(TESTS_EXTENSION):
-
-            # The module name to import, such as 'test.test_passband'
+            # The module name, such as 'test.test_passband'
             module = '%s.%s' % (TESTS_PACKAGE, path[:-len(TESTS_EXTENSION)])
+            names.append(module)
 
-            # The 'exit' parameter --so that the result is displayed on
-            # standard output without calling sys.exit()-- was not added until
-            # Python 2.7. For 2.6 compatibility, we do not use it and manually
-            # catch the exception that sys.exit() raises (SystemExit) instead.
-            try:
-                retcode = unittest.main(module = module)
-            except SystemExit:
-                pass
+    suite = unittest.TestLoader().loadTestsFromNames(names)
+    result = unittest.TextTestRunner(verbosity = 2).run(suite)
+    how_many_errors = len(result.errors) + len(result.failures)
+    sys.exit(how_many_errors)
 
