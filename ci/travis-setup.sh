@@ -118,6 +118,7 @@ DOWNLOADS_SERVER="http://iaa.es/lemon/travis/"
 DSS_IMAGES_TAR="DSS-fits-images.tar"
 DSS_IMAGES_URL=$DOWNLOADS_SERVER$DSS_IMAGES_TAR
 
+mkdir -p $TEST_FITS_DIR
 cd $TEST_FITS_DIR
 wget $DSS_IMAGES_URL
 tar xf $DSS_IMAGES_TAR
