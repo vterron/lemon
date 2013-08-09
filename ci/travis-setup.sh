@@ -23,9 +23,9 @@ fi
 # which would otherwise have to be compiled every time the Travis tests are run.
 # The binary packages allow us to avoid this, resulting in an enormous speed-up.
 
-apt-get install -qq python-dev python-pip python-numpy python-scipy libjpeg62  \
-                    python-matplotlib python-lxml python-mock libfreetype6-dev \
-                    libpng12-dev csh libx11-dev libplplot11 alien realpath
+apt-get install python-dev python-pip python-numpy python-scipy libjpeg62  \
+                python-matplotlib python-lxml python-mock libfreetype6-dev \
+                libpng12-dev csh libx11-dev libplplot11 alien realpath
 
 pip install "astropy>=0.2.4"
 pip install "d2to1>=0.2.10"
