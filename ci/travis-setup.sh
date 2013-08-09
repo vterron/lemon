@@ -48,7 +48,7 @@ else
 fi
 IRAF_URL=$DOWNLOADS_SERVER$IRAF_TAR
 
-IRAF_DIR="/iraf/iraf"
+IRAF_DIR="/iraf/iraf/"
 mkdir -p $IRAF_DIR
 IRAF_DIR=`realpath $IRAF_DIR`
 cd $IRAF_DIR
@@ -113,7 +113,7 @@ cd $PWD # back to the LEMON directory
 
 CWD=$(pwd)
 
-TEST_FITS_DIR="test/test_data/fits"
+TEST_FITS_DIR="test/test_data/fits/"
 DOWNLOADS_SERVER="http://iaa.es/lemon/travis/"
 DSS_IMAGES_TAR="DSS-fits-images.tar"
 DSS_IMAGES_URL=$DOWNLOADS_SERVER$DSS_IMAGES_TAR
