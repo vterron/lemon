@@ -18,10 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import functools
 import logging
 import math
 import numpy
+import os
 import os.path
 import stat
 import sys
@@ -464,4 +466,20 @@ def log_uncaught_exceptions(func):
             msg = "%s raised %s('%s')" % (func.__name__, type.__name__, value)
             logging.debug(msg)
     return wrapper
+
+@contextlib.contextmanager
+def tmp_chdir(path):
+    """ A context manager to temporarily change the working directory.
+
+    This is a rather simple context manager to change the current working
+    directory within a with statement, restoring the original one upon exit.
+
+    """
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(cwd)
 
