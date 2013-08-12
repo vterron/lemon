@@ -36,7 +36,7 @@ import subprocess
 import fitsimage
 import methods
 
-ASTROMATIC_FILES = os.path.abspath('./astromatic')
+ASTROMATIC_FILES = os.path.join(os.path.dirname(__file__), 'astromatic/')
 SEXTRACTOR_CONFIG = os.path.join(ASTROMATIC_FILES, 'sextractor.sex')
 SEXTRACTOR_PARAMS = os.path.join(ASTROMATIC_FILES, 'sextractor.param')
 SEXTRACTOR_FILTER = os.path.join(ASTROMATIC_FILES, 'sextractor.conv')
