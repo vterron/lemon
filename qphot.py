@@ -31,6 +31,17 @@ from the user's perspective.
 
 """
 
+import logging
+import math
+import os
+import os.path
+import tempfile
+
+# LEMON modules
+import astromatic
+import fitsimage
+import methods
+
 # Tell PyRAF to skip all graphics initialization and run in terminal-only mode.
 # Otherwise we will get annoying warning messages (such as "could not open
 # XWindow display" or "No graphics display available for this session") when
@@ -38,10 +49,16 @@ from the user's perspective.
 # Any tasks which attempt to display graphics will fail, of course, but we are
 # not going to make use of any of them, anyway.
 
-import os
 os.environ['PYRAF_NO_DISPLAY'] = '1'
-import pyraf.iraf
-from pyraf.iraf import digiphot, apphot  # 'digiphot.apphot' package
+
+# Avoid PyRAF "Warning: no login.cl found" messages and do not clutter the
+# filesystem with pyraf/ cache directories. The current working directory is
+# also temporarily changed in fitsimage.py, for the same reason, so refer to
+# that module for a more detailed explanation.
+
+with methods.tmp_chdir(os.path.dirname(__file__)):
+    import pyraf.iraf
+    from pyraf.iraf import digiphot, apphot  # 'digiphot.apphot' package
 
 # PyRAF versions older than 2.0 caused IRAF's imexpr to raise an obscure
 # exception ("Error in parameter 'a' for task imexpr\n'Key a not found") from
@@ -58,16 +75,6 @@ if pyraf_version < (2, 0):
 # and run them in parallel, each one of them would use the same IRAF running
 # executable, which could sometimes result in the most arcane of errors.
 pyraf.iraf.prcacheOff()
-
-import logging
-import math
-import os.path
-import tempfile
-
-# LEMON modules
-import astromatic
-import fitsimage
-import methods
 
 # Decorate pyraf.subproc.Subprocess.__del__() to catch the SubprocessError
 # exception that it occasionally raises (when the process is not gone after
