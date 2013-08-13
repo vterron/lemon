@@ -37,6 +37,7 @@ MKIRAF_BIN = 'mkiraf'
 TERM_TYPE = 'xgterm'
 LOGIN_FILE = 'login.cl'
 UPARM_DIR = 'uparm'
+PYRAF_CACHE = 'pyraf'
 
 def mkiraf(path):
     """ Create the IRAF login script and the uparm directory.
@@ -111,5 +112,10 @@ if __name__ == "__main__":
     lemon_path = os.path.dirname(os.path.realpath(__file__))
     print "Setting up IRAF's %s in %s ..." % (LOGIN_FILE, lemon_path) ,
     mkiraf(lemon_path)
+    print 'done.'
+
+    print "Creating pyraf/ directory for cache...",
+    pyraf_cache_path = os.path.join(lemon_path, PYRAF_CACHE)
+    mkdir_p(pyraf_cache_path)
     print 'done.'
 
