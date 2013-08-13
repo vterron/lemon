@@ -19,6 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import difflib
+import os.path
 import sys
 
 LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
@@ -45,12 +46,14 @@ def show_help(name):
 
 if __name__ == "__main__":
 
+    name = os.path.basename(sys.argv[0])
+
     if len(sys.argv) == 1 or '--help' in sys.argv:
-        show_help(sys.argv[0])
+        show_help(name)
 
     else:
 
-        name, command = sys.argv[:2]
+        command = sys.argv[1]
         args = sys.argv[2:]
 
         if command not in LEMON_COMMANDS:
