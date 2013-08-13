@@ -29,6 +29,7 @@ this file is located, so it does not depend on where it is executed from.
 """
 
 import os
+import errno
 import shutil
 import subprocess
 
@@ -85,6 +86,24 @@ def mkiraf(path):
         else:
             msg = "terminal type not defined in %s" % LOGIN_FILE
             raise ValueError(msg)
+
+def mkdir_p(path):
+    """ Create a directory, give no error if it already exists.
+
+    This implements the functionality of Unix `mkdir -p`, creating a
+    directory but without giving any error if it already exists and
+    making parent directories as needed.
+    [URL] http://stackoverflow.com/a/600612/184363
+
+    """
+
+    try:
+        os.mkdir(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
 if __name__ == "__main__":
