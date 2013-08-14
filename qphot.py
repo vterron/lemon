@@ -56,7 +56,7 @@ os.environ['PYRAF_NO_DISPLAY'] = '1'
 # also temporarily changed in fitsimage.py, for the same reason, so refer to
 # that module for a more detailed explanation.
 
-with methods.tmp_chdir(os.path.dirname(__file__)):
+with methods.tmp_chdir(os.path.dirname(os.path.abspath(__file__))):
     import pyraf.iraf
     from pyraf.iraf import digiphot, apphot  # 'digiphot.apphot' package
 
