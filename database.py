@@ -1320,7 +1320,7 @@ class LEMONdB(object):
         phased_x = []
         for utime, mag, snr in zip(unix_times, magnitudes, snrs):
             # How far into the cycle is this Unix time?
-            fractional_part, integer_part = math.modf((utime - zero_t) / period)
+            fractional_part = math.modf((utime - zero_t) / period)[0]
             phased_x.append(fractional_part)
         assert len(phased_x) == len(unix_times)
 

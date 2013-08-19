@@ -106,8 +106,6 @@ class FITSImage(object):
 
         self.path = path
 
-        nonfits_emsg = "file '%s' is not a FITS file" % path
-
         try:
             # The file must be opened to make sure it is a standard FITS.
             # We would rather use the with statement, but in that case we

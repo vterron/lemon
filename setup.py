@@ -68,7 +68,7 @@ def mkiraf(path):
     # to send the terminal type to mkiraf's stdin.
     args = [MKIRAF_BIN]
     p = subprocess.Popen(args, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-    out, err = p.communicate(input = TERM_TYPE)
+    p.communicate(input = TERM_TYPE)
 
     if p.returncode:
         msg = "execution of %s failed" % MKIRAF_BIN
