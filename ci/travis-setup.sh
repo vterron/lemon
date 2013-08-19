@@ -120,6 +120,7 @@ DSS_IMAGES_URL=$DOWNLOADS_SERVER$DSS_IMAGES_TAR
 
 mkdir -p $TEST_FITS_DIR
 cd $TEST_FITS_DIR
+echo "Downloading test FITS images to $(pwd)"
 wget $DSS_IMAGES_URL
 tar xf $DSS_IMAGES_TAR
 rm $DSS_IMAGES_TAR
