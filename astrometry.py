@@ -82,12 +82,6 @@ def astrometry(img_path, scale, equinox, radecsys, saturation,
 
     """
 
-    img_basename = os.path.basename(img_path)
-    root, ext = os.path.splitext(img_basename)
-    output_fd, output_path = \
-        tempfile.mkstemp(prefix = '%s_' % root, suffix = ext)
-    os.close(output_fd)
-
     # This does astrometry on the image and returns the path to the
     # temporary file to which the '.head' file has been saved
     head_path = astromatic.scamp(img_path, scale, equinox,
