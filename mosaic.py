@@ -52,6 +52,7 @@ import optparse
 import pyfits
 import shutil
 import sys
+import traceback
 
 # LEMON modules
 import customparser
