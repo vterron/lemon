@@ -145,7 +145,7 @@ class StringLengthFinder(object):
     def _point(self, index):
         """ Return the index-th Unix time and magnitude as a two-element NumPy
         array. Used to easily calculate the Euclidean distance in length() """
-        return self._data[:,index]
+        return self._data[:, index]
 
     @property
     def length(self):

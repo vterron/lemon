@@ -307,7 +307,7 @@ class StarSet(object):
         # by the maximum magnitude.
         for image_index in xrange(self.nimages):
             image_mags = self._phot_info[:, 0, image_index]
-            norm_mags[:,image_index] = image_mags / image_mags.max()
+            norm_mags[:, image_index] = image_mags / image_mags.max()
 
         # Now, for each star, calculate the median of the normalized magnitudes
         mag_medians = numpy.empty(len(self), dtype = self.dtype)
