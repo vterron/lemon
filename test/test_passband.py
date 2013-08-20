@@ -103,3 +103,27 @@ class PassbandTest(unittest.TestCase):
             passband = Passband.random()
             self.assertNotEqual(passband, passband.different())
 
+    @staticmethod
+    def read_filter_data_file(path):
+        """ Read the contents of a file in the ./test_data/filters directory.
+
+        Loop over the lines of the file, each one of them expected to contain a
+        two-element tuple which is eval()'uated and yielded. The first element
+        of the tuple should be the name of the photometric filter (for example,
+        'Johnson V'), while the second should be the letter that the Passband
+        class must identify (e.g., 'V'). Empty and comment lines are ignored.
+
+        """
+
+        with open(path, 'r') as fd:
+
+            for line in fd:
+                line = line.strip()
+
+                # Ignore empty and comment lines
+                if not line or line[0] == '#':
+                    continue
+
+                name, letter = eval(line)
+                yield name, letter
+
