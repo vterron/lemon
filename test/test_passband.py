@@ -20,6 +20,8 @@
 
 from __future__ import division
 
+import functools
+import os.path
 import string
 import unittest
 
@@ -29,6 +31,9 @@ NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
 
 class PassbandTest(unittest.TestCase):
+
+    get_data_path = functools.partial(os.path.join, './test/test_data/filters')
+    JOHNSON_TEST_DATA = get_data_path('Johnson')
 
     def test_init(self):
         # Make sure that the constructor works as expected.
