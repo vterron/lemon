@@ -159,3 +159,21 @@ class PassbandTest(unittest.TestCase):
         for name in 'Johnson', 'Johnson BV', 'BV (Johnson)', 'RI_(John)':
             self.assertRaises(NonRecognizedPassband, Passband, name)
 
+    def test_cousins_filters(self):
+
+        for name, letter in self.read_filter_data_file(self.COUSINS_TEST_DATA):
+                passband = Passband(name)
+                self.assertEqual(passband.system, 'Cousins')
+                self.assertEqual(passband.letter, letter)
+
+        # Letters other than RI raise InvalidPassbandLetter
+        for letter in string.ascii_uppercase:
+            if letter not in Passband.COUSINS_LETTERS:
+                name = "Cousins %s" % letter
+                self.assertRaises(InvalidPassbandLetter, Passband, name)
+
+        # NonRecognizedPassband raised if the letter of the filter cannot be
+        # identified (for example, if more than one letter is given).
+        for name in 'Cousins', 'Cousins RI', 'RI (Cousins)', 'RI_(Cou)':
+            self.assertRaises(NonRecognizedPassband, Passband, name)
+
