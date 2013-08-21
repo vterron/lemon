@@ -34,6 +34,7 @@ class PassbandTest(unittest.TestCase):
 
     get_data_path = functools.partial(os.path.join, './test/test_data/filters')
     JOHNSON_TEST_DATA = get_data_path('Johnson')
+    COUSINS_TEST_DATA = get_data_path('Cousins')
 
     def test_init(self):
         # Make sure that the constructor works as expected.
