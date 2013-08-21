@@ -22,6 +22,7 @@ from __future__ import division
 
 import functools
 import os.path
+import random
 import string
 import unittest
 
@@ -133,47 +134,58 @@ class PassbandTest(unittest.TestCase):
                 name, letter = eval(line)
                 yield name, letter
 
-    def test_johnson_filters(self):
+    def _test_photometric_system(self, system, data_file, valid_letters):
+        """ Test that Passband parses a photometric system correctly.
 
-        # Read the file with test data for the Johnson photometric system,
-        # containing two-element tuples such as "Johnson U", 'U'. For each one
-        # of them, the first element is used to instantiate a Passband object
-        # (e.g., `Passband("Johnson U")`), and we make sure that the system is
-        # identified as 'Johnson' and the letter (e.g. 'U') correctly parsed.
+        'system' must be the formal name of the photometric system, adequately
+        capitalized, such as 'Johnson' or 'Cousins'. The Passband class must
+        set the 'system' attribute to this value at instantiation time.
 
-        for name, letter in self.read_filter_data_file(self.JOHNSON_TEST_DATA):
-                passband = Passband(name)
-                self.assertEqual(passband.system, 'Johnson')
-                self.assertEqual(passband.letter, letter)
+        'data_file' is the path to the file with two-element tuples, such as
+        'Johnson U', 'U'. For each one of them, the first element is used to
+        instantiate a Passband object (e.g., `Passband('Johnson U')`), and we
+        then make sure that the system is identified as 'Johnson' and the
+        letter (e.g. 'U') correctly parsed.
 
-        # Letters other than UBVRIJHKLMN raise InvalidPassbandLetter
+        'valid_letters' is a sequence of the letters of the filters allowed by
+        the photometric system. In the case of Johnson, for example, the valid
+        filter letters are 'UBVRIJHKLMN'.
+
+        """
+
+        for name, letter in self.read_filter_data_file(data_file):
+            passband = Passband(name)
+            self.assertEqual(passband.system, system)
+            self.assertEqual(passband.letter, letter)
+
+        # Letters other than the valid ones raise InvalidPassbandLetter
         for letter in string.ascii_uppercase:
-            if letter not in Passband.JOHNSON_LETTERS:
-                name = "Johnson %s" % letter
+            if letter not in valid_letters:
+                name = "%s %s" % (system, letter)
                 self.assertRaises(InvalidPassbandLetter, Passband, name)
 
         # There are some rare cases in which the letter of the photometric
         # filter cannot be identified and NonRecognizedPassband is raised.
         # For example, if more than one letter is given.
 
-        for name in 'Johnson', 'Johnson BV', 'BV (Johnson)', 'RI_(John)':
+        two_letters = ''.join(random.sample(valid_letters, 2))
+        values = dict(system = system, letter = two_letters)
+        patterns = ("%(system)s",              # e.g., "Johnson"
+                    "%(letter)s %(system)s",   # e.g., "BV Johnson"
+                    "%(system)s %(letter)s",   # e.g., "Johnson BV"
+                    "%(letter)s (%(system)s)") # e.g., "BV (Johnson)"
+
+        for pattern in patterns:
+            name = pattern % values
             self.assertRaises(NonRecognizedPassband, Passband, name)
+
+    def test_johnson_filters(self):
+        self._test_photometric_system('Johnson',
+                                      self.JOHNSON_TEST_DATA,
+                                      Passband.JOHNSON_LETTERS)
 
     def test_cousins_filters(self):
-
-        for name, letter in self.read_filter_data_file(self.COUSINS_TEST_DATA):
-                passband = Passband(name)
-                self.assertEqual(passband.system, 'Cousins')
-                self.assertEqual(passband.letter, letter)
-
-        # Letters other than RI raise InvalidPassbandLetter
-        for letter in string.ascii_uppercase:
-            if letter not in Passband.COUSINS_LETTERS:
-                name = "Cousins %s" % letter
-                self.assertRaises(InvalidPassbandLetter, Passband, name)
-
-        # NonRecognizedPassband raised if the letter of the filter cannot be
-        # identified (for example, if more than one letter is given).
-        for name in 'Cousins', 'Cousins RI', 'RI (Cousins)', 'RI_(Cou)':
-            self.assertRaises(NonRecognizedPassband, Passband, name)
+        self._test_photometric_system('Cousins',
+                                      self.COUSINS_TEST_DATA,
+                                      Passband.COUSINS_LETTERS)
 
