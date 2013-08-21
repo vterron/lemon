@@ -25,7 +25,7 @@ import os.path
 import string
 import unittest
 
-from passband import Passband, NonRecognizedPassband, UnknownPassbandLetter
+from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -131,4 +131,30 @@ class PassbandTest(unittest.TestCase):
 
                 name, letter = eval(line)
                 yield name, letter
+
+    def test_johnson_filters(self):
+
+        # Read the file with test data for the Johnson photometric system,
+        # containing two-element tuples such as "Johnson U", 'U'. For each one
+        # of them, the first element is used to instantiate a Passband object
+        # (e.g., `Passband("Johnson U")`), and we make sure that the system is
+        # identified as 'Johnson' and the letter (e.g. 'U') correctly parsed.
+
+        for name, letter in self.read_filter_data_file(self.JOHNSON_TEST_DATA):
+                passband = Passband(name)
+                self.assertEqual(passband.system, 'Johnson')
+                self.assertEqual(passband.letter, letter)
+
+        # Letters other than UBVRIJHKLMN raise InvalidPassbandLetter
+        for letter in string.ascii_uppercase:
+            if letter not in Passband.JOHNSON_LETTERS:
+                name = "Johnson %s" % letter
+                self.assertRaises(InvalidPassbandLetter, Passband, name)
+
+        # There are some rare cases in which the letter of the photometric
+        # filter cannot be identified and NonRecognizedPassband is raised.
+        # For example, if more than one letter is given.
+
+        for name in 'Johnson', 'Johnson BV', 'BV (Johnson)', 'RI_(John)':
+            self.assertRaises(NonRecognizedPassband, Passband, name)
 

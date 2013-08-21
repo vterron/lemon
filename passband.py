@@ -49,6 +49,8 @@ class InvalidPassbandLetter(NonRecognizedPassband):
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """
 
+    JOHNSON_LETTERS = 'UBVRIJHKLMN'
+
     # The effective wavelength midpoint for each standard filter, in nanometers.
     # Taken from Binney's "Galactic Astronomy", 1998, ch.2.3.2, pp.53, seen at
     # Wikipedia. Note that this is a class (or static) variable, as there is no
