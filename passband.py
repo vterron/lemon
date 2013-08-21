@@ -36,8 +36,14 @@ class NonRecognizedPassband(ValueError):
     """ Raised when a the astronomical filter cannot be identified. """
     pass
 
-class UnknownPassbandLetter(NonRecognizedPassband):
-    """ Raised when the letter of the astronomical filter is not known. """
+class InvalidPassbandLetter(NonRecognizedPassband):
+    """ Raised if the letter of the filter does not belong to the system.
+
+    For example, this exception should be raised if we come across something
+    like 'Johnson Z', as Z is not a filter of the Johnson photometric system
+    (UBVRIJHKLMN).
+
+    """
     pass
 
 class Passband(object):
