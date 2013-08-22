@@ -50,10 +50,10 @@ class InvalidPassbandLetter(NonRecognizedPassband):
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """
 
-    SYSTEM_LETTERS = {'Johnson' : 'UBVRIJHKLMN',
-                      'Cousins' : 'VRI',
-                      'Gunn' : 'UVGR',
-                      'SDSS' : 'UGRIZ',
+    SYSTEM_LETTERS = {'Johnson' : tuple('UBVRIJHKLMN'),
+                      'Cousins' : tuple('VRI'),
+                      'Gunn' : tuple('UVGR'),
+                      'SDSS' : tuple('UGRIZ'),
                       '2MASS' : ('J', 'H', 'KS')}
 
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
