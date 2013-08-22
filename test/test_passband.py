@@ -37,6 +37,7 @@ class PassbandTest(unittest.TestCase):
     JOHNSON_TEST_DATA = get_data_path('Johnson')
     COUSINS_TEST_DATA = get_data_path('Cousins')
     GUNN_TEST_DATA = get_data_path('Gunn')
+    SDSS_TEST_DATA = get_data_path('SDSS')
 
     def test_init(self):
         # Make sure that the constructor works as expected.
