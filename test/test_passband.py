@@ -195,4 +195,8 @@ class PassbandTest(unittest.TestCase):
         self._test_photometric_system('Gunn',
                                       self.GUNN_TEST_DATA,
                                       Passband.GUNN_LETTERS)
+    def test_sdss_filters(self):
+        self._test_photometric_system('SDSS',
+                                      self.SDSS_TEST_DATA,
+                                      Passband.SDSS_LETTERS)
 

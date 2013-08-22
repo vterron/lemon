@@ -52,6 +52,7 @@ class Passband(object):
     JOHNSON_LETTERS = 'UBVRIJHKLMN'
     COUSINS_LETTERS = 'VRI'
     GUNN_LETTERS = 'UVGR'
+    SDSS_LETTERS = 'UGRIZ'
 
     # The effective wavelength midpoint for each standard filter, in nanometers.
     # Taken from Binney's "Galactic Astronomy", 1998, ch.2.3.2, pp.53, seen at
