@@ -53,7 +53,8 @@ class Passband(object):
     SYSTEM_LETTERS = {'Johnson' : 'UBVRIJHKLMN',
                       'Cousins' : 'VRI',
                       'Gunn' : 'UVGR',
-                      'SDSS' : 'UGRIZ'}
+                      'SDSS' : 'UGRIZ',
+                      '2MASS' : ('J', 'H', 'KS')}
 
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
 

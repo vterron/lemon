@@ -194,3 +194,6 @@ class PassbandTest(unittest.TestCase):
     def test_sdss_filters(self):
         self._test_photometric_system('SDSS', self.SDSS_TEST_DATA)
 
+    def test_2mass_filters(self):
+        self._test_photometric_system('2MASS', self.TWOMASS_TEST_DATA)
+
