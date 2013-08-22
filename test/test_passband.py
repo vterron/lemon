@@ -184,19 +184,20 @@ class PassbandTest(unittest.TestCase):
     def test_johnson_filters(self):
         self._test_photometric_system('Johnson',
                                       self.JOHNSON_TEST_DATA,
-                                      Passband.JOHNSON_LETTERS)
+                                      Passband.SYSTEM_LETTERS['Johnson'])
 
     def test_cousins_filters(self):
         self._test_photometric_system('Cousins',
                                       self.COUSINS_TEST_DATA,
-                                      Passband.COUSINS_LETTERS)
+                                      Passband.SYSTEM_LETTERS['Cousins'])
 
     def test_gunn_filters(self):
         self._test_photometric_system('Gunn',
                                       self.GUNN_TEST_DATA,
-                                      Passband.GUNN_LETTERS)
+                                      Passband.SYSTEM_LETTERS['Gunn'])
+
     def test_sdss_filters(self):
         self._test_photometric_system('SDSS',
                                       self.SDSS_TEST_DATA,
-                                      Passband.SDSS_LETTERS)
+                                      Passband.SYSTEM_LETTERS['SDSS'])
 
