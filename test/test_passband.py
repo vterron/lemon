@@ -136,7 +136,7 @@ class PassbandTest(unittest.TestCase):
                 name, letter = eval(line)
                 yield name, letter
 
-    def _test_photometric_system(self, system, data_file, valid_letters):
+    def _test_photometric_system(self, system, data_file):
         """ Test that Passband parses a photometric system correctly.
 
         'system' must be the formal name of the photometric system, adequately
@@ -149,16 +149,16 @@ class PassbandTest(unittest.TestCase):
         then make sure that the system is identified as 'Johnson' and the
         letter (e.g. 'U') correctly parsed.
 
-        'valid_letters' is a sequence of the letters of the filters allowed by
-        the photometric system. In the case of Johnson, for example, the valid
-        filter letters are 'UBVRIJHKLMN'.
-
         """
 
         for name, letter in self.read_filter_data_file(data_file):
             passband = Passband(name)
             self.assertEqual(passband.system, system)
             self.assertEqual(passband.letter, letter)
+
+        # A sequence of the letters allowed by the photometric system.
+        # In the case of Johnson, for example, they are 'UBVRIJHKLMN'.
+        valid_letters = Passband.SYSTEM_LETTERS[system]
 
         # Letters other than the valid ones raise InvalidPassbandLetter
         for letter in string.ascii_uppercase:
@@ -182,22 +182,14 @@ class PassbandTest(unittest.TestCase):
             self.assertRaises(NonRecognizedPassband, Passband, name)
 
     def test_johnson_filters(self):
-        self._test_photometric_system('Johnson',
-                                      self.JOHNSON_TEST_DATA,
-                                      Passband.SYSTEM_LETTERS['Johnson'])
+        self._test_photometric_system('Johnson', self.JOHNSON_TEST_DATA)
 
     def test_cousins_filters(self):
-        self._test_photometric_system('Cousins',
-                                      self.COUSINS_TEST_DATA,
-                                      Passband.SYSTEM_LETTERS['Cousins'])
+        self._test_photometric_system('Cousins', self.COUSINS_TEST_DATA)
 
     def test_gunn_filters(self):
-        self._test_photometric_system('Gunn',
-                                      self.GUNN_TEST_DATA,
-                                      Passband.SYSTEM_LETTERS['Gunn'])
+        self._test_photometric_system('Gunn', self.GUNN_TEST_DATA)
 
     def test_sdss_filters(self):
-        self._test_photometric_system('SDSS',
-                                      self.SDSS_TEST_DATA,
-                                      Passband.SYSTEM_LETTERS['SDSS'])
+        self._test_photometric_system('SDSS', self.SDSS_TEST_DATA)
 
