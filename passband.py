@@ -62,7 +62,8 @@ class Passband(object):
                       COUSINS : tuple('VRI'),
                       GUNN : tuple('UVGR'),
                       SDSS : tuple('UGRIZ'),
-                      TWOMASS : ('J', 'H', 'KS')}
+                      TWOMASS : ('J', 'H', 'KS'),
+                      STROMGREN : ('U', 'V', 'B', 'Y', 'NARROW', 'N', 'WIDE', 'W')}
 
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
 

@@ -199,3 +199,6 @@ class PassbandTest(unittest.TestCase):
     def test_2mass_filters(self):
         self._test_photometric_system(TWOMASS, self.TWOMASS_TEST_DATA)
 
+    def test_stromgren_filters(self):
+        self._test_photometric_system(STROMGREN, self.STROMGREN_TEST_DATA)
+
