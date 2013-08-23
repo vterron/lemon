@@ -34,13 +34,20 @@ NPASSBANDS = 100  # Number of elements for sequences of random Passbands
 
 class PassbandTest(unittest.TestCase):
 
-    get_data_path = functools.partial(os.path.join, './test/test_data/filters')
-    JOHNSON_TEST_DATA = get_data_path(JOHNSON)
-    COUSINS_TEST_DATA = get_data_path(COUSINS)
-    GUNN_TEST_DATA = get_data_path(GUNN)
-    SDSS_TEST_DATA = get_data_path(SDSS)
-    TWOMASS_TEST_DATA = get_data_path(TWOMASS)
-    STROMGREN_TEST_DATA = get_data_path(STROMGREN)
+    TEST_DATA_DIR = './test/test_data/filters'
+
+    @classmethod
+    def get_data_path(cls, system):
+        """ Return the path to the test data file for a photometric system.
+
+        The data files are located in the TEST_DATA_DIR directory, and their
+        filename matches the name of the photometric system (e.g., 'Johnson').
+        These files contain a series of two-element tuples, such as ('Johnson
+        U', 'U'), one per line.
+
+        """
+
+        return os.path.join(cls.TEST_DATA_DIR, system)
 
     def test_init(self):
         # Make sure that the constructor works as expected.
@@ -139,21 +146,20 @@ class PassbandTest(unittest.TestCase):
                 name, letter = eval(line)
                 yield name, letter
 
-    def _test_photometric_system(self, system, data_file):
+    def _test_photometric_system(self, system):
         """ Test that Passband parses a photometric system correctly.
 
         'system' must be the formal name of the photometric system, adequately
         capitalized, such as 'Johnson' or 'Cousins'. The Passband class must
         set the 'system' attribute to this value at instantiation time.
 
-        'data_file' is the path to the file with two-element tuples, such as
-        'Johnson U', 'U'. For each one of them, the first element is used to
-        instantiate a Passband object (e.g., `Passband('Johnson U')`), and we
-        then make sure that the system is identified as 'Johnson' and the
-        letter (e.g. 'U') correctly parsed.
-
         """
 
+        data_file = self.get_data_path(system)
+
+        # For each two-element tuple, such as 'Johnson U', 'U', the first
+        # element is used to instantiate a Passband object and we then make
+        # sure that both the system is the letter are correctly parsed.
         for name, letter in self.read_filter_data_file(data_file):
             passband = Passband(name)
             self.assertEqual(passband.system, system)
@@ -185,20 +191,20 @@ class PassbandTest(unittest.TestCase):
             self.assertRaises(NonRecognizedPassband, Passband, name)
 
     def test_johnson_filters(self):
-        self._test_photometric_system(JOHNSON, self.JOHNSON_TEST_DATA)
+        self._test_photometric_system(JOHNSON)
 
     def test_cousins_filters(self):
-        self._test_photometric_system(COUSINS, self.COUSINS_TEST_DATA)
+        self._test_photometric_system(COUSINS)
 
     def test_gunn_filters(self):
-        self._test_photometric_system(GUNN, self.GUNN_TEST_DATA)
+        self._test_photometric_system(GUNN)
 
     def test_sdss_filters(self):
-        self._test_photometric_system(SDSS, self.SDSS_TEST_DATA)
+        self._test_photometric_system(SDSS)
 
     def test_2mass_filters(self):
-        self._test_photometric_system(TWOMASS, self.TWOMASS_TEST_DATA)
+        self._test_photometric_system(TWOMASS)
 
     def test_stromgren_filters(self):
-        self._test_photometric_system(STROMGREN, self.STROMGREN_TEST_DATA)
+        self._test_photometric_system(STROMGREN)
 
