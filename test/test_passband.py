@@ -26,7 +26,8 @@ import random
 import string
 import unittest
 
-from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter
+from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
+                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -34,11 +35,11 @@ NPASSBANDS = 100  # Number of elements for sequences of random Passbands
 class PassbandTest(unittest.TestCase):
 
     get_data_path = functools.partial(os.path.join, './test/test_data/filters')
-    JOHNSON_TEST_DATA = get_data_path('Johnson')
-    COUSINS_TEST_DATA = get_data_path('Cousins')
-    GUNN_TEST_DATA = get_data_path('Gunn')
-    SDSS_TEST_DATA = get_data_path('SDSS')
-    TWOMASS_TEST_DATA = get_data_path('2MASS')
+    JOHNSON_TEST_DATA = get_data_path(JOHNSON)
+    COUSINS_TEST_DATA = get_data_path(COUSINS)
+    GUNN_TEST_DATA = get_data_path(GUNN)
+    SDSS_TEST_DATA = get_data_path(SDSS)
+    TWOMASS_TEST_DATA = get_data_path(TWOMASS)
 
     def test_init(self):
         # Make sure that the constructor works as expected.
@@ -183,17 +184,17 @@ class PassbandTest(unittest.TestCase):
             self.assertRaises(NonRecognizedPassband, Passband, name)
 
     def test_johnson_filters(self):
-        self._test_photometric_system('Johnson', self.JOHNSON_TEST_DATA)
+        self._test_photometric_system(JOHNSON, self.JOHNSON_TEST_DATA)
 
     def test_cousins_filters(self):
-        self._test_photometric_system('Cousins', self.COUSINS_TEST_DATA)
+        self._test_photometric_system(COUSINS, self.COUSINS_TEST_DATA)
 
     def test_gunn_filters(self):
-        self._test_photometric_system('Gunn', self.GUNN_TEST_DATA)
+        self._test_photometric_system(GUNN, self.GUNN_TEST_DATA)
 
     def test_sdss_filters(self):
-        self._test_photometric_system('SDSS', self.SDSS_TEST_DATA)
+        self._test_photometric_system(SDSS, self.SDSS_TEST_DATA)
 
     def test_2mass_filters(self):
-        self._test_photometric_system('2MASS', self.TWOMASS_TEST_DATA)
+        self._test_photometric_system(TWOMASS, self.TWOMASS_TEST_DATA)
 
