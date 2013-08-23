@@ -54,6 +54,7 @@ GUNN = 'Gunn'
 SDSS = 'SDSS'
 TWOMASS = '2MASS'
 STROMGREN = 'Strömgren'
+HALPHA = 'Halpha'
 
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """

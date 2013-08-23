@@ -27,7 +27,7 @@ import string
 import unittest
 
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
-                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN
+                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -207,4 +207,11 @@ class PassbandTest(unittest.TestCase):
 
     def test_stromgren_filters(self):
         self._test_photometric_system(STROMGREN)
+
+    def test_halpha_filters(self):
+        data_file = self.get_data_path(HALPHA)
+        for name, wavelength in self.read_filter_data_file(data_file):
+            passband = Passband(name)
+            self.assertEqual(passband.system, HALPHA)
+            self.assertEqual(passband.letter, wavelength)
 
