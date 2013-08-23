@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# encoding:UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -52,6 +53,7 @@ COUSINS = 'Cousins'
 GUNN = 'Gunn'
 SDSS = 'SDSS'
 TWOMASS = '2MASS'
+STROMGREN = 'Strömgren'
 
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """

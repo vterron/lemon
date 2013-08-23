@@ -27,7 +27,7 @@ import string
 import unittest
 
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
-                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS
+                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -40,6 +40,7 @@ class PassbandTest(unittest.TestCase):
     GUNN_TEST_DATA = get_data_path(GUNN)
     SDSS_TEST_DATA = get_data_path(SDSS)
     TWOMASS_TEST_DATA = get_data_path(TWOMASS)
+    STROMGREN_TEST_DATA = get_data_path(STROMGREN)
 
     def test_init(self):
         # Make sure that the constructor works as expected.
