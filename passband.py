@@ -66,6 +66,7 @@ class Passband(object):
                       TWOMASS : ('J', 'H', 'KS'),
                       STROMGREN : ('U', 'V', 'B', 'Y', 'NARROW', 'N', 'WIDE', 'W')}
 
+    ALL_SYSTEMS = set(SYSTEM_LETTERS.keys() + [HALPHA])
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
 
     # The effective wavelength midpoint for each standard filter, in nanometers.
