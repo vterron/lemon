@@ -27,7 +27,8 @@ import string
 import unittest
 
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
-                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA
+                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA, \
+                     UNKNOWN
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -214,4 +215,15 @@ class PassbandTest(unittest.TestCase):
             passband = Passband(name)
             self.assertEqual(passband.system, HALPHA)
             self.assertEqual(passband.letter, wavelength)
+
+    def test_unknown_filters(self):
+        data_file = self.get_data_path(UNKNOWN)
+        for name, letter in self.read_filter_data_file(data_file):
+            passband = Passband(name)
+            self.assertEqual(passband.system, UNKNOWN)
+            self.assertEqual(passband.letter, letter)
+
+        for letter in string.ascii_uppercase:
+            if letter not in passband.ALL_LETTERS:
+                self.assertRaises(NonRecognizedPassband, Passband, letter)
 

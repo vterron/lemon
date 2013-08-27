@@ -55,6 +55,7 @@ SDSS = 'SDSS'
 TWOMASS = '2MASS'
 STROMGREN = 'Strömgren'
 HALPHA = 'Halpha'
+UNKNOWN = 'Unknown'
 
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """
