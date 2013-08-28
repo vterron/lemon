@@ -57,6 +57,19 @@ STROMGREN = 'Strömgren'
 HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
 
+# The case-insensitive regular expression that the name of a filter must match
+# in order to consider that it belongs to each photometric system. For example,
+# 'rGunn' can be identified as a filter of the Gunn photometric system because
+# re.search(REGEXPS[GUNN], 'rGunn', re.IGNORECASE) produces a match.
+
+REGEXPS = {JOHNSON : 'Johnson|John',
+           COUSINS : 'Cousins|Cou',
+           GUNN : 'Gunn|Gun',
+           SDSS : "SDSS|'",
+           TWOMASS : '2MASS|2M',
+           STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
+           HALPHA : 'H(a(lpha)?)?\d{4}'}
+
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """
 
