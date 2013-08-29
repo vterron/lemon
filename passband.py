@@ -33,11 +33,6 @@
 import itertools
 import random
 import re
-
-class NonRecognizedPassband(ValueError):
-    """ Raised when a the astronomical filter cannot be identified. """
-    pass
-
 class InvalidPassbandLetter(NonRecognizedPassband):
     """ Raised if the letter of the filter does not belong to the system.
 
@@ -69,6 +64,22 @@ REGEXPS = {JOHNSON : 'Johnson|John',
            TWOMASS : '2MASS|2M',
            STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
            HALPHA : 'H(a(lpha)?)?\d{4}'}
+
+
+class NonRecognizedPassband(ValueError):
+    """ Raised when the photometric filter cannot be identified """
+
+    ERROR_NOTE = "If this is a legitimate filter name, and you think LEMON " \
+                 "should be able to recognize it, please let us know at " \
+                 "http://github.com/vterron/lemon/issues"
+
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        msg = "cannot identify the photometric system of filter '%s'. "
+        return msg  % self.name + self.ERROR_NOTE
+
 
 class Passband(object):
     """ Encapsulates a passband (or filter) of the photometric system. """
