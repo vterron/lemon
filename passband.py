@@ -33,15 +33,6 @@
 import itertools
 import random
 import re
-class InvalidPassbandLetter(NonRecognizedPassband):
-    """ Raised if the letter of the filter does not belong to the system.
-
-    For example, this exception should be raised if we come across something
-    like 'Johnson Z', as Z is not a filter of the Johnson photometric system
-    (UBVRIJHKLMN).
-
-    """
-    pass
 
 JOHNSON = 'Johnson'
 COUSINS = 'Cousins'
@@ -79,6 +70,24 @@ class NonRecognizedPassband(ValueError):
     def __str__(self):
         msg = "cannot identify the photometric system of filter '%s'. "
         return msg  % self.name + self.ERROR_NOTE
+
+
+class InvalidPassbandLetter(NonRecognizedPassband):
+    """ Raised if the letter of the filter does not belong to the system.
+
+    For example, this exception should be raised if we come across something
+    like 'Johnson Z', as Z is not a filter of the Johnson photometric system
+    (UBVRIJHKLMN).
+
+    """
+
+    def __init__(self, name, system):
+        self.name = name
+        self.system = system
+
+    def __str__(self):
+        msg = "'%s' is not a letter of the %s photometric system. "
+        return msg % (self.name, self.system) + self.ERROR_NOTE
 
 
 class Passband(object):
