@@ -55,11 +55,6 @@ class PassbandTest(unittest.TestCase):
             expected_wavelength = Passband.wavelengths[letter]
             self.assertEqual(Passband(letter).wavelength, expected_wavelength)
 
-    def test_different(self):
-        for _ in xrange(NITERS):
-            passband = Passband.random()
-            self.assertNotEqual(passband, passband.different())
-
     @staticmethod
     def read_filter_data_file(path):
         """ Read the contents of a file in the ./test_data/filters directory.
@@ -241,3 +236,9 @@ class PassbandTest(unittest.TestCase):
             self.assertTrue(pfilter.system in Passband.ALL_SYSTEMS)
             if pfilter.system != HALPHA: # H-alpha filters have no letter
                 self.assertTrue(pfilter.letter in Passband.SYSTEM_LETTERS[pfilter.system])
+
+    def test_different(self):
+        for _ in xrange(NITERS):
+            pfilter = Passband.random()
+            self.assertNotEqual(pfilter, pfilter.different())
+

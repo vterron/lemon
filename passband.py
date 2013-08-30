@@ -410,10 +410,16 @@ class Passband(object):
             return cls("%s %s" % (system, letter))
 
     def different(self):
-        """ Return a random filter other than this one """
+        """ Return a random Passband object different than this one.
+
+        The returned Passband object does not compare equal to 'self'. This
+        means that it has a different photometric system or, in case these are
+        equal, its letter (or wavelength, for H-alpha filters) is different.
+
+        """
 
         while True:
-            passband = random.choice(Passband.all())
+            passband = self.random()
             if passband != self:
                 return passband
 
