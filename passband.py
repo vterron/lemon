@@ -305,8 +305,42 @@ class Passband(object):
         return Passband.wavelengths[self.letter.upper()]
 
     def __str__(self):
-        """ The 'informal' string representation of the filter. """
-        return self.name
+        """ The 'informal' string representation.
+
+        Return a nice string representation of the photometric filter, such as
+        'Johnson V', 'Cousins R', 'Gunn r', 'SDSS g'', '2MASS Ks', 'Stromgren
+        y', 'H-alpha 6317' and, if the system is not known, simply 'V'. Note
+        that the letter of the Gunn, Strömgren and SDSS filters is written in
+        lowercase, and that an apostrophe is affixed to the latter. Strömgren
+        is written as 'Stromgren', removing the umlaut, so that the returned
+        string object is always ASCII-compatible.
+
+        """
+
+        system = self.system
+        letter = self.letter
+
+        if letter == 'KS':
+             letter = 'Ks'
+
+        if system == UNKNOWN:
+          return letter
+
+        if system in (GUNN, SDSS):
+            letter = letter.lower()
+
+        if system == STROMGREN:
+            system = "Stromgren"
+            if letter in ('NARROW', 'WIDE'):
+                letter = "HB " + letter.lower()
+            else:
+                letter = letter.lower()
+        elif system == SDSS:
+            letter = "%s'" % letter
+        elif system == HALPHA:
+            system = 'H-alpha'
+
+        return "%s %s" % (system, letter)
 
     def __repr__(self):
         """ The unambiguous string representation of a Passband object """
