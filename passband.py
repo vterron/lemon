@@ -144,6 +144,23 @@ class Passband(object):
         else:
             return UNKNOWN
 
+    @classmethod
+    def _parse_halpha_filter(cls, name):
+        """ Extract the wavelength from the name of a H-alpha filter.
+
+        Extract the wavelength from a H-alpha photometric filter name following
+        the pattern 'Hxxxx(/yy)?', where xxxx is the filter wavelength and yy,
+        optionally, its bandwidth. 'H' may also be 'Ha' or 'Halpha'; matching
+        is case insensitive. The wavelength *must* be a four-digit number.
+        Returns None if there is no match.
+
+        """
+
+        regexp = "^H(a(lpha)?)?(?P<wavelength>\d{4})(?P<bandwidth>/\d{2})?$"
+        match = re.match(regexp, name, re.IGNORECASE)
+        if match is not None:
+            return match.group('wavelength')
+
     def __init__(self, name):
         """ Instantiation method for the Passband class.
 
