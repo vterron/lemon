@@ -237,39 +237,42 @@ class Passband(object):
         else:
             return letter
 
-    def __init__(self, name):
+    def __init__(self, filter_name):
         """ Instantiation method for the Passband class.
 
-        The class constructor receives as its only parameter the name of the
-        photometric filter being instantiated, from which its letter is
-        automatically extracted. This means the the only truly important
-        information is, actually, the letter of the filter, a single character
-        which may ge given in lower or upper case.
+        Receive the name of the photometric filter and automatically extract
+        the system and letter (or wavelength, if it is H-alpha). The regular
+        expressions that identify them are quite flexible and should allow for
+        most, if not all, of the ways in which the name of a filter may be
+        written, assuming sane astronomers, under normal circumstances.
 
-        'Johnson V', 'V Johnson', 'V (Johnson)' and even simply 'V' are
-        acceptable filter names, from which the 'V' letter is easily identified.
-        Examples of unacceptable filter names include 'V(Johnson)' [there should
-        be a whitespace character between the letter and the left parenthesis],
-        'Johnson' [there is no letter!] and 'Johnson (V)' [as there is no point
-        in enclosing the letter in parentheses].
+        The NonRecognizedPassband exception is raised if the photometric letter
+        cannot be determined, and InvalidPassbandLetter if, although correctly
+        extracted, the letter does not belong to the photometric system (e.g.,
+        Johnson Z does not exist).
 
         """
 
-        # This regular expression matches the start of the string or a
-        # whitespace, followed a single (such as 'K') or two letters (e.g.,
-        # 'Ks'), either lower or upper case and followed by the end of the
-        # string or another whitespace.
+        # E.g., from "_Johnson_(V)_" to "JohnsonV"
+        name = re.sub('[\s\-_\(\)]', '', filter_name)
 
-        regexp = re.compile("(^|\s)([A-Z]{1,2})(\s|$)")
-        match = regexp.findall(name.upper())
-        if not 1 <= len(match) <= 2:
-            raise NonRecognizedPassband(name)
+        system = self._identify_system(name)
 
-        self.name = name
-        self.letter = match[0][1] # match = [('', 'V', ' ')], e.g.
+        if system == UNKNOWN:
+            letter = name.strip().upper()
+            if letter not in self.ALL_LETTERS:
+                raise NonRecognizedPassband(filter_name)
 
-        if self.letter.upper() not in Passband.wavelengths:
-            raise UnknownPassbandLetter(self.letter)
+        elif system == HALPHA:
+            letter = self._parse_halpha_filter(name)
+            if letter is None:
+                raise NonRecognizedPassband(filter_name)
+
+        else:
+            letter = self._parse_name(name, system)
+
+        self.system = system
+        self.letter = letter
 
     @classmethod
     def all(cls):

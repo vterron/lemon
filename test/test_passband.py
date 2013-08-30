@@ -50,30 +50,6 @@ class PassbandTest(unittest.TestCase):
 
         return os.path.join(cls.TEST_DATA_DIR, system)
 
-    def test_init(self):
-        # Make sure that the constructor works as expected.
-
-        # Improperly-formatted filter names are expected to be rejected
-        self.assertRaises(NonRecognizedPassband, Passband, "V(Johnson)")
-        self.assertRaises(NonRecognizedPassband, Passband, "Johnson (V)")
-        self.assertRaises(NonRecognizedPassband, Passband, "Johnson(V)")
-        self.assertRaises(NonRecognizedPassband, Passband, "Johnson")
-        self.assertRaises(NonRecognizedPassband, Passband, " ")
-        self.assertRaises(NonRecognizedPassband, Passband, '')
-
-        for letter in string.ascii_uppercase:
-
-            # The letter should be correctly extracted from the filter name...
-            if letter in Passband.wavelengths.keys():
-                self.assertEqual(Passband(letter).letter, letter)
-                self.assertEqual(Passband("%s (Johnson)" % letter).letter, letter)
-                self.assertEqual(Passband("Johnson %s" % letter).letter, letter)
-
-            else: # ... unless it does not belong to the photometric system
-                self.assertRaises(UnknownPassbandLetter, Passband, letter)
-                self.assertRaises(UnknownPassbandLetter, Passband, "%s Johnson" % letter)
-                self.assertRaises(UnknownPassbandLetter, Passband, "Johnson %s" % letter)
-
     def test_all(self):
         # Make sure all the photometric letters are present in all()
         wavelengths = set([x.wavelength for x in Passband.all()])
