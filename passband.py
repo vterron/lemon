@@ -122,6 +122,10 @@ class Passband(object):
                    'L' : 3450,
                    'M' : 4750}
 
+    # The order of the photometric letters, regardless of the system
+    LETTERS_ORDER = ['U', 'B', 'NARROW', 'WIDE', 'V', 'G', 'R', 'I',
+                     'Z', 'Y', 'J', 'H', 'KS', 'K', 'L', 'M', 'N']
+
     def __init__(self, name):
         """ Instantiation method for the Passband class.
 
