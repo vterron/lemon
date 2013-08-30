@@ -33,6 +33,7 @@
 import itertools
 import random
 import re
+import string
 
 JOHNSON = 'Johnson'
 COUSINS = 'Cousins'
@@ -160,6 +161,81 @@ class Passband(object):
         match = re.match(regexp, name, re.IGNORECASE)
         if match is not None:
             return match.group('wavelength')
+
+    @classmethod
+    def _parse_name(cls, name, system):
+        """ Extract the letter from the name of a photometric filter.
+
+        Parse the name of a Johnson, Cousins, Gunn, SDSS, 2MASS or Strömgren
+        filter (that is, all the photometric systems except for H-alpha) and
+        extract the letter. Whitespaces and any other separators, such as
+        dashes and underscores, *must* have been removed from the name of the
+        filter, as the regular expressions that match the photometric systems
+        do not take them into account.
+
+        The system of the filter must be specified in the 'system' argument,
+        and match one of the module-level variables that define the different
+        systems (such as JOHNSON or COUSINS).
+
+        The NonRecognizedPassband exception is raised if the photometric letter
+        cannot be determined, and InvalidPassbandLetter if, although correctly
+        extracted, the letter does not belong to the photometric system (e.g.,
+        Johnson Z does not exist).
+
+        """
+
+        if system == HALPHA:
+            msg = "Passband._parse_name() does not support H-alpha filter " \
+                  "names. Use Passband._parse_halpha_filter() instead"
+            raise ValueError(msg)
+
+        def fix_stromgren_letter(name):
+            """ A couple of cosmetic fixes needed by the Strömgren filters.
+
+            Two of the filters of the Strömgren photometric system are 'HB
+            narrow' and 'HB wide'. The 'HB' part is entirely optional and can
+            be written in several different ways (such as 'H B' or 'H Beta').
+            Remove it from the name of the filter, and in case what is left is
+            'N' or 'W' (short for 'NARROW' and 'WIDE', respectively), replace
+            them with the longer version. Returns the result in uppercase.
+
+            """
+
+            name = re.sub("H[\-\s]*B(ETA)?", '', name.upper())
+            if name == 'N':
+                return 'NARROW'
+            elif name == 'W':
+                return 'WIDE'
+            return name
+
+        # Remove from the name of the filter, which is converted to uppercase,
+        # the leftmost non-overlapping occurrences of the regular expression of
+        # the photometric system. This means that e.g., 'vJohnson' returns 'V'.
+        # We cannot use flags = re.IGNORECASE for Python 2.6 compatibility.
+        letter = re.sub(REGEXPS[system].upper(), '', name.upper()).upper()
+
+        # Strömgren subtleties
+        if system == STROMGREN:
+            letter = fix_stromgren_letter(letter)
+
+        # There should only be one letter
+        if len(letter.split()) != 1:
+            raise NonRecognizedPassband(name)
+
+        # Make sure that the letter belongs to the photometric system. If not,
+        # InvalidPassbandLetter is raised if it belongs to a different system
+        # (for example, "Gunn N") or at least is a valid letter ("Johnson A").
+        # Otherwise, raise NonRecognizedPassband.
+
+        elif letter not in cls.SYSTEM_LETTERS[system]:
+            all_letters = set(itertools.chain(cls.ALL_LETTERS,
+                                              string.ascii_uppercase))
+            if letter in all_letters:
+                raise InvalidPassbandLetter(letter, system)
+            else:
+                raise NonRecognizedPassband(name)
+        else:
+            return letter
 
     def __init__(self, name):
         """ Instantiation method for the Passband class.
