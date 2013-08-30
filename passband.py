@@ -299,11 +299,6 @@ class Passband(object):
                 pfilters.append(name)
         return [Passband(x) for x in pfilters]
 
-    @property
-    def wavelength(self):
-        """ Return the effective wavelength midpoint, in nanometers. """
-        return Passband.wavelengths[self.letter.upper()]
-
     def __str__(self):
         """ The 'informal' string representation.
 

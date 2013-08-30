@@ -50,11 +50,6 @@ class PassbandTest(unittest.TestCase):
 
         return os.path.join(cls.TEST_DATA_DIR, system)
 
-    def test_wavelength(self):
-        for letter in Passband.wavelengths.keys():
-            expected_wavelength = Passband.wavelengths[letter]
-            self.assertEqual(Passband(letter).wavelength, expected_wavelength)
-
     @staticmethod
     def read_filter_data_file(path):
         """ Read the contents of a file in the ./test_data/filters directory.
