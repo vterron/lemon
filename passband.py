@@ -20,13 +20,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-""" The class Passband encapsulates a filter of the photometric system. It is
-    mainly (and probably only) intended to be used so that the filters with
-    with the stars are observed can be automatically sorted according to their
-    position in the electromagnetic spectrum. Otherwise, if the strings with
-    the name of the filters were simply sorted lexicographically, the Johnson I
-    filter, for example, would go before the V filter, while the right order is
-    the other way around (as V has a shorter wavelenght than I, 551 vs 806 nm).
+""" The class Passband encapsulates a photometric filter. The supported systems
+are Johnson, Cousins, Gunn, SDSS, 2MASS, Strömgren and H-alpha, but photometric
+letters, designating a particular section of the electromagnetic spectrum, may
+also be given without a system (for example, 'V'). The main advantage that this
+class offers is that it makes it possible to recognize as equal filters written
+differently but that are indeed the same (e.g., 'Gunn r' and 'rGunn'). Also,
+filters can be sorted according to their position in the spectrum — otherwise,
+if the names of the filters were simply sorted lexicographically, 'Johnson I',
+for example, would go before 'Johnson V', even although the right order is the
+other way around (as V has a shorter wavelength than I).
 
 """
 
