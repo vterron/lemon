@@ -389,8 +389,25 @@ class Passband(object):
 
     @classmethod
     def random(cls):
-        """ Return a random Passband """
-        return cls(random.choice(cls.wavelengths.keys()))
+        """ Return a random Passband object.
+
+        Choose a random photometric system (Johnson, Cousins, Gunn, SDSS,
+        2MASS, Strömgren or H-alpha) and one of the letters that the system
+        defines. H-alpha filters do not have a letter, but wavelength: for
+        this, a random integer in the range [6000, 7000] is used.
+
+        """
+
+        MIN_WAVELENGTH = 6000
+        MAX_WAVELENGTH = 7000
+
+        system = random.choice(cls.SYSTEM_LETTERS.keys() + [HALPHA])
+        if system == HALPHA:
+            wavelength = random.randrange(MIN_WAVELENGTH, MAX_WAVELENGTH)
+            return cls("%s %04d" % (system, wavelength))
+        else:
+            letter = random.choice(cls.SYSTEM_LETTERS[system])
+            return cls("%s %s" % (system, letter))
 
     def different(self):
         """ Return a random filter other than this one """
