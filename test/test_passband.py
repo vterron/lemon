@@ -50,11 +50,6 @@ class PassbandTest(unittest.TestCase):
 
         return os.path.join(cls.TEST_DATA_DIR, system)
 
-    def test_all(self):
-        # Make sure all the photometric letters are present in all()
-        wavelengths = set([x.wavelength for x in Passband.all()])
-        self.assertEqual(wavelengths, set(Passband.wavelengths.values()))
-
     def test_wavelength(self):
         for letter in Passband.wavelengths.keys():
             expected_wavelength = Passband.wavelengths[letter]
@@ -203,3 +198,15 @@ class PassbandTest(unittest.TestCase):
             if letter not in passband.ALL_LETTERS:
                 self.assertRaises(NonRecognizedPassband, Passband, letter)
 
+    def test_all(self):
+
+        # Make sure that, except for H-alpha, all the photometric systems
+        # and letters are present in the list returned by Passband.all()
+        pfilters = Passband.all()
+        # There must not be duplicate Passband objects
+        self.assertEqual(len(pfilters), len(set(pfilters)))
+        for system, letters in Passband.SYSTEM_LETTERS.iteritems():
+            for letter in letters:
+                name = "%s %s" % (system, letter)
+                pfilter = Passband(name)
+                self.assertTrue(pfilter in pfilters)

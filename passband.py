@@ -276,8 +276,28 @@ class Passband(object):
 
     @classmethod
     def all(cls):
-        """ Return a sequence with all the passbands this class encapsulates """
-        return sorted(cls(letter) for letter in cls.wavelengths.iterkeys())
+        """ Return (almost) all of the filters this class encapsulates.
+
+        Return a list with a Passband object for each photometric system and
+        the corresponding letters contained in Passband.SYSTEM_LETTERS. That
+        is, for each supported photometric system (Johnson, Cousins, Gunn,
+        etc), a Passband object is created for each of the letters defined by
+        it (e.g., in the case of Johnson, UBVRIJHKLMN). H-alpha filters are
+        *not* included as they do not choose a letter from among a discrete
+        set, but instead use their wavelength.
+
+        """
+
+        pfilters = []
+        for system, letters in cls.SYSTEM_LETTERS.iteritems():
+            for letter in letters:
+                # Avoid duplicates: 'N' and 'W' are short for 'narrow' and
+                # 'wide', respectively, so they are indeed the same filter.
+                if system == STROMGREN and letter in ['N', 'W']:
+                    continue
+                name = "%s %s" % (system, letter)
+                pfilters.append(name)
+        return [Passband(x) for x in pfilters]
 
     @property
     def wavelength(self):
