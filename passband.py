@@ -92,7 +92,25 @@ class InvalidPassbandLetter(NonRecognizedPassband):
 
 
 class Passband(object):
-    """ Encapsulates a passband (or filter) of the photometric system. """
+    """ Encapsulates a passband (or filter) of the photometric system.
+
+    The photometric systems currently supported are:
+
+    - Johnson (1965): UBVRI(JHKLMN)
+    - Cousins (1976): RI
+    - Strömgren and Crawford (1956): uvbyHbeta
+    - Thuan and Gunn (1976): uvgr
+    - Sloan DSS (1996): ugriz
+    - 2MASS: J H Ks
+    - H-alpha
+
+    The information of these filters has been taken from the useful Asiago
+    Database on Photometric Systems (http://ulisse.pd.astro.it/Astro/ADPS/).
+    The Passband class also supports filters whose system is not known, such
+    as 'V' — we do not know whether it belongs to the Johnson, Strömgren or
+    Gunn system, but we can still work with it.
+
+    """
 
     SYSTEM_LETTERS = {JOHNSON : tuple('UBVRIJHKLMN'),
                       COUSINS : tuple('VRI'),
