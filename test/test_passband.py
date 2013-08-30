@@ -55,24 +55,6 @@ class PassbandTest(unittest.TestCase):
             expected_wavelength = Passband.wavelengths[letter]
             self.assertEqual(Passband(letter).wavelength, expected_wavelength)
 
-    def test_cmp(self):
-        # Make sure that filters are correctly sorted by their wavelength.
-
-        # A specific test case: B (445 nm) < V (551 nm) < I (806 nm)
-        self.assertEqual(min(Passband('V'), Passband('B')), Passband('B'))
-        self.assertEqual(min(Passband('B'), Passband('V')), Passband('B'))
-        self.assertEqual(min(Passband('V'), Passband('I')), Passband('V'))
-        self.assertEqual(min(Passband('I'), Passband('V')), Passband('V'))
-        self.assertEqual(min(Passband('B'), Passband('I')), Passband('B'))
-        self.assertEqual(min(Passband('I'), Passband('B')), Passband('B'))
-
-        # Now sort a series of lists of random passbands
-        for _ in xrange(NITERS):
-            passbands = [Passband.random() for x in xrange(NPASSBANDS)]
-            passbands.sort()
-            for index in xrange(0, len(passbands) - 1):
-                self.assertTrue(passbands[index].wavelength <= passbands[index+1].wavelength)
-
     def test_hash(self):
         # The hash must be its effective wavelength midpoint
         for _ in xrange(NITERS):
@@ -211,3 +193,49 @@ class PassbandTest(unittest.TestCase):
         for _ in xrange(NITERS):
             pfilter = Passband.random()
             self.assertEqual(pfilter, eval(`pfilter`))
+
+    def test_cmp(self):
+
+        def assert_max(index, *names):
+            """ Make sure that Passband(names[index]) is the largest item """
+            pfilters = [Passband(x) for x in names]
+            self.assertEqual(max(pfilters), pfilters[index])
+
+        assert_max(1, "Johnson B", "Cousins R")
+        assert_max(0, "SDSS Z", "Gunn U")
+        assert_max(1, "Johnson V", "SDSS I")
+        assert_max(0, "2MASS KS", "Johnson R")
+        assert_max(1, "Cousins I", "2MASS J")
+        assert_max(0, "Gunn G", "Stromgren B")
+
+        def letter_index(letter):
+            """ Return the position of a letter in Passband.LETTERS_ORDER """
+            return Passband.LETTERS_ORDER.index(letter)
+
+        # Now sort a series of lists of random Passband objects
+        for _ in xrange(NITERS):
+
+            pfilters = [Passband.random() for x in xrange(NPASSBANDS)]
+            pfilters.sort()
+
+            for index in xrange(0, len(pfilters) - 1):
+                first  = pfilters[index]
+                second = pfilters[index + 1]
+                nhalphas = sum(1 for p in [first, second] if p.system == HALPHA)
+
+                if not nhalphas:
+                    first_index  = letter_index(first.letter)
+                    second_index = letter_index(second.letter)
+                    self.assertTrue(first_index <= second_index)
+                    # If letters are equal, sort lexicographically by the system
+                    if first.letter == second.letter:
+                        self.assertTrue(first.system <= second.system)
+
+                # H-alpha filters are greater than other systems
+                elif nhalphas == 1:
+                    first.system  != HALPHA
+                    second.system == HALPHA
+
+                else:
+                    assert nhalphas == 2
+                    self.assertTrue(int(first.letter) <= int(second.letter))

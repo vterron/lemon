@@ -349,14 +349,40 @@ class Passband(object):
     def __cmp__(self, other):
         """ Called by comparison operations if rich comparison is not defined.
 
-        The method returns a negative integer is 'self' has a shorter wavelength
-        than 'other', zero if both wavelengths are equal and a positive integer
-        if the wavelength of 'self' is longer than that of 'other'. Internally,
-        this is done by means of comparing the effective wavelenght of both
-        filters.
+        Returns a negative integer is self < other, zero if self == other, and
+        a positive integer if self > other. Passband objects are sorted by the
+        photometric letter (for example, Johnson B < Johnson V < Johnson I),
+        and lexicographically by the name of the system in case the letters
+        are the same (e.g., Cousins I < Johnson I < SDSS i').
+
+        An exception to this rule are H-alpha filters: they are compared by
+        their wavelength, and are always greater than the filters of other
+        photometric systems (for example, 2MASS Ks < Johnson N < H-alpha
+        6563 < H-alpha 6607).
 
         """
-        return self.wavelength - other.wavelength
+
+        self_alpha =   self.system == HALPHA
+        other_alpha = other.system == HALPHA
+
+        # If both filters are H-alpha, sort by their wavelength.
+        # H-alpha filters are greater than all the other filters
+        if self_alpha or other_alpha:
+            if self_alpha and other_alpha:
+                return int(self.letter) - int(other.letter)
+            else:
+                # Note: int(True) == 1; int(False) == 0
+                return int(self_alpha) - int(other_alpha)
+
+        # If the photometric systems are different, sort by letter.
+        # If the letters are the same, sort by system (lexicographically)
+        self_index  = self.LETTERS_ORDER.index(self.letter)
+        other_index = self.LETTERS_ORDER.index(other.letter)
+
+        if self_index != other_index:
+            return self_index - other_index
+        else:
+            return cmp(self.system, other.system)
 
     def __hash__(self):
         return self.wavelength
