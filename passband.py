@@ -126,6 +126,24 @@ class Passband(object):
     LETTERS_ORDER = ['U', 'B', 'NARROW', 'WIDE', 'V', 'G', 'R', 'I',
                      'Z', 'Y', 'J', 'H', 'KS', 'K', 'L', 'M', 'N']
 
+    @staticmethod
+    def _identify_system(name):
+        """ Return the photometric system to which a filter belongs.
+
+        Loop over the regular expressions stored as values of the REGEXP
+        module-level dictionary, returning the key of the first to which 'name'
+        matches. For example, Passband._identify_system('rGunn') returns GUNN
+        because re.search(REGEXPS[GUNN], 'rGunn', re.IGNORECASE) produces a
+        match. Returns UNKNOWN if none of the regexps matches 'name'.
+
+        """
+
+        for system, regexp in REGEXPS.iteritems():
+            if re.search(regexp, name, re.IGNORECASE):
+                return system
+        else:
+            return UNKNOWN
+
     def __init__(self, name):
         """ Instantiation method for the Passband class.
 
