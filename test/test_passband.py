@@ -55,10 +55,6 @@ class PassbandTest(unittest.TestCase):
             expected_wavelength = Passband.wavelengths[letter]
             self.assertEqual(Passband(letter).wavelength, expected_wavelength)
 
-    def test_repr(self):
-        for letter in Passband.wavelengths.keys():
-            self.assertEqual(Passband(letter), eval(`Passband(letter)`))
-
     def test_cmp(self):
         # Make sure that filters are correctly sorted by their wavelength.
 
@@ -210,3 +206,8 @@ class PassbandTest(unittest.TestCase):
                 name = "%s %s" % (system, letter)
                 pfilter = Passband(name)
                 self.assertTrue(pfilter in pfilters)
+
+    def test_repr(self):
+        for _ in xrange(NITERS):
+            pfilter = Passband.random()
+            self.assertEqual(pfilter, eval(`pfilter`))

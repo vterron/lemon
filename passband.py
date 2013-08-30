@@ -343,8 +343,8 @@ class Passband(object):
         return "%s %s" % (system, letter)
 
     def __repr__(self):
-        """ The unambiguous string representation of a Passband object """
-        return "%s(%r)" % (self.__class__.__name__,  self.name)
+        """ The unambiguous string representation """
+        return "%s(\"%s\")" % (self.__class__.__name__, self)
 
     def __cmp__(self, other):
         """ Called by comparison operations if rich comparison is not defined.
