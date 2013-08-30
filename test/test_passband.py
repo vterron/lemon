@@ -55,12 +55,6 @@ class PassbandTest(unittest.TestCase):
             expected_wavelength = Passband.wavelengths[letter]
             self.assertEqual(Passband(letter).wavelength, expected_wavelength)
 
-    def test_hash(self):
-        # The hash must be its effective wavelength midpoint
-        for _ in xrange(NITERS):
-            passband = Passband.random()
-            self.assertEqual(hash(passband), Passband.wavelengths[passband.letter])
-
     def test_random(self):
         # Make sure the returned filter is a valid one
         for _ in xrange(NITERS):
@@ -239,3 +233,9 @@ class PassbandTest(unittest.TestCase):
                 else:
                     assert nhalphas == 2
                     self.assertTrue(int(first.letter) <= int(second.letter))
+
+    def test_hash(self):
+        for _ in xrange(NITERS):
+            pfilter = Passband.random()
+            self.assertEqual(hash(pfilter), hash(eval(`pfilter`)))
+            self.assertNotEqual(hash(pfilter), hash(pfilter.different()))

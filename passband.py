@@ -385,7 +385,7 @@ class Passband(object):
             return cmp(self.system, other.system)
 
     def __hash__(self):
-        return self.wavelength
+        return hash((self.system, self.letter))
 
     @classmethod
     def random(cls):
