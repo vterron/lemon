@@ -104,25 +104,6 @@ class Passband(object):
     ALL_SYSTEMS = set(SYSTEM_LETTERS.keys() + [HALPHA])
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
 
-    # The effective wavelength midpoint for each standard filter, in nanometers.
-    # Taken from Binney's "Galactic Astronomy", 1998, ch.2.3.2, pp.53, seen at
-    # Wikipedia. Note that this is a class (or static) variable, as there is no
-    # need to define this information separately for each instance.
-
-    wavelengths = {'U' : 365,
-                   'B' : 445,
-                   'V' : 551,
-                   'R' : 658,
-                   'I' : 806,
-                   'Z' : 882,
-                   'Y' : 1020,
-                   'J' : 1220,
-                   'H' : 1630,
-                   'KS': 2151, # Omega2K (CAHA)
-                   'K' : 2190,
-                   'L' : 3450,
-                   'M' : 4750}
-
     # The order of the photometric letters, regardless of the system
     LETTERS_ORDER = ['U', 'B', 'NARROW', 'WIDE', 'V', 'G', 'R', 'I',
                      'Z', 'Y', 'J', 'H', 'KS', 'K', 'L', 'M', 'N']
