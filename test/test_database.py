@@ -1141,7 +1141,7 @@ class LEMONdBTest(unittest.TestCase):
             of the 'db' LEMONdB """
 
             query_images  = "SELECT * FROM images ORDER BY unix_time"
-            query_filters = "SELECT * FROM photometric_filters ORDER BY wavelength"
+            query_filters = "SELECT * FROM photometric_filters ORDER BY id"
             query_pparams = "SELECT * FROM photometric_parameters ORDER BY id"
             db._execute(query_images)
             images = tuple(db._rows)
@@ -1539,7 +1539,7 @@ class LEMONdBTest(unittest.TestCase):
 
             query_curves = "SELECT * FROM light_curves ORDER BY id"
             query_cmp_stars = "SELECT * FROM cmp_stars ORDER BY id"
-            query_filters = "SELECT * FROM photometric_filters ORDER BY wavelength"
+            query_filters = "SELECT * FROM photometric_filters ORDER BY id"
 
             db._execute(query_curves)
             curves = tuple(db._rows)
@@ -1684,6 +1684,7 @@ class LEMONdBTest(unittest.TestCase):
         periods = collections.defaultdict(dict)
         nfilters = random.randint(self.MIN_NFILTERS, self.MAX_NFILTERS)
         spfilters = random.sample(passband.Passband.all(), nfilters)
+
         for pfilter in spfilters:
             for star_id in db.star_ids:
                 if random.random() < self.PERIOD_PROB:
@@ -1750,7 +1751,7 @@ class LEMONdBTest(unittest.TestCase):
             """ Return three sorted tuples with all the information stored in
             the PHOTOMETRIC_FILTERS and PERIODS tables of the 'db' LEMONdB """
 
-            query_filters = "SELECT * FROM photometric_filters ORDER BY wavelength"
+            query_filters = "SELECT * FROM photometric_filters ORDER BY id"
             query_periods = "SELECT * FROM periods ORDER BY id"
             db._execute(query_filters)
             filters = tuple(db._rows)

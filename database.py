@@ -466,8 +466,8 @@ class LEMONdB(object):
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS photometric_filters (
-            wavelength INTEGER PRIMARY KEY,
-            name       TEXT UNIQUE NOT NULL)
+            id    INTEGER PRIMARY KEY,
+            name  TEXT UNIQUE NOT NULL)
         ''')
 
         self._execute('''
@@ -490,25 +490,25 @@ class LEMONdB(object):
         CREATE TABLE IF NOT EXISTS candidate_parameters (
             id         INTEGER PRIMARY KEY,
             pparams_id INTEGER NOT NULL,
-            wavelength INTEGER NOT NULL,
+            filter_id  INTEGER NOT NULL,
             stdev      REAL NOT NULL,
             FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
-            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
-            UNIQUE (pparams_id, wavelength))
+            FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
+            UNIQUE (pparams_id, filter_id))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS cand_wavelength "
-                      "ON candidate_parameters(wavelength)")
+        self._execute("CREATE INDEX IF NOT EXISTS cand_filter "
+                      "ON candidate_parameters(filter_id)")
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS rimage (
            path       TEXT NOT NULL,
-           wavelength INTEGER NOT NULL,
+           filter_id  INTEGER NOT NULL,
            unix_time  REAL NOT NULL,
            object     TEXT,
            airmass    REAL NOT NULL,
            gain       REAL NOT NULL,
-           FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength))
+           FOREIGN KEY (filter_id) REFERENCES photometric_filters(id))
         ''')
 
         self._execute('''
@@ -516,7 +516,7 @@ class LEMONdB(object):
             id         INTEGER PRIMARY KEY,
             unix_time  REAL NOT NULL,
             path       TEXT NOT NULL,
-            wavelength INTEGER NOT NULL,
+            filter_id  INTEGER NOT NULL,
             pparams_id INTEGER NOT NULL,
             object     TEXT,
             airmass    REAL NOT NULL,
@@ -525,14 +525,14 @@ class LEMONdB(object):
             xoverlap   INTEGER NOT NULL,
             yoffset    REAL NOT NULL,
             yoverlap   INTEGER NOT NULL,
-            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
+            FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
             FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
-            UNIQUE (unix_time, wavelength))
+            UNIQUE (unix_time, filter_id))
 
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_wavelength_time "
-                      "ON images(wavelength, unix_time)")
+        self._execute("CREATE INDEX IF NOT EXISTS img_by_filter_time "
+                      "ON images(filter_id, unix_time)")
 
         # This table stores as a blob entire FITS files. The 'id' value should
         # be that of the FITS file in the IMAGES table. However, we do not use
@@ -580,33 +580,33 @@ class LEMONdB(object):
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS cmp_stars (
-            id         INTEGER PRIMARY KEY,
-            star_id    INTEGER NOT NULL,
-            wavelength INTEGER NOT NULL,
-            cstar_id   INTEGER NOT NULL,
-            weight     REAL NOT NULL,
+            id        INTEGER PRIMARY KEY,
+            star_id   INTEGER NOT NULL,
+            filter_id INTEGER NOT NULL,
+            cstar_id  INTEGER NOT NULL,
+            weight    REAL NOT NULL,
             FOREIGN KEY (star_id)    REFERENCES stars(id),
-            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
+            FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
             FOREIGN KEY (cstar_id)   REFERENCES stars(id))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_wavelength "
-                      "ON cmp_stars(star_id, wavelength)")
+        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_filter "
+                      "ON cmp_stars(star_id, filter_id)")
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS periods (
-            id         INTEGER PRIMARY KEY,
-            star_id    INTEGER NOT NULL,
-            wavelength INTEGER NOT NULL,
-            step       REAL NOT NULL,
-            period     REAL NOT NULL,
+            id        INTEGER PRIMARY KEY,
+            star_id   INTEGER NOT NULL,
+            filter_id INTEGER NOT NULL,
+            step      REAL NOT NULL,
+            period    REAL NOT NULL,
             FOREIGN KEY (star_id)    REFERENCES stars(id),
-            FOREIGN KEY (wavelength) REFERENCES photometric_filters(wavelength),
-            UNIQUE (star_id, wavelength))
+            FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
+            UNIQUE (star_id, filter_id))
         ''')
 
-        self._execute("CREATE INDEX IF NOT EXISTS period_by_star_wavelength "
-                      "ON periods(star_id, wavelength)")
+        self._execute("CREATE INDEX IF NOT EXISTS period_by_star_filter "
+                      "ON periods(star_id, filter_id)")
 
     def _table_count(self, table):
         """ Return the number of rows in 'table' """
@@ -617,9 +617,9 @@ class LEMONdB(object):
 
     def _add_pfilter(self, pfilter):
         """ Store a photometric filter in the database. The primary
-        key of the filters in their table is their wavelength """
+        key of the Passband objects in the table is their hash value """
 
-        t = (pfilter.wavelength, pfilter.name)
+        t = (hash(pfilter), pfilter.name)
         self._execute("INSERT OR IGNORE INTO photometric_filters VALUES (?, ?)", t)
 
     @property
@@ -687,7 +687,7 @@ class LEMONdB(object):
 
         pparams_id = self._add_pparams(candidate_annuli)
         self._add_pfilter(pfilter)
-        t = (None, pparams_id, pfilter.wavelength, candidate_annuli.stdev)
+        t = (None, pparams_id, hash(pfilter), candidate_annuli.stdev)
         self._execute("INSERT OR REPLACE INTO candidate_parameters "
                       "VALUES (?, ?, ?, ?)", t)
 
@@ -703,13 +703,13 @@ class LEMONdB(object):
 
         """
 
-        t = (pfilter.wavelength,)
+        t = (hash(pfilter),)
         self._execute("SELECT p.aperture, p.annulus, p.dannulus, c.stdev "
                       " FROM candidate_parameters AS c "
-                      "      INDEXED BY cand_wavelength, "
+                      "      INDEXED BY cand_filter, "
                       "      photometric_parameters AS p "
                       "ON c.pparams_id = p.id "
-                      "WHERE c.wavelength = ? "
+                      "WHERE c.filter_id = ? "
                       "ORDER BY c.stdev ASC", t)
         return [xmlparse.CandidateAnnuli(*args) for args in self._rows]
 
@@ -719,7 +719,7 @@ class LEMONdB(object):
         self._execute("SELECT r.path, p.name, r.unix_time, "
                       "       r.object, r.airmass, r.gain "
                       "FROM rimage AS r, photometric_filters AS p "
-                      "ON r.wavelength = p.wavelength")
+                      "ON r.filter_id = p.id")
         rows = list(self._rows)
         if not rows:
             return None
@@ -733,7 +733,7 @@ class LEMONdB(object):
     def rimage(self, rimage):
         """ Set the reference image that was used to compute the offsets """
         self._add_pfilter(rimage.pfilter)
-        t = (rimage.path, rimage.pfilter.wavelength, rimage.unix_time,
+        t = (rimage.path, hash(rimage.pfilter), rimage.unix_time,
              rimage.object, rimage.airmass, rimage.gain)
         self._execute("DELETE FROM rimage")
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?, ?)", t)
@@ -755,9 +755,10 @@ class LEMONdB(object):
         self._add_pfilter(image.pfilter)
         pparams_id = self._add_pparams(image.pparams)
 
-        t = (None, image.unix_time, image.path, image.pfilter.wavelength,
+        t = (None, image.unix_time, image.path, hash(image.pfilter),
              pparams_id, image.object, image.airmass, image.gain,
              image.xoffset, image.xoverlap, image.yoffset, image.yoverlap)
+
         try:
             self._execute("INSERT INTO images "
                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
@@ -773,7 +774,7 @@ class LEMONdB(object):
                 assert (unix_time,) in self._rows
                 self._execute("SELECT 1 "
                               "FROM photometric_filters "
-                              "WHERE wavelength = ?", (pfilter.wavelength,))
+                              "WHERE id = ?", (hash(pfilter),))
                 assert [(1,)] == list(self._rows)
 
             msg = "Image with Unix time %.4f (%s) and filter %s already in " \
@@ -787,11 +788,11 @@ class LEMONdB(object):
         # Note the cast to Python's built-in float. Otherwise, if the method
         # gets a NumPy float, SQLite raises "sqlite3.InterfaceError: Error
         # binding parameter - probably unsupported type"
-        t = (float(unix_time), pfilter.wavelength)
+        t = (float(unix_time), hash(pfilter))
         self._execute("SELECT id "
-                      "FROM images INDEXED BY img_by_wavelength_time "
+                      "FROM images INDEXED BY img_by_filter_time "
                       "WHERE unix_time = ? "
-                      "  AND wavelength = ?", t)
+                      "  AND filter_id = ?", t)
         rows = list(self._rows)
         if not rows:
             msg = "%.4f (%s) and filter %s"
@@ -811,7 +812,7 @@ class LEMONdB(object):
                       "       i.airmass, i.gain, i.xoffset, i.yoffset, "
                       "       i.xoverlap, i.yoverlap, i.pparams_id "
                       "FROM images AS i, photometric_filters AS p "
-                      "ON i.wavelength = p.wavelength "
+                      "ON i.filter_id = p.id "
                       "WHERE i.id = ?", (image_id,))
 
         rows = list(self._rows)
@@ -936,13 +937,13 @@ class LEMONdB(object):
         # Note the cast to Python's built-in int. Otherwise, if the method gets
         # a NumPy integer, SQLite raises "sqlite3.InterfaceError: Error binding
         # parameter - probably unsupported type"
-        t = (int(star_id), pfilter.wavelength)
+        t = (int(star_id), hash(pfilter))
         self._execute("SELECT img.unix_time, phot.magnitude, phot.snr "
                       "FROM photometry AS phot INDEXED BY phot_by_star_image, "
-                      "     images AS img INDEXED BY img_by_wavelength_time "
+                      "     images AS img INDEXED BY img_by_filter_time "
                       "ON phot.image_id = img.id "
                       "WHERE phot.star_id = ? "
-                      "  AND img.wavelength = ? "
+                      "  AND img.filter_id = ? "
                       "ORDER BY img.unix_time ASC", t)
 
         args = star_id, pfilter, list(self._rows)
@@ -951,10 +952,10 @@ class LEMONdB(object):
     def _star_pfilters(self, star_id):
         """ Return the photometric filters for which the star has data.
 
-        The method returns a list, sorted by wavelength, of the photometric
-        filters (encapsulated as Passband instances) of the images on which the
-        star with this ID had photometry done. Raises KeyError is no star in
-        the database has the specified ID.
+        The method returns a sorted list of the photometric filters
+        (encapsulated as Passband instances) of the images on which the star
+        with this ID had photometry done. Raises KeyError is no star in the
+        database has the specified ID.
 
         """
 
@@ -970,20 +971,19 @@ class LEMONdB(object):
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
-                         ON img.wavelength = f.wavelength
-                         ORDER BY f.wavelength ASC """, t)
+                         ON img.filter_id = f.id """, t)
 
-        return [passband.Passband(x[0]) for x in self._rows]
+        return sorted(passband.Passband(x[0]) for x in self._rows)
 
     @property
     def pfilters(self):
         """ Return the photometric filters for which there is data.
 
-        The method returns a list, sorted by wavelength, of the photometric
-        filters for which the database has photometric records. Note that this
-        means that a filter for which there are images (LEMONdB.add_image) but
-        no photometric records (those added with LEMONdB.add_photometry) will
-        not be included in the returned list.
+        The method returns a sorted list of the photometric filters for which
+        the database has photometric records. Note that this means that a
+        filter for which there are images (LEMONdB.add_image) but no
+        photometric records (those added with LEMONdB.add_photometry) will not
+        be included in the returned list.
 
         The photometric filter of the reference image is ignored. This
         means that if, say, it was observed in the Johnson I filter while the
@@ -999,10 +999,9 @@ class LEMONdB(object):
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
-                         ON img.wavelength = f.wavelength
-                         ORDER BY f.wavelength ASC """)
+                         ON img.filter_id = f.id """)
 
-        return [passband.Passband(x[0]) for x in self._rows]
+        return sorted(passband.Passband(x[0]) for x in self._rows)
 
     def _add_curve_point(self, star_id, unix_time, pfilter, magnitude, snr):
         """ Store a point of the light curve of a star.
@@ -1065,7 +1064,7 @@ class LEMONdB(object):
             # Note the cast to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
-            t = (None, star_id, pfilter.wavelength, cstar_id, float(cweight))
+            t = (None, star_id, hash(pfilter), cstar_id, float(cweight))
             self._execute("INSERT INTO cmp_stars "
                           "VALUES (?, ?, ?, ?, ?)", t)
             self._release(mark)
@@ -1140,22 +1139,22 @@ class LEMONdB(object):
         err_msg = "star with ID = %d " % star_id
 
         # Extract the points of the light curve ...
-        t = (star_id, pfilter.wavelength)
+        t = (star_id, hash(pfilter))
         self._execute("SELECT img.unix_time, curve.magnitude, curve.snr "
                       "FROM light_curves AS curve INDEXED BY curve_by_star_image, "
-                      "     images AS img INDEXED BY img_by_wavelength_time "
+                      "     images AS img INDEXED BY img_by_filter_time "
                       "ON curve.image_id = img.id "
                       "WHERE curve.star_id = ? "
-                      "  AND img.wavelength = ? "
+                      "  AND img.filter_id = ? "
                       "ORDER BY img.unix_time ASC", t)
         curve_points = list(self._rows)
 
         if curve_points:
             # ... as well as the comparison stars.
             self._execute("SELECT cstar_id, weight "
-                          "FROM cmp_stars INDEXED BY cstars_by_star_wavelength "
+                          "FROM cmp_stars INDEXED BY cstars_by_star_filter "
                           "WHERE star_id = ? "
-                          "  AND wavelength = ? "
+                          "  AND filter_id = ? "
                           "ORDER BY cstar_id", t)
 
             rows = list(self._rows)
@@ -1200,7 +1199,7 @@ class LEMONdB(object):
             # Note the casts to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
-            t = (None, star_id, pfilter.wavelength, float(step), float(period))
+            t = (None, star_id, hash(pfilter), float(step), float(period))
             self._execute("INSERT INTO periods "
                           "VALUES (?, ?, ?, ?, ?)", t)
             self._release(mark)
@@ -1226,11 +1225,11 @@ class LEMONdB(object):
 
         """
 
-        t = (star_id, pfilter.wavelength)
+        t = (star_id, hash(pfilter))
         self._execute("SELECT period, step "
-                      "FROM periods INDEXED BY period_by_star_wavelength "
+                      "FROM periods INDEXED BY period_by_star_filter "
                       "WHERE star_id = ? "
-                      "  AND wavelength = ?", t)
+                      "  AND filter_id = ?", t)
         try:
             rows = tuple(self._rows)
             return rows[0]
@@ -1259,7 +1258,7 @@ class LEMONdB(object):
 
         t = (star_id,)
         self._execute("SELECT period "
-                      "FROM periods INDEXED BY period_by_star_wavelength "
+                      "FROM periods INDEXED BY period_by_star_filter "
                       "WHERE star_id = ? ", t)
         periods = tuple(x[0] for x in self._rows)
         if not periods and star_id not in self.star_ids:
@@ -1279,10 +1278,10 @@ class LEMONdB(object):
 
         """
 
-        t = (pfilter.wavelength, )
+        t = (hash(pfilter), )
         self._execute("SELECT unix_time, airmass "
-                      "FROM images INDEXED BY img_by_wavelength_time "
-                      "WHERE wavelength = ? ", t)
+                      "FROM images INDEXED BY img_by_filter_time "
+                      "WHERE filter_id = ? ", t)
         return dict(self._rows)
 
     def get_phase_diagram(self, star_id, pfilter, period, repeat = 1):
