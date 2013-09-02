@@ -1469,9 +1469,10 @@ class LEMONdBTest(unittest.TestCase):
                     stars_pfilters[star_id].add(img.pfilter)
                     seen_pfilters.add(img.pfilter)
 
-                    star_pfilters = set(db._star_pfilters(star_id))
-                    self.assertTrue(star_pfilters, stars_pfilters[star_id])
-                    self.assertTrue(set(db.pfilters), seen_pfilters)
+                    star_pfilters = db._star_pfilters(star_id)
+                    # The returned Passband objects must be already sorted
+                    self.assertEqual(star_pfilters, sorted(stars_pfilters[star_id]))
+                    self.assertEqual(db.pfilters, sorted(seen_pfilters))
 
         # LEMONdB._star_pfilters raises KeyError if the star is not in the
         # database. To test this we need to generate a random, new star ID
