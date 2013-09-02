@@ -619,7 +619,7 @@ class LEMONdB(object):
         """ Store a photometric filter in the database. The primary
         key of the Passband objects in the table is their hash value """
 
-        t = (hash(pfilter), pfilter.name)
+        t = (hash(pfilter), str(pfilter))
         self._execute("INSERT OR IGNORE INTO photometric_filters VALUES (?, ?)", t)
 
     @property

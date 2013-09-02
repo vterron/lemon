@@ -428,7 +428,7 @@ def main(arguments = None):
             # quote the path to the --pixels file in case the name of the
             # filter contains them (as optparse would only see up to the
             # first whitespace).
-            prefix = '%s_' % pfilter.name.replace(' ', '_')
+            prefix = '%s_' % str(pfilter).replace(' ', '_')
             pixels_fd, pixels_files[pfilter] = \
                  tempfile.mkstemp(prefix = prefix, suffix = '.pixels')
 

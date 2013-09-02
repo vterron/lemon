@@ -477,7 +477,7 @@ class CandidateAnnuli(object):
             # order to evaluate these parameters is also stored for debugging
             # purposes.
 
-            kwargs = {'name' : pfilter.name,
+            kwargs = {'name' : str(pfilter),
                       'aperture' : '%.5f' % best.aperture,
                       'annulus' : '%.5f' % best.annulus,
                       'dannulus' : '%.5f' % best.dannulus,
