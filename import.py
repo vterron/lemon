@@ -209,7 +209,7 @@ def main(arguments = None):
             images_set.append(fitsimage.FITSImage(path))
             fraction = (path_index + 1) / len(files_paths) * 100
             methods.show_progress(fraction)
-        except (fitsimage.NonFITSFile, fitsimage.NonStandardFITS):
+        except fitsimage.NonStandardFITS:
             pass
     else:
         methods.show_progress(100)

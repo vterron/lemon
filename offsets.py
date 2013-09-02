@@ -164,13 +164,13 @@ def parallel_offset(args):
 
     # We did not check that the given paths do actually refer to existing, FITS
     # files before starting the work in parallel. Thus, IOError may be raised
-    # if 'shifted_path' does not exist, as well as the self-explanatory
-    # NonFITSFile and NonStandardFITS exceptions. In these cases, the path is
-    # silently ignored and the worker (CPU core) can move to the next path.
+    # if 'shifted_path' does not exist, as well as NonStandardFITS if it is not
+    # a FITS file or does not conform to the standard. In these cases, the path
+    # is silently ignored and the worker (CPU core) can move to the next path.
 
     try:
         fitsimage.FITSImage(shifted_path)
-    except (IOError, fitsimage.NonFITSFile, fitsimage.NonStandardFITS):
+    except (IOError, fitsimage.NonStandardFITS):
         return
 
     img_offset = offset(reference.path, shifted_path, options.maximum,

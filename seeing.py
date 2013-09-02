@@ -801,10 +801,6 @@ def parallel_sextractor(args):
         logging.debug("%s: %d sources detected" % (path, nstars))
         queue.put((path, fwhm, elong, nstars))
 
-    except fitsimage.NonFITSFile:
-        logging.info("%s ignored (not recognized as a FITS file)" % path)
-        return
-
     except fitsimage.NonStandardFITS:
         logging.info("%s ignored (non-standard FITS)" % path)
         return
