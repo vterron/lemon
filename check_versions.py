@@ -18,6 +18,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+""" Use Python import hooks to enforce a minimum version of those modules
+defined in the requirements.txt file. Another option would have been to check
+the versions manually, but that would have forced us to do it multiple times
+and across all the code, every time one of the modules were imported. And, as
+more code is added in the future, we could forget to test for this. With this
+solution we only need to define the hooks once, here, and this guarantee that
+the modules will always have the required version, no matter how, when or
+where they are imported.
+
+"""
+
 import imp
 import re
 import sys
