@@ -114,3 +114,22 @@ def get_lxml_version(*args):
     finally:
         del etree
 
+# For each module whose minimum version has been defined in requirements.txt,
+# create an import hook and add it to sys.meta_path, which is searched before
+# any implicit default finders or sys.path.
+
+for module, version in [
+  ('numpy', (1, 7, 1)),
+  ('aplpy', (0, 9, 9)),
+  ('scipy', (0, 12, 0)),
+  ('matplotlib', (1, 2, 1)),
+  ('mock', (1, 0, 1)),
+  ('pyfits', (3, 1, 2)),
+  ('pyraf', (2, 1, 1)),
+  ('uncertainties', (2, 4, 1))]:
+      hook = RequireModuleVersionHook(module, version, get__version__)
+      sys.meta_path.append(hook)
+
+lxml_hook = RequireModuleVersionHook('lxml', (3, 2, 3), get_lxml_version)
+sys.meta_path.append(lxml_hook)
+
