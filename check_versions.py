@@ -96,3 +96,21 @@ def get__version__(module):
         version = match.group(0)
         return str_to_version(version)
 
+def get_lxml_version(*args):
+    """ Return the version of lxml, as a tuple of integers.
+
+    This function returns the version of the lxml package, which is defined in
+    lxml.etree.LXML_VERSION. A variable number of arguments is accepted because
+    RequireModuleVersionHook.load_module() will pass to it the module object,
+    although we do not need it in this case. Although Python does not support
+    unloading modules, we remove lxml.etree in order to clean up the evidence,
+    so to speak.
+
+    """
+
+    from lxml import etree
+    try:
+        return etree.LXML_VERSION
+    finally:
+        del etree
+
