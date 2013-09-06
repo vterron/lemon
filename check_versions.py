@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import imp
+import re
 import sys
 
 def version_to_str(version):
@@ -80,4 +81,18 @@ class RequireModuleVersionHook(object):
         else:
             sys.modules[fullname] = module
             return module
+
+
+def get__version__(module):
+    """ Return module.__version__, as a tuple of integers """
+
+    version = module.__version__
+    regexp = "(\d\.?)+" # extract "2.1.1" from "2.1.1-r1785"
+    match = re.match(regexp, version)
+    if match is None:
+        msg = "cannot extract version from '%s' (%s)" % (version, module)
+        raise Exception(msg)
+    else:
+        version = match.group(0)
+        return str_to_version(version)
 
