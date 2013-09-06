@@ -12,6 +12,14 @@ def str_to_version(version):
     return tuple(int(x) for x in version.split('.'))
 
 class RequireModuleVersionHook(object):
+    """ An import hook to enforce minimum versions of Python modules.
+
+    This class implements both the module finder (find_module) and loader
+    (load_module). It can be installed in sys.meta_path to intercept every
+    attempt to import a new module, checking whether it has the required
+    version and raising ImportError otherwise.
+
+    """
 
     def __init__(self, fullname, min_version, vfunc):
         """ Instantiation method for the RequireModuleVersionHook class.
