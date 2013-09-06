@@ -26,3 +26,18 @@ class RequireModuleVersionHook(object):
         self.min_version = min_version
         self.vfunc = vfunc
 
+    def find_module(self, fullname, path=None):
+        """ The module finder.
+
+        Receive the fully qualified name of the module to be imported, along
+        with, optionally, the path where it is supposed to be found. Return
+        None if the module cannot be found by this particular finder and self
+        (since this class also implements the module loader) otherwise.
+
+        """
+
+        if fullname == self.fullname:
+            self.path = path
+            return self
+        return None
+
