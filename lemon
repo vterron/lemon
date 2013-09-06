@@ -18,6 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
+# Use import hooks, which are added to sys.meta_path, to enforce
+# a minimum version of the modules defined in requirements.txt.
+import check_versions
+
 import difflib
 import os.path
 import sys
