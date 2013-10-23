@@ -68,8 +68,10 @@ class NonRecognizedPassband(ValueError):
                  "should be able to recognize it, please let us know at " \
                  "http://github.com/vterron/lemon/issues"
 
-    def __init__(self, name):
+    def __init__(self, name, path = None, keyword = None):
         self.name = name
+        self.path = path
+        self.keyword = keyword
 
     def __str__(self):
         msg = "cannot identify the photometric system of filter '%s'. "
