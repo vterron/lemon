@@ -74,7 +74,18 @@ class NonRecognizedPassband(ValueError):
         self.keyword = keyword
 
     def __str__(self):
-        msg = "cannot identify the photometric system of filter '%s'. "
+        msg = "cannot identify the photometric system of filter '%s'"
+
+        details = []
+        if self.path:
+            details.append("FITS image = '%s'" % self.path)
+        if self.keyword:
+            details.append("keyword = '%s'" % self.keyword)
+        if details:
+            msg += " (%s). " % ', '.join(details)
+        else:
+            msg += ". "
+
         return msg  % self.name + self.ERROR_NOTE
 
 
