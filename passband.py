@@ -84,6 +84,15 @@ class NonRecognizedPassband(ValueError):
         self.keyword = keyword
 
     def __str__(self):
+        """ Return the error message of the NonRecognizedPassband exception.
+
+        If the the FITS image and keyword the unrecognized photometric filter
+        was read from have been given, they are also included in the message.
+        Also, users are requested to open a ticket on the GitHub issue tracker
+        if they come across a filter incorrectly considered unrecognizable.
+
+        """
+
         msg = "cannot identify the photometric system of filter '%s'"
 
         details = []
