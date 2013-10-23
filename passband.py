@@ -69,6 +69,16 @@ class NonRecognizedPassband(ValueError):
                  "http://github.com/vterron/lemon/issues"
 
     def __init__(self, name, path = None, keyword = None):
+        """ Instantiation method for the NonRecognizedPassband class.
+
+        The 'name' argument is the name of the filter whose photometric system
+        could not be identified. If applicable, the path to the FITS image and
+        keyword from which the filter was read may be given in the 'path' and
+        'keyword' keyword arguments, respectively, so that they are also
+        included in the error message.
+
+        """
+
         self.name = name
         self.path = path
         self.keyword = keyword
