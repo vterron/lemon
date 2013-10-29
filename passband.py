@@ -68,11 +68,43 @@ class NonRecognizedPassband(ValueError):
                  "should be able to recognize it, please let us know at " \
                  "http://github.com/vterron/lemon/issues"
 
-    def __init__(self, name):
+    def __init__(self, name, path = None, keyword = None):
+        """ Instantiation method for the NonRecognizedPassband class.
+
+        The 'name' argument is the name of the filter whose photometric system
+        could not be identified. If applicable, the path to the FITS image and
+        keyword from which the filter was read may be given in the 'path' and
+        'keyword' keyword arguments, respectively, so that they are also
+        included in the error message.
+
+        """
+
         self.name = name
+        self.path = path
+        self.keyword = keyword
 
     def __str__(self):
-        msg = "cannot identify the photometric system of filter '%s'. "
+        """ Return the error message of the NonRecognizedPassband exception.
+
+        If the the FITS image and keyword the unrecognized photometric filter
+        was read from have been given, they are also included in the message.
+        Also, users are requested to open a ticket on the GitHub issue tracker
+        if they come across a filter incorrectly considered unrecognizable.
+
+        """
+
+        msg = "cannot identify the photometric system of filter '%s'"
+
+        details = []
+        if self.path:
+            details.append("FITS image = '%s'" % self.path)
+        if self.keyword:
+            details.append("keyword = '%s'" % self.keyword)
+        if details:
+            msg += " (%s). " % ', '.join(details)
+        else:
+            msg += ". "
+
         return msg  % self.name + self.ERROR_NOTE
 
 

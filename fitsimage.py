@@ -475,9 +475,8 @@ class FITSImage(object):
             pfilter_str = self.read_keyword(keyword)
             return passband.Passband(pfilter_str)
         except passband.NonRecognizedPassband:
-            msg = "%s: unknown filter '%s' ('%s' keyword)"
-            args = (self.path, pfilter_str, keyword)
-            raise passband.NonRecognizedPassband(msg % args)
+            kwargs = dict(path = self.path, keyword = keyword)
+            raise passband.NonRecognizedPassband(pfilter_str, **kwargs)
 
     @property
     def basename(self):
