@@ -26,6 +26,7 @@ import logging
 import optparse
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -58,6 +59,44 @@ class AstrometryNetNotInstalled(StandardError):
 class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
     pass
+
+def astrometry_net(path):
+
+    emsg = "'%s' not found in the current environment"
+    if not methods.which(ASTROMETRY_COMMAND):
+        raise AstrometryNetNotInstalled(emsg % ASTROMETRY_COMMAND)
+
+    img = fitsimage.FITSImage(path)
+    tempfile_prefix = '%s_' % img.basename_woe
+    # Place all output files in this directory
+    kwargs = dict(prefix = tempfile_prefix, suffix = '_astrometry.net')
+    output_dir = tempfile.mkdtemp(**kwargs)
+
+    # Path to the temporary FITS file containing the WCS header
+    root, ext = os.path.splitext(img.basename)
+    kwargs = dict(prefix = '%s_astrometry_' % root, suffix = ext)
+    with tempfile.NamedTemporaryFile(**kwargs) as fd:
+        output_path = fd.name
+
+    # --dir: place all output files in the specified directory.
+    # --no-plots: don't create any plots of the results.
+    # --new-fits: the new FITS file containing the WCS header.
+    # --no-fits2fits: don't sanitize FITS files; assume they're already valid.
+    # --overwrite: overwrite output files if they already exist.
+
+    args = [ASTROMETRY_COMMAND, path,
+            '--dir', output_dir,
+            '--no-plots',
+            '--new-fits', output_path,
+            '--no-fits2fits',
+            '--overwrite']
+    try:
+        subprocess.check_call(args)
+        return output_path
+    except subprocess.CalledProcessError, e:
+        raise AstrometryNetError(e.returncode, e.cmd)
+    finally:
+        shutil.rmtree(output_dir, ignore_errors = True)
 
 def astrometry(img_path, scale, equinox, radecsys, saturation,
                copy_keywords = None, ra_keyword = 'RA',
