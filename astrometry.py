@@ -51,6 +51,10 @@ SWarp, thus updating it with the astrometric information.
 
 ASTROMETRY_COMMAND = 'solve-field'
 
+class AstrometryNetNotInstalled(StandardError):
+    """ Raised if Astrometry.net is not installed on the system """
+    pass
+
 def astrometry(img_path, scale, equinox, radecsys, saturation,
                copy_keywords = None, ra_keyword = 'RA',
                dec_keyword = 'DEC', stdout = None, stderr = None):
