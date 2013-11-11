@@ -61,6 +61,30 @@ class AstrometryNetError(subprocess.CalledProcessError):
     pass
 
 def astrometry_net(path):
+    """ Do astrometry on a FITS image using Astrometry.net.
+
+    Use a local build of the amazing Astrometry.net software [1] in order to
+    compute the astrometric solution of a FITS image. This software has many,
+    many advantages over the well-respected SCAMP, but the most important one
+    is that it is a blind astrometric calibration service. We do not need to
+    know literally anything about the image, including approximate coordinates,
+    scale and equinox. It just works, giving us a new FITS file containing the
+    WCS header.
+
+    In order for this function to work, you must have built and installed the
+    Astrometry.net code in your machine [2]. The main high-level command-line
+    user interface, 'solve-field', is expected to be available in your PATH;
+    otherwise, the AstrometryNetNotInstalled exception is raised. Note that you
+    also need to download the appropriate index files, which are considerably
+    heavy. At the time of this writing, the entire set of indexes built from
+    the 2MASS catalog [4] has a total size of ~32 gigabytes.
+
+    [1] http://astrometry.net/
+    [2] http://astrometry.net/doc/build.html
+    [3] http://astrometry.net/doc/readme.html#getting-index-files
+    [4] http://data.astrometry.net/4200/
+
+    """
 
     emsg = "'%s' not found in the current environment"
     if not methods.which(ASTROMETRY_COMMAND):
