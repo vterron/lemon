@@ -226,17 +226,13 @@ def main(arguments = None):
 
     output_img = fitsimage.FITSImage(options.output_path)
 
-    msg1 = "Astrometry done by LEMON on %s" % methods.utctime()
-    msg2 = "[Astrometry] Implemented using Emmanuel Bertin's SCAMP and SWarp"
-    msg3 = "[Astrometry] Astrometric system: %s" % options.radecsys
-    msg4 = "[Astrometry] Mean equinox: %d" % options.equinox
-    msg5 = "[Astrometry] Original image: %s" % img_path
+    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+    msg2 = "[Astrometry] WCS solution found by Astrometry.net"
+    msg3 = "[Astrometry] Original image: %s" % img_path
 
     output_img.add_history(msg1)
     output_img.add_history(msg2)
     output_img.add_history(msg3)
-    output_img.add_history(msg4)
-    output_img.add_history(msg5)
 
     if not options.update:
         print "%sImage with astrometry saved to '%s'." % \
