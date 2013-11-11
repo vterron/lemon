@@ -23,7 +23,6 @@ from __future__ import division
 
 import atexit
 import logging
-import optparse
 import os
 import shutil
 import subprocess
@@ -31,13 +30,10 @@ import sys
 import tempfile
 
 # LEMON modules
-import astromatic
 import customparser
 import defaults
-import keywords
 import fitsimage
 import methods
-import seeing
 import style
 
 description = """
