@@ -362,13 +362,7 @@ def main(arguments = None):
     sys.stdout.flush()
 
     with open(os.devnull, 'wt') as fd:
-        output_path = \
-            astrometry(img_path, options.scale, options.equinox,
-                       options.radecsys, img.saturation,
-                       copy_keywords = propagated,
-                       ra_keyword = options.rak, dec_keyword = options.deck,
-                       stdout = None if options.verbose else fd,
-                       stderr = None if options.verbose else fd)
+        output_path = astrometry_net(img_path)
         try:
             shutil.move(output_path, options.output_path)
         except (IOError, OSError):
