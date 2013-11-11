@@ -122,55 +122,6 @@ def astrometry_net(path):
     finally:
         shutil.rmtree(output_dir, ignore_errors = True)
 
-def astrometry(img_path, scale, equinox, radecsys, saturation,
-               copy_keywords = None, ra_keyword = 'RA',
-               dec_keyword = 'DEC', stdout = None, stderr = None):
-    """ Do astrometry on a FITS image.
-
-    This method chains the execution of SExtractor, SCAMP and SWarp, as
-    explained in the description of this module, computing the astrometric
-    solution of the input FITS image. Returns the path to the output image,
-    which is saved to a temporary file and for whose deletion when it is no
-    longer needed the user is responsible.
-
-    scale - scale of the image, in degrees per pixel
-    equinox - equinox in years (e.g., 2000)
-    radecsys - reference system (e.g., ICRS)
-    saturation - number of ADUs at which arises saturation. Note that for
-                 coadded images this value is the result of multiplying the CCD
-                 saturation level by the number of images that were coadded.
-
-    Keyword arguments:
-    copy_keywords - FITS keywords, and their values, to propagate from the
-                    input image header to the resampled and coadded image
-                    header produced by SWarp.  Needed since not all FITS
-                    keywords are automatically copied to the output image
-                    header, as many of them become irrelevant.
-    ra_keyword - FITS keyword for the right ascension, in decimal degrees.
-    dec_keyword - FITS keyword for the declination, in decimal degrees.
-    stdout - the SExtractor, SCAMP and SWarp standard output file handle.
-             If set to None, no redirection will occur.
-    stderr - the SExtractor, SCAMP and SWarp standard error file handle.
-             If set to None, no redirection will occur.
-
-    """
-
-    # This does astrometry on the image and returns the path to the
-    # temporary file to which the '.head' file has been saved
-    head_path = astromatic.scamp(img_path, scale, equinox,
-                                 radecsys, saturation,
-                                 ra_keyword = ra_keyword,
-                                 dec_keyword = dec_keyword,
-                                 stdout = stdout, stderr = stderr)
-    try:
-        # Now merge the '.head' file with the original image
-        return astromatic.swarp(img_path, head_path,
-                                copy_keywords = copy_keywords,
-                                stdout = stdout, stderr = stderr)
-    finally:
-        try: os.unlink(head_path)
-        except (IOError, OSError): pass
-
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... FITS_IMAGE"
