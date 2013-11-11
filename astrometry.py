@@ -37,12 +37,11 @@ import methods
 import style
 
 description = """
-This module does astrometry on an image entirely using Emmanuel Bertin's tools,
-namely SExtractor, SCAMP and SWarp. First, SExtractor is run on the image and
-the output catalog saved in the FITS_LDAC binary format. This is then read by
-SCAMP, which computes the astrometic solution and saves it to a FITS-like image
-header. Finally, this header file is merged with the original FITS image using
-SWarp, thus updating it with the astrometric information.
+This module uses a local build of the Astrometry.net software in order to
+compute the astrometric solution of a FITS image. This is, essentially, a mere
+simple interface to solve-field, Astrometry.net's command-line high-level user
+interface, which must be present in PATH. Keep in mind that for Astrometry.net
+to work it is also necessary to download the index files.
 
 """
 
