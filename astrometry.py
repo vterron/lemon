@@ -138,87 +138,10 @@ parser.add_option('--update', action = 'store_true', dest = 'update',
                   "input image with the astrometric solution. This causes "
                   "the --output and --overwrite options to be ignored")
 
-# CCD SITE#2b focus scale = 0.50209205 arcsec/pixel
-parser.add_option('--scale', action = 'store', type = 'float',
-                  dest = 'scale', default = 0.50,
-                  help = "the scale of the images, in arcsec/pixel "
-                  "[default: %default]")
-
-parser.add_option('--equinox', action = 'store', type = 'int',
-                  dest = 'equinox', default = '2000',
-                  help = "mean equinox, in years [default: %default]")
-
-parser.add_option('--radecsys', action = 'store', type = 'str',
-                  dest = 'radecsys', default = 'ICRS',
-                  help = "WCS astrometric system [default: %default]")
-
-parser.add_option('--maximum', action = 'store', type = 'int',
-                  dest = 'maximum', default = defaults.maximum,
-                  help = defaults.desc['maximum'])
-
-# Note for developers: we are not doing anything with the stars of the image,
-# so the width of the margin is irrelevant here. However, it is required by the
-# __init__ method of the FITSeeingImage class. We could use any value, but we
-# prefer to use the same as in other stages of the pipeline.
-parser.add_option('--margin', action = 'store', type = 'int',
-                  dest = 'margin', default = defaults.margin,
-                  help = defaults.desc['margin'])
-
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
                   help = defaults.desc['verbosity'])
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
-
-key_group.add_option('--objectk', action = 'store', type = 'str',
-                     dest = 'objectk', default = keywords.objectk,
-                     help = keywords.desc['objectk'])
-
-key_group.add_option('--filterk', action = 'store', type = 'str',
-                     dest = 'filterk', default = keywords.filterk,
-                     help = keywords.desc['filterk'])
-
-key_group.add_option('--rak', action = 'store', type = 'str',
-                     dest = 'rak', default = keywords.rak,
-                     help = keywords.desc['rak'])
-
-key_group.add_option('--deck', action = 'store', type = 'str',
-                     dest = 'deck', default = keywords.deck,
-                     help = keywords.desc['deck'])
-
-key_group.add_option('--datek', action = 'store', type = 'str',
-                     dest = 'datek', default = keywords.datek,
-                     help = keywords.desc['datek'])
-
-key_group.add_option('--timek', action = 'store', type = 'str',
-                     dest = 'timek', default = keywords.timek,
-                     help = keywords.desc['timek'])
-
-key_group.add_option('--expk', action = 'store', type = 'str',
-                     dest = 'exptimek', default = keywords.exptimek,
-                     help = keywords.desc['exptimek'])
-
-key_group.add_option('--airmk', action = 'store', type = 'str',
-                     dest = 'airmassk', default = keywords.airmassk,
-                     help = keywords.desc['airmassk'])
-
-key_group.add_option('--coaddk', action = 'store', type = 'str',
-                     dest = 'coaddk', default = keywords.coaddk,
-                     help = keywords.desc['coaddk'])
-
-key_group.add_option('--gaink', action = 'store', type = 'str',
-                     dest = 'gaink', default = keywords.gaink,
-                     help = keywords.desc['gaink'])
-
-key_group.add_option('--uik', action = 'store', type = 'str',
-                     dest = 'uncimgk', default = keywords.uncimgk,
-                     help = keywords.desc['uncimgk'])
-
-key_group.add_option('--fwhmk', action = 'store', type = 'str',
-                     dest = 'fwhmk', default = keywords.fwhmk,
-                     help = keywords.desc['fwhmk'])
-parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
