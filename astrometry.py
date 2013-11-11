@@ -55,6 +55,10 @@ class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
     pass
 
+class AstrometryNetError(subprocess.CalledProcessError):
+    """ Raised if the execution of Astrometry.net fails """
+    pass
+
 def astrometry(img_path, scale, equinox, radecsys, saturation,
                copy_keywords = None, ra_keyword = 'RA',
                dec_keyword = 'DEC', stdout = None, stderr = None):
