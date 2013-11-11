@@ -207,33 +207,14 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    print "%sReading WCS information from the FITS header..." % style.prefix,
-    img = seeing.FITSeeingImage(img_path, options.maximum, options.margin)
-    ra  = img.read_keyword(options.rak)
-    dec = img.read_keyword(options.deck)
-    print 'done.'
 
-    print "%sAstrometic system: %s" % (style.prefix, options.radecsys)
-    print "%sRight ascension = %f (%.2dh %.2dm %.4fs)" % \
-          ((style.prefix, ra) + methods.DD_to_HMS(ra))
-    print "%sDeclination = %f (%.2d° %.2d′ %.4f″)" % \
-          ((style.prefix, dec) + methods.DD_to_DMS(dec))
+    print "%sInput FITS image: %s" % (style.prefix, img_path)
+    msg = "%sUsing a local build of Astrometry.net to solve the FITS image."
+    print msg % style.prefix
 
-    print "%sMean equinox: %d" % (style.prefix, options.equinox)
-    print "%sScale: %.3f arcsec/pixel" % (style.prefix, options.scale)
-    msg = "%sImage saturation level: %d x %d = %d ADUs"
-    print msg % (style.prefix, options.maximum, img.ncoadds, img.saturation)
-
-    # All these keywords have to be propagated to the resulting FITS
-    # image, as subsequent modules of the pipeline need access to them.
-    propagated = \
-        [options.objectk, options.filterk, options.rak, options.deck,
-         options.datek, options.timek, options.exptimek, options.airmassk,
-         keywords.coaddk, options.gaink, options.uncimgk, options.fwhmk]
-
-    print "%sRunning SExtractor, SCAMP and SWarp on the image..." % \
-          style.prefix ,
-    sys.stdout.flush()
+    msg = "%sLines not starting with '%s' come from Astrometry.net."
+    print msg % (style.prefix, style.prefix.strip())
+    print
 
     with open(os.devnull, 'wt') as fd:
         output_path = astrometry_net(img_path)
@@ -243,7 +224,6 @@ def main(arguments = None):
             try: os.unlink(output_path)
             except (IOError, OSError): pass
 
-    print 'done.'
     output_img = fitsimage.FITSImage(options.output_path)
 
     msg1 = "Astrometry done by LEMON on %s" % methods.utctime()
