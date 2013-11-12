@@ -63,9 +63,6 @@ class SExtractorUpgradeRequired(StandardError):
 class SExtractorError(subprocess.CalledProcessError):
     pass
 
-class SWarpError(subprocess.CalledProcessError):
-    pass
-
 class Pixel(collections.namedtuple('Pixel', "x y")):
     """ A pair of immutable x- and y-coordinates. """
 
