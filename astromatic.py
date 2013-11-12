@@ -63,9 +63,6 @@ class SExtractorUpgradeRequired(StandardError):
 class SExtractorError(subprocess.CalledProcessError):
     pass
 
-class SCAMPNotInstalled(StandardError):
-    pass
-
 class SCAMPError(subprocess.CalledProcessError):
     pass
 
