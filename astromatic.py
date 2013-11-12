@@ -28,12 +28,10 @@ import os
 import os.path
 import re
 import math
-import shutil
 import tempfile
 import subprocess
 
 # LEMON modules
-import fitsimage
 import methods
 
 ASTROMATIC_FILES = os.path.join(os.path.dirname(__file__), 'astromatic/')
