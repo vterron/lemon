@@ -53,10 +53,6 @@ CDSCLIENT_COMMAND = 'aclient'
 SWARP_CONFIG = os.path.join(ASTROMATIC_FILES, 'swarp.conf')
 SWARP_COMMAND = 'swarp'
 
-class CDSclientNotInstalled(StandardError):
-    """ Raised if F.Ochsenbein's CDSclient package is not installed """
-    pass
-
 class SExtractorNotInstalled(StandardError):
     pass
 
