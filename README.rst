@@ -41,7 +41,7 @@ These are the steps to install LEMON on a clean Debian machine:
 #. ``pip install -r requirements.txt``
 #. Install `IRAF <http://iraf.noao.edu/>`_
 #. Install the `CDSClient <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_ package
-#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer), `SCAMP <http://www.astromatic.net/software/scamp>`_ and `SWarp <http://www.astromatic.net/software/swarp>`_
+#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer)
 #. ``python ./setup.py``
 #. ``echo 'PATH=$PATH:~/lemon' >> ~/.bashrc``
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
