@@ -363,7 +363,7 @@ def which(*names):
     for directory in os.environ.get('PATH', '').split(os.pathsep):
         for name in names:
             path = os.path.join(directory, name)
-            if os.access(path, os.X_OK):
+            if os.access(path, os.X_OK) and os.path.isfile(path):
                 result.append(path)
     return result
 
