@@ -44,15 +44,6 @@ SEXTRACTOR_STARNNW = os.path.join(ASTROMATIC_FILES, 'sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 SEXTRACTOR_REQUIRED_VERSION = (2, 8, 6)
 
-SCAMP_CONFIG = os.path.join(ASTROMATIC_FILES, 'scamp.conf')
-SCAMP_AHEADER_SUFFIX = '.ahead'
-SCAMP_HEADER_SUFFIX = '.head'
-SCAMP_COMMAND = 'scamp'
-CDSCLIENT_COMMAND = 'aclient'
-
-SWARP_CONFIG = os.path.join(ASTROMATIC_FILES, 'swarp.conf')
-SWARP_COMMAND = 'swarp'
-
 class SExtractorNotInstalled(StandardError):
     pass
 
