@@ -33,7 +33,7 @@ import subprocess
 # LEMON modules
 import methods
 
-CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'astromatic/')
+CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')
 SEXTRACTOR_CONFIG = os.path.join(CONFIG_FILES_DIR, 'sextractor.sex')
 SEXTRACTOR_PARAMS = os.path.join(CONFIG_FILES_DIR, 'sextractor.param')
 SEXTRACTOR_FILTER = os.path.join(CONFIG_FILES_DIR, 'sextractor.conv')
