@@ -33,11 +33,11 @@ import subprocess
 # LEMON modules
 import methods
 
-ASTROMATIC_FILES = os.path.join(os.path.dirname(__file__), 'astromatic/')
-SEXTRACTOR_CONFIG = os.path.join(ASTROMATIC_FILES, 'sextractor.sex')
-SEXTRACTOR_PARAMS = os.path.join(ASTROMATIC_FILES, 'sextractor.param')
-SEXTRACTOR_FILTER = os.path.join(ASTROMATIC_FILES, 'sextractor.conv')
-SEXTRACTOR_STARNNW = os.path.join(ASTROMATIC_FILES, 'sextractor.nnw')
+CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')
+SEXTRACTOR_CONFIG = os.path.join(CONFIG_FILES_DIR, 'sextractor.sex')
+SEXTRACTOR_PARAMS = os.path.join(CONFIG_FILES_DIR, 'sextractor.param')
+SEXTRACTOR_FILTER = os.path.join(CONFIG_FILES_DIR, 'sextractor.conv')
+SEXTRACTOR_STARNNW = os.path.join(CONFIG_FILES_DIR, 'sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 SEXTRACTOR_REQUIRED_VERSION = (2, 8, 6)
 
