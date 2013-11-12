@@ -63,9 +63,6 @@ class SExtractorUpgradeRequired(StandardError):
 class SExtractorError(subprocess.CalledProcessError):
     pass
 
-class SWarpNotInstalled(StandardError):
-    pass
-
 class SWarpError(subprocess.CalledProcessError):
     pass
 
