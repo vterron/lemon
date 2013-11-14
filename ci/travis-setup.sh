@@ -80,22 +80,14 @@ cd ~
 
 if [[ $ARCH_64_BITS == 1 ]]; then
     SEXTRACTOR_RPM="sextractor-2.8.6-1.x86_64.rpm"
-    SWARP_RPM="swarp-2.19.1-1.x86_64.rpm"
 else
     SEXTRACTOR_RPM="sextractor-2.8.6-1.i386.rpm"
-    SWARP_RPM="swarp-2.19.1-1.i386.rpm"
 fi
 
 SEXTRACTOR_URL=$DOWNLOADS_SERVER$SEXTRACTOR_RPM
-SWARP_URL=$DOWNLOADS_SERVER$SWARP_RPM
-
 wget $SEXTRACTOR_URL
 alien -i $SEXTRACTOR_RPM
 rm $SEXTRACTOR_RPM
-
-wget $SWARP_URL
-alien -i $SWARP_RPM
-rm $SWARP_RPM
 
 cd $PWD # back to the LEMON directory
 
