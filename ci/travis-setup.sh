@@ -61,48 +61,20 @@ export iraf
 yes "" | $iraf/unix/hlib/install
 rm $IRAF_TAR
 
-########### Install CDSClient ###########
-
-CDSCLIENT_TAR="cdsclient.tar.gz"
-
-cd ~
-wget $DOWNLOADS_SERVER$CDSCLIENT_TAR
-tar xfz $CDSCLIENT_TAR
-
-cd cdsclient-* # e.g., cdsclient-3.72/
-./configure
-make
-make install
-
-########### Install SExtractor, SCAMP and SWarp ###########
+########### Install SExtractor ###########
 
 cd ~
 
 if [[ $ARCH_64_BITS == 1 ]]; then
     SEXTRACTOR_RPM="sextractor-2.8.6-1.x86_64.rpm"
-    SCAMP_RPM="scamp-1.7.0-1.x86_64.rpm"
-    SWARP_RPM="swarp-2.19.1-1.x86_64.rpm"
 else
     SEXTRACTOR_RPM="sextractor-2.8.6-1.i386.rpm"
-    SCAMP_RPM="scamp-1.7.0-1.i386.rpm"
-    SWARP_RPM="swarp-2.19.1-1.i386.rpm"
 fi
 
 SEXTRACTOR_URL=$DOWNLOADS_SERVER$SEXTRACTOR_RPM
-SCAMP_URL=$DOWNLOADS_SERVER$SCAMP_RPM
-SWARP_URL=$DOWNLOADS_SERVER$SWARP_RPM
-
 wget $SEXTRACTOR_URL
 alien -i $SEXTRACTOR_RPM
 rm $SEXTRACTOR_RPM
-
-wget $SCAMP_URL
-alien -i $SCAMP_RPM
-rm $SCAMP_RPM
-
-wget $SWARP_URL
-alien -i $SWARP_RPM
-rm $SWARP_RPM
 
 cd $PWD # back to the LEMON directory
 
