@@ -61,7 +61,7 @@ export iraf
 yes "" | $iraf/unix/hlib/install
 rm $IRAF_TAR
 
-########### Install SExtractor, SCAMP and SWarp ###########
+########### Install SExtractor ###########
 
 cd ~
 
