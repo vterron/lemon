@@ -1207,7 +1207,7 @@ class FITSet(list):
 
         # If only two images are combined, we always discard the highest pixel
         # (since some stars could be discernible in the case of flat-fields,
-        # for example). When there are three or more stars we also discard the
+        # for example). When there are three or more images we also discard the
         # lowest and highest pixels, unless the specified fraction is zero: in
         # that case, it is understood as to mean "do not discard anything".
         if len(self) == 2 and not nhigh and fhigh:
