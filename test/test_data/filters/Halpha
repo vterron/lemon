@@ -10,7 +10,7 @@
 'Halpha-6345', '6345'
 'Halpha_6346/75', '6346'
 
-# These are *real* examples of Gunn filters, provided by Javier Blasco,
+# These are *real* examples of Halpha filters, provided by Javier Blasco,
 # who found them among the FITS images of several astronomical campaigns.
 
 'H6563', '6563'
