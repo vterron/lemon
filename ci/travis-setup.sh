@@ -61,19 +61,6 @@ export iraf
 yes "" | $iraf/unix/hlib/install
 rm $IRAF_TAR
 
-########### Install CDSClient ###########
-
-CDSCLIENT_TAR="cdsclient.tar.gz"
-
-cd ~
-wget $DOWNLOADS_SERVER$CDSCLIENT_TAR
-tar xfz $CDSCLIENT_TAR
-
-cd cdsclient-* # e.g., cdsclient-3.72/
-./configure
-make
-make install
-
 ########### Install SExtractor, SCAMP and SWarp ###########
 
 cd ~
