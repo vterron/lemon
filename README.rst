@@ -4,10 +4,14 @@ LEMON
 .. image:: https://travis-ci.org/vterron/lemon.png?branch=master
   :target: https://travis-ci.org/vterron/lemon
 
+.. image:: ./Misc/lemon-icon.png
+   :width: 200 px
+   :alt: LEMON icon
+   :align: center
+
 LEMON is a CCD differential-photometry pipeline, written in Python, developed at the `Institute of Astrophysics of Andalusia (CSIC) <http://www.iaa.es/>`_ and originally designed for its use at the `1.23m CAHA telescope <http://www.caha.es/telescopes-overview-and-instruments-manuals.html/>`_ for automated variable stars detection and analysis. The aim of this tool is to make it possible to *completely reduce thousands of images of time series* in a matter of hours and with minimal user interaction, if not none at all, automatically detecting variable stars and presenting the results to the astronomer.
 
 A first overview of LEMON, now slightly outdated, was presented some time ago at `<http://adsabs.harvard.edu/abs/2011hsa6.conf..755T>`_.
-
 
 Modules
 =======
