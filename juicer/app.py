@@ -723,6 +723,7 @@ class LEMONJuicerGUI(object):
     TABS_LABEL = "Star %d"
 
     get_abspath = functools.partial(os.path.join, os.path.dirname(__file__))
+    LEMON_ICON = get_abspath('./gui/img/lemon.png')
     COMPASS_ICON = get_abspath('./gui/img/compass.png')
 
     def _add_custom_stock_icons(self):
@@ -1082,6 +1083,8 @@ class LEMONJuicerGUI(object):
             filt.set_name('LEMON XML File (%s)' % xml_pattern)
             filt.add_custom(gtk.FILE_FILTER_FILENAME, xml_filter)
             dialog.add_filter(filt)
+
+            dialog.set_icon_from_file(self.LEMON_ICON)
 
             response = dialog.run()
             if response == gtk.RESPONSE_OK:

@@ -7,6 +7,7 @@
     <property name="window_position">center</property>
     <property name="default_width">800</property>
     <property name="default_height">500</property>
+    <property name="icon">img/lemon.png</property>
     <signal name="destroy" handler="handle_quit"/>
     <child>
       <object class="GtkVBox" id="main-box">
