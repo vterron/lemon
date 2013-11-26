@@ -55,7 +55,7 @@ class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
     pass
 
-def astrometry_net(path, verbosity = 0):
+def astrometry_net(path, ra = None, verbosity = 0):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -114,6 +114,12 @@ def astrometry_net(path, verbosity = 0):
             '--new-fits', output_path,
             '--no-fits2fits',
             '--overwrite']
+
+    # -3 / --ra <degrees or hh:mm:ss>: only search in indexes within 'radius'
+    # of the field center given by 'ra' and 'dec'
+
+    if ra is not None:
+        args += ['--ra', '%f' % ra]
 
     # -v / --verbose: be more chatty -- repeat for even more verboseness
     if verbosity:
