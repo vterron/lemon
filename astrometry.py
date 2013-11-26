@@ -190,6 +190,11 @@ coords_group.add_option('--ra', action = 'store', type = 'float',
 coords_group.add_option('--dec', action = 'store', type = 'float',
                         dest = 'dec', help = "Declination, in degrees")
 
+coords_group.add_option('--radius', action = 'store', type = 'float',
+                        dest = 'radius', default = 1,
+                        help = "only search in indexes within this number "
+                        "of degrees of the field center given by --ra and "
+                        "--dec [default: %default]")
 parser.add_option_group(coords_group)
 customparser.clear_metavars(parser)
 
@@ -267,6 +272,7 @@ def main(arguments = None):
 
     kwargs = dict(ra = options.ra,
                   dec = options.dec,
+                  radius = options.radius,
                   verbosity = options.verbose)
 
     output_path = astrometry_net(img_path, **kwargs)
