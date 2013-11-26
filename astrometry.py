@@ -145,7 +145,10 @@ parser.add_option('--update', action = 'store_true', dest = 'update',
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'])
+                  help = defaults.desc['verbosity'] + " The verbosity "
+                  "level is also passed down to Astrometry.net, causing "
+                  "it to be increasingly chattier as more -v flags are "
+                  "given")
 
 customparser.clear_metavars(parser)
 
