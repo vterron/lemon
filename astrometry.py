@@ -80,6 +80,15 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     [4] http://data.astrometry.net/4200/
 
     Keyword arguments:
+
+    ra,
+    dec,
+    radius - restrict the Astrometry.net search to those indexes within
+             'radius' degrees of the field center given by ('ra', 'dec').
+             Both the right ascension and declination must be given in order
+             for this feature to work. The three arguments must be expressed
+             in degrees.
+
     verbosity - the verbosity level. The higher this value, the 'chattier'
                 Astrometry.net will be. Most of the time, a verbosity other
                 than zero, the default value, is only needed for debugging.
