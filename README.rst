@@ -4,7 +4,7 @@ LEMON
 .. image:: https://travis-ci.org/vterron/lemon.png?branch=master
   :target: https://travis-ci.org/vterron/lemon
 
-.. image:: ./Misc/lemon-icon.png
+.. image:: ./Misc/lemon-icon_200px.png
    :width: 200 px
    :alt: LEMON icon
    :align: center
