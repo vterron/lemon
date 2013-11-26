@@ -187,6 +187,9 @@ coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
 coords_group.add_option('--ra', action = 'store', type = 'float',
                         dest = 'ra', help = "Right ascension, in degrees")
 
+coords_group.add_option('--dec', action = 'store', type = 'float',
+                        dest = 'dec', help = "Declination, in degrees")
+
 parser.add_option_group(coords_group)
 customparser.clear_metavars(parser)
 
@@ -263,6 +266,7 @@ def main(arguments = None):
     print
 
     kwargs = dict(ra = options.ra,
+                  dec = options.dec,
                   verbosity = options.verbose)
 
     output_path = astrometry_net(img_path, **kwargs)
