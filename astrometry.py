@@ -55,7 +55,7 @@ class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
     pass
 
-def astrometry_net(path):
+def astrometry_net(path, verbosity = 0):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -78,6 +78,11 @@ def astrometry_net(path):
     [2] http://astrometry.net/doc/build.html
     [3] http://astrometry.net/doc/readme.html#getting-index-files
     [4] http://data.astrometry.net/4200/
+
+    Keyword arguments:
+    verbosity - the verbosity level. The higher this value, the 'chattier'
+                Astrometry.net will be. Most of the time, a verbosity other
+                than zero, the default value, is only needed for debugging.
 
     """
 
@@ -109,6 +114,11 @@ def astrometry_net(path):
             '--new-fits', output_path,
             '--no-fits2fits',
             '--overwrite']
+
+    # -v / --verbose: be more chatty -- repeat for even more verboseness
+    if verbosity:
+        args.append('-%s' % ('v' * verbosity))
+
     try:
         subprocess.check_call(args)
         return output_path
@@ -212,7 +222,8 @@ def main(arguments = None):
     print
 
     with open(os.devnull, 'wt') as fd:
-        output_path = astrometry_net(img_path)
+        kwargs = dict(verbosity = options.verbose)
+        output_path = astrometry_net(img_path, **kwargs)
         try:
             shutil.move(output_path, options.output_path)
         except (IOError, OSError):
