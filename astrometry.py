@@ -23,6 +23,7 @@ from __future__ import division
 
 import atexit
 import logging
+import optparse
 import os
 import shutil
 import subprocess
@@ -175,6 +176,15 @@ parser.add_option('-v', '--verbose', action = 'count',
                   "it to be increasingly chattier as more -v flags are "
                   "given")
 
+coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
+               "Although one of its main advantages is that it is a blind "
+               "calibration tool, the execution of Astrometry.net can be "
+               "enormously sped up (in more than an order of magnitude, in "
+               "fact) if we know the approximate coordinates of the image. "
+               "If that is your case, you may use these options to restrict "
+               "the search to those indexes close to the field center")
+
+parser.add_option_group(coords_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
