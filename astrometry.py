@@ -224,14 +224,14 @@ def main(arguments = None):
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    with open(os.devnull, 'wt') as fd:
-        kwargs = dict(verbosity = options.verbose)
-        output_path = astrometry_net(img_path, **kwargs)
-        try:
-            shutil.move(output_path, options.output_path)
-        except (IOError, OSError):
-            try: os.unlink(output_path)
-            except (IOError, OSError): pass
+    kwargs = dict(verbosity = options.verbose)
+    output_path = astrometry_net(img_path, **kwargs)
+
+    try:
+        shutil.move(output_path, options.output_path)
+    except (IOError, OSError):
+        try: os.unlink(output_path)
+        except (IOError, OSError): pass
 
     output_img = fitsimage.FITSImage(options.output_path)
 
