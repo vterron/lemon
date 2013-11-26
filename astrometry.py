@@ -184,6 +184,9 @@ coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
                "If that is your case, you may use these options to restrict "
                "the search to those indexes close to the field center")
 
+coords_group.add_option('--ra', action = 'store', type = 'float',
+                        dest = 'ra', help = "Right ascension, in degrees")
+
 parser.add_option_group(coords_group)
 customparser.clear_metavars(parser)
 
@@ -259,7 +262,9 @@ def main(arguments = None):
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    kwargs = dict(verbosity = options.verbose)
+    kwargs = dict(ra = options.ra,
+                  verbosity = options.verbose)
+
     output_path = astrometry_net(img_path, **kwargs)
 
     try:
