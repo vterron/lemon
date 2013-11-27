@@ -235,6 +235,19 @@ def main(arguments = None):
         assert len(args) == 1
         img_path = args[0]
 
+    # If the right ascension is specified but not the declination, or vice
+    # versa, Astrometry.net ignores the received coordinate since it needs both
+    # in order to restrict the search to those indexes close to the center that
+    # they define. If this happens, raise an error and abort the execution, as
+    # the user may have passed only one by accident, or in the assumption that,
+    # even if only one is known, it can still help Astrometry.net reduce the
+    # number of indexes that must be searched.
+
+    if (options.ra and not options.dec) or (not options.ra and options.dec):
+           msg = "%sError: --ra and --dec must be used together or not at all."
+           print msg % style.prefix
+           sys.exit(style.error_exit_message)
+
     # Images cannot be directly updated with the astrometric solution. Instead,
     # what we do is to save it to a temporary file and then overwrite the input
     # image. This is what the user views as an "update" of the original file.
