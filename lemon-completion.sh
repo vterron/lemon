@@ -98,10 +98,7 @@ _lemon_mosaic()
 _lemon_astrometry()
 {
     local opts
-    opts="--output --overwrite --update --scale --equinox --radecsys
-    --maximum --margin --verbose --objectk --filterk --rak --deck
-    --datek --expk --airmk --coadk --gaink --uik --fwhmk"
-
+    opts="--output --overwrite --update --verbose --ra --dec --radius"
     if [[ ${prev} == --output ]]; then
 	_filedir $FITS_EXTS
     elif [[ ${cur} == -* ]]; then

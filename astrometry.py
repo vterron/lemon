@@ -23,6 +23,7 @@ from __future__ import division
 
 import atexit
 import logging
+import optparse
 import os
 import shutil
 import subprocess
@@ -55,7 +56,7 @@ class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
     pass
 
-def astrometry_net(path):
+def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -78,6 +79,20 @@ def astrometry_net(path):
     [2] http://astrometry.net/doc/build.html
     [3] http://astrometry.net/doc/readme.html#getting-index-files
     [4] http://data.astrometry.net/4200/
+
+    Keyword arguments:
+
+    ra,
+    dec,
+    radius - restrict the Astrometry.net search to those indexes within
+             'radius' degrees of the field center given by ('ra', 'dec').
+             Both the right ascension and declination must be given in order
+             for this feature to work. The three arguments must be expressed
+             in degrees.
+
+    verbosity - the verbosity level. The higher this value, the 'chattier'
+                Astrometry.net will be. Most of the time, a verbosity other
+                than zero, the default value, is only needed for debugging.
 
     """
 
@@ -109,6 +124,27 @@ def astrometry_net(path):
             '--new-fits', output_path,
             '--no-fits2fits',
             '--overwrite']
+
+    # -3 / --ra <degrees or hh:mm:ss>: only search in indexes within 'radius'
+    # of the field center given by 'ra' and 'dec'
+    # -4 / --dec <degrees or [+-]dd:mm:ss>: only search in indexes within
+    # 'radius' of the field center given by 'ra' and 'dec'
+    # -5 / --radius <degrees>: only search in indexes within 'radius' of the
+    # field center given by ('ra', 'dec')
+
+    if ra is not None:
+        args += ['--ra', '%f' % ra]
+
+    if dec is not None:
+        args += ['--dec', '%f' % dec]
+
+    if radius is not None:
+        args += ['--radius', '%f' % radius]
+
+    # -v / --verbose: be more chatty -- repeat for even more verboseness
+    if verbosity:
+        args.append('-%s' % ('v' * verbosity))
+
     try:
         subprocess.check_call(args)
         return output_path
@@ -135,8 +171,31 @@ parser.add_option('--update', action = 'store_true', dest = 'update',
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'])
+                  help = defaults.desc['verbosity'] + " The verbosity "
+                  "level is also passed down to Astrometry.net, causing "
+                  "it to be increasingly chattier as more -v flags are "
+                  "given")
 
+coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
+               "Although one of its main advantages is that it is a blind "
+               "calibration tool, the execution of Astrometry.net can be "
+               "enormously sped up (in more than an order of magnitude, in "
+               "fact) if we know the approximate coordinates of the image. "
+               "If that is your case, you may use these options to restrict "
+               "the search to those indexes close to the field center")
+
+coords_group.add_option('--ra', action = 'store', type = 'float',
+                        dest = 'ra', help = "Right ascension, in degrees")
+
+coords_group.add_option('--dec', action = 'store', type = 'float',
+                        dest = 'dec', help = "Declination, in degrees")
+
+coords_group.add_option('--radius', action = 'store', type = 'float',
+                        dest = 'radius', default = 1,
+                        help = "only search in indexes within this number "
+                        "of degrees of the field center given by --ra and "
+                        "--dec [default: %default]")
+parser.add_option_group(coords_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
@@ -176,6 +235,25 @@ def main(arguments = None):
         assert len(args) == 1
         img_path = args[0]
 
+    # If the right ascension is specified but not the declination, or vice
+    # versa, Astrometry.net ignores the received coordinate since it needs both
+    # in order to restrict the search to those indexes close to the center that
+    # they define. If this happens, raise an error and abort the execution, as
+    # the user may have passed only one by accident, or in the assumption that,
+    # even if only one is known, it can still help Astrometry.net reduce the
+    # number of indexes that must be searched.
+
+    if (options.ra and not options.dec) or (not options.ra and options.dec):
+           msg = "%sError: --ra and --dec must be used together or not at all."
+           print msg % style.prefix
+           sys.exit(style.error_exit_message)
+
+    # No index can be within the search area if the radius is not > 0
+    if options.radius <= 0:
+        msg = "%sError: --radius must a positive number of degrees"
+        print msg % style.prefix
+        sys.exit(style.error_exit_message)
+
     # Images cannot be directly updated with the astrometric solution. Instead,
     # what we do is to save it to a temporary file and then overwrite the input
     # image. This is what the user views as an "update" of the original file.
@@ -211,13 +289,18 @@ def main(arguments = None):
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    with open(os.devnull, 'wt') as fd:
-        output_path = astrometry_net(img_path)
-        try:
-            shutil.move(output_path, options.output_path)
-        except (IOError, OSError):
-            try: os.unlink(output_path)
-            except (IOError, OSError): pass
+    kwargs = dict(ra = options.ra,
+                  dec = options.dec,
+                  radius = options.radius,
+                  verbosity = options.verbose)
+
+    output_path = astrometry_net(img_path, **kwargs)
+
+    try:
+        shutil.move(output_path, options.output_path)
+    except (IOError, OSError):
+        try: os.unlink(output_path)
+        except (IOError, OSError): pass
 
     output_img = fitsimage.FITSImage(options.output_path)
 
