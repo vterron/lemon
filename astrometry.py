@@ -248,6 +248,12 @@ def main(arguments = None):
            print msg % style.prefix
            sys.exit(style.error_exit_message)
 
+    # No index can be within the search area if the radius is not > 0
+    if options.radius <= 0:
+        msg = "%sError: --radius must a positive number of degrees"
+        print msg % style.prefix
+        sys.exit(style.error_exit_message)
+
     # Images cannot be directly updated with the astrometric solution. Instead,
     # what we do is to save it to a temporary file and then overwrite the input
     # image. This is what the user views as an "update" of the original file.
