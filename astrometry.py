@@ -156,7 +156,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... FITS_IMAGE"
+parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
 
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
