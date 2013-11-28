@@ -23,6 +23,7 @@ from __future__ import division
 
 import atexit
 import logging
+import numpy
 import optparse
 import os
 import shutil
@@ -260,10 +261,12 @@ def main(arguments = None):
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    kwargs = dict(ra = options.ra,
-                  dec = options.dec,
-                  radius = options.radius,
-                  verbosity = options.verbose)
+    # Store the approximate coordinates, if provided, in a list. For each FITS
+    # image, we use as right ascension and declination, with which to restrict
+    # the search, the median of the coordinates that Astrometry.net has solved
+    # for all the previous images.
+    options.ra = [options.ra] if options.ra is not None else []
+    options.dec = [options.dec] if options.dec is not None else []
 
     for path in input_paths:
         img = fitsimage.FITSImage(path)
@@ -271,6 +274,18 @@ def main(arguments = None):
         root, ext = os.path.splitext(os.path.basename(path))
         output_filename = root + options.suffix + ext
         dest_path = os.path.join(output_dir, output_filename)
+
+        # The approximate right ascension and declination, when the --ra and
+        # --dec options are not used, will be None only in the first iteration.
+        # For the rest of the loop, we use the median of the coordinates found
+        # so far.
+        ra = numpy.median(options.ra) if options.ra else None
+        dec = numpy.median(options.dec) if options.dec else None
+
+        kwargs = dict(ra = ra,
+                      dec = dec,
+                      radius = options.radius,
+                      verbosity = options.verbose)
 
         output_path = astrometry_net(img.path, **kwargs)
 
@@ -292,6 +307,12 @@ def main(arguments = None):
 
         msg = "%s%s solved and saved to %s"
         print  msg % (style.prefix, img.path, output_img.path)
+
+        # Read RA and DEC from the Astrometry.net WCS solution
+        ra = output_img.read_keyword('CRVAL1')
+        dec = output_img.read_keyword('CRVAL2')
+        options.ra.append(ra)
+        options.dec.append(dec)
 
     print "%sYou're done ^_^" % style.prefix
     return 0
