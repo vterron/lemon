@@ -21,7 +21,6 @@
 
 from __future__ import division
 
-import atexit
 import logging
 import numpy
 import optparse
