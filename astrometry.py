@@ -176,7 +176,16 @@ coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
                "enormously sped up (in more than an order of magnitude, in "
                "fact) if we know the approximate coordinates of the image. "
                "If that is your case, you may use these options to restrict "
-               "the search to those indexes close to the field center")
+               "the search to those indexes close to the field center. \n"
+               "\n"
+               "Note, however, that as images are processed we always rely "
+               "on the median of the coordinates that were solved for the "
+               "previous ones. The consequence of this is that, even if the "
+               "approximate coordinates of our field are not known, only the "
+               "calibration of the first image will be actually blind. Viewed "
+               "from another perspective, this also means that the speed-up "
+               "gained with these options approaches zero as the number of "
+               "images to solve increases.")
 
 coords_group.add_option('--ra', action = 'store', type = 'float',
                         dest = 'ra', help = "Right ascension, in degrees")
