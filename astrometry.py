@@ -21,8 +21,8 @@
 
 from __future__ import division
 
-import atexit
 import logging
+import numpy
 import optparse
 import os
 import shutil
@@ -39,7 +39,8 @@ import style
 
 description = """
 This module uses a local build of the Astrometry.net software in order to
-compute the astrometric solution of a FITS image. This is, essentially, a mere
+compute the astrometric solution of the input FITS files, saving the new files,
+containing the WCS header, to the output directory. This is, in essence, a mere
 simple interface to solve-field, Astrometry.net's command-line high-level user
 interface, which must be present in PATH. Keep in mind that for Astrometry.net
 to work it is also necessary to download the index files.
@@ -155,19 +156,12 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... FITS_IMAGE"
+parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
 
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'output_path', default = 'astrometry.fits',
-                  help = "path to the output image [default: %default]")
-
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output image if it already exists")
-
-parser.add_option('--update', action = 'store_true', dest = 'update',
-                  help = "do not output a FITS image; instead, update the "
-                  "input image with the astrometric solution. This causes "
-                  "the --output and --overwrite options to be ignored")
+parser.add_option('--suffix', action = 'store', type = 'str',
+                  dest = 'suffix', default = 'a',
+                  help = "string to be appended to output images, before "
+                  "the file extension, of course [default: %default]")
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
@@ -182,7 +176,16 @@ coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
                "enormously sped up (in more than an order of magnitude, in "
                "fact) if we know the approximate coordinates of the image. "
                "If that is your case, you may use these options to restrict "
-               "the search to those indexes close to the field center")
+               "the search to those indexes close to the field center. \n"
+               "\n"
+               "Note, however, that as images are processed we always rely "
+               "on the median of the coordinates that were solved for the "
+               "previous ones. The consequence of this is that, even if the "
+               "approximate coordinates of our field are not known, only the "
+               "calibration of the first image will be actually blind. Viewed "
+               "from another perspective, this also means that the speed-up "
+               "gained with these options approaches zero as the number of "
+               "images to solve increases.")
 
 coords_group.add_option('--ra', action = 'store', type = 'float',
                         dest = 'ra', help = "Right ascension, in degrees")
@@ -228,12 +231,15 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    # Print the help and abort the execution if there are not two positional
+    # arguments left after parsing the options, as the user must specify at
+    # least one (only one?) input FITS file and the output directory
+    if len(args) < 2:
         parser.print_help()
-        return 2 # used for command line syntax errors
+        return 2     # 2 is generally used for command line syntax errors
     else:
-        assert len(args) == 1
-        img_path = args[0]
+        input_paths = args[:-1]
+        output_dir = args[-1]
 
     # If the right ascension is specified but not the declination, or vice
     # versa, Astrometry.net ignores the received coordinate since it needs both
@@ -254,71 +260,68 @@ def main(arguments = None):
         print msg % style.prefix
         sys.exit(style.error_exit_message)
 
-    # Images cannot be directly updated with the astrometric solution. Instead,
-    # what we do is to save it to a temporary file and then overwrite the input
-    # image. This is what the user views as an "update" of the original file.
-    if options.update:
-        tmp_fd, tmp_path = tempfile.mkstemp(suffix = '.fits')
-        os.close(tmp_fd)
-        options.output_path = tmp_path
-        options.overwrite = True
+    # Make sure that the output directory exists; create it if it doesn't.
+    methods.determine_output_dir(output_dir)
 
-        # Use a simple cleanup function to guarante that the temporary file is
-        # removed -- we want it to be deleted even if the program crashes or
-        # the execution is aborted before the input image is overwritten.
-        @atexit.register
-        def clean_tempfile():
-            if os.path.exists(options.output_path):
-                try:
-                    os.unlink(options.output_path)
-                except (IOError, OSError):
-                    pass
-
-    elif os.path.exists(options.output_path) and not options.overwrite:
-        print "%sError. The output image '%s' already exists." % \
-              (style.prefix, options.output_path)
-        print style.error_exit_message
-        return 1
-
-
-    print "%sInput FITS image: %s" % (style.prefix, img_path)
-    msg = "%sUsing a local build of Astrometry.net to solve the FITS image."
-    print msg % style.prefix
-
+    msg = "%s%d paths given as input, on which photometry will be done."
+    print msg % (style.prefix, len(input_paths))
+    print "%sUsing a local build of Astrometry.net." % style.prefix
     msg = "%sLines not starting with '%s' come from Astrometry.net."
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    kwargs = dict(ra = options.ra,
-                  dec = options.dec,
-                  radius = options.radius,
-                  verbosity = options.verbose)
+    # Store the approximate coordinates, if provided, in a list. For each FITS
+    # image, we use as right ascension and declination, with which to restrict
+    # the search, the median of the coordinates that Astrometry.net has solved
+    # for all the previous images.
+    options.ra = [options.ra] if options.ra is not None else []
+    options.dec = [options.dec] if options.dec is not None else []
 
-    output_path = astrometry_net(img_path, **kwargs)
+    for path in input_paths:
+        img = fitsimage.FITSImage(path)
+        # Add the suffix to the basename of the FITS image
+        root, ext = os.path.splitext(os.path.basename(path))
+        output_filename = root + options.suffix + ext
+        dest_path = os.path.join(output_dir, output_filename)
 
-    try:
-        shutil.move(output_path, options.output_path)
-    except (IOError, OSError):
-        try: os.unlink(output_path)
-        except (IOError, OSError): pass
+        # The approximate right ascension and declination, when the --ra and
+        # --dec options are not used, will be None only in the first iteration.
+        # For the rest of the loop, we use the median of the coordinates found
+        # so far.
+        ra = numpy.median(options.ra) if options.ra else None
+        dec = numpy.median(options.dec) if options.dec else None
 
-    output_img = fitsimage.FITSImage(options.output_path)
+        kwargs = dict(ra = ra,
+                      dec = dec,
+                      radius = options.radius,
+                      verbosity = options.verbose)
 
-    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
-    msg2 = "[Astrometry] WCS solution found by Astrometry.net"
-    msg3 = "[Astrometry] Original image: %s" % img_path
+        output_path = astrometry_net(img.path, **kwargs)
 
-    output_img.add_history(msg1)
-    output_img.add_history(msg2)
-    output_img.add_history(msg3)
+        try:
+            shutil.move(output_path, dest_path)
+        except (IOError, OSError):
+            try: os.unlink(output_path)
+            except (IOError, OSError): pass
 
-    if not options.update:
-        print "%sImage with astrometry saved to '%s'." % \
-              (style.prefix, options.output_path)
-    else:
-        shutil.move(options.output_path, img_path)
-        print "%sImage '%s' was updated with the astrometric solution." % \
-              (style.prefix, img_path)
+        output_img = fitsimage.FITSImage(dest_path)
+
+        msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+        msg2 = "[Astrometry] WCS solution found by Astrometry.net"
+        msg3 = "[Astrometry] Original image: %s" % img.path
+
+        output_img.add_history(msg1)
+        output_img.add_history(msg2)
+        output_img.add_history(msg3)
+
+        msg = "%s%s solved and saved to %s"
+        print  msg % (style.prefix, img.path, output_img.path)
+
+        # Read RA and DEC from the Astrometry.net WCS solution
+        ra = output_img.read_keyword('CRVAL1')
+        dec = output_img.read_keyword('CRVAL2')
+        options.ra.append(ra)
+        options.dec.append(dec)
 
     print "%sYou're done ^_^" % style.prefix
     return 0

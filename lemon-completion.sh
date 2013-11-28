@@ -98,7 +98,7 @@ _lemon_mosaic()
 _lemon_astrometry()
 {
     local opts
-    opts="--output --overwrite --update --verbose --ra --dec --radius"
+    opts="--suffix --verbose --ra --dec --radius"
     if [[ ${prev} == --output ]]; then
 	_filedir $FITS_EXTS
     elif [[ ${cur} == -* ]]; then
