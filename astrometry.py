@@ -157,6 +157,11 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... FITS_IMAGE"
 
+parser.add_option('--suffix', action = 'store', type = 'str',
+                  dest = 'suffix', default = 'a',
+                  help = "string to be appended to output images, before "
+                  "the file extension, of course [default: %default]")
+
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
                   help = defaults.desc['verbosity'] + " The verbosity "
@@ -262,7 +267,10 @@ def main(arguments = None):
 
     for path in input_paths:
         img = fitsimage.FITSImage(path)
-        dest_path = os.path.join(output_dir, img.basename)
+        # Add the suffix to the basename of the FITS image
+        root, ext = os.path.splitext(os.path.basename(path))
+        output_filename = root + options.suffix + ext
+        dest_path = os.path.join(output_dir, output_filename)
 
         output_path = astrometry_net(img.path, **kwargs)
 
