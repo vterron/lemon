@@ -40,7 +40,8 @@ import style
 
 description = """
 This module uses a local build of the Astrometry.net software in order to
-compute the astrometric solution of a FITS image. This is, essentially, a mere
+compute the astrometric solution of the input FITS files, saving the new files,
+containing the WCS header, to the output directory. This is, in essence, a mere
 simple interface to solve-field, Astrometry.net's command-line high-level user
 interface, which must be present in PATH. Keep in mind that for Astrometry.net
 to work it is also necessary to download the index files.
