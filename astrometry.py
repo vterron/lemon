@@ -157,13 +157,6 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... FITS_IMAGE"
 
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'output_path', default = 'astrometry.fits',
-                  help = "path to the output image [default: %default]")
-
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output image if it already exists")
-
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
                   help = defaults.desc['verbosity'] + " The verbosity "
@@ -223,12 +216,15 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    # Print the help and abort the execution if there are not two positional
+    # arguments left after parsing the options, as the user must specify at
+    # least one (only one?) input FITS file and the output directory
+    if len(args) < 2:
         parser.print_help()
-        return 2 # used for command line syntax errors
+        return 2     # 2 is generally used for command line syntax errors
     else:
-        assert len(args) == 1
-        img_path = args[0]
+        input_paths = args[:-1]
+        output_dir = args[-1]
 
     # If the right ascension is specified but not the declination, or vice
     # versa, Astrometry.net ignores the received coordinate since it needs both
@@ -249,17 +245,12 @@ def main(arguments = None):
         print msg % style.prefix
         sys.exit(style.error_exit_message)
 
-    if os.path.exists(options.output_path) and not options.overwrite:
-        print "%sError. The output image '%s' already exists." % \
-              (style.prefix, options.output_path)
-        print style.error_exit_message
-        return 1
+    # Make sure that the output directory exists; create it if it doesn't.
+    methods.determine_output_dir(output_dir)
 
-
-    print "%sInput FITS image: %s" % (style.prefix, img_path)
-    msg = "%sUsing a local build of Astrometry.net to solve the FITS image."
-    print msg % style.prefix
-
+    msg = "%s%d paths given as input, on which photometry will be done."
+    print msg % (style.prefix, len(input_paths))
+    print "%sUsing a local build of Astrometry.net." % style.prefix
     msg = "%sLines not starting with '%s' come from Astrometry.net."
     print msg % (style.prefix, style.prefix.strip())
     print
@@ -269,26 +260,30 @@ def main(arguments = None):
                   radius = options.radius,
                   verbosity = options.verbose)
 
-    output_path = astrometry_net(img_path, **kwargs)
+    for path in input_paths:
+        img = fitsimage.FITSImage(path)
+        dest_path = os.path.join(output_dir, img.basename)
 
-    try:
-        shutil.move(output_path, options.output_path)
-    except (IOError, OSError):
-        try: os.unlink(output_path)
-        except (IOError, OSError): pass
+        output_path = astrometry_net(img.path, **kwargs)
 
-    output_img = fitsimage.FITSImage(options.output_path)
+        try:
+            shutil.move(output_path, dest_path)
+        except (IOError, OSError):
+            try: os.unlink(output_path)
+            except (IOError, OSError): pass
 
-    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
-    msg2 = "[Astrometry] WCS solution found by Astrometry.net"
-    msg3 = "[Astrometry] Original image: %s" % img_path
+        output_img = fitsimage.FITSImage(dest_path)
 
-    output_img.add_history(msg1)
-    output_img.add_history(msg2)
-    output_img.add_history(msg3)
+        msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+        msg2 = "[Astrometry] WCS solution found by Astrometry.net"
+        msg3 = "[Astrometry] Original image: %s" % img.path
 
-    print "%sImage with astrometry saved to '%s'." % \
-          (style.prefix, options.output_path)
+        output_img.add_history(msg1)
+        output_img.add_history(msg2)
+        output_img.add_history(msg3)
+
+        msg = "%s%s solved and saved to %s"
+        print  msg % (style.prefix, img.path, output_img.path)
 
     print "%sYou're done ^_^" % style.prefix
     return 0
