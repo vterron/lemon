@@ -23,4 +23,6 @@ before_install:
   - python ./setup.py
 
 script:
+  - export iraf=/iraf/iraf/
+  - export IRAFARCH=linux
   - ./run_tests.py
