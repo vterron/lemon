@@ -5,6 +5,7 @@
 # License: GNU GPLv3
 
 set -e # exit if any statement returns a non-true return value
+set -u # any attempt to use an undefined variable is an error
 
 REGEXP=".*64$"
 HARDWARE_NAME=`uname -m`
