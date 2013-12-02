@@ -78,14 +78,12 @@ wget $SEXTRACTOR_URL
 alien -i $SEXTRACTOR_RPM
 rm $SEXTRACTOR_RPM
 
-cd $PWD # back to the LEMON directory
+cd $CWD # back to the LEMON directory
 
 # The unit tests use several FITS images that are downloaded from the
 # STScI Digitized Sky Survey to test/test_data/fits/. Be considerate
 # and, instead of downloading them every time the tests are run, keep
 # a copy on our server.
-
-CWD=$(pwd)
 
 TEST_FITS_DIR="test/test_data/fits/"
 DOWNLOADS_SERVER="http://iaa.es/lemon/travis/"
@@ -99,6 +97,6 @@ wget $DSS_IMAGES_URL
 tar xf $DSS_IMAGES_TAR
 rm $DSS_IMAGES_TAR
 
-cd $PWD
+cd $CWD
 
 exit 0
