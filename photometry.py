@@ -384,7 +384,7 @@ def main(arguments = None):
     if options.xml_annuli:
         if not os.path.exists(options.xml_annuli):
             print "%sError. The file '%s' does not exist." % \
-                  (style.prefix, xml_path)
+                  (style.prefix, options.xml_annuli)
             print style.error_exit_message
             return 1
         else:
