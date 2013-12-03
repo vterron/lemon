@@ -146,9 +146,6 @@ def parallel_photometry(args):
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'output_db', default = 'photometry.LEMONdB',
-                  help = "path to output database [default: %default]")
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
@@ -501,14 +498,14 @@ def main(arguments = None):
     # the overwrite option is set, in which case it will be deleted and thus
     # created again from scratch.
 
-    if os.path.exists(options.output_db):
+    if os.path.exists(output_db_path):
         if not options.overwrite:
             print "%sError. The output database '%s' already exists." % \
-                  (style.prefix, options.output_db)
+                  (style.prefix, output_db_path)
             print style.error_exit_message
             return 1
         else:
-            os.unlink(options.output_db)
+            os.unlink(output_db_path)
 
     print "%sValidating input XML file '%s'..." % \
           (style.prefix, os.path.basename(xml_path)) ,
@@ -648,7 +645,7 @@ def main(arguments = None):
     # sources are detected and to which the offsets in the XML file refer) and
     # the output database are.
     print "%sReference image: %s" % (style.prefix, reference_img.path)
-    print "%sOutput database: %s" % (style.prefix, options.output_db)
+    print "%sOutput database: %s" % (style.prefix, output_db_path)
 
     # Let the user know on how many coordinates, that were listed in the pixels
     # file, photometry will be done. If no list of pixels was given to the
@@ -808,7 +805,7 @@ def main(arguments = None):
         print "%sThere are %d detections left on which to do photometry." % \
               (style.prefix, len(reference_stars))
 
-    output_db = database.LEMONdB(options.output_db)
+    output_db = database.LEMONdB(output_db_path)
 
     # In the first place, we extract the image and sky coordinates of each
     # star, immediately storing this information in the database. But this is
@@ -1138,7 +1135,7 @@ def main(arguments = None):
     output_db.id = md5.hexdigest()
     output_db.commit()
 
-    methods.owner_writable(options.output_db, False) # chmod u-w
+    methods.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 
