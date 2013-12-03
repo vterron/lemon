@@ -263,7 +263,7 @@ def main(arguments = None):
     # Make sure that the output directory exists; create it if it doesn't.
     methods.determine_output_dir(output_dir)
 
-    msg = "%s%d paths given as input, on which photometry will be done."
+    msg = "%s%d paths given as input, on which astrometry will be done."
     print msg % (style.prefix, len(input_paths))
     print "%sUsing a local build of Astrometry.net." % style.prefix
     msg = "%sLines not starting with '%s' come from Astrometry.net."
