@@ -293,6 +293,10 @@ parser.add_option_group(qphot_fixed)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
+key_group.add_option('--filterk', action = 'store', type = 'str',
+                     dest = 'filterk', default = keywords.filterk,
+                     help = keywords.desc['filterk'])
+
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
