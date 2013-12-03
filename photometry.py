@@ -505,6 +505,16 @@ def main(arguments = None):
         else:
             os.unlink(output_db_path)
 
+    # Map each photometric filter to a list of the FITS images that were
+    # observed in it.
+    img_pfilters = collections.defaultdict(list)
+    for img_path in input_paths:
+        img = fitsimage.FITSImage(img_path)
+        pfilter = img.pfilter(options.filterk)
+        img_pfilters[pfilter].append(img_path)
+
+    msg = "%s%d FITS files in %d different photometric filters given as input."
+    print msg % (style.prefix, len(input_paths), len(img_pfilters))
 
     # Although all the offsets listed in the XML file are loaded into memory,
     # the --passband option allows the user to specify which must be taken into
