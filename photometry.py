@@ -524,8 +524,13 @@ def main(arguments = None):
 
     print # progress bar doesn't include newline
 
-    msg = "%s%d different photometric were detected."
+    msg = "%s%d different photometric were detected:"
     print msg % (style.prefix, len(img_pfilters))
+
+    for pfilter, images in img_pfilters.iteritems():
+        msg = "%s %s: %d files (%.2f %%)"
+        percentage = len(images) / len(input_paths) * 100
+        print msg % (style.prefix, pfilter, len(images), percentage)
 
     # Although all the offsets listed in the XML file are loaded into memory,
     # the --passband option allows the user to specify which must be taken into
