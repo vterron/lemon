@@ -507,14 +507,25 @@ def main(arguments = None):
 
     # Map each photometric filter to a list of the FITS images that were
     # observed in it.
+
+    msg = "%sExamining the headers of the %s FITS files given as input..."
+    print msg % (style.prefix, len(input_paths))
+
     img_pfilters = collections.defaultdict(list)
-    for img_path in input_paths:
+
+    methods.show_progress(0.0)
+    for index, img_path in enumerate(input_paths):
         img = fitsimage.FITSImage(img_path)
         pfilter = img.pfilter(options.filterk)
         img_pfilters[pfilter].append(img_path)
 
-    msg = "%s%d FITS files in %d different photometric filters given as input."
-    print msg % (style.prefix, len(input_paths), len(img_pfilters))
+        percentage = (index + 1) / len(input_paths) * 100
+        methods.show_progress(percentage)
+
+    print # progress bar doesn't include newline
+
+    msg = "%s%d different photometric were detected."
+    print msg % (style.prefix, len(img_pfilters))
 
     # Although all the offsets listed in the XML file are loaded into memory,
     # the --passband option allows the user to specify which must be taken into
