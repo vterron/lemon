@@ -57,7 +57,7 @@ def show_progress(percentage):
     for Python Code (PEP 8). It should also be noted that the progress bar is
     printed in the current line, so a new one should be started before calling
     the method if the current line is not to be overwritten. It also does not
-    included a newline character either. The percentage must be in the range
+    include a newline character either. The percentage must be in the range
     [0, 100].
 
     """
