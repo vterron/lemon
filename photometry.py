@@ -513,19 +513,30 @@ def main(arguments = None):
         else:
             os.unlink(output_db_path)
 
-    # Map each photometric filter to a list of the FITS images that were
-    # observed in it.
+    # Loop over all the input FITS files, mapping (a) each photometric filter
+    # to a list of the FITS images that were observed in it, and (b) each FITS
+    # image to its date of observation (UTC), in Unix time.
 
     msg = "%sExamining the headers of the %s FITS files given as input..."
     print msg % (style.prefix, len(input_paths))
 
+    def get_date(img):
+        """ Return the date() of a FITSImage object """
+        return img.date(date_keyword = options.datek,
+                        time_keyword = options.timek,
+                        exp_keyword = options.exptimek)
+
     img_pfilters = collections.defaultdict(list)
+    img_dates = {}
 
     methods.show_progress(0.0)
     for index, img_path in enumerate(input_paths):
         img = fitsimage.FITSImage(img_path)
         pfilter = img.pfilter(options.filterk)
         img_pfilters[pfilter].append(img_path)
+
+        date = get_date(img)
+        img_dates[img_path] = date
 
         percentage = (index + 1) / len(input_paths) * 100
         methods.show_progress(percentage)
