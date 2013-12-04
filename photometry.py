@@ -85,6 +85,10 @@ class InputFITSFiles(collections.defaultdict):
             for img in pfilter:
                 yield img
 
+    def __len__(self):
+        """ Return the number of FITS files, in any filter """
+        return sum(len(pfilter) for pfilter in self.itervalues())
+
 
 def parallel_photometry(args):
     """ Method argument of map_async to do photometry in parallel.
