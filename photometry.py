@@ -197,12 +197,14 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
-parser.add_option('--passband', action = 'store', type = str,
-                  dest = 'passband', default = None,
-                  help = "do not do photometry on all the images whose "
-                  "offset is listed in OFFSETS_XML_FILE, but instead only on "
-                  "those whose passband (i.e., the filter with which they were "
-                  "observed) matches the value specified by this option")
+parser.add_option('--filter', action = 'store', type = str,
+                  dest = 'filter', default = None,
+                  help = "do not do photometry on all the FITS files given as "
+                  "input, but only on those taken in this photometric filter. "
+                  "The supported systems are Johnson, Cousins, Gunn, SDSS, "
+                  "2MASS, Stromgren and H-alpha, but letters, designating a "
+                  "particular section of the electromagnetic spectrum, may "
+                  "also be used without a system (e.g., 'V')")
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
@@ -322,7 +324,7 @@ qphot_fixed = optparse.OptionGroup(parser, "Aperture Photometry (pixels)",
               "are used regardless of the filter with which the images were "
               "observed, and even for the reference image, so you should "
               "probably always use these options in conjunction with "
-              "--passband, in order to to photometry one filter at a time.")
+              "--filter, in order to to photometry one filter at a time.")
 
 qphot_fixed.add_option('--aperture-pix', action = 'store', type = 'float',
                        dest = 'aperture_pix', default = None,
@@ -658,14 +660,14 @@ def main(arguments = None):
         print msg % (style.prefix, discarded, len(files))
 
     # Although all the offsets listed in the XML file are loaded into memory,
-    # the --passband option allows the user to specify which must be taken into
+    # the --filter option allows the user to specify which must be taken into
     # account: only those offsets for which the shifted image was taken with
     # the specified filter. The comparison is made by looking at the wavelength
     # of the filter -- after all, 'Johnson V' and 'V' are the same filter, but
     # if we just compared both strings they would not be so. The rest will be
     # discarded and lost like tears in rain.
 
-    if options.passband:
+    if options.filter:
 
         print "%sIgnoring offsets for shifted images with a passband other " \
               "than '%s'..." % (style.prefix, options.passband) ,
@@ -699,7 +701,7 @@ def main(arguments = None):
     # If an annuli XML file is being used, it must list the photometric
     # parameters for all the filters on which photometry is to be done, whether
     # they are all the input images or only those taken in the filter specified
-    # by the --passband option.
+    # by the --filter option.
 
     if xml_annuli:
         xml_offsets_bands = set(x.filter for x in xml_offsets)
