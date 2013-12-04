@@ -75,6 +75,16 @@ import xmlparse
 queue = multiprocessing.Queue()
 
 class InputFITSFiles(collections.defaultdict):
+    """ Map each photometric filter to a list of FITS files.
+
+    A convenience class to simplify how we work with the images on which
+    photometry has to be done: it is a defaultdict, mapping each photometric
+    filter to a list of the corresponding FITS files, but that iterates over
+    the values (the FITS files, independently of their filter). This way, it
+    may be viewed as a sequence of FITS files that also allows access by the
+    photometric filter.
+
+    """
 
     def __init__(self):
         super(InputFITSFiles, self).__init__(list)
