@@ -414,7 +414,7 @@ def main(arguments = None):
         parser.print_help()
         return 2     # 2 is generally used for command line syntax errors
     else:
-        input_paths = args[:-1]
+        input_paths = set(args[:-1])
         output_db_path = args[-1]
 
     # If the user gives an empty string as the FITS keyword which stores the
