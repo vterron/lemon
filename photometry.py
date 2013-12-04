@@ -89,6 +89,27 @@ class InputFITSFiles(collections.defaultdict):
         """ Return the number of FITS files, in any filter """
         return sum(len(pfilter) for pfilter in self.itervalues())
 
+    def remove(self, img):
+        """ Remove all occurrences of the FITS file, in any filter.
+
+        Loop over the different photometric filters and remove, from each
+        associated list of FITS files, all occurrences of 'img'. Returns the
+        number of elements that were deleted. Emits a warning for each file
+        that is removed, stating that is has been 'excluded'.
+
+        """
+
+        discarded = 0
+        for pfilter_imgs in self.itervalues():
+            # Iterate backwards, modify original list in situ
+            for index in reversed(xrange(len(pfilter_imgs))):
+                if pfilter_imgs[index] == img:
+                    del pfilter_imgs[index]
+                    discarded += 1
+                    msg = "%s %s excluded."
+                    warnings.warn(msg % (style.prefix, img))
+        return discarded
+
 
 def parallel_photometry(args):
     """ Method argument of map_async to do photometry in parallel.
