@@ -297,6 +297,10 @@ key_group.add_option('--filterk', action = 'store', type = 'str',
                      dest = 'filterk', default = keywords.filterk,
                      help = keywords.desc['filterk'])
 
+key_group.add_option('--datek', action = 'store', type = 'str',
+                     dest = 'datek', default = keywords.datek,
+                     help = keywords.desc['datek'])
+
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
