@@ -79,6 +79,12 @@ class InputFITSFiles(collections.defaultdict):
     def __init__(self):
         super(InputFITSFiles, self).__init__(list)
 
+    def __iter__(self):
+        """ Iterate over the FITS files, regardless or their filter """
+        for pfilter in self.itervalues():
+            for img in pfilter:
+                yield img
+
 
 def parallel_photometry(args):
     """ Method argument of map_async to do photometry in parallel.
