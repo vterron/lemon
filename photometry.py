@@ -301,6 +301,10 @@ key_group.add_option('--datek', action = 'store', type = 'str',
                      dest = 'datek', default = keywords.datek,
                      help = keywords.desc['datek'])
 
+key_group.add_option('--timek', action = 'store', type = 'str',
+                     dest = 'timek', default = keywords.timek,
+                     help = keywords.desc['timek'])
+
 key_group.add_option('--expk', action = 'store', type = 'str',
                      dest = 'exptimek', default = keywords.exptimek,
                      help = keywords.desc['exptimek'])
