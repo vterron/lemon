@@ -573,14 +573,14 @@ def main(arguments = None):
                         time_keyword = options.timek,
                         exp_keyword = options.exptimek)
 
-    img_pfilters = collections.defaultdict(list)
+    files = InputFITSFiles()
     img_dates = {}
 
     methods.show_progress(0.0)
     for index, img_path in enumerate(input_paths):
         img = fitsimage.FITSImage(img_path)
         pfilter = img.pfilter(options.filterk)
-        img_pfilters[pfilter].append(img_path)
+        files[pfilter].append(img_path)
 
         date = get_date(img)
         img_dates[img_path] = date
@@ -591,11 +591,11 @@ def main(arguments = None):
     print # progress bar doesn't include newline
 
     msg = "%s%d different photometric were detected:"
-    print msg % (style.prefix, len(img_pfilters))
+    print msg % (style.prefix, len(files))
 
-    for pfilter, images in img_pfilters.iteritems():
+    for pfilter, images in files.iteritems():
         msg = "%s %s: %d files (%.2f %%)"
-        percentage = len(images) / len(input_paths) * 100
+        percentage = len(images) / len(files) * 100
         print msg % (style.prefix, pfilter, len(images), percentage)
 
     # Although all the offsets listed in the XML file are loaded into memory,
