@@ -74,6 +74,12 @@ import xmlparse
 # See http://stackoverflow.com/a/3217427/184363
 queue = multiprocessing.Queue()
 
+class InputFITSFiles(collections.defaultdict):
+
+    def __init__(self):
+        super(InputFITSFiles, self).__init__(list)
+
+
 def parallel_photometry(args):
     """ Method argument of map_async to do photometry in parallel.
 
