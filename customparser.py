@@ -21,6 +21,9 @@
 import optparse
 import textwrap
 
+# LEMON modules
+import passband
+
 class NewlinesFormatter(optparse.IndentedHelpFormatter):
     """ This quick-and-dirty trick prevents optparse from stripping newlines
     (using textwrap) when the description of the module is printed. This should
@@ -41,6 +44,25 @@ class NewlinesFormatter(optparse.IndentedHelpFormatter):
 
         return formatted_text.rstrip()
 
+def check_passband(option, opt, value):
+    """ Type-checking function for the 'passband' optparse option type.
+
+    This is the type-checking function for 'passband', a custom optparse type
+    that accepts a string with the name of a photometric filter and returns
+    it as a passband.Passband object. 'option' is an optpase.Option instance,
+    'opt' is the option string (e.g., -f), and 'value' is the string from the
+    command line that must be checked and converted to a Passband object.
+
+    In case of doubt, please refer to:
+    http://docs.python.org/2.7/library/optparse.html#adding-new-types
+
+    """
+
+    try:
+        return passband.Passband(value)
+    except ValueError, e:
+        msg = "option %s: invalid photometric filter: %r (%s)"
+        raise optparse.OptionValueError(msg % (opt, value, e))
 
 def get_parser(description):
     """ Return the OptionParser object used in the LEMON modules.
