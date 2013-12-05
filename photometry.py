@@ -197,7 +197,7 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
-parser.add_option('--filter', action = 'store', type = str,
+parser.add_option('--filter', action = 'store', type = 'passband',
                   dest = 'filter', default = None,
                   help = "do not do photometry on all the FITS files given as "
                   "input, but only on those taken in this photometric filter. "
