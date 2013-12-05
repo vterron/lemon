@@ -690,19 +690,15 @@ def main(arguments = None):
             msg = "%s%d images taken in the '%s' filter, %d were discarded."
             print msg % (style.prefix, len(files), options.filter, discarded)
 
-    # If an annuli XML file is being used, it must list the photometric
-    # parameters for all the filters on which photometry is to be done, whether
-    # they are all the input images or only those taken in the filter specified
-    # by the --filter option.
-
+    # If an XML file is specified with --annuli, it must list the photometric
+    # parameters for all the filters on which photometry is to be done.
     if xml_annuli:
-        xml_offsets_bands = set(x.filter for x in xml_offsets)
-        for pfilter in xml_annuli.iterkeys():
-            if pfilter not in xml_offsets_bands:
-                print "%sError. The photometric parameters for the %s filter " \
-                      "are not listed in" % (style.prefix, pfilter)
-                print "%sthe '%s' file. Wrong file, maybe?" % (style.prefix,
-                       os.path.basename(options.xml_annuli))
+        for pfilter in files.iterkeys():
+            if pfilter not in xml_annuli.iterkeys():
+                msg = ("%sError. Photometric parameters for the '%s' "
+                       "filter not listed in '%s. Wrong file, maybe?")
+                xml_basename = os.path.basename(options.xml_annuli)
+                print msg % (style.prefix, pfilter, xml_basename)
                 print style.error_exit_message
                 return 1
 
