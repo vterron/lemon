@@ -88,13 +88,17 @@ def get_parser(description):
     Its 'description' argument (a paragraph of text giving a brief overview of
     the program) is set to the value of the argument of the same name, while
     the NewlinesFormatter class is used for printing help text ('formatter'
-    argument). This parser does not include the default -h and --help options.
+    argument). This parser adds a custom option type, 'passband', which
+    receives a string with the name of a photometric filter and converts it to
+    a passband.Passband object. Neither the default -h nor --help options are
+    included.
 
     """
 
     kwargs = dict(description = description,
                   add_help_option = False,
-                  formatter = NewlinesFormatter())
+                  formatter = NewlinesFormatter(),
+                  option_class = PassbandOption)
     parser = optparse.OptionParser(**kwargs)
     return parser
 
