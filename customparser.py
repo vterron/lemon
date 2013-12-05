@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import optparse
 import textwrap
 
@@ -63,6 +64,22 @@ def check_passband(option, opt, value):
     except ValueError, e:
         msg = "option %s: invalid photometric filter: %r (%s)"
         raise optparse.OptionValueError(msg % (opt, value, e))
+
+class PassbandOption(optparse.Option):
+    """ Custom optparse option type encapsulating a photometric filter.
+
+    This subclass of optparse's Option class implements 'passband', a custom
+    option type: it receives a string with the name of a photometric filter,
+    such as 'Johnson V', and returns it as a passband.Passband object. This
+    option supports all the photometric systems allowed by the Passband class.
+
+    """
+
+    # A tuple of type names
+    TYPES = optparse.Option.TYPES + ('passband',)
+    # A dictionary mapping type names to type-checking functions
+    TYPE_CHECKER = copy.copy(optparse.Option.TYPE_CHECKER)
+    TYPE_CHECKER['passband'] = check_passband
 
 def get_parser(description):
     """ Return the OptionParser object used in the LEMON modules.
