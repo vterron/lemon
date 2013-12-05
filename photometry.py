@@ -659,44 +659,36 @@ def main(arguments = None):
         msg = "%s%d images had duplicate dates and were discarded, %d remain."
         print msg % (style.prefix, discarded, len(files))
 
-    # Although all the offsets listed in the XML file are loaded into memory,
-    # the --filter option allows the user to specify which must be taken into
-    # account: only those offsets for which the shifted image was taken with
-    # the specified filter. The comparison is made by looking at the wavelength
-    # of the filter -- after all, 'Johnson V' and 'V' are the same filter, but
-    # if we just compared both strings they would not be so. The rest will be
-    # discarded and lost like tears in rain.
-
+    # The --filter option allows the user to specify on which FITS files, among
+    # all those received as input, photometry must be done: only those files in
+    # the options.filter photometric filter. The Passband class, which supports
+    # comparison operations, makes it possible to compare filters for what they
+    # really are, not how they were written: "Johnson V" and "johnson_v", for
+    # example, are the same filter after all, but if we just compared the two
+    # strings we would consider them to be different.
     if options.filter:
 
-        print "%sIgnoring offsets for shifted images with a passband other " \
-              "than '%s'..." % (style.prefix, options.passband) ,
+        msg = "%sIgnoring images not taken in the '%s' photometric filter..."
+        print msg % (style.prefix, options.filter) ,
         sys.stdout.flush()
 
-        # Iterate backwards, removing those XMLOffsets with a photometric
-        # filter other than that specified with the --passband option. We
-        # cannot use a list comprehension here as, if we did so, we would
-        # end up with, well, a list, when we need an XMLOffsetFile object.
-        pfilter = passband.Passband(options.passband)
-        for index in reversed(xrange(len(xml_offsets))):
-            if xml_offsets[index].filter != pfilter:
-                del xml_offsets[index]
+        discarded = 0
+        for pfilter, images in files.items():
+            if pfilter != options.filter:
+                discarded += len(images)
+                del files[pfilter]
 
-        if not len(xml_offsets):
-            print style.prefix
-            print "%sError. No shifted image was taken with the '%s' " \
-                  "passband." % (style.prefix, options.passband)
+        if not files:
+            print
+            msg = "%sError. No image was taken in the '%s' filter."
+            print msg % (style.prefix, options.filter)
             print style.error_exit_message
             return 1
 
         else:
-            # The remaining XMLOffsets must all have the same filter
-            assert set(x.filter for x in xml_offsets) == set([pfilter])
             print 'done.'
-            print "%s%d offsets matched the '%s' passband; the rest were " \
-                  "discarded." % (style.prefix, len(xml_offsets),
-                                  options.passband)
-
+            msg = "%s%d images taken in the '%s' filter, %d were discarded."
+            print msg % (style.prefix, len(files), options.filter, discarded)
 
     # If an annuli XML file is being used, it must list the photometric
     # parameters for all the filters on which photometry is to be done, whether
