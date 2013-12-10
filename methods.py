@@ -330,8 +330,15 @@ def load_coordinates(path):
                        "ascension) and two (declination)" % line)
                 raise ValueError(msg)
 
-            ra = float(words[0])
             dec = float(words[1])
+
+            try:
+                ra = float(words[0])
+                if not 0 <= ra < 360:
+                    raise ValueError
+            except ValueError:
+                msg = "Right ascension '%r' not in range [0, 360[ degrees"
+                raise ValueError(msg % ra)
 
             coordinates.append((ra, dec))
 
