@@ -310,16 +310,13 @@ def owner_writable(path, add):
 
     os.chmod(path, mode)
 
-def load_coordinates(path, warn = True):
+def load_coordinates(path):
     """ Load a list of Pixels from a file.
 
     The method parses a text file which shall contain two values (the x and y
     coordinates of a star) per line. These pixels are then returned in a list
     of tuples. Note that improperly-formatted lines, such as those with tree
     values or a non-real value, are ignored.
-
-    Keyword arguments:
-    warn - display a warning message for each improperly-formatted line.
 
     """
 
