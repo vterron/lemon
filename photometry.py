@@ -243,23 +243,24 @@ parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
                   help = defaults.desc['verbosity'])
 
-pixels_group = optparse.OptionGroup(parser, "List of Pixels",
-               "By default, the module runs SExtractor on the reference image "
-               "in order to determine which stars must have photometry done. "
-               "Alternatively, photometry may be done on a fixed number of "
-               "pixels by means of this option. It should be noted that this "
-               "method is exclusive with the automatic detection of sources "
-               "in the image; that is, if this option is used, photometry "
-               "will be done only on these pixels.")
+coords_group = optparse.OptionGroup(parser, "List of Coordinates",
+               "By default, we run SExtractor on the sources image in order "
+               "to detect the astronomical objects on which to do photometry. "
+               "Alternatively, with this option it is possible to skip the "
+               "detection stage and directly do photometry on the objects "
+               "whose celestial coordinates are specified in a text file. "
+               "Note that this option is exclusive with the automatic "
+               "detection of sources, so photometry will be done *only* on "
+               "these coordinates.")
 
-pixels_group.add_option('--coordinates', action = 'store', type = str,
+coords_group.add_option('--coordinates', action = 'store', type = str,
                         dest = 'coordinates', default = None,
                         help = "path to the file containing the celestial "
                         "coordinates of the objects on which photometry must "
                         "be done. These coordinates must be given in degrees "
                         "and listed one per line, in two columns, right "
                         "ascension and declination, respectively.")
-parser.add_option_group(pixels_group)
+parser.add_option_group(coords_group)
 
 qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
               "Photometry is done on the images by IRAF's qphot, the quick "
