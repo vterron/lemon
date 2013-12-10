@@ -311,12 +311,14 @@ def owner_writable(path, add):
     os.chmod(path, mode)
 
 def load_coordinates(path):
-    """ Load a list of Pixels from a file.
+    """ Load a list of celestial coordinates from a text file.
 
-    The method parses a text file which shall contain two values (the x and y
-    coordinates of a star) per line. These pixels are then returned in a list
-    of tuples. Note that improperly-formatted lines, such as those with tree
-    values or a non-real value, are ignored.
+    Parse a text file containing the celestial coordinates of a series of
+    astronomical objects, one per line, and return them as a list of tuples.
+    The file must have exactly two columns, for each right ascension and
+    declination, in this order. ValueError is raised if there are more than
+    two values on any line, of if any right ascension or declination is out
+    of range. Empty lines are ignored.
 
     """
 
