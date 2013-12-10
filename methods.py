@@ -323,7 +323,12 @@ def load_coordinates(path):
     coordinates = []
     with open(path, 'rt') as fd:
         for line in fd:
+
             words = line.split()
+
+            if not words:
+                continue
+
             if len(words) != 2:
                 msg = ("Unable to parse line '%r'. Objects must be listed one "
                        "per line with coordinate values in columns one (right "
