@@ -310,7 +310,7 @@ def owner_writable(path, add):
 
     os.chmod(path, mode)
 
-def load_file_list(path, warn = True):
+def load_coordinates(path, warn = True):
     """ Load a list of Pixels from a file.
 
     The method parses a text file which shall contain two values (the x and y
