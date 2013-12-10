@@ -252,13 +252,13 @@ pixels_group = optparse.OptionGroup(parser, "List of Pixels",
                "in the image; that is, if this option is used, photometry "
                "will be done only on these pixels.")
 
-pixels_group.add_option('--pixels', action = 'store', type = str,
-                        dest = 'list', default = None,
-                        help = "path to the file which lists the pixels on "
-                        "which photometry must be done. These coordinates "
-                        "must be listed one per line: x_coordinate, "
-                        "whitespace, y-coordinate. Improperly-formatted "
-                        "lines are ignored.")
+pixels_group.add_option('--coordinates', action = 'store', type = str,
+                        dest = 'coordinates', default = None,
+                        help = "path to the file containing the celestial "
+                        "coordinates of the objects on which photometry must "
+                        "be done. These coordinates must be given in degrees "
+                        "and listed one per line, in two columns, right "
+                        "ascension and declination, respectively.")
 parser.add_option_group(pixels_group)
 
 qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
