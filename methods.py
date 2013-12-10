@@ -320,26 +320,22 @@ def load_coordinates(path):
 
     """
 
-    list_of_pixels = []
-
+    coordinates = []
     with open(path, 'rt') as fd:
         for line in fd:
-            splitted_line = line.split()
-            try:
-                # There should be two and only two numbers per line
-                if len(splitted_line) != 2:
-                    raise IndexError
-                x, y = float(splitted_line[0]), float(splitted_line[1])
-                list_of_pixels.append((x, y))
+            words = line.split()
+            if len(words) != 2:
+                msg = ("Unable to parse line '%r'. Objects must be listed one "
+                       "per line with coordinate values in columns one (right "
+                       "ascension) and two (declination)" % line)
+                raise ValueError(msg)
 
-            # We may attemp to cast something that is not a real number
-            except (ValueError, IndexError):
-                if warn:
-                    print "%sWarning: improperly-formatted line '%s' " \
-                          "ignored." % (style.prefix, line.replace('\n', ''))
-                continue
+            ra = float(words[0])
+            dec = float(words[1])
 
-    return list_of_pixels
+            coordinates.append((ra, dec))
+
+    return coordinates
 
 def which(*names):
     """ Search PATH for executable files with the given names.
