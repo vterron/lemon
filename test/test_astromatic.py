@@ -108,6 +108,20 @@ class CoordinatesTest(unittest.TestCase):
             self.assertRaises(AttributeError, setattr, coords, name, value)
             self.assertRaises(AttributeError, delattr, coords, name)
 
+    def test_distance(self):
+
+        # http://www.astronomycafe.net/qadir/q1890.html (Sten Odenwald)
+        coords1 = Coordinates(100.2, -16.58)
+        coords2 = Coordinates(87.5, 7.38)
+        distance = coords1.distance(coords2)
+        self.assertAlmostEqual(distance, 27.054384870767787)
+
+        # http://www.skythisweek.info/angsep.pdf (David Oesper)
+        coords3 = Coordinates(165.458, 56.3825)
+        coords4 = Coordinates(165.933, 61.7511)
+        distance = coords3.distance(coords4)
+        self.assertAlmostEqual(distance, 5.374111607543190)
+
 
 class StarTest(unittest.TestCase):
 
