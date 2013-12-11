@@ -61,6 +61,12 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
         y_axis = pow(self.y - another.y, 2)
         return math.sqrt(x_axis + y_axis)
 
+class Coordinates(collections.namedtuple('Coordinates', "ra dec")):
+    """ The immutable celestial coordinates of an astronomical object. """
+
+    pass
+
+
 class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
            "mag, saturated, snr, fwhm, elongation")):
     """ An immutable class with a source detected by SExtractor. """
