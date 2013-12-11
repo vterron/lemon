@@ -33,7 +33,7 @@ import tempfile
 import unittest
 
 import astromatic
-from astromatic import Pixel, Star, Catalog
+from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
 import fitsimage
 import methods
@@ -86,6 +86,18 @@ class PixelTest(unittest.TestCase):
             array2 = numpy.array([pixel2.x, pixel2.y])
             expected = numpy.linalg.norm(array1 - array2)
             self.assertAlmostEqual(distance, expected)
+
+class CoordinatesTest(unittest.TestCase):
+
+    RIGHT_ASCENSION_RANGE = (0, 360)
+    DECLINATION_RANGE = (-90, 90)
+
+    @classmethod
+    def random(cls):
+        """ Return a random Coordinates object """
+        ra = random.uniform(*cls.RIGHT_ASCENSION_RANGE)
+        dec = random.uniform(*cls.DECLINATION_RANGE)
+        return Coordinates(ra, dec)
 
 
 class StarTest(unittest.TestCase):
