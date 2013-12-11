@@ -64,7 +64,19 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
 class Coordinates(collections.namedtuple('Coordinates', "ra dec")):
     """ The immutable celestial coordinates of an astronomical object. """
 
-    pass
+    def distance(self, another):
+        """ The angular distance, in degrees, between two Coordinates. """
+
+        # Formula: cos(A) = sin(d1)sin(d2) + cos(d1)cos(d2)cos(ra1-ra2)
+        # http://www.astronomycafe.net/qadir/q1890.html
+
+        ra1  = math.radians(self.ra)
+        dec1 = math.radians(self.dec)
+        ra2  = math.radians(another.ra)
+        dec2 = math.radians(another.dec)
+        return math.degrees(math.acos(math.sin(dec1) * math.sin(dec2) +
+                                      math.cos(dec1) * math.cos(dec2) *
+                                      math.cos(ra1-ra2)))
 
 
 class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
