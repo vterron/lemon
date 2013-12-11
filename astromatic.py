@@ -107,7 +107,7 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
         """
 
         img_coords = Pixel(x, y)
-        sky_coords = Pixel(alpha, delta)
+        sky_coords = Coordinates(alpha, delta)
         args = img_coords, sky_coords, area, mag, satur, snr, fwhm, elong
         return super(Star, cls).__new__(cls, *args)
 
@@ -121,11 +121,11 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
 
     @property
     def alpha(self):
-        return self.sky_coords.x
+        return self.sky_coords.ra
 
     @property
     def delta(self):
-        return self.sky_coords.y
+        return self.sky_coords.dec
 
     def angular_distance(self, another):
         """ Return the angular distance, in degrees, between two Stars. """
