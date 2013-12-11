@@ -99,6 +99,15 @@ class CoordinatesTest(unittest.TestCase):
         dec = random.uniform(*cls.DECLINATION_RANGE)
         return Coordinates(ra, dec)
 
+    def test_immutability(self):
+        """ Make sure that the Coordinates class is immutable """
+
+        coords = self.random()
+        for name in coords._asdict().iterkeys():
+            value = random.random()
+            self.assertRaises(AttributeError, setattr, coords, name, value)
+            self.assertRaises(AttributeError, delattr, coords, name)
+
 
 class StarTest(unittest.TestCase):
 
