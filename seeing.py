@@ -294,14 +294,14 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     @property
     def coordinates(self):
-        """ Return a list with the x- and y-coordinates of the stars.
+        """ Return a list with the celestial coordinates of the stars.
 
-        The method returs a Pixel instance for each object that was detected by
-        SExtractor and was not ignored because of its proximity to the image
-        margins, encapsulating the image coordinates of its center.
+        This method returns a list containing a Coordinates object for each
+        astronomical source that was detected by SExtractor and not ignored
+        because of its proximity to the image edge.
 
         """
-        return self.catalog.get_image_coordinates()
+        return self.catalog.get_sky_coordinates()
 
     def snr_percentile(self, per):
         """ Return the score at the given percentile of the SNR of the stars.
