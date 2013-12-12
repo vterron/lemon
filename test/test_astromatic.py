@@ -387,22 +387,27 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(type(faint_catalog), Catalog)
         self.assertEqual(list(faint_catalog), list(stars))
 
-
-    def test_get_image_coordinates(self):
+    def test_get_image_and_sky_coordinates(self):
 
         catalog = Catalog(self.SAMPLE_CATALOG_PATH)
         self.assertEqual(len(catalog), 127)
         pixels = catalog.get_image_coordinates()
+        coordinates = catalog.get_sky_coordinates()
 
-        # The returned list must contain as many Pixel objects, and in the same
-        # order, as detected sources are in the SExtractor catalog. That is to
-        # say that the x- and y-coordinates of the first Pixel must match those
-        # of the first object in the Catalog, and so on.
+        # The two lists must contain as many Pixel and Coordinates objects,
+        # respectively, and in the same order, as sources there are in the
+        # SExtractor catalog. Therefore, the x- and y-coordinates of the i-th
+        # Pixel object, and the right ascension and declination of the i-th
+        # Coordinates object, must match those of the i-th source in the
+        # Catalog.
 
         self.assertEqual(len(pixels), len(catalog))
-        for pixel, star in zip(pixels, catalog):
+        self.assertEqual(len(coordinates), len(catalog))
+        for pixel, coord, star in zip(pixels, coordinates, catalog):
             self.assertEqual(pixel.x, star.x)
             self.assertEqual(pixel.y, star.y)
+            self.assertEqual(coord.ra, star.alpha)
+            self.assertEqual(coord.dec, star.delta)
 
 
 def get_nonexistent_path(ext = None):

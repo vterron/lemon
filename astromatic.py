@@ -338,6 +338,16 @@ class Catalog(tuple):
         """
         return [star.img_coords for star in self]
 
+    def get_sky_coordinates(self):
+         """ Return a list with the celestial coordinates of the stars.
+
+         Return the right ascension and declination of each astronomical source
+         in the SExtractor catalog, as a list of Coordinates objects.
+
+         """
+         return [star.sky_coords for star in self]
+
+
 def sextractor_md5sum(options = None):
     """ Return the MD5 hash of the SExtractor configuration.
 
