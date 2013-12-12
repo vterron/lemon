@@ -525,27 +525,23 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    # If a list of pixels has been specified, read the file and extract them.
-    # We also need to make sure that the file exists and complain otherwise.
-    # The execution must be also aborted if the list of pixels is empty.
-    if options.list:
+    # If the --coordinates option has been given, read the text file and
+    # extract the right ascensions and declinations as two-element tuples,
+    # storing them in a list of astromatic.Coordinates objects. Abort the
+    # execution if the coordinates file is empty.
 
-        if not os.path.exists(options.list):
-            print "%sError. The pixels list '%s' does not exist." % \
-                  (style.prefix, options.list)
+    if options.coordinates:
+
+        sources_coordinates = []
+        for ra, dec in methods.load_coordinates(options.coordinates):
+            coords = astromatic.Coordinates(ra, dec)
+            sources_coordinates.append(coords)
+
+        if not sources_coordinates:
+            msg = "%sError. Coordinates file '%s' is empty."
+            print msg % (style.prefix, options.coordinates)
             print style.error_exit_message
             return 1
-
-        else:
-            # methods.load_file_list(path) returns a list of two-element tuples
-            # which we cast to astromatic.Pixel instances for later convenience
-            list_of_pixels = [astromatic.Pixel(*coords) for coords \
-                              in methods.load_file_list(options.list, warn = True)]
-            if not list_of_pixels:
-                print "%sError. The pixels list '%s' is empty." % \
-                      (style.prefix, options.list)
-                print style.error_exit_message
-                return 1
 
     # Each campaign must be saved to its own LEMON database, as it would not
     # make much sense to merge data (as the same tables would be used) of stars
