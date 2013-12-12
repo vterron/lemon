@@ -314,15 +314,14 @@ def load_coordinates(path):
     """ Load a list of celestial coordinates from a text file.
 
     Parse a text file containing the celestial coordinates of a series of
-    astronomical objects, one per line, and return them as a list of tuples.
-    The file must have exactly two columns, for each right ascension and
-    declination, in this order. ValueError is raised if there are more than
-    two values on any line, of if any right ascension or declination is out
-    of range. Empty lines are ignored.
+    astronomical objects, one per line, and return a generator that yields
+    (alpha, delta) tuples. The file must have exactly two columns, for each
+    right ascension and declination, in this order. ValueError is raised if
+    there are more than two values on any line, of if any right ascension or
+    declination is out of range. Empty lines are ignored.
 
     """
 
-    coordinates = []
     with open(path, 'rt') as fd:
         for line in fd:
 
@@ -353,9 +352,7 @@ def load_coordinates(path):
                 msg = "Declination '%r' not in range [-90, 90] degrees"
                 raise ValueError(msg % dec)
 
-            coordinates.append((ra, dec))
-
-    return coordinates
+            yield ra, dec
 
 def which(*names):
     """ Search PATH for executable files with the given names.
