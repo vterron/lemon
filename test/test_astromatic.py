@@ -33,7 +33,7 @@ import tempfile
 import unittest
 
 import astromatic
-from astromatic import Pixel, Star, Catalog
+from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
 import fitsimage
 import methods
@@ -86,6 +86,41 @@ class PixelTest(unittest.TestCase):
             array2 = numpy.array([pixel2.x, pixel2.y])
             expected = numpy.linalg.norm(array1 - array2)
             self.assertAlmostEqual(distance, expected)
+
+class CoordinatesTest(unittest.TestCase):
+
+    RIGHT_ASCENSION_RANGE = (0, 360)
+    DECLINATION_RANGE = (-90, 90)
+
+    @classmethod
+    def random(cls):
+        """ Return a random Coordinates object """
+        ra = random.uniform(*cls.RIGHT_ASCENSION_RANGE)
+        dec = random.uniform(*cls.DECLINATION_RANGE)
+        return Coordinates(ra, dec)
+
+    def test_immutability(self):
+        """ Make sure that the Coordinates class is immutable """
+
+        coords = self.random()
+        for name in coords._asdict().iterkeys():
+            value = random.random()
+            self.assertRaises(AttributeError, setattr, coords, name, value)
+            self.assertRaises(AttributeError, delattr, coords, name)
+
+    def test_distance(self):
+
+        # http://www.astronomycafe.net/qadir/q1890.html (Sten Odenwald)
+        coords1 = Coordinates(100.2, -16.58)
+        coords2 = Coordinates(87.5, 7.38)
+        distance = coords1.distance(coords2)
+        self.assertAlmostEqual(distance, 27.054384870767787)
+
+        # http://www.skythisweek.info/angsep.pdf (David Oesper)
+        coords3 = Coordinates(165.458, 56.3825)
+        coords4 = Coordinates(165.933, 61.7511)
+        distance = coords3.distance(coords4)
+        self.assertAlmostEqual(distance, 5.374111607543190)
 
 
 class StarTest(unittest.TestCase):
