@@ -190,13 +190,10 @@ class DBStar(object):
         return DBStar(id_, pfilter, phot_info, times_indexes, dtype = dtype)
 
 
-class PhotometricParameters(object):
-    """ Encapsulates the parameters used for photometry """
-    def __init__(self, aperture, annulus, dannulus):
-        self.aperture = aperture
-        self.annulus  = annulus
-        self.dannulus = dannulus
-
+# The parameters used for aperture photometry
+typename = 'PhotometricParameters'
+field_names = "aperture, annulus, dannulus"
+PhotometricParameters = collections.namedtuple(typename, field_names)
 
 class ReferenceImage(object):
     """ Encapculates the image used for the offsets calculation """
