@@ -803,9 +803,7 @@ class LEMONdB(object):
             raise KeyError(msg % args)
         else:
             assert len(rows) == 1
-            row = rows[0]
-
-            args = list(row)
+            args = list(rows[0])
             args[1] = passband.Passband(args[1])
             return Image(*args)
 
