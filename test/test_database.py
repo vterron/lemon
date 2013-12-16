@@ -1059,7 +1059,7 @@ class LEMONdBTest(unittest.TestCase):
         # Add the lengths of the second-level dictionaries (i.e., find the
         # number of images that have been added to the LEMONdB, regardless
         # of their photometric filter and any duplicate Unix time)
-        assert sum([len(p) for p in added_images.itervalues()]) == size
+        assert sum(len(p) for p in added_images.itervalues()) == size
 
         # Extract the Images from the LEMONdB and check that the returned
         # objects are exactly equal to what we added previously
