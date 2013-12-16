@@ -488,10 +488,8 @@ class ImageTest(unittest.TestCase):
     MAX_AIRMASS = 2.92  # Maximum value for random airmasses (~70 dec)
     MIN_GAIN = 1   # Minimum value for random CCD gains
     MAX_GAIN = 10  # Maximum value for random CCD gains
-    MIN_XOFFSET = MIN_YOFFSET = 0    # Minimum and maximum values for random
-    MAX_XOFFSET = MAX_YOFFSET = 500  # ... offsets in both axes (pixels)
-    MIN_XOVERLAP = MIN_YOVERLAP = 0    # Minimum and maximum values for random
-    MAX_XOVERLAP = MAX_YOVERLAP = 2000 # ... numbers of stars that overlap
+    RA_RANGE = (0, 359.99999)  # Minimum and maximum right ascensions (degrees)
+    DEC_RANGE = (-90, 90) # Minimum and maximum declinations (degrees)
     OBJECT_LENGTH = (1, 30) # Minimum and maximum length of the random string
                             # used as the name of the observed object
 
@@ -504,19 +502,15 @@ class ImageTest(unittest.TestCase):
         os.unlink(path)
 
         pfilter = passband.Passband.random()
-        pparams = PhotometricParametersTest.random()
         unix_time = runix_times(1)[0]
         size = random.randint(*cls.OBJECT_LENGTH)
         object_ = ''.join(random.choice(string.letters) for _ in xrange(size))
         airmass = random.uniform(cls.MIN_AIRMASS, cls.MAX_AIRMASS)
         gain = random.uniform(cls.MIN_GAIN, cls.MAX_GAIN)
-        xoffset = random.uniform(cls.MIN_XOFFSET, cls.MAX_XOFFSET)
-        yoffset = random.uniform(cls.MIN_YOFFSET, cls.MAX_YOFFSET)
-        xoverlap = random.randint(cls.MIN_XOVERLAP, cls.MAX_XOVERLAP)
-        yoverlap = random.randint(cls.MIN_YOVERLAP, cls.MAX_YOVERLAP)
+        ra = random.uniform(*cls.RA_RANGE)
+        dec = random.uniform(*cls.DEC_RANGE)
 
-        return (path, pfilter, pparams, unix_time, object_, airmass,
-                gain, xoffset, yoffset, xoverlap, yoverlap)
+        return (path, pfilter, unix_time, object_, airmass, gain, ra, dec)
 
     @classmethod
     def nrandom(cls, size, pfilter = None, simult_prob = 0.5):
@@ -546,7 +540,7 @@ class ImageTest(unittest.TestCase):
 
         for index, unix_time in enumerate(runix_times(size)):
             args = list(cls.random_data())
-            args[3] = unix_time
+            args[2] = unix_time
 
             img = Image(*args)
 
@@ -557,7 +551,7 @@ class ImageTest(unittest.TestCase):
             # randomly to have a duplicate Unix time.
 
             if pfilter:
-                img.pfilter = pfilter
+                img = img._replace(pfilter = pfilter)
 
             elif bool(used_utimes) and random.random() < simult_prob:
 
@@ -571,8 +565,8 @@ class ImageTest(unittest.TestCase):
                 random.shuffle(all_pfilters)
                 for duplicate_pfilter in all_pfilters:
                     if duplicate_utime not in used_utimes[duplicate_pfilter]:
-                        img.unix_time = duplicate_utime
-                        img.pfilter = duplicate_pfilter
+                        img = img._replace(unix_time = duplicate_utime)
+                        img = img._replace(pfilter = duplicate_pfilter)
                         break
 
                 # This point is reached only if all the photometric filters
@@ -608,34 +602,12 @@ class ImageTest(unittest.TestCase):
             img = Image(*args)
             self.assertEqual(img.path, args[0])
             self.assertEqual(img.pfilter, args[1])
-            pparams = args[2]
-            self.assertEqual(img.pparams.aperture, pparams.aperture)
-            self.assertEqual(img.pparams.annulus, pparams.annulus)
-            self.assertEqual(img.pparams.dannulus, pparams.dannulus)
-            self.assertEqual(img.unix_time, args[3])
-            self.assertEqual(img.object, args[4])
-            self.assertEqual(img.airmass, args[5])
-            self.assertEqual(img.gain, args[6])
-            self.assertEqual(img.xoffset, args[7])
-            self.assertEqual(img.yoffset, args[8])
-            self.assertEqual(img.xoverlap, args[9])
-            self.assertEqual(img.yoverlap, args[10])
-
-    @staticmethod
-    def equal(first, second):
-        """ Check whether two Images are equal """
-
-        pparams = first.pparams, second.pparams
-        return first.path == second.path and \
-               first.pfilter == second.pfilter and \
-               PhotometricParametersTest.equal(*pparams) and \
-               first.unix_time == second.unix_time and \
-               first.airmass == second.airmass and \
-               first.gain == second.gain and \
-               first.xoffset == second.xoffset and \
-               first.yoffset == second.yoffset and \
-               first.xoverlap == second.xoverlap and \
-               first.yoverlap == second.yoverlap
+            self.assertEqual(img.unix_time, args[2])
+            self.assertEqual(img.object, args[3])
+            self.assertEqual(img.airmass, args[4])
+            self.assertEqual(img.gain, args[5])
+            self.assertEqual(img.ra, args[6])
+            self.assertEqual(img.dec, args[7])
 
 
 class ReferenceImageTest(unittest.TestCase):
@@ -1094,7 +1066,7 @@ class LEMONdBTest(unittest.TestCase):
         for pfilter in added_images.iterkeys():
             for unix_time, input_img in added_images[pfilter].iteritems():
                 output_img = db.get_image(unix_time, pfilter)
-                self.assertTrue(ImageTest.equal(input_img, output_img))
+                self.assertEqual(input_img, output_img)
 
         # LEMONdB.get_image raises KeyError if there is no Image with the
         # specified Unix time *and* photometric filter. Try the three possible
@@ -1136,39 +1108,23 @@ class LEMONdBTest(unittest.TestCase):
         db.add_image(img1)
 
         def tables_status(db):
-            """ Return three sorted tuples with all the information stored in
-            the IMAGES, PHOTOMETRIC_FILTERS and PHOTOMETRIC_PARAMETERS tables
-            of the 'db' LEMONdB """
+            """ Return two sorted tuples with all the information stored in
+            the IMAGES and PHOTOMETRIC_FILTERS tables of the 'db' LEMONdB"""
 
             query_images  = "SELECT * FROM images ORDER BY unix_time"
             query_filters = "SELECT * FROM photometric_filters ORDER BY id"
-            query_pparams = "SELECT * FROM photometric_parameters ORDER BY id"
             db._execute(query_images)
             images = tuple(db._rows)
             db._execute(query_filters)
             filters = tuple(db._rows)
-            db._execute(query_pparams)
-            pparams = tuple(db._rows)
-            return images, filters, pparams
+            return images, filters
 
-        # Get another random Image with the same Unix time and photometric
-        # filter but different photometric parameters. If everything went well,
-        # the addition of the image would insert new rows into the tables. We
-        # need the photometric parameters to be different as otherwise we would
-        # have no way of knowing whether their insertion was rolled back.
-
+        # Another random Image with the same Unix time filter.
         img2 = ImageTest.random(pfilter = img1.pfilter)
-        img2.unix_time = img1.unix_time
-
-        _eq_ = PhotometricParametersTest.equal
-        while True:
-            img2.pparams = PhotometricParametersTest.random()
-            if not _eq_(img1.pparams, img2.pparams):
-                break
+        img2 = img2._replace(unix_time = img1.unix_time)
 
         assert img1.unix_time == img2.unix_time
         assert img1.pfilter == img2.pfilter
-        assert img1.pparams != img2.pparams
 
         before_tables = tables_status(db)
         self.assertRaises(DuplicateImageError, db.add_image, img2)
@@ -1305,13 +1261,13 @@ class LEMONdBTest(unittest.TestCase):
         # supports simultaneous observations.
 
         img1 = ImageTest.random(johnson_B)
-        img1.unix_time = 100000
+        img1 = img1._replace(unix_time = 100000)
         img2 = ImageTest.random(johnson_B)
-        img2.unix_time = 90000
+        img2 = img2._replace(unix_time = 90000)
         img3 = ImageTest.random(johnson_V)
-        img3.unix_time = 150400
+        img3 = img3._replace(unix_time = 150400)
         img4 = ImageTest.random(johnson_B)
-        img4.unix_time = img3.unix_time
+        img4 = img4._replace(unix_time = img3.unix_time)
 
         images = [img1, img2, img3, img4]
         for img in images:
@@ -1822,12 +1778,13 @@ class LEMONdBTest(unittest.TestCase):
         images = list(ImageTest.nrandom(3, pfilter = pfilter))
         # Note that img2 precedes img1 in time
         img1, img2, img3 = images
-        img1.unix_time = 500
-        img2.unix_time = 100
-        img3.unix_time = 785
+        img1 = img1._replace(unix_time = 500)
+        img2 = img2._replace(unix_time = 100)
+        img3 = img3._replace(unix_time = 785)
 
-        for img in images:
-            db.add_image(img)
+        db.add_image(img1)
+        db.add_image(img2)
+        db.add_image(img3)
 
         point1 = (img1.unix_time, 14.5, 100)
         point2 = (img2.unix_time, 10.1, 200)
@@ -1904,7 +1861,7 @@ class LEMONdBTest(unittest.TestCase):
         images = collections.defaultdict(list)
         for index, img in enumerate(ImageTest.nrandom(15, pfilter = johnson_V)):
             if index >= 10:
-                img.pfilter = johnson_I
+                img = img._replace(pfilter = johnson_I)
             images[img.pfilter].append(img)
 
         assert len(images[johnson_V]) == 10
@@ -2063,7 +2020,7 @@ class LEMONdBTest(unittest.TestCase):
             db = LEMONdB(':memory:')
             rimages = ImageTest.nrandom(len(names))
             for image, name in zip(rimages, names):
-                image.object = name
+                image = image._replace(object = name)
                 db.add_image(image)
             return db
 
