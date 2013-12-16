@@ -503,20 +503,16 @@ class LEMONdB(object):
         self._execute('''
         CREATE TABLE IF NOT EXISTS images (
             id         INTEGER PRIMARY KEY,
-            unix_time  REAL NOT NULL,
             path       TEXT NOT NULL,
             filter_id  INTEGER NOT NULL,
-            pparams_id INTEGER NOT NULL,
+            unix_time  REAL NOT NULL,
             object     TEXT,
             airmass    REAL NOT NULL,
             gain       REAL NOT NULL,
-            xoffset    REAL NOT NULL,
-            xoverlap   INTEGER NOT NULL,
-            yoffset    REAL NOT NULL,
-            yoverlap   INTEGER NOT NULL,
+            ra         REAL NOT NULL,
+            dec        REAL NOT NULL,
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
-            FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
-            UNIQUE (unix_time, filter_id))
+            UNIQUE (filter_id, unix_time))
 
         ''')
 
@@ -737,20 +733,17 @@ class LEMONdB(object):
 
         """
 
-        # Use a SAVEPOINT to, if the insertion of the Image fails, be able to
-        # roll back the insertion of the filter and photometric parameters
+        # Use a SAVEPOINT to, if the insertion of the Image fails, be able
+        # to roll back the insertion of the photometric filter.
 
         mark = self._savepoint()
         self._add_pfilter(image.pfilter)
-        pparams_id = self._add_pparams(image.pparams)
 
-        t = (None, image.unix_time, image.path, hash(image.pfilter),
-             pparams_id, image.object, image.airmass, image.gain,
-             image.xoffset, image.xoverlap, image.yoffset, image.yoverlap)
-
+        t = (None, image.path, hash(image.pfilter), image.unix_time,
+             image.object, image.airmass, image.gain, image.ra, image.dec)
         try:
             self._execute("INSERT INTO images "
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
@@ -766,9 +759,9 @@ class LEMONdB(object):
                               "WHERE id = ?", (hash(pfilter),))
                 assert [(1,)] == list(self._rows)
 
-            msg = "Image with Unix time %.4f (%s) and filter %s already in " \
-                  "database" % (unix_time, methods.utctime(unix_time), pfilter)
-            raise DuplicateImageError(msg)
+            msg = "Image with Unix time %.4f (%s) and filter %s already in database"
+            args = (unix_time, methods.utctime(unix_time), pfilter)
+            raise DuplicateImageError(msg % args)
 
     def _get_image_id(self, unix_time, pfilter):
         """ Return the ID of the Image with this Unix time and filter.
@@ -798,8 +791,7 @@ class LEMONdB(object):
 
         image_id = self._get_image_id(unix_time, pfilter)
         self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
-                      "       i.airmass, i.gain, i.xoffset, i.yoffset, "
-                      "       i.xoverlap, i.yoverlap, i.pparams_id "
+                      "       i.airmass, i.gain, i.ra, i.dec "
                       "FROM images AS i, photometric_filters AS p "
                       "ON i.filter_id = p.id "
                       "WHERE i.id = ?", (image_id,))
@@ -813,12 +805,8 @@ class LEMONdB(object):
             assert len(rows) == 1
             row = rows[0]
 
-            pparams_id = row[-1]
-            pparams = self._get_pparams(pparams_id)
-
-            args = list(row[:-1])
+            args = list(row)
             args[1] = passband.Passband(args[1])
-            args.insert(2, pparams)
             return Image(*args)
 
     def add_star(self, star_id, x, y, ra, dec, imag):
