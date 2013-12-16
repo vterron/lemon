@@ -724,11 +724,11 @@ class LEMONdB(object):
         self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?, ?)", t)
 
     def add_image(self, image):
-        """ Store an image into the database.
+        """ Store information about a FITS image in the database.
 
         Raises DuplicateImageError if the Image has the same Unix time and
-        photometric filter that another instance already stored in the LEMON
-        database (as these two values must be unique; that is, we cannot have
+        photometric filter that another image already stored in the LEMON
+        database (as these two values must be unique; i.e., we cannot have
         two or more images with the same Unix time and photometric filter).
 
         """
