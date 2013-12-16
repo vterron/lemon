@@ -206,18 +206,10 @@ class ReferenceImage(object):
         self.gain = gain
 
 
-class Image(ReferenceImage):
-    """ Encapsulates the images shifted from the reference one """
-    def __init__(self, path, pfilter, pparams, unix_time, object_, airmass,
-                 gain, xoffset, yoffset, xoverlap, yoverlap):
-        args = path, pfilter, unix_time, object_, airmass, gain
-        super(Image, self).__init__(*args)
-        self.pparams = pparams  # photometric parameters
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-        self.xoverlap = xoverlap
-        self.yoverlap = yoverlap
-
+# A FITS image
+typename = 'Image'
+field_names = "path pfilter unix_time object airmass gain ra dec"
+Image = collections.namedtuple(typename, field_names)
 
 class LightCurve(object):
     """ The data points of a graph of light intensity of a celestial object.
