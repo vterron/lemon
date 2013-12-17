@@ -195,17 +195,6 @@ typename = 'PhotometricParameters'
 field_names = "aperture, annulus, dannulus"
 PhotometricParameters = collections.namedtuple(typename, field_names)
 
-class ReferenceImage(object):
-    """ Encapculates the image used for the offsets calculation """
-    def __init__(self, path, pfilter, unix_time, object_, airmass, gain):
-        self.path = path
-        self.pfilter  = pfilter
-        self.unix_time = unix_time
-        self.object = object_
-        self.airmass = airmass
-        self.gain = gain
-
-
 # A FITS image
 typename = 'Image'
 field_names = "path pfilter unix_time object airmass gain ra dec"
