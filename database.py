@@ -1282,10 +1282,8 @@ class LEMONdB(object):
         """ Return the airmasses of the images in a photometric filter.
 
         The method returns a dictionary which maps the Unix time of each of the
-        images in this photometric filter to their airmasses. The airmass of
-        the reference image is irrelevant, as photometry is not done on it, so
-        it is not considered and never included in the returned dictionary. If
-        no images were taken in this filter, an empty dictionary is returned.
+        images in this photometric filter to their airmasses. If no images were
+        taken in this filter, an empty dictionary is returned.
 
         """
 
