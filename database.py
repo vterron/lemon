@@ -1509,14 +1509,13 @@ class LEMONdB(object):
     def mosaic(self):
         """ Save to disk the FITS file on which sources were detected.
 
-        The method saves to disk the FITS file, stored as a blob in the
-        database, that was used as a reference frame. The file is copied to a
-        temporary location with the '.fits' extension. Returns the path to the
-        FITS file, or None if the reference frame has no FITS file associated.
-        It is important to note that the FITS file is saved to a *different*
-        temporary location every time this method is called, so accessing the
-        LEMONdB.mosaic attribute multiple times means that the same number of
-        copies of the file will be copied to disk.
+        This method saves to a temporary location, with the '.fits' extension,
+        the FITS file that was used to detect sources, stored as a blob in the
+        database. Returns the path to the FITS file, or None if the sources
+        image has not yet been set. It is important to note that the FITS file
+        is saved to a *different* temporary location every time this method is
+        called, so accessing the LEMONdB.mosaic attribute multiple times means
+        that the same number of copies of the file will be saved to disk.
 
         """
 
