@@ -995,16 +995,11 @@ class LEMONdB(object):
     def pfilters(self):
         """ Return the photometric filters for which there is data.
 
-        The method returns a sorted list of the photometric filters for which
-        the database has photometric records. Note that this means that a
-        filter for which there are images (LEMONdB.add_image) but no
-        photometric records (those added with LEMONdB.add_photometry) will not
-        be included in the returned list.
-
-        The photometric filter of the reference image is ignored. This
-        means that if, say, it was observed in the Johnson I filter while the
-        rest of the images of the campaign were taken in Johnson B, only the
-        latter will be returned.
+        Return a sorted list of the photometric filters for which the database
+        has photometric records. This means that a filter for which images were
+        added using LEMONdB.add_image() but that have no associated photometric
+        records (LEMONdB.add_photometry()) will not be included in the returned
+        list.
 
         """
 
