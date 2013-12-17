@@ -689,6 +689,25 @@ class LEMONdB(object):
                       "ORDER BY c.stdev ASC", t)
         return [xmlparse.CandidateAnnuli(*args) for args in self._rows]
 
+    def _get_simage_id(self):
+        """ Return the ID of the image on which sources were detected.
+
+        Return the ID of the FITS file that was used to detect sources: it can
+        be identified in the IMAGES table because it is the only row where the
+        value of the SOURCES column is equal to one. Raises KeyError if the
+        sources image (LEMONdB.simage) has not yet been set.
+
+        """
+
+        self._execute("SELECT id FROM images WHERE sources = 1")
+        rows = list(self._rows)
+        if not rows:
+            msg = "sources image has not yet been set"
+            raise KeyError(msg)
+        else:
+            assert len(rows) == 1
+            return rows[0][0]
+
     @property
     def rimage(self):
         """ Return a ReferenceImage instance, or None if there isn't any"""
