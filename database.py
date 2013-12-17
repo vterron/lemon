@@ -874,9 +874,9 @@ class LEMONdB(object):
         """ Return the coordinates and magnitude of a star.
 
         The method returns a five-element tuple with, in this order: the x- and
-        y- coordinates of the star in the reference image, the right ascension
-        and declination and its instrumental magnitude in the reference image.
-        Raises KeyError is no star in the database has this ID.
+        y- coordinates of the star in the image on which it was detected, the
+        right ascension and declination and its instrumental magnitude in the
+        sources image. Raises KeyError is no star in the database has this ID.
 
         """
 
