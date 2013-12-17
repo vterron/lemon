@@ -853,10 +853,10 @@ class LEMONdB(object):
 
         This method only stores the 'description' of the star, that is, its
         image and celestial coordinates, as well as its instrumental magnitude
-        in the reference image. To add the photometric records and the light
-        curves, use LEMONdB.add_photometry and add_light_curve, respectively.
-        Raises DuplicateStarError if the specified ID was already used for
-        another star in the database.
+        in the image on which it was detected. To add photometric records and
+        light curves, use the LEMONdB.add_photometry() and add_light_curve(),
+        methods respectively. Raises DuplicateStarError if the specified ID
+        was already used for another star in the database.
 
         """
 
