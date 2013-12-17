@@ -738,7 +738,31 @@ class LEMONdB(object):
         args[1] = passband.Passband(args[1])
         return Image(*args)
 
+    @simage.setter
+    def simage(self, image):
+        """ Set the FITS image on which sources were detected.
 
+        Receives an Image object with information about the FITS file that was
+        used to detect sources and stores it in the LEMONdB. The file to which
+        Image.path refers must exist and be readable, as it is also stored in
+        the database and accessible through the LEMON.mosaic attribute.
+
+        """
+
+        try:
+            self.add_image(image)
+        except DuplicateImageError:
+            pass
+
+        with open(image.path, 'rb') as fd:
+            blob = fd.read()
+
+        # The sources image is the only one with  SOURCES == 1
+        id_ = self._get_image_id(image.unix_time, image.pfilter)
+        self._execute("UPDATE images SET sources = 0")
+        self._execute("UPDATE images SET sources = 1 WHERE id = ?", (id_,))
+        t = (id_, buffer(blob))
+        self._execute("INSERT OR REPLACE INTO raw_images VALUES (?, ?)", t)
 
     def add_image(self, image):
         """ Store information about a FITS image in the database.
