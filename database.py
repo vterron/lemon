@@ -1507,7 +1507,7 @@ class LEMONdB(object):
 
     @property
     def mosaic(self):
-        """ Save to disk the FITS file used as reference frame.
+        """ Save to disk the FITS file on which sources were detected.
 
         The method saves to disk the FITS file, stored as a blob in the
         database, that was used as a reference frame. The file is copied to a
@@ -1520,19 +1520,20 @@ class LEMONdB(object):
 
         """
 
-        self._execute("SELECT fits FROM raw_images WHERE id = 0")
-        rows = list(self._rows)
-        if not rows:
+        try:
+            id_ = self._get_simage_id()
+        except KeyError:
             return None
-        else:
-            assert len(rows) == 1
-            assert len(rows[0]) == 1
-            blob = rows[0][0]
-            fd, path = tempfile.mkstemp(suffix = '.fits')
-            os.write(fd, blob)
-            os.close(fd)
-            return path
 
+        self._execute("SELECT fits FROM raw_images WHERE id = ?", (id_,))
+        rows = list(self._rows)
+        assert len(rows) == 1
+        assert len(rows[0]) == 1
+        blob = rows[0][0]
+        fd, path = tempfile.mkstemp(suffix = '.fits')
+        os.write(fd, blob)
+        os.close(fd)
+        return path
 
     def star_closest_to_image_coords(self, x, y):
         """ Find the star closest to the image x- and y-coordinates.
