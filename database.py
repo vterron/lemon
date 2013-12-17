@@ -489,6 +489,10 @@ class LEMONdB(object):
         self._execute("CREATE INDEX IF NOT EXISTS cand_filter "
                       "ON candidate_parameters(filter_id)")
 
+        # IMAGES table: the 'sources' column stores Boolean values as integers
+        # 0 (False) and 1 (True), indicating the FITS image on which sources
+        # were detected. Only one image must have 'sources' set to True; all
+        # the others must be False.
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS images (
@@ -501,6 +505,7 @@ class LEMONdB(object):
             gain       REAL NOT NULL,
             ra         REAL NOT NULL,
             dec        REAL NOT NULL,
+            sources    INTEGER NOT NULL,
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
             UNIQUE (filter_id, unix_time))
 
