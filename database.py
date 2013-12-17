@@ -514,16 +514,12 @@ class LEMONdB(object):
         self._execute("CREATE INDEX IF NOT EXISTS img_by_filter_time "
                       "ON images(filter_id, unix_time)")
 
-        # This table stores as a blob entire FITS files. The 'id' value should
-        # be that of the FITS file in the IMAGES table. However, we do not use
-        # a foreign key constraint here because the reference image is stored
-        # in a different table, RIMAGE. For it we will use zero as the ID.
-
+        # Store as a blob entire FITS files.
         self._execute('''
         CREATE TABLE IF NOT EXISTS raw_images (
             id   INTEGER PRIMARY KEY,
             fits BLOB NOT NULL,
-            UNIQUE (id, fits))
+            FOREIGN KEY (id) REFERENCES images(id))
         ''')
 
         self._execute('''
