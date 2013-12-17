@@ -489,16 +489,6 @@ class LEMONdB(object):
         self._execute("CREATE INDEX IF NOT EXISTS cand_filter "
                       "ON candidate_parameters(filter_id)")
 
-        self._execute('''
-        CREATE TABLE IF NOT EXISTS rimage (
-           path       TEXT NOT NULL,
-           filter_id  INTEGER NOT NULL,
-           unix_time  REAL NOT NULL,
-           object     TEXT,
-           airmass    REAL NOT NULL,
-           gain       REAL NOT NULL,
-           FOREIGN KEY (filter_id) REFERENCES photometric_filters(id))
-        ''')
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS images (
