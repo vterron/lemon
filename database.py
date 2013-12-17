@@ -781,10 +781,10 @@ class LEMONdB(object):
         self._add_pfilter(image.pfilter)
 
         t = (None, image.path, hash(image.pfilter), image.unix_time,
-             image.object, image.airmass, image.gain, image.ra, image.dec)
+             image.object, image.airmass, image.gain, image.ra, image.dec, 0)
         try:
             self._execute("INSERT INTO images "
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
