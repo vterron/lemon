@@ -709,29 +709,36 @@ class LEMONdB(object):
             return rows[0][0]
 
     @property
-    def rimage(self):
-        """ Return a ReferenceImage instance, or None if there isn't any"""
-        self._execute("SELECT r.path, p.name, r.unix_time, "
-                      "       r.object, r.airmass, r.gain "
-                      "FROM rimage AS r, photometric_filters AS p "
-                      "ON r.filter_id = p.id")
-        rows = list(self._rows)
-        if not rows:
-            return None
-        else:
-            assert len(rows) == 1
-            args = list(rows[0])
-            args[1] = passband.Passband(args[1])
-            return ReferenceImage(*args)
+    def simage(self):
+        """ Return the FITS image on which sources were detected.
 
-    @rimage.setter
-    def rimage(self, rimage):
-        """ Set the reference image that was used to compute the offsets """
-        self._add_pfilter(rimage.pfilter)
-        t = (rimage.path, hash(rimage.pfilter), rimage.unix_time,
-             rimage.object, rimage.airmass, rimage.gain)
-        self._execute("DELETE FROM rimage")
-        self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?, ?)", t)
+        Return an Image object with the information about the FITS file that
+        was used to detect sources. The Image.path attribute is just that, a
+        path, but a copy of the FITS image is also stored in the database, and
+        is available through the LEMONdB.mosaic attribute. Returns None if the
+        sources image has not yet been set.
+
+        """
+
+        try:
+            id_ = self._get_simage_id()
+        except KeyError:
+            return None
+
+        t = (id_,)
+        self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
+                      "       i.airmass, i.gain, i.ra, i.dec "
+                      "FROM images AS i, photometric_filters AS p "
+                      "ON i.filter_id = p.id "
+                      "WHERE i.id = ?", t)
+
+        rows = list(self._rows)
+        assert len(rows) == 1
+        args = list(rows[0])
+        args[1] = passband.Passband(args[1])
+        return Image(*args)
+
+
 
     def add_image(self, image):
         """ Store information about a FITS image in the database.
