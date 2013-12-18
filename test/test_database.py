@@ -474,13 +474,6 @@ class PhotometricParametersTest(unittest.TestCase):
             self.assertEqual(pparams.annulus, annulus)
             self.assertEqual(pparams.dannulus, dannulus)
 
-    @staticmethod
-    def equal(first, second):
-        """ Check whether two PhotometricParameters are equal """
-        return (first.aperture == second.aperture and
-                first.annulus == second.annulus and
-                first.dannulus == second.dannulus)
-
 
 class ImageTest(unittest.TestCase):
 
