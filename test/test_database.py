@@ -45,7 +45,6 @@ from database import \
    LEMONdB,
    LightCurve,
    PhotometricParameters,
-   ReferenceImage,
    UnknownImageError,
    UnknownStarError)
 
@@ -601,44 +600,6 @@ class ImageTest(unittest.TestCase):
             self.assertEqual(img.gain, args[5])
             self.assertEqual(img.ra, args[6])
             self.assertEqual(img.dec, args[7])
-
-
-class ReferenceImageTest(unittest.TestCase):
-
-    @classmethod
-    def random_data(cls):
-        """ Return the args needed to instantiate a random ReferenceImage"""
-        args = ImageTest.random_data()
-        # Return the first seven elements, except for 'pparams'
-        return args[:2] + args[3:7]
-
-    @classmethod
-    def random(cls):
-        """ Return a random ReferenceImage """
-        args = cls.random_data()
-        return ReferenceImage(*args)
-
-    def test_init_(self):
-        for _ in xrange(NITERS):
-            args = self.random_data()
-            path, pfilter, unix_time, object_, airmass, gain = args
-            rimage = ReferenceImage(*args)
-            self.assertEqual(rimage.path, path)
-            self.assertEqual(rimage.pfilter, pfilter)
-            self.assertEqual(rimage.unix_time, unix_time)
-            self.assertEqual(rimage.object, object_)
-            self.assertEqual(rimage.airmass, airmass)
-            self.assertEqual(rimage.gain, gain)
-
-    @staticmethod
-    def equal(first, second):
-        """ Check whether two Images are equal """
-
-        return (first.path == second.path and
-                first.pfilter == second.pfilter and
-                first.unix_time == second.unix_time and
-                first.airmass == second.airmass and
-                first.gain == second.gain)
 
 
 class LightCurveTest(unittest.TestCase):
