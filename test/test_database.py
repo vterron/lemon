@@ -1351,8 +1351,12 @@ class LEMONdBTest(unittest.TestCase):
 
         db = LEMONdB(':memory:')
 
-        db.rimage = ImageTest.random()
-        self.assertEqual([], db.pfilters)
+        # FITS file is deleted on exit from the with statement.
+        with test.test_fitsimage.FITSImageTest.random() as fits:
+            img = ImageTest.random()
+            img = img._replace(path = fits.path)
+            db.simage = img
+            self.assertEqual([], db.pfilters)
 
         nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
         # Add the information of the stars in the database.
@@ -1712,16 +1716,20 @@ class LEMONdBTest(unittest.TestCase):
     def test_airmasses(self):
         db = LEMONdB(':memory:')
 
-        # Make sure the reference image is ignored
-        rimg = ReferenceImageTest.random()
-        pfilter = rimg.pfilter
-        db.rimage = rimg
-        self.assertEqual(db.airmasses(pfilter), {})
-
         # Two-level dictionary: map each photometric filter to a dictionary
         # which in turns maps each Unix time to its airmass (we're building
         # here the dictionary LEMONdB.airmasses is expected to return)
         airmasses = collections.defaultdict(dict)
+
+        # Make sure that the sources image is not ignored. This FITS file is
+        # automatically deleted on exit from the with statement, once it has
+        # been stored in the database.
+        with test.test_fitsimage.FITSImageTest.random() as fits:
+            simg = ImageTest.random()
+            simg = simg._replace(path = fits.path)
+            db.simage = simg
+            airmasses[simg.pfilter][simg.unix_time] = simg.airmass
+
         size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
         for img in ImageTest.nrandom(size):
             airmasses[img.pfilter][img.unix_time] = img.airmass
