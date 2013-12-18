@@ -2097,24 +2097,6 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db.author, new_host)
         self.assertRaises(ValueError, setattr, db, 'hostname', None)
 
-    def test_mosaic(self):
-
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.mosaic, None)
-
-        # test.test_fitsimage.FITSImage is a subclass of fitsimage.FITSImage
-        # which deletes the file on exit from the body of the with statement.
-        with test.test_fitsimage.FITSImageTest.random() as mosaic:
-            db.mosaic = mosaic.path
-            with test.test_fitsimage.FITSImage(db.mosaic) as output:
-                self.assertEqual(mosaic.sha1sum, output.sha1sum)
-
-        # Now update the mosaic to a different FITS file
-        with test.test_fitsimage.FITSImageTest.random() as new_mosaic:
-            db.mosaic = new_mosaic.path
-            with test.test_fitsimage.FITSImage(db.mosaic) as output:
-                self.assertEqual(new_mosaic.sha1sum, output.sha1sum)
-
     def test_star_closest_to_image_coords(self):
 
         db = LEMONdB(':memory:')
