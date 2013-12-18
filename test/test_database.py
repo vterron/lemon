@@ -988,13 +988,25 @@ class LEMONdBTest(unittest.TestCase):
                 retrieved = db.get_candidate_pparams(pfilter)
                 self.assertEqual(retrieved, expected)
 
-    def test_rimage(self):
+    def test_simage_and_mosaic(self):
         db = LEMONdB(':memory:')
-        self.assertEqual(db.rimage, None)
+
+        self.assertEqual(db.simage, None)
+        self.assertEqual(db.mosaic, None)
+
         for index in xrange(NITERS):
-            img = ReferenceImageTest.random()
-            db.rimage = img
-            self.assertTrue(ReferenceImageTest.equal(db.rimage, img))
+            # We need more than the path to a fictitious FITS file: it must
+            # actually exist, since LEMONdB.simage stores it in the database.
+            # Use test.test_fitsimage.FITSImage.random() to get a subclass of
+            # fitsimage.FITSImage which is automatically deleted on exit from
+            # the body of the with statement.
+            with test.test_fitsimage.FITSImageTest.random() as input:
+                img = ImageTest.random()
+                img = img._replace(path = input.path)
+                db.simage = img
+                self.assertEqual(db.simage, img)
+                with test.test_fitsimage.FITSImage(db.mosaic) as output:
+                    self.assertEqual(input.sha1sum, output.sha1sum)
 
     def test_add_and_get_image(self):
         db = LEMONdB(':memory:')
