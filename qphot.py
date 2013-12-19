@@ -111,24 +111,6 @@ class QPhotResult(object):
 
         """
 
-        # Historical note: here there used to be an assertion that made sure
-        # that sum >= flux, as the total number of counts in the aperture
-        # including the sky should never, ever be smaller than when the sky is
-        # excluded. However, this may not be true if we attempt to do
-        # photometry on something that is not an astronomical object.
-        #
-        # How could this possibly happen, you may ask. Well, in our case, at
-        # least, this was due to SExtractor, when sources were detected in the
-        # reference image, which identified some points in the extremely noisy
-        # (because of the flat-field reduction step) margins as stars. Anyway,
-        # I suspect that the assertion may also fail for large (bigger than the
-        # aperture) objects.
-        #
-        # The moral of the story, my developer fellow, is that the S/N of the
-        # star also provides information about, well, whether it is _actually_
-        # a star: negative signal-to-noise ratios clearly indicate that what
-        # had photometry done on was definitely not a star.
-
         self.x         = xcenter
         self.y         = ycenter
         self.magnitude = mag
