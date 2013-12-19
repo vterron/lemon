@@ -95,14 +95,14 @@ pyraf.subproc.Subprocess.__del__ = func
 
 
 typename = 'QPhotResult'
-field_names = "x, y, magnitude, sum, flux, stdev"
+field_names = "x, y, mag, sum, flux, stdev"
 class QPhotResult(collections.namedtuple(typename, field_names)):
     """ Encapsulate the photometry of an astronomical object. In other words,
     each one of the lines that for each object are output by IRAF's qphot are
     parsed and saved as an object of this class.
 
     x, y - the x- and y-coordinates of the center of the object.
-    magnitude - the instrumental magnitude of the object in the aperture.
+    mag - the instrumental magnitude of the object in the aperture.
     sum - the total number of counts in the aperture *including* the sky.
     flux - the total number of counts in the aperture *excluding* the sky.
     stdev - the standard deviation of the best estimate of the sky value,
