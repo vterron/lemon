@@ -31,6 +31,7 @@ from the user's perspective.
 
 """
 
+import collections
 import logging
 import math
 import os
@@ -93,30 +94,21 @@ func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
 pyraf.subproc.Subprocess.__del__ = func
 
 
-class QPhotResult(object):
-    """ This class simply encapsulates the photometry of a star. In other
-        words, each one of the lines that for each star will be outputted by
-        IRAF's qphot will be parsed and saved as an instance of this class."""
+typename = 'QPhotResult'
+field_names = "x, y, magnitude, sum, flux, stdev"
+class QPhotResult(collections.namedtuple(typename, field_names)):
+    """ Encapsulate the photometry of an astronomical object. In other words,
+    each one of the lines that for each object are output by IRAF's qphot are
+    parsed and saved as an object of this class.
 
-    def __init__(self, xcenter, ycenter, mag, sum_, flux, stdev):
-        """ Instantiation method for the QPhotResult class.
+    x, y - the x- and y-coordinates of the center of the object.
+    magnitude - the instrumental magnitude of the object in the aperture.
+    sum - the total number of counts in the aperture *including* the sky.
+    flux - the total number of counts in the aperture *excluding* the sky.
+    stdev - the standard deviation of the best estimate of the sky value,
+            per pixel.
 
-        xcenter - x coordinate of the center of the star.
-        ycenter - y coordinate of the center of the star.
-        mag - the instrumental magnitude of the star in the aperture.
-        sum_ - the total number of counts in the aperture _including_ the sky.
-        flux - the total number of counts in the aperture _excluding_ the sky.
-        stdev - the standard deviation of the best estimate of the sky value,
-                per pixel.
-
-        """
-
-        self.x         = xcenter
-        self.y         = ycenter
-        self.magnitude = mag
-        self.sum       = sum_
-        self.flux      = flux
-        self.stdev     = stdev
+    """
 
     def snr(self, gain):
         """ Return the signal-to-noise ratio of the star.
