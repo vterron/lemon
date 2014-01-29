@@ -143,20 +143,18 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
         if gain <= 0:
             raise ValueError("CCD gain must be a positive value")
 
-        # Division by zero must be avoided, as sum and flux can both be zero if
-        # photometry is done on a pair of coordinates that do not correspond to
-        # any star (or, in other words, if the star on which we are doing
-        # photometry is so faint that it is not visible in the image).
-
+        # Division by zero must be avoided, as sum and flux may both be zero if
+        # photometry is done on celestial coordinates that do not correspond to
+        # any astronomical object, or if it is so faint that it is not visible.
         if not self.sum:
             return 0.0
 
-        # Also, sum and flux could be negative if photometry, as already
-        # explained, is done on the margins (overscan area and such) of the
-        # image, where the calibration of the images may have resulted in
-        # pixels with negative values. In that case we do not return zero, but
-        # instead a _negative_ SNR, so that it is clear that almost surely what
-        # had photometry done on was not a star.
+        # As counterintuitive as it seems, IRAF's qphot may return negative
+        # values of 'sum': e.g., if one of the steps of the data calibration
+        # (such as the bias subtraction) resulted in pixels with negative
+        # values.  When that is the case, this method returns a negative SNR,
+        # which should be viewed as a red flag that something went wrong with
+        # this photometric measurement.
 
         elif self.sum < 0.0:
             return -(abs(self.flux * gain) / math.sqrt(abs(self.sum * gain)))
