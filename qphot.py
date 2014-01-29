@@ -183,7 +183,7 @@ class QPhot(list):
         return self.image.path
 
     def clear(self):
-        """ Remove from the instance the photometry of all the stars. """
+        """ Remove all the photometric measurements. """
         del self[:]
 
     def run(self, annulus, dannulus, aperture, exptimek, pixels):
