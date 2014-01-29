@@ -111,19 +111,19 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
     """
 
     def snr(self, gain):
-        """ Return the signal-to-noise ratio of the star.
+        """ Return the signal-to-noise ratio of the photometric measurement.
 
-        The method returns the S/N, a quantitative measure of the accuracy with
-        which the star was observed. The signal-to-noise ratio tells us the
-        relative size of the desired signal to the underlying noise or
+        The method returns the S/N, a quantitative measurement of the accuracy
+        with which the object was observed. The signal-to-noise ratio tells us
+        the relative size of the desired signal to the underlying noise or
         background light. The noise is defined as the standard deviation of a
-        single measurement from the mean of the measurements made on a star.
+        single measurement from the mean of the measurements made on an object.
 
         For photon arrivals, the statistical noise fluctuation is represented
-        by the Poisson distribution, and for bright sources where the sky
+        by the Poisson distribution. For bright sources where the sky
         background is negligible, S/N = total counts / sqrt(total counts).
-        Note that when the sky is not insignificant, the formula becomes
-        S/N = (total counts - sky counts) / sqrt(total counts).
+        When the sky is not insignificant, the formula becomes S/N = (total
+        counts - sky counts) / sqrt(total counts).
 
         Astronomers typically consider a good photoelectric measurement as one
         that has a signal-to-noise ratio of 100, or in other words, the noise
