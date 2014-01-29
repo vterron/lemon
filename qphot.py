@@ -138,6 +138,13 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
         although one is a common gain among many instruments, results may be
         only approximate.
 
+        As counterintuitive as it seems, IRAF's qphot may return negative
+        values of 'sum': e.g., if one of the steps of the data calibration
+        (such as the bias subtraction) resulted in pixels with negative values.
+        When that is the case, this method returns a negative SNR, which should
+        be viewed as a red flag that something went wrong with this photometric
+        measurement.
+
         """
 
         if gain <= 0:
@@ -148,13 +155,6 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
         # any astronomical object, or if it is so faint that it is not visible.
         if not self.sum:
             return 0.0
-
-        # As counterintuitive as it seems, IRAF's qphot may return negative
-        # values of 'sum': e.g., if one of the steps of the data calibration
-        # (such as the bias subtraction) resulted in pixels with negative
-        # values.  When that is the case, this method returns a negative SNR,
-        # which should be viewed as a red flag that something went wrong with
-        # this photometric measurement.
 
         elif self.sum < 0.0:
             return -(abs(self.flux * gain) / math.sqrt(abs(self.sum * gain)))
