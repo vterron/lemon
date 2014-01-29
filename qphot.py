@@ -162,7 +162,7 @@ class QPhot(list):
 
     """
 
-    def __init__(self, path):
+    def __init__(self, img_path, coords_path):
         """ Instantiation method for the QPhot class.
 
         path - path to the image whose photometry is to be done.
@@ -170,7 +170,8 @@ class QPhot(list):
         """
 
         super(list, self).__init__()
-        self.image = fitsimage.FITSImage(path)
+        self.image = fitsimage.FITSImage(img_path)
+        self.coords_path = coords_path
 
     @property
     def path(self):
