@@ -31,6 +31,7 @@ from the user's perspective.
 
 """
 
+import collections
 import logging
 import math
 import os
@@ -82,63 +83,36 @@ func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
 pyraf.subproc.Subprocess.__del__ = func
 
 
-class QPhotResult(object):
-    """ This class simply encapsulates the photometry of a star. In other
-        words, each one of the lines that for each star will be outputted by
-        IRAF's qphot will be parsed and saved as an instance of this class."""
+typename = 'QPhotResult'
+field_names = "x, y, mag, sum, flux, stdev"
+class QPhotResult(collections.namedtuple(typename, field_names)):
+    """ Encapsulate the photometry of an astronomical object. In other words,
+    each one of the lines that for each object are output by IRAF's qphot are
+    parsed and saved as an object of this class.
 
-    def __init__(self, xcenter, ycenter, mag, sum_, flux, stdev):
-        """ Instantiation method for the QPhotResult class.
+    x, y - the x- and y-coordinates of the center of the object.
+    mag - the instrumental magnitude of the object in the aperture.
+    sum - the total number of counts in the aperture *including* the sky.
+    flux - the total number of counts in the aperture *excluding* the sky.
+    stdev - the standard deviation of the best estimate of the sky value,
+            per pixel.
 
-        xcenter - x coordinate of the center of the star.
-        ycenter - y coordinate of the center of the star.
-        mag - the instrumental magnitude of the star in the aperture.
-        sum_ - the total number of counts in the aperture _including_ the sky.
-        flux - the total number of counts in the aperture _excluding_ the sky.
-        stdev - the standard deviation of the best estimate of the sky value,
-                per pixel.
-
-        """
-
-        # Historical note: here there used to be an assertion that made sure
-        # that sum >= flux, as the total number of counts in the aperture
-        # including the sky should never, ever be smaller than when the sky is
-        # excluded. However, this may not be true if we attempt to do
-        # photometry on something that is not an astronomical object.
-        #
-        # How could this possibly happen, you may ask. Well, in our case, at
-        # least, this was due to SExtractor, when sources were detected in the
-        # reference image, which identified some points in the extremely noisy
-        # (because of the flat-field reduction step) margins as stars. Anyway,
-        # I suspect that the assertion may also fail for large (bigger than the
-        # aperture) objects.
-        #
-        # The moral of the story, my developer fellow, is that the S/N of the
-        # star also provides information about, well, whether it is _actually_
-        # a star: negative signal-to-noise ratios clearly indicate that what
-        # had photometry done on was definitely not a star.
-
-        self.x         = xcenter
-        self.y         = ycenter
-        self.magnitude = mag
-        self.sum       = sum_
-        self.flux      = flux
-        self.stdev     = stdev
+    """
 
     def snr(self, gain):
-        """ Return the signal-to-noise ratio of the star.
+        """ Return the signal-to-noise ratio of the photometric measurement.
 
-        The method returns the S/N, a quantitative measure of the accuracy with
-        which the star was observed. The signal-to-noise ratio tells us the
-        relative size of the desired signal to the underlying noise or
+        The method returns the S/N, a quantitative measurement of the accuracy
+        with which the object was observed. The signal-to-noise ratio tells us
+        the relative size of the desired signal to the underlying noise or
         background light. The noise is defined as the standard deviation of a
-        single measurement from the mean of the measurements made on a star.
+        single measurement from the mean of the measurements made on an object.
 
         For photon arrivals, the statistical noise fluctuation is represented
-        by the Poisson distribution, and for bright sources where the sky
+        by the Poisson distribution. For bright sources where the sky
         background is negligible, S/N = total counts / sqrt(total counts).
-        Note that when the sky is not insignificant, the formula becomes
-        S/N = (total counts - sky counts) / sqrt(total counts).
+        When the sky is not insignificant, the formula becomes S/N = (total
+        counts - sky counts) / sqrt(total counts).
 
         Astronomers typically consider a good photoelectric measurement as one
         that has a signal-to-noise ratio of 100, or in other words, the noise
@@ -153,25 +127,23 @@ class QPhotResult(object):
         although one is a common gain among many instruments, results may be
         only approximate.
 
+        As counterintuitive as it seems, IRAF's qphot may return negative
+        values of 'sum': e.g., if one of the steps of the data calibration
+        (such as the bias subtraction) resulted in pixels with negative values.
+        When that is the case, this method returns a negative SNR, which should
+        be viewed as a red flag that something went wrong with this photometric
+        measurement.
+
         """
 
         if gain <= 0:
             raise ValueError("CCD gain must be a positive value")
 
-        # Division by zero must be avoided, as sum and flux can both be zero if
-        # photometry is done on a pair of coordinates that do not correspond to
-        # any star (or, in other words, if the star on which we are doing
-        # photometry is so faint that it is not visible in the image).
-
+        # Division by zero must be avoided, as sum and flux may both be zero if
+        # photometry is done on celestial coordinates that do not correspond to
+        # any astronomical object, or if it is so faint that it is not visible.
         if not self.sum:
             return 0.0
-
-        # Also, sum and flux could be negative if photometry, as already
-        # explained, is done on the margins (overscan area and such) of the
-        # image, where the calibration of the images may have resulted in
-        # pixels with negative values. In that case we do not return zero, but
-        # instead a _negative_ SNR, so that it is clear that almost surely what
-        # had photometry done on was not a star.
 
         elif self.sum < 0.0:
             return -(abs(self.flux * gain) / math.sqrt(abs(self.sum * gain)))
