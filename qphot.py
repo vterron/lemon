@@ -165,7 +165,11 @@ class QPhot(list):
     def __init__(self, img_path, coords_path):
         """ Instantiation method for the QPhot class.
 
-        path - path to the image whose photometry is to be done.
+        img_path - path to the FITS image on which to do photometry.
+        coords_path - path to the text file with the celestial coordinates
+                      (right ascension and declination) of the astronomical
+                      objects to be measured. These objects must be listed
+                      one per line, in two columns.
 
         """
 
