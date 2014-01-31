@@ -186,7 +186,7 @@ class QPhot(list):
         """ Remove all the photometric measurements. """
         del self[:]
 
-    def run(self, annulus, dannulus, aperture, exptimek, pixels):
+    def run(self, annulus, dannulus, aperture, exptimek):
         """ Run IRAF's qphot on the image.
 
         This method is a wrapper, equivalent to (1) running 'qphot' on an image
@@ -226,26 +226,12 @@ class QPhot(list):
         exptimek - the image header keyword containing the exposure time. Needed
                    by qphot in order to normalize the computed magnitudes to an
                    exposure time of one time unit.
-        pixels - list of instances of Pixel which encapsulate the image
-                 coordinates that will be passed to IRAF's qphot. It set to None
-                 (the default value) or left empty, these coordinates will be
-                 obtained by running SExtractor on the image.
 
         """
 
         self.clear() # empty the current instance
 
         try:
-            # The task qphot will receive a text file with the coordinates for
-            # the objects to be measured. We need, then, to create a temporary
-            # file, with the coordinates of the stars, one per line.
-            coords_fd, stars_coords = \
-                tempfile.mkstemp(prefix = os.path.basename(self.path),
-                                 suffix = '.qphot_coords', text = True)
-            for pixel in pixels:
-                os.write(coords_fd, "%f\t%f\n" % (pixel.x, pixel.y))
-            os.close(coords_fd)
-
             # Temporary file to which the text database produced by qphot will
             # be saved. Even if empty, it must be deleted before calling
             # qphot. Otherwise, an error message, stating that the operation
@@ -267,7 +253,7 @@ class QPhot(list):
             # exactly on the specified coordinates.
 
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
-                          aperture = aperture, coords = stars_coords,
+                          aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
                           interactive = 'no')
 
@@ -297,45 +283,32 @@ class QPhot(list):
             # Now open the outut file again and parse the output of 'txdump',
             # creating an instance of QPhotResult and saving it in the current
             # instance for each line of the file.
-            txdump_fd = open(txdump_output, 'rt')
-            txdump_lines = txdump_fd.readlines()
-            txdump_fd.close()
+            with open(txdump_output, 'rt') as txdump_fd:
+                for line in txdump_fd:
 
-            assert len(txdump_lines) == len(pixels)
-            for line, pixel in zip(txdump_lines, pixels):
-                try:
-                    # The i-th line in the file corresponds to the i-th pixel.
-                    splitted_line = line.split()
-                    xcenter = float(splitted_line[0]) # same value as pixel.x
-                    ycenter = float(splitted_line[1]) # same value as pixel.y
-
-                    if __debug__:
-                        epsilon = 0.001  # a thousandth of a pixel!
-                        assert abs(xcenter - pixel.x) < epsilon
-                        assert abs(ycenter - pixel.y) < epsilon
+                    fields = line.split()
+                    xcenter = float(fields[0])
+                    ycenter = float(fields[1])
 
                     try:
-                        mag_str = splitted_line[2]
+                        mag_str = fields[2]
                         mag     = float(mag_str)
                     except ValueError:  # raised by float("INDEF")
                         assert mag_str == 'INDEF'
                         mag = None
 
-                    sum_ = float(splitted_line[3])
-                    flux = float(splitted_line[4])
+                    sum_ = float(fields[3])
+                    flux = float(fields[4])
 
                     try:
-                        stdev_str = splitted_line[5]
+                        stdev_str = fields[5]
                         stdev = float(stdev_str)
                     except ValueError:  # raised by float("INDEF")
                         assert stdev_str == 'INDEF'
                         stdev = None
 
-                    star_phot = QPhotResult(xcenter, ycenter, mag, sum_, flux, stdev)
-                    self.append(star_phot)
-
-                except IndexError:
-                    raise  # we aren't expecting any improperly formatted line
+                    args = xcenter, ycenter, mag, sum_, flux, stdev
+                    self.append(QPhotResult(*args))
 
         finally:
 
@@ -345,11 +318,6 @@ class QPhot(list):
             # the execution of the module is aborted by the user. NameError is
             # needed because an exception may be raised before the variables
             # are declared.
-
-            try:
-                os.unlink(stars_coords)
-            except (NameError, OSError):
-                pass
 
             try:
                 os.unlink(qphot_output)
