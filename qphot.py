@@ -155,22 +155,30 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
 class QPhot(list):
     """ The photometry of an image, as returned by IRAF's qphot.
 
-    This class encapsulates the photometry done by the qphot (quick aperture
-    photometer) task implemented in IRAF. An instance of QPhotResult will be
-    created for each star detected in the image, except for those stars that
-    were INDEF or saturated -- for these, None is used.
+    This class stores the result of the photometry done by IRAF's qphot (quick
+    aperture photometer) on an image. A QPhotResult object is created for each
+    object listed in the text file: after calling QPhot.run(), this subclass of
+    the built-in list contains the photometric measurement of each astronomical
+    object. The order to these QphotResult objects is guaranteed to respect
+    that in which coordinates are listed in the text file. In other words: the
+    i-th QPhotResult object corresponds to the i-th astronomical object.
 
     """
 
-    def __init__(self, path):
+    def __init__(self, img_path, coords_path):
         """ Instantiation method for the QPhot class.
 
-        path - path to the image whose photometry is to be done.
+        img_path - path to the FITS image on which to do photometry.
+        coords_path - path to the text file with the celestial coordinates
+                      (right ascension and declination) of the astronomical
+                      objects to be measured. These objects must be listed
+                      one per line, in two columns.
 
         """
 
         super(list, self).__init__()
-        self.image = fitsimage.FITSImage(path)
+        self.image = fitsimage.FITSImage(img_path)
+        self.coords_path = coords_path
 
     @property
     def path(self):
@@ -178,172 +186,140 @@ class QPhot(list):
         return self.image.path
 
     def clear(self):
-        """ Remove from the instance the photometry of all the stars. """
+        """ Remove all the photometric measurements. """
         del self[:]
 
-    def run(self, annulus, dannulus, aperture, exptimek, pixels):
-        """ Run IRAF's qphot on the image.
+    def run(self, annulus, dannulus, aperture, exptimek):
+        """ Run IRAF's qphot on the FITS image.
 
-        This method is a wrapper, equivalent to (1) running 'qphot' on an image
-        and (2) using 'txdump' in order to extract some fields from the text
-        database that the former outputs. The goal of this routine is to make
-        it possible to easily do photometry on an image, saving in the current
-        instance the information for all the objects (that is, when running
-        txdump the parameter 'expr' is set to 'yes').
+        This method is a wrapper, equivalent to (1) running 'qphot' on a FITS
+        image and (2) using 'txdump' in order to extract some fields from the
+        resulting text database. This subroutine, therefore, allows to easily
+        do photometry on a FITS image, storing as a sequence of QPhotResult
+        objects the photometric measurements. The method returns the number
+        of astronomical objects on which photometry has been done.
 
-        This method may be seen as a low-level routine: INDEF stars will have
-        *a magnitude of None*, but it does not pay attention to the saturation
-        levels. For that, you will have to use the photometry function, defined
-        in this very module. That, and not this one, is the routine you are
-        expected to use to do photometry on your images.
+        No matter how convenient, QPhot.run() should still be seen as a
+        low-level method: INDEF objects will have a magnitude and standard
+        deviation of None, but it does not pay attention to the saturation
+        levels -- the sole reason for this being that IRAF's qphot, per se,
+        provides no way of knowing if one or more pixels in the aperture are
+        above some saturation level. For this very reason, the recommended
+        approach to doing photometry is to use photometry(), a convenience
+        function defined below.
 
-        In the first step, photometry will be done for the objects whose
-        coordinates are listed in 'pixels', a sequence of two-element tuples
-        (x- and y- values). These coordinates are saved to a temporary file,
-        which is given as input to 'qphot' to do photometry on these pixels.
+        In the first step, photometry is done, using qphot, on the astronomical
+        objects whose coordinates have been listed, one per line, in the text
+        file passed as an argument to QPhot.__init__(). The output of this IRAF
+        task is saved to temporary file (a), an APPHOT text database from which
+        'txdump' extracts the fields to another temporary file, (b). Then this
+        file is parsed, the information of each of its lines, one per object,
+        used in order to create a QPhotResult object. All previous photometric
+        measurements are lost every time this method is run. All the temporary
+        files (a, b) are guaranteed to be deleted on exit, even if an error is
+        encountered.
 
-        The output of 'qphot' is saved to a second temporary file (b), on which
-        'txdump' is run to extract the fields from the APPHOT text database
-        that was produced by 'qphot' to a third temporary file (c). This last
-        file is then parsed, the information of each of its lines used in order
-        to create an instance of QPhotResult, one per star, which is added to
-        the current instance. Note that previous results will be lost if this
-        method is run twice on the same instance.
-
-        All the temporary files (a, b, c) are guaranteed to be deleted before
-        the method exits, even if an error is encountered. The method returns
-        the number of stars whose photometry has been done.
+        An important note: you may find extremely confusing that, although the
+        input that this method accepts are celestial coordinates (the right
+        ascension and declination of the astronomical objects to be measured),
+        the resulting QPhotResult objects store the x- and y-coordinates of
+        their centers. The reason for this is that IRAF's qphot supports
+        'world' coordinates as the system of the input coordinates, but the
+        output coordinate system options are 'logical', 'tv', and 'physical':
+        http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?qphot
 
         Arguments:
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
-        aperture - the single aperture radius, in pixels.
+        aperture - the aperture radius, in pixels.
         exptimek - the image header keyword containing the exposure time. Needed
                    by qphot in order to normalize the computed magnitudes to an
                    exposure time of one time unit.
-        pixels - list of instances of Pixel which encapsulate the image
-                 coordinates that will be passed to IRAF's qphot. It set to None
-                 (the default value) or left empty, these coordinates will be
-                 obtained by running SExtractor on the image.
 
         """
 
-        self.clear() # empty the current instance
+        self.clear() # empty object
 
         try:
-            # The task qphot will receive a text file with the coordinates for
-            # the objects to be measured. We need, then, to create a temporary
-            # file, with the coordinates of the stars, one per line.
-            coords_fd, stars_coords = \
-                tempfile.mkstemp(prefix = os.path.basename(self.path),
-                                 suffix = '.qphot_coords', text = True)
-            for pixel in pixels:
-                os.write(coords_fd, "%f\t%f\n" % (pixel.x, pixel.y))
-            os.close(coords_fd)
-
-            # Temporary file to which the text database produced by qphot will
-            # be saved. Even if empty, it must be deleted before calling
-            # qphot. Otherwise, an error message, stating that the operation
-            # "would overwrite existing file", will be thrown.
+            # Temporary file to which the APPHOT text database produced by
+            # qphot will be saved. Even if empty, it must be deleted before
+            # calling qphot. Otherwise, an error message, stating that the
+            # operation "would overwrite existing file", will be thrown.
             output_fd, qphot_output = \
                 tempfile.mkstemp(prefix = os.path.basename(self.path),
                                  suffix = '.qphot_output', text = True)
             os.close(output_fd)
             os.unlink(qphot_output)
 
-            # The list of the fields passed to qphot
-            qphot_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
-
-            # Run IRAF's qphot on the image and save the output to our
-            # temporary file. Note that cbox *must* be set to zero, as
-            # otherwise IRAF's qphot will compute accurate centers for each
-            # object using the centroid centering algorithm. This is generally
-            # a good thing, but in this case we need the photometry to be done
-            # exactly on the specified coordinates.
+            # Run qphot on the image and save the output to our temporary
+            # file. Note that cbox *must* be set to zero, as otherwise qphot
+            # will compute accurate centers for each object using the centroid
+            # centering algorithm. This is generally a good thing, but in our
+            # case we want the photometry to be done exactly on the specified
+            # coordinates.
 
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
-                          aperture = aperture, coords = stars_coords,
+                          aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
-                          interactive = 'no')
+                          wcsin = 'world', interactive = 'no')
 
             apphot.qphot(self.path, **kwargs)
 
-            # Make sure the outpout was written to where we said
+            # Make sure the output was written to where we said
             assert os.path.exists(qphot_output)
 
-            # Now extract the specified records from the qphot output. We need
-            # the path (the file, even empty, must be deleted, as IRAF won't
-            # overwrite it) another temporary file to which save the output;
-            # IRAF's txdump 'Stdout' (why the upper case?) redirection must
-            # be to a file handle or string.
-
+            # Now extract the records from the APPHOT text database. We need
+            # the path of another temporary file to which to save them. Even
+            # if empty, we need to delete the temporary file created by
+            # mkstemp(), as IRAF will not overwrite it.
             txdump_fd, txdump_output = \
                 tempfile.mkstemp(prefix = os.path.basename(self.path),
                                  suffix ='.qphot_txdump', text = True)
             os.close(txdump_fd)
             os.unlink(txdump_output)
 
-            # The cast of Stdout to string is needed as txdump won't work with
-            # unicode, if we happen to come across it -- it would insist on
-            # that redirection must be to a file handle or string.
-            pyraf.iraf.txdump(qphot_output, fields = ','.join(qphot_fields),
+            # The type casting of Stdout to string is needed as txdump will not
+            # work with unicode, if we happen to come across it: PyRAF requires
+            # that redirection be to a file handle or string.
+
+            txdump_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
+            pyraf.iraf.txdump(qphot_output, fields = ','.join(txdump_fields),
                               Stdout = str(txdump_output), expr = 'yes')
 
-            # Now open the outut file again and parse the output of 'txdump',
-            # creating an instance of QPhotResult and saving it in the current
-            # instance for each line of the file.
-            txdump_fd = open(txdump_output, 'rt')
-            txdump_lines = txdump_fd.readlines()
+            # Now open the output file again and parse the output of txdump,
+            # creating a QPhotResult object for each record.
+            with open(txdump_output, 'rt') as txdump_fd:
+                for line in txdump_fd:
 
-            assert len(txdump_lines) == len(pixels)
-            for line, pixel in zip(txdump_lines, pixels):
-                try:
-                    # The i-th line in the file corresponds to the i-th pixel.
-                    splitted_line = line.split()
-                    xcenter = float(splitted_line[0]) # same value as pixel.x
-                    ycenter = float(splitted_line[1]) # same value as pixel.y
-
-                    if __debug__:
-                        epsilon = 0.001  # a thousandth of a pixel!
-                        assert abs(xcenter - pixel.x) < epsilon
-                        assert abs(ycenter - pixel.y) < epsilon
+                    fields = line.split()
+                    xcenter = float(fields[0])
+                    ycenter = float(fields[1])
 
                     try:
-                        mag_str = splitted_line[2]
+                        mag_str = fields[2]
                         mag     = float(mag_str)
-                    except ValueError:  # raised by float("INDEF")
+                    except ValueError:  # float("INDEF")
                         assert mag_str == 'INDEF'
                         mag = None
 
-                    sum_ = float(splitted_line[3])
-                    flux = float(splitted_line[4])
+                    sum_ = float(fields[3])
+                    flux = float(fields[4])
 
                     try:
-                        stdev_str = splitted_line[5]
+                        stdev_str = fields[5]
                         stdev = float(stdev_str)
-                    except ValueError:  # raised by float("INDEF")
+                    except ValueError:  # float("INDEF")
                         assert stdev_str == 'INDEF'
                         stdev = None
 
-                    star_phot = QPhotResult(xcenter, ycenter, mag, sum_, flux, stdev)
-                    self.append(star_phot)
-
-                except IndexError:
-                    raise  # we aren't expecting any improperly formatted line
+                    args = xcenter, ycenter, mag, sum_, flux, stdev
+                    self.append(QPhotResult(*args))
 
         finally:
 
-            # Remove the temporary files, as we do not longer need them. The
-            # try-except is needed to prevents raised exceptions in case a file
-            # does not get to be created -- that is, if an IRAF task fails or
-            # the execution of the module is aborted by the user. NameError is
-            # needed because an exception may be raised before the variables
-            # are declared.
-
-            try:
-                os.unlink(stars_coords)
-            except (NameError, OSError):
-                pass
+            # Remove temporary files. The try-except is necessary because the
+            # deletion may fail (OSError), or something could go wrong and an
+            # exception be raised before the variables are defined (NameError).
 
             try:
                 os.unlink(qphot_output)
