@@ -155,10 +155,13 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
 class QPhot(list):
     """ The photometry of an image, as returned by IRAF's qphot.
 
-    This class encapsulates the photometry done by the qphot (quick aperture
-    photometer) task implemented in IRAF. An instance of QPhotResult will be
-    created for each star detected in the image, except for those stars that
-    were INDEF or saturated -- for these, None is used.
+    This class stores the result of the photometry done by IRAF's qphot (quick
+    aperture photometer) on an image. A QPhotResult object is created for each
+    object listed in the text file: after calling QPhot.run(), this subclass of
+    the built-in list contains the photometric measurement of each astronomical
+    object. The order to these QphotResult objects is guaranteed to respect
+    that in which coordinates are listed in the text file. In other words: the
+    i-th QPhotResult object corresponds to the i-th astronomical object.
 
     """
 
