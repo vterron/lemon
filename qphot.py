@@ -187,42 +187,48 @@ class QPhot(list):
         del self[:]
 
     def run(self, annulus, dannulus, aperture, exptimek):
-        """ Run IRAF's qphot on the image.
+        """ Run IRAF's qphot on the FITS image.
 
-        This method is a wrapper, equivalent to (1) running 'qphot' on an image
-        and (2) using 'txdump' in order to extract some fields from the text
-        database that the former outputs. The goal of this routine is to make
-        it possible to easily do photometry on an image, saving in the current
-        instance the information for all the objects (that is, when running
-        txdump the parameter 'expr' is set to 'yes').
+        This method is a wrapper, equivalent to (1) running 'qphot' on a FITS
+        image and (2) using 'txdump' in order to extract some fields from the
+        resulting text database. This subroutine, therefore, allows to easily
+        do photometry on a FITS image, storing as a sequence of QPhotResult
+        objects the photometric measurements. The method returns the number
+        of astronomical objects on which photometry has been done.
 
-        This method may be seen as a low-level routine: INDEF stars will have
-        *a magnitude of None*, but it does not pay attention to the saturation
-        levels. For that, you will have to use the photometry function, defined
-        in this very module. That, and not this one, is the routine you are
-        expected to use to do photometry on your images.
+        No matter how convenient, QPhot.run() should still be seen as a
+        low-level method: INDEF objects will have a magnitude and standard
+        deviation of None, but it does not pay attention to the saturation
+        levels -- the sole reason for this being that IRAF's qphot, per se,
+        provides no way of knowing if one or more pixels in the aperture are
+        above some saturation level. For this very reason, the recommended
+        approach to doing photometry is to use photometry(), a convenience
+        function defined below.
 
-        In the first step, photometry will be done for the objects whose
-        coordinates are listed in 'pixels', a sequence of two-element tuples
-        (x- and y- values). These coordinates are saved to a temporary file,
-        which is given as input to 'qphot' to do photometry on these pixels.
+        In the first step, photometry is done, using qphot, on the astronomical
+        objects whose coordinates have been listed, one per line, in the text
+        file passed as an argument to QPhot.__init__(). The output of this IRAF
+        task is saved to temporary file (a), an APPHOT text database from which
+        'txdump' extracts the fields to another temporary file, (b). Then this
+        file is parsed, the information of each of its lines, one per object,
+        used in order to create a QPhotResult object. All previous photometric
+        measurements are lost every time this method is run. All the temporary
+        files (a, b) are guaranteed to be deleted on exit, even if an error is
+        encountered.
 
-        The output of 'qphot' is saved to a second temporary file (b), on which
-        'txdump' is run to extract the fields from the APPHOT text database
-        that was produced by 'qphot' to a third temporary file (c). This last
-        file is then parsed, the information of each of its lines used in order
-        to create an instance of QPhotResult, one per star, which is added to
-        the current instance. Note that previous results will be lost if this
-        method is run twice on the same instance.
-
-        All the temporary files (a, b, c) are guaranteed to be deleted before
-        the method exits, even if an error is encountered. The method returns
-        the number of stars whose photometry has been done.
+        An important note: you may find extremely confusing that, although the
+        input that this method accepts are celestial coordinates (the right
+        ascension and declination of the astronomical objects to be measured),
+        the resulting QPhotResult objects store the x- and y-coordinates of
+        their centers. The reason for this is that IRAF's qphot supports
+        'world' coordinates as the system of the input coordinates, but the
+        output coordinate system options are 'logical', 'tv', and 'physical':
+        http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?qphot
 
         Arguments:
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
-        aperture - the single aperture radius, in pixels.
+        aperture - the aperture radius, in pixels.
         exptimek - the image header keyword containing the exposure time. Needed
                    by qphot in order to normalize the computed magnitudes to an
                    exposure time of one time unit.
