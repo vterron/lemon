@@ -242,9 +242,6 @@ class QPhot(list):
             os.close(output_fd)
             os.unlink(qphot_output)
 
-            # The fields to be extracted from the APPHOT text database
-            qphot_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
-
             # Run qphot on the image and save the output to our temporary
             # file. Note that cbox *must* be set to zero, as otherwise qphot
             # will compute accurate centers for each object using the centroid
@@ -275,7 +272,9 @@ class QPhot(list):
             # The type casting of Stdout to string is needed as txdump will not
             # work with unicode, if we happen to come across it: PyRAF requires
             # that redirection be to a file handle or string.
-            pyraf.iraf.txdump(qphot_output, fields = ','.join(qphot_fields),
+
+            txdump_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
+            pyraf.iraf.txdump(qphot_output, fields = ','.join(txdump_fields),
                               Stdout = str(txdump_output), expr = 'yes')
 
             # Now open the output file again and parse the output of txdump,
