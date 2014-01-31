@@ -299,6 +299,7 @@ class QPhot(list):
             # instance for each line of the file.
             txdump_fd = open(txdump_output, 'rt')
             txdump_lines = txdump_fd.readlines()
+            txdump_fd.close()
 
             assert len(txdump_lines) == len(pixels)
             for line, pixel in zip(txdump_lines, pixels):
