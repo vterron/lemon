@@ -255,7 +255,7 @@ class QPhot(list):
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
                           aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
-                          interactive = 'no')
+                          wcsin = 'world', interactive = 'no')
 
             apphot.qphot(self.path, **kwargs)
 
