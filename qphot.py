@@ -229,28 +229,28 @@ class QPhot(list):
 
         """
 
-        self.clear() # empty the current instance
+        self.clear() # empty object
 
         try:
-            # Temporary file to which the text database produced by qphot will
-            # be saved. Even if empty, it must be deleted before calling
-            # qphot. Otherwise, an error message, stating that the operation
-            # "would overwrite existing file", will be thrown.
+            # Temporary file to which the APPHOT text database produced by
+            # qphot will be saved. Even if empty, it must be deleted before
+            # calling qphot. Otherwise, an error message, stating that the
+            # operation "would overwrite existing file", will be thrown.
             output_fd, qphot_output = \
                 tempfile.mkstemp(prefix = os.path.basename(self.path),
                                  suffix = '.qphot_output', text = True)
             os.close(output_fd)
             os.unlink(qphot_output)
 
-            # The list of the fields passed to qphot
+            # The fields to be extracted from the APPHOT text database
             qphot_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
 
-            # Run IRAF's qphot on the image and save the output to our
-            # temporary file. Note that cbox *must* be set to zero, as
-            # otherwise IRAF's qphot will compute accurate centers for each
-            # object using the centroid centering algorithm. This is generally
-            # a good thing, but in this case we need the photometry to be done
-            # exactly on the specified coordinates.
+            # Run qphot on the image and save the output to our temporary
+            # file. Note that cbox *must* be set to zero, as otherwise qphot
+            # will compute accurate centers for each object using the centroid
+            # centering algorithm. This is generally a good thing, but in our
+            # case we want the photometry to be done exactly on the specified
+            # coordinates.
 
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
                           aperture = aperture, coords = self.coords_path,
@@ -259,30 +259,27 @@ class QPhot(list):
 
             apphot.qphot(self.path, **kwargs)
 
-            # Make sure the outpout was written to where we said
+            # Make sure the output was written to where we said
             assert os.path.exists(qphot_output)
 
-            # Now extract the specified records from the qphot output. We need
-            # the path (the file, even empty, must be deleted, as IRAF won't
-            # overwrite it) another temporary file to which save the output;
-            # IRAF's txdump 'Stdout' (why the upper case?) redirection must
-            # be to a file handle or string.
-
+            # Now extract the records from the APPHOT text database. We need
+            # the path of another temporary file to which to save them. Even
+            # if empty, we need to delete the temporary file created by
+            # mkstemp(), as IRAF will not overwrite it.
             txdump_fd, txdump_output = \
                 tempfile.mkstemp(prefix = os.path.basename(self.path),
                                  suffix ='.qphot_txdump', text = True)
             os.close(txdump_fd)
             os.unlink(txdump_output)
 
-            # The cast of Stdout to string is needed as txdump won't work with
-            # unicode, if we happen to come across it -- it would insist on
-            # that redirection must be to a file handle or string.
+            # The type casting of Stdout to string is needed as txdump will not
+            # work with unicode, if we happen to come across it: PyRAF requires
+            # that redirection be to a file handle or string.
             pyraf.iraf.txdump(qphot_output, fields = ','.join(qphot_fields),
                               Stdout = str(txdump_output), expr = 'yes')
 
-            # Now open the outut file again and parse the output of 'txdump',
-            # creating an instance of QPhotResult and saving it in the current
-            # instance for each line of the file.
+            # Now open the output file again and parse the output of txdump,
+            # creating a QPhotResult object for each record.
             with open(txdump_output, 'rt') as txdump_fd:
                 for line in txdump_fd:
 
@@ -293,7 +290,7 @@ class QPhot(list):
                     try:
                         mag_str = fields[2]
                         mag     = float(mag_str)
-                    except ValueError:  # raised by float("INDEF")
+                    except ValueError:  # float("INDEF")
                         assert mag_str == 'INDEF'
                         mag = None
 
@@ -303,7 +300,7 @@ class QPhot(list):
                     try:
                         stdev_str = fields[5]
                         stdev = float(stdev_str)
-                    except ValueError:  # raised by float("INDEF")
+                    except ValueError:  # float("INDEF")
                         assert stdev_str == 'INDEF'
                         stdev = None
 
@@ -312,12 +309,9 @@ class QPhot(list):
 
         finally:
 
-            # Remove the temporary files, as we do not longer need them. The
-            # try-except is needed to prevents raised exceptions in case a file
-            # does not get to be created -- that is, if an IRAF task fails or
-            # the execution of the module is aborted by the user. NameError is
-            # needed because an exception may be raised before the variables
-            # are declared.
+            # Remove temporary files. The try-except is necessary because the
+            # deletion may fail (OSError), or something could go wrong and an
+            # exception be raised before the variables are defined (NameError).
 
             try:
                 os.unlink(qphot_output)
