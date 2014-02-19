@@ -337,39 +337,41 @@ class QPhot(list):
 def run(img, coords_path,
         aperture, annulus, dannulus,
         maximum, exptimek, uncimgk):
-    """ Do photometry on an image.
+    """ Do photometry on a FITS image.
 
-    The method receives a xmlparse.XMLOffset instance and runs IRAF's qphot in
-    the shifted image on those those stars whose coordinates are listed in the
-    'pixels' keyword argument. Where the stars are in the shifted image is
-    determined by applying to their cooredinates the translation offset given
-    by the XMLOffset instance, thus aligning both images and 'correcting' the
-    star coordinates.
-
-    Returns a qphot.QPhot instance, which contains a magnitude of None for
-    INDEF stars and positive infinity for saturated stars (those with one or
-    more pixels in the aperture above the saturation level).
+    This convenience function does photometry on a FITSImage object, measuring
+    the astronomical objects listed in the 'coords_path' text file. Note that
+    the FITS image *must* have been previously calibrated astrometrically, so
+    that the right ascensions and declinations listed in the text file are
+    meaningful. Returns a QPhot object, using None as the magnitude of those
+    astronomical objects that are INDEF (i.e., so faint that qphot could not
+    measure anything) and positive infinity if they are saturated (i.e., if
+    one or more pixels in the aperture are above the saturation level).
 
     Arguments:
-    xml_offset - a XMLOffset instance, encapsulating the translation offset
-                 between the reference and the shifted FITS images.
-    aperture - the single aperture radius, in pixels.
+    img - the fitsimage.FITSImage object on which to do photometry.
+    coords_path - the text file containing the celestial coordinates for the
+                  astronomical objects to be measured. These objects must be
+                  listed one per line, in two columns: right ascension and
+                  declination, in this order.
+    aperture - the aperture radius, in pixels.
     annulus - the inner radius of the sky annulus, in pixels.
     dannulus - the width of the sky annulus, in pixels.
-    maximum - level at which arises saturation in the shifted image, in
-              ADUs. If one or more pixels in the aperture of the star are above
-              this value, it will be considered to be saturated. For coadded
+    maximum - number of ADUs at which saturation arises. If one or more pixels
+              in the aperture are above this value, the magnitude of the
+              astronomical object is set to positive infinity. For coadded
               observations, the effective saturation level is obtained by
               multiplying this value by the number of coadded images.
     exptimek - the image header keyword containing the exposure time. Needed
                by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
-    uncimgk - keyword for the relative path to the uncalibrated shifted image;
-              which will be one used to check whether pixels are saturated.
-              This value may be set to an empty string or None if saturation is
-              to be checked for on the same image in which photometry is done.
-    pixels - sequence of instances of Pixel which encapsulate the image
-             coordinates that will be passed to IRAF's qphot.
+    uncimgk - the image header keyword containing the path to the image used to
+              check for saturation. It is expected to be the original FITS file
+              (that is, before any calibration step, since corrections such as
+              flat-fielding may move a saturated pixel below the saturation
+              level) of the very image on which photometry is done. If this
+              argument is set to an empty string or None, saturation is checked
+              for on the same FITS image used for photometry, 'img'.
 
     """
 
