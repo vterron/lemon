@@ -333,8 +333,10 @@ class QPhot(list):
 
         return len(self)
 
-def run(xml_offset, aperture, annulus, dannulus,
-        maximum, exptimek, uncimgk, pixels):
+
+def run(img, coords_path,
+        aperture, annulus, dannulus,
+        maximum, exptimek, uncimgk):
     """ Do photometry on an image.
 
     The method receives a xmlparse.XMLOffset instance and runs IRAF's qphot in
@@ -371,28 +373,8 @@ def run(xml_offset, aperture, annulus, dannulus,
 
     """
 
-    # The instantiation method of FITSImage makes sure that the image on which
-    # photometry will be done does exist and is standard-conforming.
-    shifted_image = fitsimage.FITSImage(xml_offset.shifted)
-
-    # Apply the offset to the coordinates of each star.
-    shifted_pixels = []
-    for pixel in pixels:
-        x = pixel.x + xml_offset.x
-        y = pixel.y + xml_offset.y
-        shifted = astromatic.Pixel(x, y)
-        shifted_pixels.append(shifted)
-
-    if __debug__:
-        assert len(pixels) == len(shifted_pixels)
-        epsilon = 0.001  # a thousandth of a pixel!
-        for pixel, shifted in zip(pixels, shifted_pixels):
-            assert abs(shifted.x - xml_offset.x - pixel.x) < epsilon
-            assert abs(shifted.y - xml_offset.y - pixel.y) < epsilon
-
-    # And, finally, do photometry on the shifted image
-    img_qphot = QPhot(shifted_image.path)
-    img_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
+    img_qphot = QPhot(img.path, coords_path)
+    img_qphot.run(annulus, dannulus, aperture, exptimek)
 
     # How do we know whether one or more pixels in the aperture are above a
     # saturation threshold? As suggested by Frank Valdes at the IRAF.net
@@ -415,22 +397,23 @@ def run(xml_offset, aperture, annulus, dannulus,
     # value.
 
     if not uncimgk:
-        orig_img_path = shifted_image.path
+        orig_img_path = img.path
 
     else:
-        orig_img_path = shifted_image.read_keyword(uncimgk)
+        orig_img_path = img.read_keyword(uncimgk)
         if not os.path.exists(orig_img_path):
-            msg = "image %s (keyword '%s' of image %s) does not exist" % \
-                  (orig_img_path, uncimgk, shifted_image.path)
-            raise IOError(msg)
+            msg = "image %s (keyword '%s' of image %s) does not exist"
+            args = orig_img_path, uncimgk, img.path
+            raise IOError(msg % args)
 
     try:
         # The temporary file to which the saturation mask is saved
         basename = os.path.basename(orig_img_path)
         mkstemp_prefix = "%s_satur_mask_%d_ADUS_" % (basename, maximum)
-        mask_fd, satur_mask_path = \
-            tempfile.mkstemp(prefix = mkstemp_prefix,
-                             suffix = '.fits', text = True)
+        kwargs = dict(prefix = mkstemp_prefix,
+                      suffix = '.fits', text = True)
+        mask_fd, satur_mask_path = tempfile.mkstemp(**kwargs)
+        os.close(mask_fd)
 
         # IRAF's imexpr won't overwrite the file. Instead, it will raise an
         # IrafError exception stating that "IRAF task terminated abnormally
@@ -438,31 +421,30 @@ def run(xml_offset, aperture, annulus, dannulus,
         # path to the output file. It seems it is attempting to read it (and
         # failing, since it's empty) even although it is the output path.
         # Anyway, we can fix this by simply deleting it.
-        os.close(mask_fd)
         os.unlink(satur_mask_path)
 
         # The expression that will be given to 'imexpr'. The space after the
         # colon is needed to avoid sexigesimal intepretation. 'a' is the first
         # and only operand, linked to our image at the invokation of the task.
         expr = "a>%d ? 1 : 0" % maximum
-        logging.debug("%s: imexpr = '%s'" % (shifted_image.path, expr))
-        logging.debug("%s: a = %s" % (shifted_image.path, orig_img_path))
+        logging.debug("%s: imexpr = '%s'" % (img.path, expr))
+        logging.debug("%s: a = %s" % (img.path, orig_img_path))
         pyraf.iraf.images.imexpr(expr, a = orig_img_path,
                                  output = satur_mask_path, verbose = 'no')
 
         # Now we just do photometry again, on the same pixels, but this time on
         # the saturation mask. Those stars for which we get a non-zero flux
         # will be known to be saturated and their magnitude set to infinity.
-        mask_qphot = QPhot(satur_mask_path)
-        mask_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
+        mask_qphot = QPhot(satur_mask_path, coords_path)
+        mask_qphot.run(annulus, dannulus, aperture, exptimek)
 
         assert len(img_qphot) == len(mask_qphot)
-        for star_phot, star_mask in zip(img_qphot, mask_qphot):
-            assert star_phot.x == star_mask.x
-            assert star_phot.y == star_mask.y
+        for object_phot, object_mask in zip(img_qphot, mask_qphot):
+            assert object_phot.x == object_mask.x
+            assert object_phot.y == object_mask.y
 
-            if star_mask.flux > 0:
-                star_phot.mag = float('infinity')
+            if object_mask.flux > 0:
+                object_phot = object_phot._replace(mag = float('infinity'))
     finally:
         try:
             os.unlink(satur_mask_path)
