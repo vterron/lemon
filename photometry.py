@@ -41,6 +41,7 @@ the manual for further information.
 
 """
 
+import atexit
 import collections
 import hashlib
 import logging
@@ -748,6 +749,20 @@ def main(arguments = None):
         for ra, dec in sources_coordinates:
             os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
         os.close(coords_fd)
+
+        @atexit.register
+        def clean_tmp_coords_file():
+            msg = "Cleaning up temporary file '%s'"
+            logging.debug(msg % options.coordinates)
+
+            try:
+                os.unlink(options.coordinates)
+            except OSError, e:
+                msg = "Cannot delete '%s' (%s)"
+                logging.debug(msg % (options.coordinates, e))
+            else:
+                msg = "Temporary coordinates file '%s' removed"
+                logging.debug(msg % options.coordinates)
 
     print style.prefix
     print "%sPhotometry has to be done on the reference image in order to " \
