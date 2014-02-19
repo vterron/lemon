@@ -32,6 +32,7 @@ from the user's perspective.
 """
 
 import collections
+import itertools
 import logging
 import math
 import os
@@ -424,7 +425,7 @@ def run(img, coords_path,
         mask_qphot.run(annulus, dannulus, aperture, exptimek)
 
         assert len(img_qphot) == len(mask_qphot)
-        for object_phot, object_mask in zip(img_qphot, mask_qphot):
+        for object_phot, object_mask in itertools.izip(img_qphot, mask_qphot):
             assert object_phot.x == object_mask.x
             assert object_phot.y == object_mask.y
 
