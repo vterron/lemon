@@ -32,6 +32,7 @@ from the user's perspective.
 """
 
 import collections
+import itertools
 import logging
 import math
 import os
@@ -333,140 +334,111 @@ class QPhot(list):
 
         return len(self)
 
-def run(xml_offset, aperture, annulus, dannulus,
-        maximum, exptimek, uncimgk, pixels):
-    """ Do photometry on an image.
 
-    The method receives a xmlparse.XMLOffset instance and runs IRAF's qphot in
-    the shifted image on those those stars whose coordinates are listed in the
-    'pixels' keyword argument. Where the stars are in the shifted image is
-    determined by applying to their cooredinates the translation offset given
-    by the XMLOffset instance, thus aligning both images and 'correcting' the
-    star coordinates.
+def run(img, coords_path,
+        aperture, annulus, dannulus,
+        maximum, exptimek, uncimgk):
+    """ Do photometry on a FITS image.
 
-    Returns a qphot.QPhot instance, which contains a magnitude of None for
-    INDEF stars and positive infinity for saturated stars (those with one or
-    more pixels in the aperture above the saturation level).
+    This convenience function does photometry on a FITSImage object, measuring
+    the astronomical objects listed in the 'coords_path' text file. Note that
+    the FITS image *must* have been previously calibrated astrometrically, so
+    that the right ascensions and declinations listed in the text file are
+    meaningful. Returns a QPhot object, using None as the magnitude of those
+    astronomical objects that are INDEF (i.e., so faint that qphot could not
+    measure anything) and positive infinity if they are saturated (i.e., if
+    one or more pixels in the aperture are above the saturation level).
 
     Arguments:
-    xml_offset - a XMLOffset instance, encapsulating the translation offset
-                 between the reference and the shifted FITS images.
-    aperture - the single aperture radius, in pixels.
+    img - the fitsimage.FITSImage object on which to do photometry.
+    coords_path - the text file containing the celestial coordinates for the
+                  astronomical objects to be measured. These objects must be
+                  listed one per line, in two columns: right ascension and
+                  declination, in this order.
+    aperture - the aperture radius, in pixels.
     annulus - the inner radius of the sky annulus, in pixels.
     dannulus - the width of the sky annulus, in pixels.
-    maximum - level at which arises saturation in the shifted image, in
-              ADUs. If one or more pixels in the aperture of the star are above
-              this value, it will be considered to be saturated. For coadded
+    maximum - number of ADUs at which saturation arises. If one or more pixels
+              in the aperture are above this value, the magnitude of the
+              astronomical object is set to positive infinity. For coadded
               observations, the effective saturation level is obtained by
               multiplying this value by the number of coadded images.
     exptimek - the image header keyword containing the exposure time. Needed
                by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
-    uncimgk - keyword for the relative path to the uncalibrated shifted image;
-              which will be one used to check whether pixels are saturated.
-              This value may be set to an empty string or None if saturation is
-              to be checked for on the same image in which photometry is done.
-    pixels - sequence of instances of Pixel which encapsulate the image
-             coordinates that will be passed to IRAF's qphot.
+    uncimgk - the image header keyword containing the path to the image used to
+              check for saturation. It is expected to be the original FITS file
+              (that is, before any calibration step, since corrections such as
+              flat-fielding may move a saturated pixel below the saturation
+              level) of the very image on which photometry is done. If this
+              argument is set to an empty string or None, saturation is checked
+              for on the same FITS image used for photometry, 'img'.
 
     """
 
-    # The instantiation method of FITSImage makes sure that the image on which
-    # photometry will be done does exist and is standard-conforming.
-    shifted_image = fitsimage.FITSImage(xml_offset.shifted)
-
-    # Apply the offset to the coordinates of each star.
-    shifted_pixels = []
-    for pixel in pixels:
-        x = pixel.x + xml_offset.x
-        y = pixel.y + xml_offset.y
-        shifted = astromatic.Pixel(x, y)
-        shifted_pixels.append(shifted)
-
-    if __debug__:
-        assert len(pixels) == len(shifted_pixels)
-        epsilon = 0.001  # a thousandth of a pixel!
-        for pixel, shifted in zip(pixels, shifted_pixels):
-            assert abs(shifted.x - xml_offset.x - pixel.x) < epsilon
-            assert abs(shifted.y - xml_offset.y - pixel.y) < epsilon
-
-    # And, finally, do photometry on the shifted image
-    img_qphot = QPhot(shifted_image.path)
-    img_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
+    img_qphot = QPhot(img.path, coords_path)
+    img_qphot.run(annulus, dannulus, aperture, exptimek)
 
     # How do we know whether one or more pixels in the aperture are above a
     # saturation threshold? As suggested by Frank Valdes at the IRAF.net
     # forums, we can make a mask of the saturated values, on which we can do
-    # photometry using the same aperture. If we get a non-zero flux, we know
-    # it has saturation. [URL http://iraf.net/phpBB2/viewtopic.php?t=90621]
-    #
-    # In order to check for the saturation of a star, we can use the same image
-    # on which we are doing photometry or, as Matilde Fernandez suggested, the
-    # _original_ image -- the raw one, before any calibration step, as
-    # processes such as flat-fielding may move a saturated pixel below the
-    # saturation level. Far-sighted as we are, the path to this primeval image
-    # was stored in the FITS header by the import.py module, the first of the
-    # pipeline. However, in case we want to use the same image, or if the
-    # keyword is not available for these images, 'uncimgk' may be set to None.
-
-    # Note that, if 'uncimgk' is given, the path to the original image will be
-    # loaded and the execution of the script aborted. The path stored in the
-    # keyword is trusted blindly, so you better do not modify it to a different
-    # value.
+    # photometry using the same aperture. If we get a non-zero flux, we know it
+    # has saturation: http://iraf.net/forum/viewtopic.php?showtopic=1466068
 
     if not uncimgk:
-        orig_img_path = shifted_image.path
+        orig_img_path = img.path
 
     else:
-        orig_img_path = shifted_image.read_keyword(uncimgk)
+        orig_img_path = img.read_keyword(uncimgk)
         if not os.path.exists(orig_img_path):
-            msg = "image %s (keyword '%s' of image %s) does not exist" % \
-                  (orig_img_path, uncimgk, shifted_image.path)
-            raise IOError(msg)
+            msg = "image %s (keyword '%s' of image %s) does not exist"
+            args = orig_img_path, uncimgk, img.path
+            raise IOError(msg % args)
 
     try:
-        # The temporary file to which the saturation mask is saved
+        # Temporary file to which the saturation mask is saved
         basename = os.path.basename(orig_img_path)
         mkstemp_prefix = "%s_satur_mask_%d_ADUS_" % (basename, maximum)
-        mask_fd, satur_mask_path = \
-            tempfile.mkstemp(prefix = mkstemp_prefix,
-                             suffix = '.fits', text = True)
+        kwargs = dict(prefix = mkstemp_prefix,
+                      suffix = '.fits', text = True)
+        mask_fd, satur_mask_path = tempfile.mkstemp(**kwargs)
+        os.close(mask_fd)
 
         # IRAF's imexpr won't overwrite the file. Instead, it will raise an
         # IrafError exception stating that "IRAF task terminated abnormally
-        # ERROR (1121, "FXF: EOF encountered while reading FITS file", with the
-        # path to the output file. It seems it is attempting to read it (and
-        # failing, since it's empty) even although it is the output path.
-        # Anyway, we can fix this by simply deleting it.
-        os.close(mask_fd)
+        # ERROR (1121, "FXF: EOF encountered while reading FITS file".
         os.unlink(satur_mask_path)
 
         # The expression that will be given to 'imexpr'. The space after the
-        # colon is needed to avoid sexigesimal intepretation. 'a' is the first
+        # colon is needed to avoid sexigesimal interpretation. 'a' is the first
         # and only operand, linked to our image at the invokation of the task.
         expr = "a>%d ? 1 : 0" % maximum
-        logging.debug("%s: imexpr = '%s'" % (shifted_image.path, expr))
-        logging.debug("%s: a = %s" % (shifted_image.path, orig_img_path))
+        logging.debug("%s: imexpr = '%s'" % (img.path, expr))
+        logging.debug("%s: a = %s" % (img.path, orig_img_path))
         pyraf.iraf.images.imexpr(expr, a = orig_img_path,
                                  output = satur_mask_path, verbose = 'no')
 
         # Now we just do photometry again, on the same pixels, but this time on
-        # the saturation mask. Those stars for which we get a non-zero flux
+        # the saturation mask. Those objects for which we get a non-zero flux
         # will be known to be saturated and their magnitude set to infinity.
-        mask_qphot = QPhot(satur_mask_path)
-        mask_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
+        mask_qphot = QPhot(satur_mask_path, coords_path)
+        mask_qphot.run(annulus, dannulus, aperture, exptimek)
 
         assert len(img_qphot) == len(mask_qphot)
-        for star_phot, star_mask in zip(img_qphot, mask_qphot):
-            assert star_phot.x == star_mask.x
-            assert star_phot.y == star_mask.y
+        for object_phot, object_mask in itertools.izip(img_qphot, mask_qphot):
+            assert object_phot.x == object_mask.x
+            assert object_phot.y == object_mask.y
 
-            if star_mask.flux > 0:
-                star_phot.mag = float('infinity')
+            if object_mask.flux > 0:
+                object_phot = object_phot._replace(mag = float('infinity'))
     finally:
+
+        # Remove saturation mask. The try-except is necessary because the
+        # deletion may fail (OSError), or something could go wrong and an
+        # exception be raised before the variable is defined (NameError).
+
         try:
             os.unlink(satur_mask_path)
-        # NameError needed as something may go wrong before it's declared
         except (NameError, OSError):
             pass
 
