@@ -379,22 +379,8 @@ def run(img, coords_path,
     # How do we know whether one or more pixels in the aperture are above a
     # saturation threshold? As suggested by Frank Valdes at the IRAF.net
     # forums, we can make a mask of the saturated values, on which we can do
-    # photometry using the same aperture. If we get a non-zero flux, we know
-    # it has saturation. [URL http://iraf.net/phpBB2/viewtopic.php?t=90621]
-    #
-    # In order to check for the saturation of a star, we can use the same image
-    # on which we are doing photometry or, as Matilde Fernandez suggested, the
-    # _original_ image -- the raw one, before any calibration step, as
-    # processes such as flat-fielding may move a saturated pixel below the
-    # saturation level. Far-sighted as we are, the path to this primeval image
-    # was stored in the FITS header by the import.py module, the first of the
-    # pipeline. However, in case we want to use the same image, or if the
-    # keyword is not available for these images, 'uncimgk' may be set to None.
-
-    # Note that, if 'uncimgk' is given, the path to the original image will be
-    # loaded and the execution of the script aborted. The path stored in the
-    # keyword is trusted blindly, so you better do not modify it to a different
-    # value.
+    # photometry using the same aperture. If we get a non-zero flux, we know it
+    # has saturation: http://iraf.net/forum/viewtopic.php?showtopic=1466068
 
     if not uncimgk:
         orig_img_path = img.path
@@ -407,7 +393,7 @@ def run(img, coords_path,
             raise IOError(msg % args)
 
     try:
-        # The temporary file to which the saturation mask is saved
+        # Temporary file to which the saturation mask is saved
         basename = os.path.basename(orig_img_path)
         mkstemp_prefix = "%s_satur_mask_%d_ADUS_" % (basename, maximum)
         kwargs = dict(prefix = mkstemp_prefix,
@@ -417,14 +403,11 @@ def run(img, coords_path,
 
         # IRAF's imexpr won't overwrite the file. Instead, it will raise an
         # IrafError exception stating that "IRAF task terminated abnormally
-        # ERROR (1121, "FXF: EOF encountered while reading FITS file", with the
-        # path to the output file. It seems it is attempting to read it (and
-        # failing, since it's empty) even although it is the output path.
-        # Anyway, we can fix this by simply deleting it.
+        # ERROR (1121, "FXF: EOF encountered while reading FITS file".
         os.unlink(satur_mask_path)
 
         # The expression that will be given to 'imexpr'. The space after the
-        # colon is needed to avoid sexigesimal intepretation. 'a' is the first
+        # colon is needed to avoid sexigesimal interpretation. 'a' is the first
         # and only operand, linked to our image at the invokation of the task.
         expr = "a>%d ? 1 : 0" % maximum
         logging.debug("%s: imexpr = '%s'" % (img.path, expr))
@@ -433,7 +416,7 @@ def run(img, coords_path,
                                  output = satur_mask_path, verbose = 'no')
 
         # Now we just do photometry again, on the same pixels, but this time on
-        # the saturation mask. Those stars for which we get a non-zero flux
+        # the saturation mask. Those objects for which we get a non-zero flux
         # will be known to be saturated and their magnitude set to infinity.
         mask_qphot = QPhot(satur_mask_path, coords_path)
         mask_qphot.run(annulus, dannulus, aperture, exptimek)
@@ -446,9 +429,13 @@ def run(img, coords_path,
             if object_mask.flux > 0:
                 object_phot = object_phot._replace(mag = float('infinity'))
     finally:
+
+        # Remove saturation mask. The try-except is necessary because the
+        # deletion may fail (OSError), or something could go wrong and an
+        # exception be raised before the variable is defined (NameError).
+
         try:
             os.unlink(satur_mask_path)
-        # NameError needed as something may go wrong before it's declared
         except (NameError, OSError):
             pass
 
