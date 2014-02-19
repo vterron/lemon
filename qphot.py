@@ -40,7 +40,6 @@ import os.path
 import tempfile
 
 # LEMON modules
-import astromatic
 import fitsimage
 import methods
 
