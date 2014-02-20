@@ -28,7 +28,7 @@ the 1-D profiles of the images in both axes (horizontal and vertical) and
 finding the exact point at which most stars overlap. You may think of this as
 if we were 'sliding' one of the images over the other and finding the point at
 which most stars were aligned. The offsets are saved to a XML file which can be
-parsed by LEMON at the next stages.
+parsed by other LEMON commands.
 
 """
 
@@ -208,8 +208,7 @@ mask_group = optparse.OptionGroup(parser, "Single-point-masks",
 # Note for developers: this value is not per se needed to compute the offsets,
 # but it is required by the instantiation method of the FITSeeingImage class.
 # Although we could pass any other value, using the same saturation level as in
-# other stages of the pipeline allows us to reuse the on-disk cached SExtractor
-# catalog.
+# other LEMON commands allows us to reuse the on-disk cached SExtractor catalog.
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
                   help = defaults.desc['maximum'])

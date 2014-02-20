@@ -84,7 +84,7 @@ desc['uncimgk'] = \
 fwhmk = 'LEMON FWHM'
 desc['fwhmk'] = \
 "keyword for the Full Width at Half Maximum (FWHM) of the image, which is " \
-"written to the FITS header at the seeing.py stage [default: %default]"
+"written to the FITS header by the 'seeing' command [default: %default]"
 
 objectk = 'OBJECT'
 desc['objectk'] = \

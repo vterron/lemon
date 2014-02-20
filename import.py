@@ -411,9 +411,10 @@ def main(arguments = None):
         if not options.exact:
 
             # Store the absolute path to the image of which we made a copy.
-            # This value propagates across the pipeline stages and may be
-            # accessed by later modules in case some analysis must be done
-            # on the original image, before any calibration step.
+            # This allows other LEMON commands, if necessary, to access the
+            # original FITS files in case the imported images are modified
+            # (e.g., bias subtraction or flat-fielding) before these other
+            # commands are executed.
 
             comment = "before any calibration task"
             dest_img.update_keyword(options.uncimgk,
