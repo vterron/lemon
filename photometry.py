@@ -769,53 +769,49 @@ def main(arguments = None):
                 logging.debug(msg % options.coordinates)
 
     print style.prefix
-    print "%sPhotometry has to be done on the reference image in order to " \
-          "extract" % style.prefix
-    print "%sthe instrumental magnitude of each star, using the following " \
-          "parameters:" % style.prefix
+    msg = "%sNeed to determine the instrumental magnitude of each source."
+    print msg % style.prefix
+    msg = "%sDoing photometry on the sources image, using the parameters:"
+    print msg % style.prefix
 
-    # The photometry method always receives an XMLOffset instance, so we need
-    # to create one to stupidly indicate that the offset between the reference
-    # image and itself is... zero. Who would have guessed that?
-
-    keys = ('path', 'path', 'object', 'filter', 'date', 'fwhm', 'airmass')
-    args = [xml_offsets.reference[k] for k in keys]
-    args += [0.0, 0.0, float('inf'), float('inf')]
-    null_offset = xmlparse.XMLOffset(*args)
-
+    # Unless the photometric parameters are given in pixels, the sizes of the
+    # aperture and sky annulus are determined by the FWHM of the sources image.
     if not fixed_annuli:
 
-        reference_fwhm = xml_offsets.reference['fwhm']
-        reference_aperture = options.aperture * reference_fwhm
-        reference_annulus = options.annulus  * reference_fwhm
-        reference_dannulus = options.dannulus * reference_fwhm
+        sources_img_fwhm = sources_img.read_keyword(options.fwhmk)
+        sources_aperture = options.aperture * sources_img_fwhm
+        sources_annulus  = options.annulus  * sources_img_fwhm
+        sources_dannulus = options.dannulus * sources_img_fwhm
 
-        print "%sFWHM (reference image) = %.3f pixels, therefore:" % \
-              (style.prefix, reference_fwhm)
-        print "%sAperture radius = %.3f x %.2f = %.3f pixels" % \
-              (style.prefix, reference_fwhm, options.aperture, reference_aperture)
-        print "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels" % \
-              (style.prefix, reference_fwhm, options.annulus, reference_annulus)
-        print "%sSky annulus, width = %.3f x %.2f = %.3f pixels" % \
-              (style.prefix, reference_fwhm, options.dannulus, reference_dannulus)
+        t = (style.prefix, sources_img_fwhm)
+        msg = "%sFWHM (sources image) = %.3f pixels, therefore:"
+        print msg % t
+        msg = "%sAperture radius = %.3f x %.2f = %.3f pixels"
+        print msg % (t + (options.aperture, sources_aperture))
+        msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
+        print msg % (t + (options.annulus, sources_annulus))
+        msg = "%sSky annulus, width = %.3f x %.2f = %.3f pixels"
+        print msg % (t + (options.dannulus, sources_dannulus))
 
-        if reference_dannulus < options.min:
-            reference_dannulus = options.min
-            msg = ("%sWhoops! Sky annulus too thin, setting it to the minimum "
-                   "of %.2f pixels") %  (style.prefix, reference_dannulus)
-            warnings.warn(msg)
+        if sources_dannulus < options.min:
+            sources_dannulus = options.min
+            msg = "%sWhoops! Sky annulus too thin, " \
+                  "setting it to the minimum of %.2f pixels"
+            args = (style.prefix, sources_dannulus)
+            warnings.warn(msg % args)
 
     else:
-        reference_aperture = options.aperture_pix
-        reference_annulus = options.annulus_pix
-        reference_dannulus = options.dannulus_pix
+        sources_aperture = options.aperture_pix
+        sources_annulus  = options.annulus_pix
+        sources_dannulus = options.dannulus_pix
 
-        print "%sAperture radius = %.3f pixels" % \
-              (style.prefix, reference_aperture)
-        print "%sSky annulus, inner radius = %.3f pixels" % \
-              (style.prefix, reference_annulus)
-        print "%sSky annulus, width = %.3f pixels" % \
-              (style.prefix, reference_dannulus)
+        msg = "%sAperture radius = %.3f pixels"
+        print msg % (style.prefix, sources_aperture)
+        msg = "%sSky annulus, inner radius = %.3f pixels"
+        print msg % (style.prefix, sources_annulus)
+        msg = "%sSky annulus, width = %.3f pixels"
+        print msg % (style.prefix, sources_dannulus)
+
 
     print "%sExtracting the instrumental magnitude of each star..." % style.prefix ,
     sys.stdout.flush()
