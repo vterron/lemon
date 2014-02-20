@@ -432,6 +432,10 @@ class LEMONdB(object):
             UNIQUE (key))
         ''')
 
+        # STARS table: 'x' and 'y' are the x- and y-image coordinates of the
+        # stars (or, by extension, any astronomical object) in the FITS file
+        # on which they are detected (what we call the "sources image").
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS stars (
             id   INTEGER PRIMARY KEY,
