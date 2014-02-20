@@ -461,20 +461,24 @@ def main(arguments = None):
     # order to do photometry on the reference image and extract the
     # instrumental magnitude that for each star is stored in the database.
 
-    # This warning is printed if one or more, but not the three, options are given
-    if 0 < bool(options.aperture_pix) + bool(options.annulus_pix) + \
-           bool(options.dannulus_pix) < 3:
+    # Abort the execution if one or more of the {aperture,{,d}annulus}-pix:
+    # options are given, but not all three. If we are going to use fixed sizes
+    # for the aperture and sky annuli we need to know all of them.
+    fixed_pix_count = bool(options.aperture_pix) + \
+                      bool(options.annulus_pix)  + \
+                      bool(options.dannulus_pix)
 
-        msg = ("%(p)sWarning: the --aperture-pix, --annulus-pix and "
-               "--dannulus-pix options must\n"
-               "%(p)salways be used in conjunction. The sizes of the apertures "
-               "and sky annuli\n"
-               "%(p)swill still be determined by the FWHMs.\n"
-               "%(p)s") % {'p': style.prefix}
-        warnings.warn(msg)
-
-    if options.aperture_pix and options.annulus_pix and options.dannulus_pix:
-        fixed_annuli = True
+    if fixed_pix_count:
+        if fixed_pix_count < 3:
+            assert 1 <= fixed_pix_count <= 2
+            msg = "%sError. The --aperture-pix, --annulus-pix and " + \
+                  "--dannulus-pix options must be used together."
+            print msg % style.prefix
+            print style.error_exit_message
+            return 1
+        else:
+            assert fixed_pix_count == 3
+            fixed_annuli = True
 
     # Abort the execution if the user gives, at the same time, the
     # --aperture-pix, --annulus-pix, --dannulus-pix and --annuli options. It
