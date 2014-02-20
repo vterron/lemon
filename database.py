@@ -437,8 +437,8 @@ class LEMONdB(object):
             id   INTEGER PRIMARY KEY,
             x    REAL NOT NULL,
             y    REAL NOT NULL,
-            ra   REAL,
-            dec  REAL,
+            ra   REAL NOT NULL,
+            dec  REAL NOT NULL,
             imag REAL NOT NULL)
         ''')
 
