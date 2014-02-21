@@ -821,17 +821,23 @@ def main(arguments = None):
     print msg % style.prefix ,
     sys.stdout.flush()
 
-    # The path to the uncalibrated, original image can not be used here, as for
-    # the reference image, most probably being the result of combining multiple
-    # FITS files, there is no such thing as a 'original' file.
+    # Some (or even many) astronomical objects may be saturated in the sources
+    # image, but (a) there is nothing we can really do about it and, anyway,
+    # (b) this fact is irrelevant for our purposes. The instrumental magnitude
+    # computed by IRAF's qphot in the sources image is exclusively intended to
+    # serve as a very rough estimate of how bright each object is, allowing us
+    # to compare its intensity to that of other objects, but nothing more.
+    # Because of their saturation, there is no guarantee that the instrumental
+    # magnitudes of the brightest objects will be the right ones: they may
+    # appear less bright than they actually are, we hypothesize that following
+    # a non-linear distribution.
     #
-    # What is the saturation level of the reference image? We don't know, and
-    # in any case it would depend on the saturation level of the images that
-    # were combined. Anyway, it does not matter at all, as here we are only
-    # detecting sources, saturated or not. Hence the usage of sys.maxint, which
-    # returns the largest positive integer supported by the regular integer
-    # type. It is not the largest integer supported by Python, but being at
-    # least 2**31-1, as a saturation level it is quite close to infinity.
+    # The number of ADUs at which saturation arises must be sufficiently large
+    # so that qphot.run() does not mark any object as saturated. An approach
+    # could be using float('infinity'), but the function expects an integer.
+    # That is why we instead use sys.maxint, which returns the largest positive
+    # integer supported by the regular integer type. Being at least 2 ** 31 -
+    # 1, as a saturation level this value is sufficiently close to infinity.
 
     qphot_args = (sources_img, options.coordinates,
                   sources_aperture, sources_annulus, sources_dannulus,
