@@ -816,8 +816,9 @@ def main(arguments = None):
         msg = "%sSky annulus, width = %.3f pixels"
         print msg % (style.prefix, sources_dannulus)
 
-
-    print "%sExtracting the instrumental magnitude of each star..." % style.prefix ,
+    print style.prefix
+    msg = "%sRunning IRAF's qphot..."
+    print msg % style.prefix ,
     sys.stdout.flush()
 
     # The path to the uncalibrated, original image can not be used here, as for
@@ -832,10 +833,11 @@ def main(arguments = None):
     # type. It is not the largest integer supported by Python, but being at
     # least 2**31-1, as a saturation level it is quite close to infinity.
 
-    qphot_result = qphot.run(null_offset, reference_aperture,
-                             reference_annulus, reference_dannulus,
-                             sys.maxint, options.exptimek, None,
-                             list_of_pixels)
+    qphot_args = (sources_img, options.coordinates,
+                  sources_aperture, sources_annulus, sources_dannulus,
+                  sys.maxint, options.exptimek, None)
+    sources_phot = qphot.run(*qphot_args)
+    print 'done.'
 
     # From the reference catalog, ignore those stars which are INDEF (None)
     #
