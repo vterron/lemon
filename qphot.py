@@ -159,7 +159,7 @@ class QPhot(list):
     aperture photometer) on an image. A QPhotResult object is created for each
     object listed in the text file: after calling QPhot.run(), this subclass of
     the built-in list contains the photometric measurement of each astronomical
-    object. The order to these QphotResult objects is guaranteed to respect
+    object. The order of these QPhotResult objects is guaranteed to respect
     that in which coordinates are listed in the text file. In other words: the
     i-th QPhotResult object corresponds to the i-th astronomical object.
 
