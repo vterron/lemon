@@ -846,17 +846,18 @@ def main(arguments = None):
     sources_phot = qphot.run(*qphot_args)
     print 'done.'
 
-    # From the reference catalog, ignore those stars which are INDEF (None)
+    # Remove those astronomical objects so faint that they are INDEF in the
+    # sources image. After all, if they are not even visible in this image,
+    # which ideally should be as deep as possible, they will not be visible in
+    # the individual images either. This may happen, for example, with false
+    # positive detections by SExtractor, or if incorrect coordinates, that do
+    # not correspond to any object, are given with the --coordinates option.
     #
-    # Also: unless the --pixels option is given, the photometry function does
-    # photometry on all the sources detected on the reference image. However,
-    # this is not what we want if one or more stars have been discarded because
-    # they were INDEF in the reference image. Solution: we use list_of_pixels
-    # even if it was not given by the user, listing the coordinates of only the
-    # non-INDEF stars, and pass it to 'photometry'. This not only solves the
-    # problem; as a side effect, the execution time is sped up as sources do no
-    # longer have to be detected (i.e., the SExtractor loaded from disk, as it
-    # is cached on a file by LEMON) on the reference image over and over.
+    # Make a copy of the options.coordinates file and delete the lines of the
+    # objects that are INDEF (i.e., whose magnitude is None). This is possible
+    # because the order of the QPhotResult objects in the QPhot object returned
+    # by qphot.run() is guaranteed to preserve that of the astronomical objects
+    # listed in the coordinates file.
 
     msg = "%sDetecting INDEF objects..."
     print msg % style.prefix ,
