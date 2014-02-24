@@ -123,6 +123,20 @@ class InputFITSFiles(collections.defaultdict):
                     warnings.warn(msg % (style.prefix, img))
         return discarded
 
+def clean_tmp_coords_file(path):
+    """ Try to unlink the coordinates file 'path'. """
+
+    msg = "Cleaning up temporary file '%s'"
+    logging.debug(msg % path)
+
+    try:
+        os.unlink(path)
+    except OSError, e:
+        msg = "Cannot delete '%s' (%s)"
+        logging.debug(msg % (path, e))
+    else:
+        msg = "Temporary coordinates file '%s' removed"
+        logging.debug(msg % path)
 
 def parallel_photometry(args):
     """ Method argument of map_async to do photometry in parallel.
@@ -754,23 +768,10 @@ def main(arguments = None):
                       text = True)
 
         coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
+        atexit.register(clean_tmp_coords_file, options.coordinates)
         for ra, dec in sources_coordinates:
             os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
         os.close(coords_fd)
-
-        @atexit.register
-        def clean_tmp_coords_file():
-            msg = "Cleaning up temporary file '%s'"
-            logging.debug(msg % options.coordinates)
-
-            try:
-                os.unlink(options.coordinates)
-            except OSError, e:
-                msg = "Cannot delete '%s' (%s)"
-                logging.debug(msg % (options.coordinates, e))
-            else:
-                msg = "Temporary coordinates file '%s' removed"
-                logging.debug(msg % options.coordinates)
 
     print style.prefix
     msg = "%sNeed to determine the instrumental magnitude of each source."
