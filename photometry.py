@@ -712,6 +712,12 @@ def main(arguments = None):
                 return 1
 
     print "%sSources image: %s" % (style.prefix, sources_img_path)
+    print "%sRunning SExtractor on the sources image..." % style.prefix ,
+    sys.stdout.flush()
+    args = (sources_img_path, options.maximum, options.margin)
+    kwargs = dict(coaddk = options.coaddk)
+    sources_img = seeing.FITSeeingImage(*args, **kwargs)
+    print 'done.'
 
     # If --coordinates was given, let the user know on how many celestial
     # coordinates we are going to do photometry. If not, run SExtractor on the
@@ -726,13 +732,6 @@ def main(arguments = None):
         print msg % args
 
     else:
-        print "%sDetecting sources using SExtractor..." % style.prefix ,
-        sys.stdout.flush()
-        args = (sources_img_path, options.maximum, options.margin)
-        kwargs = dict(coaddk = options.coaddk)
-        sources_img = seeing.FITSeeingImage(*args, **kwargs)
-        print 'done.'
-
         sources_coordinates = sources_img.coordinates
         assert len(sources_coordinates) == len(sources_img)
         ipercentage = sources_img.ignored / sources_img.total * 100
