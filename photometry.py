@@ -44,6 +44,7 @@ the manual for further information.
 import atexit
 import collections
 import hashlib
+import itertools
 import logging
 import multiprocessing
 import numpy
@@ -839,9 +840,9 @@ def main(arguments = None):
     # integer supported by the regular integer type. Being at least 2 ** 31 -
     # 1, as a saturation level this value is sufficiently close to infinity.
 
-    qphot_args = (sources_img, options.coordinates,
+    qphot_args = [sources_img, options.coordinates,
                   sources_aperture, sources_annulus, sources_dannulus,
-                  sys.maxint, options.exptimek, None)
+                  sys.maxint, options.exptimek, None]
     sources_phot = qphot.run(*qphot_args)
     print 'done.'
 
@@ -857,52 +858,68 @@ def main(arguments = None):
     # longer have to be detected (i.e., the SExtractor loaded from disk, as it
     # is cached on a file by LEMON) on the reference image over and over.
 
-    reference_stars = [] # a tuple for each non-INDEF star
-    ignored_counter = 0  # number of stars that are INDEF
-    assert len(qphot_result) == len(list_of_pixels)
+    msg = "%sDetecting INDEF objects..."
+    print msg % style.prefix ,
+    sys.stdout.flush()
 
-    for star_index, star_photometry in enumerate(qphot_result):
-        imag = star_photometry.magnitude
-        if imag is not None:  # NoneType returned for INDEF mags
-            x = star_photometry.x
-            y = star_photometry.y
+    with open(options.coordinates, 'rt') as fd:
+        lines = fd.readlines()
 
-            if options.list:
-                ra, dec = None, None
-            else:
-                # RA / DEC extracted from sextractor catalog (that is why
-                # we cannot currently determine them if --pixels is used)
-                db_star = reference_img[star_index]
-                ra, dec = db_star.alpha, db_star.delta
+    kwargs = dict(prefix = 'PID_%d' % os.getpid(),
+                  suffix = '_NO_INDEF.coords',
+                  text = True)
 
-                if __debug__:
-                    epsilon = 0.001  # a thousandth of a pixel!
-                    assert abs(db_star.x - x) < epsilon
-                    assert abs(db_star.y - y) < epsilon
+    # A second coordinates file, listing only non-INDEF objects
+    coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
 
-            reference_stars.append((x, y, ra, dec, imag))
+    ignored_counter = 0
+    non_ignored_counter = 0
+    original_size = len(sources_phot)
+
+    for line, object_phot in itertools.izip(lines, sources_phot):
+        if object_phot.mag is not None:
+            os.write(coords_fd, line)
+            non_ignored_counter += 1
         else:
             ignored_counter += 1
+    os.close(coords_fd)
 
-    # Make sure no INDEF star made it to the list of stars with which we'll
-    # work. The instrumental magnitude is the last element of each tuple
-    assert all([x[-1] for x in reference_stars])
-    assert len(reference_stars) + ignored_counter == \
-           len(list_of_pixels or reference_img)
+    # Delete INDEF photometric measurements, in-place
+    for index in xrange(len(sources_phot) - 1, -1, -1):
+        if sources_phot[index].mag is None:
+            sources_phot.pop(index)
+
+    assert non_ignored_counter == len(sources_phot)
+    assert ignored_counter + non_ignored_counter == original_size
     print 'done.'
 
     if ignored_counter:
-        print "%s%d stars were INDEF in the reference image and therefore " \
-              "ignored." % (style.prefix, ignored_counter)
+        msg = "%s%s objects" % (style.prefix, ignored_counter)
+    else:
+        msg = "%sNo objects" % style.prefix
+    print msg + " are INDEF in the sources image."
 
-    if not reference_stars:
-        print "%sError. There are no stars on which to do photometry." % \
-              style.prefix
+    if not non_ignored_counter:
+        msg = "%sError. There are no objects left on which to do photometry."
+        print msg % style.prefix
         print style.error_exit_message
         return 1
-    if ignored_counter:
-        print "%sThere are %d detections left on which to do photometry." % \
-              (style.prefix, len(reference_stars))
+
+    elif ignored_counter:
+        msg = "%sThere are %d objects left on which to do photometry."
+        print msg % (style.prefix, len(sources_phot))
+
+    if __debug__:
+
+        msg = "%sMaking sure INDEF objects were removed..."
+        print msg % style.prefix ,
+        sys.stdout.flush()
+
+        # Do photometry again, use the non-INDEF coordinates file
+        qphot_args[1] = options.coordinates
+        non_INDEF_phot = qphot.run(*qphot_args)
+        assert sources_phot == non_INDEF_phot
+        print 'done.'
 
     output_db = database.LEMONdB(output_db_path)
 
