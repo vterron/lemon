@@ -81,7 +81,7 @@ def offset(reference_path, shifted_path, maximum, margin, per,
     Arguments:
     reference_path - the path to the reference FITS image.
     shifted_path - the path to the shifted ('moved') FITS image.
-    maximum - level at which arises saturation, in ADUs. For coadded
+    maximum - level at which saturation arises , in ADUs. For coadded
               observations, the effective saturation level is obtained by
               multiplying this value by the number of coadded images.
     margin - the width, in pixels, of the areas adjacent to the borders

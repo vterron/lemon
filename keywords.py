@@ -102,7 +102,7 @@ sex_md5sum  = 'SEX MD5SUM'
 coaddk = 'NCOADDS'
 desc['coaddk'] = \
 "keyword for the number of effective coadds. This value is essential to " \
-"determine the number of counts at which arises saturation in coadded " \
+"determine the number of counts at which saturation arises in coadded " \
 "observations. If the keyword is missing, we assume a value of one (that " \
 "is, that the observation consisted of a single exposure) [default: %default]"
 
