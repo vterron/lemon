@@ -872,6 +872,7 @@ def main(arguments = None):
 
     # A second coordinates file, listing only non-INDEF objects
     coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
+    atexit.register(clean_tmp_coords_file, options.coordinates)
 
     ignored_counter = 0
     non_ignored_counter = 0
