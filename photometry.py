@@ -42,6 +42,7 @@ the manual for further information.
 
 """
 
+import astropy.wcs
 import atexit
 import collections
 import hashlib
@@ -733,6 +734,35 @@ def main(arguments = None):
     kwargs = dict(coaddk = options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
+
+    # Transform the pixel coordinates of the center of the sources image to
+    # world coordinates. Most of the time the right ascension and declination
+    # of the field can be found in the FITS header, but (a) these keywords are
+    # non-standard and (b) it would not be the first time that we come across
+    # incorrect (or, at least, not as accurate as we would expect) coordinates.
+    # Instead of blindly trusting the FITS header, take advantage of the fact
+    # that our images are calibrated astrometrically and compute these values
+    # ourselves.
+
+    msg = "%sCalculating coordinates of field center..."
+    print msg % style.prefix ,
+    sys.stdout.flush()
+
+    wcs = astropy.wcs.WCS(sources_img._header)
+    pixcrd = numpy.array([sources_img.center])
+    sources_img_ra, sources_img_dec = wcs.all_pix2world(pixcrd, 1)[0]
+    print 'done.'
+
+    # Print coordinates, in degrees and sexagesimal
+    print "%sα = %11.7f" % (style.prefix, sources_img_ra) ,
+    msg = " (%.02d %.02d %05.2f)"
+    args = methods.DD_to_HMS(sources_img_ra)
+    print msg % args
+
+    print "%sδ = %11.7f" % (style.prefix, sources_img_dec) ,
+    msg = "(%+.02d %.02d %05.2f)"
+    args = methods.DD_to_DMS(sources_img_dec)
+    print msg % args
 
     # If --coordinates was given, let the user know on how many celestial
     # coordinates we are going to do photometry. If not, run SExtractor on the
