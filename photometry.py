@@ -923,30 +923,31 @@ def main(arguments = None):
         assert sources_phot == non_INDEF_phot
         print 'done.'
 
+    print style.prefix
+    msg = "%sInitializing output LEMONdB..."
+    print msg % style.prefix ,
+    sys.stdout.flush()
+
     output_db = database.LEMONdB(output_db_path)
 
-    # In the first place, we extract the image and sky coordinates of each
-    # star, immediately storing this information in the database. But this is
-    # only possible if sources were automatically detected on the intrumental
-    # magnitudes image. Otherwise, we (currently, at least) have no way of
-    # knowing neither the celestial coordinates that correspond to a pixel on
-    # the image nor the magnitude reported by SExtractor for that pixel.
-    #
-    # This means that if sources were automatically detected, all of this
-    # information is taken from the SExtractor catalog, while if a list of
-    # pixels was given we only store the x- and y-image coordinates, leaving
-    # alpha, delta and the reference magnitude set to minus one. This may seem
-    # useless, but think that the pipeline will mainly (and even maybe only)
-    # use the --pixels option when the light curve of a specific set of stars
-    # has to be evaluated, and in that case we do not care (or, at least, we do
-    # not currently need to know) about the declination, right ascension or
-    # instrumental magnitude of these pixels in the reference image.
+    # The fact that the QPhot object returned by qphot.run() preserves the
+    # order of the astronomical objects listed in options.coordinates proves to
+    # be useful again: it allows us to match the celestial coordinates of each
+    # object (a row in the coordinates file) to the corresponding QPhotResult
+    # object. Note that qphot.run() accepts celestial coordinates but returns
+    # the x- and y-coordinates of their centers, as IRAF's qphot does.
 
-    print "%sStoring the information of each star in the database..." % style.prefix,
-    sys.stdout.flush()
-    for star_id, star_info in enumerate(reference_stars):
-        x, y, ra, dec, imag = star_info
-        output_db.add_star(star_id, x, y, ra, dec, imag)
+    sources_coords = list(methods.load_coordinates(options.coordinates))
+    assert len(sources_coords) == len(sources_phot)
+    it = itertools.izip(sources_coords, sources_phot)
+    for id_, (object_coords, object_phot) in enumerate(it):
+        x, y = object_phot.x, object_phot.y
+        ra, dec = object_coords
+        imag = object_phot.mag
+
+        args = (id_, x, y, ra, dec, imag)
+        output_db.add_star(*args)
+
     print 'done.'
 
     # Although not used for photometry, we also need to store the path to the
