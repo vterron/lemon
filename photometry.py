@@ -748,7 +748,9 @@ def main(arguments = None):
     print msg % style.prefix ,
     sys.stdout.flush()
 
-    wcs = astropy.wcs.WCS(sources_img._header)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        wcs = astropy.wcs.WCS(sources_img._header)
     pixcrd = numpy.array([sources_img.center])
     sources_img_ra, sources_img_dec = wcs.all_pix2world(pixcrd, 1)[0]
     print 'done.'
