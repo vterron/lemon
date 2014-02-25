@@ -362,6 +362,10 @@ parser.add_option_group(qphot_fixed)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
+key_group.add_option('--objectk', action = 'store', type = 'str',
+                     dest = 'objectk', default = keywords.objectk,
+                     help = keywords.desc['objectk'])
+
 key_group.add_option('--filterk', action = 'store', type = 'str',
                      dest = 'filterk', default = keywords.filterk,
                      help = keywords.desc['filterk'])
