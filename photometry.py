@@ -989,6 +989,7 @@ def main(arguments = None):
         args = (id_, x, y, ra, dec, imag)
         output_db.add_star(*args)
 
+    output_db.commit()
     print 'done.'
 
     # Although not used for photometry, we also need to store the path to the
