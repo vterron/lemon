@@ -394,6 +394,10 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = keywords.desc['fwhmk'])
 
+key_group.add_option('--airmk', action = 'store', type = 'str',
+                     dest = 'airmassk', default = keywords.airmassk,
+                     help = keywords.desc['airmassk'])
+
 key_group.add_option('--uik', action = 'store', type = 'str',
                      dest = 'uncimgk', default = keywords.uncimgk,
                      help = keywords.desc['uncimgk'])
