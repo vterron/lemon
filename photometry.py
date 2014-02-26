@@ -1120,23 +1120,24 @@ def main(arguments = None):
         # coordinates are the first two values.
         reference_pixels = [astromatic.Pixel(*x[:2]) for x in reference_stars]
 
-        def fwhm_derived_params(offset):
+        def fwhm_derived_params(img):
             """ Return the FWHM-derived aperture and sky annuli parameters.
 
-            Return a three-element tuple with (1) the aperture radius, (2) the
-            sky annulus inner radius and (3) its width. These are equal to the
-            FWHM of the image (offset.fwhm) times the --aperture, --annulus and
-            --dannulus options, respectively.
+            Return a database.PhotometricParameters object (a three-element
+            named tuple) containing (1) the aperture radius, (2) sky annulus
+            inner radius and (3) its width, in pixels, which with to do
+            photometry. These are equal to the FWHM of the FITS file (a
+            fitsimage.FITSImage object) times the --aperture, --annulus
+            and --dannulus options, respectively.
 
             """
 
-            fwhm = offset.fwhm
-
+            fwhm = img.read_keyword(options.fwhmk)
             aperture = fwhm * options.aperture
             annulus  = fwhm * options.annulus
             dannulus = fwhm * options.dannulus
 
-            path = offset.shifted
+            path = img.path
             logging.debug("%s: FWHM = %.3f" % (path, fwhm))
             msg = "%s: FWHM-derived aperture: %.3f x %.2f = %.3f pixels"
             logging.debug(msg % (path, fwhm, options.aperture, aperture))
@@ -1145,7 +1146,8 @@ def main(arguments = None):
             msg = "%s: FWHM-derived dannulus: %.3f x %.2f = %.3f pixels"
             logging.debug(msg % (path, fwhm, options.dannulus, dannulus))
 
-            return aperture, annulus, dannulus
+            args = aperture, annulus, dannulus
+            return database.PhotometricParameters(args)
 
         # Define qphot_params either as a function that always returns the same
         # aperture, annulus and dannulus (since the same photometric parameters
