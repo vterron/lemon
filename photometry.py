@@ -992,22 +992,29 @@ def main(arguments = None):
     output_db.commit()
     print 'done.'
 
-    # Although not used for photometry, we also need to store the path to the
-    # reference image so that the 'x' and 'y' coordinates in the STARS table
-    # can be correlated to something.
-    #
-    # The date of the image may not make much sense in many cases (for example,
-    # when the reference image is the output of the mosaic.py module, i.e., the
-    # result of combining multiple images in order to maximize the SNR), but it
-    # is still valid when a single image is used for sources detection.
+    # Store some relevant information about the sources image in the LEMONdB.
+    # Do this by creating a database.Image object, which encapsulates a FITS
+    # file, and assign it to the LEMONdB.simage attribute. The image is also
+    # stored as a blob and is available through the LEMONdB.mosaic attribute.
 
-    pfilter = xml_offsets.reference['filter']
-    date = xml_offsets.reference['date']
-    object_ = xml_offsets.reference['object']
-    airmass = xml_offsets.reference['airmass']
-    gain = options.gain or reference_img.read_keyword(options.gaink)
-    args = reference_img.path, pfilter, date, object_, airmass, gain
-    output_db.rimage = database.ReferenceImage(*args)
+    path = sources_img.path
+    pfilter = sources_img.pfilter(options.filterk)
+
+    kwargs = dict(date_keyword = options.datek,
+                  time_keyword = options.timek,
+                  exp_keyword = options.exptimek)
+    unix_time = sources_img.date(**kwargs)
+
+    object_ = sources_img.read_keyword(options.objectk)
+    airmass = sources_img.read_keyword(options.airmassk)
+    # If not given with --gaink, read it from the FITS header
+    gain = options.gain or sources_img.read_keyword(options.gaink)
+    ra, dec = sources_img_ra, sources_img_dec
+
+    args = (path, pfilter, unix_time, object_, airmass, gain, ra, dec)
+    simage = database.Image(*args)
+    output_db.simage = simage
+    output_db.commit()
 
     # Insert FITS file (as blob) into the LEMONdB
     output_db.mosaic = reference_img.path
