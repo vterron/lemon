@@ -1016,20 +1016,11 @@ def main(arguments = None):
     output_db.simage = simage
     output_db.commit()
 
-    # Determine how many different filters there are among the images contained
-    # in the list of offsets. Then, sort the filters by their wavelength, so
-    # that, e.g., photometry for the images observed in the Johnson V band (551
-    # nanometers) is done before that for the images observed in Johnson I (806
-    # nms), even although lexicographically they go the other way around.
-
-    photometry_filters = sorted(set([x.filter for x in xml_offsets]))
-
-    for pfilter in photometry_filters:
-        band_offsets = [x for x in xml_offsets if x.filter == pfilter]
-
+    for pfilter, images in files.iteritems():
         print style.prefix
-        print "%sPhotometry will now be done on the %d images taken in the " \
-              "%s filter." % (style.prefix, len(band_offsets), pfilter)
+        msg = "%sLet's do photometry on the %d images taken in the %s filter."
+        args = (style.prefix, len(images), pfilter)
+        print msg % args
 
         # The procedure if the dimensions of the aperture and sky annuli are to
         # be extracted from the --annuli file is simple: just take the first
