@@ -132,7 +132,7 @@ _lemon_photometry()
     opts="--output --overwrite --passband --maximum --margin --gain
     --annuli --cores --verbose --pixels --min-sky --aperture --annulus
     --dannulus --individual-fwhm --aperture-pix --annulus-pix
-    --dannulus-pix --expk --coaddk --gaink --uik"
+    --dannulus-pix --expk --coaddk --saturk --gaink --uik"
 
     case $prev in
 	--output)
