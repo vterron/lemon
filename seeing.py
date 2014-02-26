@@ -67,7 +67,8 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     """
 
-    def __init__(self, path, maximum, margin, coaddk = keywords.coaddk):
+    def __init__(self, path, maximum, margin,
+                 coaddk = keywords.coaddk, saturk = keywords.saturk):
         """ Instantiation method for the FITSeeingImage class.
 
         The path to the SExtractor catalog is read from the FITS header: if the
@@ -205,7 +206,7 @@ class FITSeeingImage(fitsimage.FITSImage):
                     # about "illegal values" if it receives a Unicode string.
                     self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
-                    args = keywords.saturk, self.saturation
+                    args = saturk, self.saturation
                     self.update_keyword(*args, comment = satur_comment)
                 except IOError:
                     pass
