@@ -83,7 +83,9 @@ class FITSeeingImage(fitsimage.FITSImage):
         example, the effective saturation level equals three times the value of
         'saturation'. The number of effective coadds is read from the 'coaddk'
         parameter. If the keyword is missing, a value of one (that is, that the
-        image consisted of a single exposure) is assumed.
+        image consisted of a single exposure) is assumed. The effective
+        saturation level, in ADUs, is written to the FITS header with the
+        keyword 'saturk'.
 
         The 'margin' argument gives the width, in pixels, of the areas adjacent
         to the edges of the image that are to be ignored when detecting sources
