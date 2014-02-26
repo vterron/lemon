@@ -1016,9 +1016,6 @@ def main(arguments = None):
     output_db.simage = simage
     output_db.commit()
 
-    # Insert FITS file (as blob) into the LEMONdB
-    output_db.mosaic = reference_img.path
-
     # Determine how many different filters there are among the images contained
     # in the list of offsets. Then, sort the filters by their wavelength, so
     # that, e.g., photometry for the images observed in the Johnson V band (551
