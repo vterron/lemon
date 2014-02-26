@@ -1145,16 +1145,18 @@ def main(arguments = None):
             return database.PhotometricParameters(args)
 
         # Define qphot_params either as a function that always returns the same
-        # aperture, annulus and dannulus (since the same photometric parameters
-        # are to be used for all the images in the same filter) *or*, if the
-        # --individual-fwhm option was given, derives them from the FWHM of
-        # each of the images. This allows us to, in both cases, populate
+        # PhotometricParameters object (since identical photometric parameters
+        # are to be used for all the images in this photometric filter) or, if
+        # the --individual-fwhm option was used, derives them from the FWHM of
+        # each of the FITS images. This allows us to, in both cases, populate
         # map_async_args by looping over the images on which photometry is to
         # be done and, for each one of them, calling qphot_params to get the
-        # parameters.
+        # parameters that have to be used.
 
         if not options.individual_fwhm:
-            qphot_params = lambda x: (aperture, annulus, dannulus)
+            args = aperture, annulus, dannulus
+            pparams = database.PhotometricParameters(*args)
+            qphot_params = lambda x: pparams
         else:
             qphot_params = fwhm_derived_params
 
