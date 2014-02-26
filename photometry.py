@@ -1035,7 +1035,6 @@ def main(arguments = None):
         # for all the filters.
 
         if xml_annuli:
-
             # Store all the CandidateAnnuli objects in the LEMONdB
             assert len(xml_annuli[pfilter])
             for cand in xml_annuli[pfilter]:
@@ -1046,79 +1045,75 @@ def main(arguments = None):
             annulus  = filter_annuli.annulus
             dannulus = filter_annuli.dannulus
 
-            print "%sUsing the photometric parameters listed in the XML " \
-                  "file, which are:" % style.prefix
-            print "%sAperture radius = %.3f pixels" % \
-                  (style.prefix, aperture)
-            print "%sSky annulus, inner radius = %.3f pixels" % \
-                  (style.prefix, annulus)
-            print "%sSky annulus, width = %.3f pixels" % \
-                  (style.prefix, dannulus)
+            msg = "%sUsing the parameters listed in the XML file, which are:"
+            print msg % style.prefix
+            msg = "%sAperture radius = %.3f pixels"
+            print msg % (style.prefix, aperture)
+            msg = "%sSky annulus, inner radius = %.3f pixels"
+            print msg % (style.prefix, annulus)
+            msg = "%sSky annulus, width = %.3f pixels"
+            print msg % (style.prefix, dannulus)
 
         elif options.individual_fwhm:
-            print "%sUsing photometric parameters derived from the FWHM of " \
-                  "each image:" % style.prefix
-            print "%sAperture radius = %.2f x FWHM pixels" % \
-                  (style.prefix, options.aperture)
-            print "%sSky annulus, inner radius = %.2f x FWHM pixels" % \
-                  (style.prefix, options.annulus)
-            print "%sSky annulus, width = %.2f x FWHM pixels" % \
-                  (style.prefix, options.dannulus)
+            msg = "%sUsing parameters derived from the FWHM of each image:"
+            print msg % style.prefix
+            msg = "%sAperture radius = %.2f x FWHM pixels"
+            print msg % (style.prefix, options.aperture)
+            msg = "%sSky annulus, inner radius = %.2f x FWHM pixels"
+            print msg % (style.prefix, options.annulus)
+            msg = "%sSky annulus, width = %.2f x FWHM pixels"
+            print msg % (style.prefix, options.dannulus)
 
         elif not fixed_annuli:
-            print "%sCalculating the median FWHM for this filter..." %  \
-                  style.prefix ,
+            msg = "%sCalculating the median FWHM for this filter..."
+            print msg % style.prefix ,
             sys.stdout.flush()
 
-            img_fwhms = []
-            for img in band_offsets:
-                logging.debug("%s: FWHM = %.3f" % (img.shifted, img.fwhm))
-                img_fwhms.append(img.fwhm)
+            pfilter_fwhms = []
+            for path in images:
+                img = fitsimage.FITSImage(path)
+                img_fwhm = img.read_keyword(options.fwhmk)
+                logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
+                pfilter_fwhms.append(img_fwhm)
 
-            fwhm = numpy.median(img_fwhms)
+            fwhm = numpy.median(pfilter_fwhms)
             print 'done.'
 
             aperture = fwhm * options.aperture
             annulus  = fwhm * options.annulus
             dannulus = fwhm * options.dannulus
 
-            print "%sFWHM (%s passband) = %.3f pixels, therefore:" % \
-                  (style.prefix, pfilter, fwhm)
-            print "%sAperture radius = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.aperture, aperture)
-            print "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.annulus, annulus)
-            print "%sSky annulus, width = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.dannulus, dannulus)
+            msg = "%sFWHM (%s) = %.3f pixels, therefore:"
+            print msg % (style.prefix, pfilter, fwhm)
+            msg = "%sAperture radius = %.3f x %.2f = %.3f pixels"
+            print msg % (style.prefix, fwhm, options.aperture, aperture)
+            msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
+            print msg % (style.prefix, fwhm, options.annulus, annulus)
+            msg = "%sSky annulus, width = %.3f x %.2f = %.3f pixels"
+            print msg % (style.prefix, fwhm, options.dannulus, dannulus)
 
             if dannulus < options.min:
                 dannulus = options.min
-                msg = ("%sWhoops! Sky annulus too thin, setting it to the "
-                      "minimum of %.2f pixels") % (style.prefix, dannulus)
-                warnings.warn(msg)
+                msg = "%sWhoops! Sky annulus too thin, " \
+                  "setting it to the minimum of %.2f pixels"
+                args = (style.prefix, dannulus)
+                warnings.warn(msg % args)
 
         else: # fixed aperture and sky annuli directly specified in pixels
             aperture = options.aperture_pix
             annulus  = options.annulus_pix
             dannulus = options.dannulus_pix
 
-            print "%sAperture radius = %.3f pixels" % \
-                  (style.prefix, aperture)
-            print "%sSky annulus, inner radius = %.3f pixels" % \
-                  (style.prefix, annulus)
-            print "%sSky annulus, width = %.3f pixels" % \
-                  (style.prefix, dannulus)
+            msg = "%sAperture radius = %.3f pixels"
+            print msg % (style.prefix, aperture)
+            msg = "%sSky annulus, inner radius = %.3f pixels"
+            print msg % (style.prefix, annulus)
+            msg = "%sSky annulus, width = %.3f pixels"
+            print msg % (style.prefix, dannulus)
 
         # The task of doing photometry on a series of images is inherently
         # parallelizable; use a pool of workers to which to assign the images.
         pool = multiprocessing.Pool(options.ncores)
-
-        # Stars are stored in 'reference_stars' as database.DBStar instances.
-        # However, the photometry function receives the pixels as a sequence
-        # of astromatic.Pixel instances; hence the cast. Note that in
-        # 'reference_stars' we have a five-element tuple, where the x and y
-        # coordinates are the first two values.
-        reference_pixels = [astromatic.Pixel(*x[:2]) for x in reference_stars]
 
         def fwhm_derived_params(img):
             """ Return the FWHM-derived aperture and sky annuli parameters.
