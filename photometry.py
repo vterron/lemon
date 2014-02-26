@@ -1142,7 +1142,7 @@ def main(arguments = None):
             logging.debug(msg % (path, fwhm, options.dannulus, dannulus))
 
             args = aperture, annulus, dannulus
-            return database.PhotometricParameters(args)
+            return database.PhotometricParameters(*args)
 
         # Define qphot_params either as a function that always returns the same
         # PhotometricParameters object (since identical photometric parameters
