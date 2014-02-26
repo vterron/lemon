@@ -743,7 +743,8 @@ def main(arguments = None):
     print "%sRunning SExtractor on the sources image..." % style.prefix ,
     sys.stdout.flush()
     args = (sources_img_path, options.maximum, options.margin)
-    kwargs = dict(coaddk = options.coaddk)
+    kwargs = dict(coaddk = options.coaddk,
+                  saturk = options.saturk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
 
