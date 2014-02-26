@@ -1123,10 +1123,12 @@ def main(arguments = None):
         def fwhm_derived_params(img):
             """ Return the FWHM-derived aperture and sky annuli parameters.
 
-            Return a three-element tuple with (1) the aperture radius, (2) the
-            sky annulus inner radius and (3) its width. These are equal to the
-            FWHM of the FITS file (a fitsimage.FITSImage object) times the
-            --aperture, --annulus and --dannulus options, respectively.
+            Return a database.PhotometricParameters object (a three-element
+            named tuple) containing (1) the aperture radius, (2) sky annulus
+            inner radius and (3) its width, in pixels, which with to do
+            photometry. These are equal to the FWHM of the FITS file (a
+            fitsimage.FITSImage object) times the --aperture, --annulus
+            and --dannulus options, respectively.
 
             """
 
@@ -1144,7 +1146,8 @@ def main(arguments = None):
             msg = "%s: FWHM-derived dannulus: %.3f x %.2f = %.3f pixels"
             logging.debug(msg % (path, fwhm, options.dannulus, dannulus))
 
-            return aperture, annulus, dannulus
+            args = aperture, annulus, dannulus
+            return database.PhotometricParameters(args)
 
         # Define qphot_params either as a function that always returns the same
         # aperture, annulus and dannulus (since the same photometric parameters
