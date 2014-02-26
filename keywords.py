@@ -109,5 +109,4 @@ desc['coaddk'] = \
 # Also used by seeing.FITSeeingImage, this keyword stores the effective
 # saturation level, i.e, the result of multiplying the number of ADUs at which
 # a single image would saturate by the number of frames that were co-added.
-saturation_level = 'SATURATION LEVEL'
-
+saturk = 'SATURATION LEVEL'

@@ -205,7 +205,7 @@ class FITSeeingImage(fitsimage.FITSImage):
                     # about "illegal values" if it receives a Unicode string.
                     self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
-                    args = keywords.saturation_level, self.saturation
+                    args = keywords.saturk, self.saturation
                     self.update_keyword(*args, comment = satur_comment)
                 except IOError:
                     pass
