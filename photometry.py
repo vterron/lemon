@@ -633,8 +633,8 @@ def main(arguments = None):
 
     print # progress bar doesn't include newline
 
-    msg = "%s%d different photometric were detected:"
-    print msg % (style.prefix, len(files))
+    msg = "%s%d different photometric filters were detected:"
+    print msg % (style.prefix, len(files.keys()))
 
     for pfilter, images in files.iteritems():
         msg = "%s %s: %d files (%.2f %%)"
