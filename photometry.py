@@ -228,7 +228,7 @@ def parallel_photometry(args):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
+parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_DB"
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
