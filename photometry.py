@@ -67,7 +67,6 @@ import defaults
 import fitsimage
 import keywords
 import methods
-import passband
 import qphot
 import seeing
 import style
