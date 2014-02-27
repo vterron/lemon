@@ -1156,10 +1156,10 @@ def main(arguments = None):
         # PhotometricParameters object (since identical photometric parameters
         # are to be used for all the images in this photometric filter) or, if
         # the --individual-fwhm option was used, derives them from the FWHM of
-        # each of the FITS images. This allows us to, in both cases, populate
-        # map_async_args by looping over the images on which photometry is to
-        # be done and, for each one of them, calling qphot_params to get the
-        # parameters that have to be used.
+        # each of the FITS images. This allows us to, in both cases, make the
+        # map_async_args() generator loop over the images on which photometry
+        # is to be done and, for each one of them, call qphot_params() to get
+        # the parameters that have to be used.
 
         if not options.individual_fwhm:
             args = aperture, annulus, dannulus
@@ -1168,15 +1168,16 @@ def main(arguments = None):
         else:
             qphot_params = fwhm_derived_params
 
-        map_async_args = \
-            ((offset, reference_pixels, qphot_params(offset), options)
-             for offset in band_offsets)
-        result = pool.map_async(parallel_photometry, map_async_args)
+        def map_async_args():
+            for path in images:
+                img = fitsimage.FITSImage(path)
+                yield (img, qphot_params(img), options)
 
+        result = pool.map_async(parallel_photometry, map_async_args())
         methods.show_progress(0.0)
         while not result.ready():
             time.sleep(1)
-            methods.show_progress(queue.qsize() / len(band_offsets) * 100)
+            methods.show_progress(queue.qsize() / len(images) * 100)
             # Do not update the progress bar when debugging; instead, print it
             # on a new line each time. This prevents the next logging message,
             # if any, from being printed on the same line that the bar.
