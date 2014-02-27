@@ -73,6 +73,11 @@ import seeing
 import style
 import xmlparse
 
+# Message of the warning that is issued when the width of the sky annulus is
+# smaller than the number of pixels specified with the --min-sky option.
+DANNULUS_TOO_THIN_MSG = \
+"Whoops! Sky annulus too thin, setting it to the minimum of %.2f pixels"
+
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
@@ -834,10 +839,8 @@ def main(arguments = None):
 
         if sources_dannulus < options.min:
             sources_dannulus = options.min
-            msg = "%sWhoops! Sky annulus too thin, " \
-                  "setting it to the minimum of %.2f pixels"
-            args = (style.prefix, sources_dannulus)
-            warnings.warn(msg % args)
+            msg = style.prefix + DANNULUS_TOO_THIN_MSG
+            warnings.warn(msg % sources_dannulus)
 
     else:
         sources_aperture = options.aperture_pix
@@ -1087,10 +1090,8 @@ def main(arguments = None):
 
             if dannulus < options.min:
                 dannulus = options.min
-                msg = "%sWhoops! Sky annulus too thin, " \
-                  "setting it to the minimum of %.2f pixels"
-                args = (style.prefix, dannulus)
-                warnings.warn(msg % args)
+                msg = style.prefix + DANNULUS_TOO_THIN_MSG
+                warnings.warn(msg % dannulus)
 
         else: # fixed aperture and sky annuli directly specified in pixels
             aperture = options.aperture_pix
