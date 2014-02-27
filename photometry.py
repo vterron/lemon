@@ -154,64 +154,67 @@ def parallel_photometry(args):
 
     """
 
-    img_offset, reference_pixels, qphot_params, options = args
-    aperture, annulus, dannulus = qphot_params
+    image, pparams, options = args
 
-    photometry_image = \
-        seeing.FITSeeingImage(img_offset.shifted, options.maximum,
-                                 options.margin, coaddk = options.coaddk)
-    img_path = photometry_image.path
-    logging.debug("Doing photometry on image %s" % img_path)
+    logging.debug("Doing photometry on %s" % image.path)
+    msg = "%s: qphot aperture: %.3f"
+    logging.debug(msg % (image.path, pparams.aperture))
+    msg = "%s: qphot annulus: %.3f"
+    logging.debug(msg % (image.path, pparams.annulus))
+    msg = "%s: qphot dannulus: %.3f"
+    logging.debug(msg % (image.path, pparams.dannulus))
 
-    saturation_level = photometry_image.saturation
-    qphot_result = qphot.run(img_offset, aperture, annulus, dannulus,
-                             saturation_level, options.exptimek,
-                             options.uncimgk, reference_pixels)
-    logging.info("Done photometry on image %s " % img_path)
-    logging.debug("%s: photometry returned %d records (expected = %d)" % \
-                 (img_path, len(qphot_result), len(reference_pixels)))
-    assert len(qphot_result) == len(reference_pixels)
+    maximum = image.read_keyword(options.saturk)
+    msg = "%s: saturation level = %d ADUs (keyword '%s')"
+    args = (image.path, maximum, options.saturk)
+    logging.debug(msg % args)
 
-    # The filter name and qphot parameters are stored in their own
-    # table and referred to using their ID (primary key) in order not
-    # to have duplicated information in the database. The aperture,
-    # annulus and dannulus, on the other hand, were received as input
-    # by the program.
+    logging.info("Running qphot on %s" % image.path)
+    args = (image, options.coordinates,
+            pparams.aperture, pparams.annulus, pparams.dannulus,
+            maximum, options.exptimek, options.uncimgk)
+    img_qphot = qphot.run(*args)
+    logging.info("Finished running qphot on %s" % image.path)
 
-    img_pfilter = img_offset.filter
-    img_unix_time = img_offset.date
-    img_object = img_offset.object
-    img_airmass = img_offset.airmass
-    img_gain = options.gain or photometry_image.read_keyword(options.gaink)
-    img_xoffset = img_offset.x
-    img_xoverlap = img_offset.x_overlap
-    img_yoffset = img_offset.y
-    img_yoverlap = img_offset.y_overlap
+    msg = "%s: qphot.run() returned %d records"
+    args = (image.path, len(img_qphot))
+    logging.debug(msg % args)
 
-    logging.debug("%s: filter = %s" % (img_path, img_pfilter))
-    logging.debug("%s: observation date: %.2f (%s)" % \
-                  (img_path, img_unix_time, methods.utctime(img_unix_time)))
-    logging.debug("%s: object = %s" % (img_path, img_object))
-    logging.debug("%s: airmass = %.4f" % (img_path, img_airmass))
-    gain_comes_from_msg = "given by user" if options.gain else "read from header"
-    logging.debug("%s: gain (%s) = %.4f" % \
-                  (img_path, gain_comes_from_msg, img_gain))
-    logging.debug("%s: x-offset: %.4f" % (img_path, img_xoffset))
-    logging.debug("%s: x-overlap: %.d" % (img_path, img_xoverlap))
-    logging.debug("%s: y-offset: %.4f" % (img_path, img_yoffset))
-    logging.debug("%s: y-overlap: %.d" % (img_path, img_yoverlap))
+    pfilter = image.pfilter(options.filterk)
+    logging.debug("%s: filter = %s" % (image.path, pfilter))
 
-    logging.debug("%s: photometry aperture: %.3f" % (img_path, aperture))
-    logging.debug("%s: photometry annulus: %.3f" % (img_path, annulus))
-    logging.debug("%s: photometry dannulus: %.3f" % (img_path, dannulus))
-    pparams = database.PhotometricParameters(aperture, annulus, dannulus)
+    kwargs = dict(date_keyword = options.datek,
+                  time_keyword = options.timek,
+                  exp_keyword = options.exptimek)
+    unix_time = image.date(**kwargs)
+    msg = "%s: observation date: %.2f (%s)"
+    args = (image.path, unix_time, methods.utctime(unix_time))
+    logging.debug(msg % args)
 
-    pimage = \
-        database.Image(img_path, img_pfilter, pparams, img_unix_time,
-                       img_object, img_airmass, img_gain, img_xoffset,
-                       img_yoffset, img_xoverlap, img_yoverlap)
+    object_ = image.read_keyword(options.objectk)
+    logging.debug("%s: object = %s" % (image.path, object_))
 
-    queue.put((pimage, img_offset, qphot_result))
+    airmass = image.read_keyword(options.airmassk)
+    logging.debug("%s: airmass = %.4f" % (image.path, airmass))
+
+    # If not given with --gaink, read it from the FITS header
+    gain = options.gain or image.read_keyword(options.gaink)
+    msg = "%s: gain (%s) = %.4f"
+    gain_msg = "given by user" if options.gain else "read from header"
+    args = image.path, gain_msg, gain
+    logging.debug(msg % args)
+
+    msg = "%s: calculating coordinates of field center"
+    logging.debug(msg % image.path)
+    ra, dec = image.center_wcs()
+    logging.debug("%s: RA (field center) = %.8f" % (image.path, ra))
+    logging.debug("%s: DEC (field center) = %.8f" % (image.path, dec))
+
+    args = (image.path, pfilter, unix_time, object_, airmass, gain, ra, dec)
+    db_image = database.Image(*args)
+    queue.put((db_image, pparams, img_qphot))
+    msg = "%s: photometry result put into global queue"
+    logging.debug(msg % image.path)
 
 
 parser = customparser.get_parser(description)
