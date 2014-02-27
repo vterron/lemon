@@ -145,12 +145,23 @@ def clean_tmp_coords_file(path):
         logging.debug(msg % path)
 
 def parallel_photometry(args):
-    """ Method argument of map_async to do photometry in parallel.
+    """ Function argument of map_async() to do photometry in parallel.
 
-    Functions defined in classes don't pickle, so we have moved this code here
-    in order to be able to use it with multiprocessing's map_async. As it
-    receives a single argument, values are passed in a tuple which is then
-    unpacked.
+    This will be the first argument passed to multiprocessing.Pool.map_async(),
+    which chops the iterable into a number of chunks that are submitted to the
+    process pool as separate tasks. 'args' must be a three-element tuple with
+    (1) a fitsimage.FITSImage object, (2) a database.PhotometricParameters
+    object and (3) 'options', the optparse.Values object returned by
+    optparse.OptionParser.parse_args().
+
+    This function does photometry (qphot.run()) on the astronomical objects of
+    the FITS image listed in options.coordinates, using the aperture, annulus
+    and dannulus defined by the PhotometricParameters object. The result is
+    another three-element tuple, which is put into the module-level 'queue'
+    multiprocessing.Queue object. This tuple contains (1) a database.Image
+    object, (2) a database.PhotometricParameters object and (3) a qphot.QPhot
+    object -- therefore mapping each FITS file and the parameters used for
+    photometry to the measurements returned by qphot.
 
     """
 
