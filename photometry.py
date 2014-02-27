@@ -306,13 +306,13 @@ qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
               "the value of the following parameters are defined in terms of "
               "the *median* FWHM of the images in each band.\n\n"
 
-              "As the full width at half-maximum of an image is defined here "
-              "as the median of FWHM (as reported by SExtractor) for all the "
-              "detected stars, you may think of the median 'FWHM of the "
-              "images' as the 'median of the median of the FWHM of all the "
-              "stars, if you find it easier. Note also that a different "
-              "'median FWHM' is computed for each passband on which "
-              "photometry is done.")
+              "The full width at half-maximum of an image is defined here as "
+              "the median of the FWHM of all the astronomical objects detected "
+              "by SExtractor. Therefore, you may think of the median 'FWHM of "
+              "the images' as the 'median of the median of the FWHM of all the "
+              "astronomical objects, if you find it easier. Note also that a "
+              "different median FWHM is computed for each photometric filter "
+              "on which photometry is done.")
 
 qphot_group.add_option('--aperture', action = 'store', type = 'float',
                        dest = 'aperture', default = 3.0,
@@ -504,8 +504,8 @@ def main(arguments = None):
 
     # Even if the annuli XML is used by the module, the aperture and sky annuli
     # parameters (whether FWHM-based or given in pixels) are still needed in
-    # order to do photometry on the reference image and extract the
-    # instrumental magnitude that for each star is stored in the database.
+    # order to do photometry on the sources image and extract the instrumental
+    # magnitude that for each astronomical object is stored in the database.
 
     # Abort the execution if one or more of the {aperture,{,d}annulus}-pix:
     # options are given, but not all three. If we are going to use fixed sizes
@@ -600,12 +600,11 @@ def main(arguments = None):
             return 1
 
     # Each campaign must be saved to its own LEMON database, as it would not
-    # make much sense to merge data (as the same tables would be used) of stars
-    # that belong to different fields. Thus, by default the module will refuse
-    # to work with an existing database (which is what the LEMONdB class would
-    # do otherwise, as other modules shall need to update its contents) unless
-    # the overwrite option is set, in which case it will be deleted and thus
-    # created again from scratch.
+    # make much sense to merge data (since the same tables would be used) of
+    # astronomical objects that belong to different fields. Thus, we refuse to
+    # work with an existing database (which is what the LEMONdB class would do
+    # otherwise) unless the --overwrite option is given, in which case it is
+    # deleted and created again from scratch.
 
     if os.path.exists(output_db_path):
         if not options.overwrite:
