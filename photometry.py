@@ -1188,75 +1188,75 @@ def main(arguments = None):
         methods.show_progress(100) # in case the queue was ready too soon
         print
 
-        # And now store the photometry for all the stars in the database
-        print "%sStoring photometric information in the database..." % style.prefix
+        msg = "%sStoring photometric measurements in the database..."
+        print msg % style.prefix
+        sys.stdout.flush()
+
         methods.show_progress(0)
-        photometric_results = (queue.get() for x in xrange(queue.qsize()))
-        for index, (pimage, img_offset, qphot_result) in enumerate(photometric_results):
+        qphot_results = (queue.get() for x in xrange(queue.qsize()))
+        for index, args in enumerate(qphot_results):
+            db_image, pparams, img_qphot = args
+            logging.debug("Storing image %s in database" % db_image.path)
+            output_db.add_image(db_image)
+            logging.debug("Image %s successfully stored" % db_image.path)
 
-            logging.debug("Storing image %s in database" % pimage.path)
-            output_db.add_image(pimage)
-            logging.debug("Image %s successfully stored" % pimage.path)
-
-            # Now store the photometry for each star
-            for star_id, star_photometry in enumerate(qphot_result):
-
-                if __debug__:
-                    # Make sure that photometry was done on the correct pixels:
-                    # apply the image offset to the original coordinates of the
-                    # star (those in the reference image) and verify that this
-                    # value equals the coordinates were photometry was done.
-                    star_x, star_y = reference_stars[star_id][:2]
-                    expected_x = star_x + img_offset.x
-                    expected_y = star_y + img_offset.y
-
-                    logging.debug("%s: star %d x-coord = %.3f (expected = %.3f)" % \
-                                  (pimage.path, star_id, star_photometry.x, expected_x))
-                    logging.debug("%s: star %d y-coord = %.3f (expected = %.3f)" % \
-                                  (pimage.path, star_id, star_photometry.y, expected_y))
-
-                    epsilon = 0.001  # a thousandth of a pixel!
-                    assert abs(star_photometry.x - expected_x) < epsilon
-                    assert abs(star_photometry.y - expected_y) < epsilon
-
-                # INDEF stars will have a magnitude of None, and those with at
-                # least one saturated pixel in the aperture will have infinity.
-                # In both cases the measure is useless for our photometric
-                # purposes and can be ignored -- it won't even be saved.
-                magnitude = star_photometry.magnitude
-                if magnitude is None:
-                    logging.debug("%s: star %d is INDEF (None)" % \
-                                  (pimage.path, star_id))
+            # Now store each photometric measurement
+            for object_id, object_phot in enumerate(img_qphot):
+                # INDEF photometric measurements have a magnitude of None, and
+                # those with at least one saturated pixel in the aperture have
+                # a magnitude of infinity. In both cases the measurement is
+                # useless for our photometric purposes and can be ignored.
+                if object_phot.mag is None:
+                    msg = "%s: object %d is INDEF (None)"
+                    args = db_image.path, object_id
+                    logging.debug(msg % args)
                     continue
 
-                elif magnitude == float('infinity'):
-                    logging.debug("%s: star %d is saturated (infinity)" % \
-                                  (pimage.path, star_id))
+                elif object_phot.mag == float('infinity'):
+                    msg = "%s: object %d is saturated (infinity)"
+                    args = db_image.path, object_id
+                    logging.debug(msg % args)
                     continue
+
                 else:
-                    logging.debug("%s: star %d magnitude = %f" % \
-                                  (pimage.path, star_id, magnitude))
+                    msg = "%s: object %d magnitude = %f"
+                    args = db_image, object_id, object_phot.mag
+                    logging.debug(msg % args)
 
-                # Stars with a signal-to-noise ratio less than or equal to one
-                # are ignored -- not only because these measures are anything
-                # but reliable, but also because such values are outside of the
-                # domain function that converts SNRs to errors in magnitudes.
-                snr = star_photometry.snr(pimage.gain)
-                if snr <= 1:
-                    logging.debug("%s: star %d ignored (SNR = %f <= 1.0)" % \
-                                  (pimage.path, star_id, snr))
+                # Photometric measurements with a signal-to-noise ratio less
+                # than or equal to one are ignored -- not only because these
+                # measurements are anything but reliable, but also because such
+                # values are outside of the domain of the function that
+                # converts SNRs to errors in magnitudes.
+                object_snr = object_phot.snr(db_image.gain)
+                if object_snr <= 1:
+                    msg = "%s: object %d ignored (SNR = %f <= 1)"
+                    args = db_image, object_id, object_snr
+                    logging.debug(msg % args)
                     continue
+
                 else:
-                    logging.debug("%s: star %d SNR = %f" % \
-                                  (pimage.path, star_id, snr))
-                    logging.debug("%s: storing photometry for star %d in database" % \
-                                  (pimage.path, star_id))
-                    args = star_id, pimage.unix_time, pimage.pfilter, magnitude, snr
+                    msg = "%s: object %d SNR = %f"
+                    args = db_image, object_id, object_snr
+                    logging.debug(msg % args)
+
+                    msg = "%s: storing measurement for object %d in database"
+                    args = db_image, object_id
+                    logging.debug(msg % args)
+
+                    args = (object_id,
+                            db_image.unix_time,
+                            db_image.pfilter,
+                            object_phot.mag,
+                            object_snr)
+
                     output_db.add_photometry(*args)
-                    logging.debug("%s: photometry for star %d successfully stored" % \
-                                  (pimage.path, star_id))
 
-            methods.show_progress(100 * (index + 1) / len(band_offsets))
+                    msg = "%s: measurement for object %d successfully stored"
+                    args = db_image, object_id
+                    logging.debug(msg % args)
+
+            methods.show_progress(100 * (index + 1) / len(images))
             if logging_level < logging.WARNING:
                 print
 
