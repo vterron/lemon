@@ -259,17 +259,16 @@ parser.add_option('--gain', action = 'store', type = 'float',
 
 parser.add_option('--annuli', action = 'store', type = str,
                   dest = 'xml_annuli', default = None,
-                  help = "ignore the 'Aperture Photometry' (FWHM and pixels) "
-                  "sections below an instead read the aperture and sky annuli "
-                  "to be used from a XML file outputted by the LEMON "
-                  "annuli.py module. This file should, of course, have been "
-                  "generated for the same set of images on which photometry "
-                  "is now being done. For this same reason, the execution "
-                  "will be aborted if the XML file does not have information "
-                  "for all the filters listed in OFFSETS_XML_FILE. Note that "
-                  "the parameters in the 'Aperture Photometry' sections are "
-                  "still used when photometry is done on the reference image "
-                  "to extract the instrumental magnitude of each image.")
+                  help = "ignore the Aperture Photometry (FWHM and Pixels) "
+                  "sections below an instead read the apertures and sky annuli "
+                  "to use from an XML file output by the 'annuli' command. "
+                  "This file should, of course, have been generated for the "
+                  "same set of images on which photometry is now being done. "
+                  "For this same reason, the execution will be aborted if the "
+                  "XML file does not have information for the photometric "
+                  "filters of all the input FITS files. Even when this option "
+                  "is used, the aperture and sky annulus used for the sources "
+                  "image are determined by the 'Aperture Photometry' sections.")
 
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = defaults.ncores,
@@ -303,8 +302,8 @@ qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
               "aperture photometer, which computes accurate sky values and "
               "magnitudes for a series of objects. Instead of using "
               "absolute values (such as, for example, 8, 11 or 13 pixels), "
-              "the value of the following parameters are defined in terms of "
-              "the *median* FWHM of the images in each band.\n\n"
+              "the values of the following parameters are defined in terms "
+              "of the *median* FWHM of the images in each filter.\n\n"
 
               "The full width at half-maximum of an image is defined here as "
               "the median of the FWHM of all the astronomical objects detected "
@@ -334,7 +333,7 @@ qphot_group.add_option('--min-sky', action = 'store', type = 'float',
                        help = "the minimum width of the sky annulus, in "
                        "pixels, regardless of the value specified in the "
                        "above parameter. This option is intended to prevent "
-                       "small FWHMs from resulting in too thin an sky "
+                       "small FWHMs from resulting in too thin a sky "
                        "annulus. [default = %default]")
 
 qphot_group.add_option('--individual-fwhm', action = 'store_true',
@@ -349,19 +348,16 @@ qphot_group.add_option('--individual-fwhm', action = 'store_true',
 parser.add_option_group(qphot_group)
 
 qphot_fixed = optparse.OptionGroup(parser, "Aperture Photometry (pixels)",
-              "In case the exact size of the aperture and sky annuli is "
-              "known, their dimensions can be specified in pixels. The three "
-              "parameters are required, so if one or more are not specified "
-              "the module will ignore them and revert back to the calculation "
-              "of the sizes based on the FWHM of the images. In other and "
-              "more concise, emphatic words: use them all or none at all!\n\n"
+              "In case the exact sizes of the aperture and sky annulus are "
+              "known, their dimensions can be specified in pixels. If used, "
+              "these three options must be used together.\n\n"
 
               "Note that setting the aperture photometry parameters to a "
               "fixed size, as these options do, means that the same values "
-              "are used regardless of the filter with which the images were "
-              "observed, and even for the reference image, so you should "
-              "probably always use these options in conjunction with "
-              "--filter, in order to to photometry one filter at a time.")
+              "are used regardless of the photometric filter of the images, "
+              "including the sources image. You probably want to use these "
+              "options in conjunction with --filter, in order to do "
+              "photometry one photometric filter at a time.")
 
 qphot_fixed.add_option('--aperture-pix', action = 'store', type = 'float',
                        dest = 'aperture_pix', default = None,
