@@ -22,23 +22,22 @@
 from __future__ import division
 
 description = """
-This module does aperture photometry on a series of images. In its most basic
-usage, it only receives two parameters: (a) an image of the field, usually
-taken under excellent atmospheric conditions, from which the reference
-instrumental magnitude of each object is extracted and (b) a LEMON XML file
-which lists the horizontal and vertical translation offsets of all the images
-with respect to the master frame. In this manner, after each object has been
-detected on the master frame, photometry can be done on the same exact position
-in all the images, as the translation objects are known.
+This module does aperture photometry on all the FITS images that it receives as
+arguments. Astronomical objects are automatically detected, using SExtractor,
+on the first image (which will be referred to from now on as the 'sources
+image'), and then photometry is done for their celestial coordinates on the
+rest of the images. The output is a LEMON database. The sources image is also
+used to extract the instrumental magnitude that for each astronomical object
+is stored in the LEMONdB, in order to allow us to approximately estimate how
+bright each object is.
 
-The output of the module is a LEMON database, already indexed in order to
-considerably speed up the queries that are most likely to be done.
-
-Most, if not all, of the aspects of the module are configurable. For example,
-which aperture and sky annuli (instead of the default values) are used or on
-which exact pixels photometry is done (instead of on all the sources that are
-automatically detected on the master frame) can be specified. Please refer to
-the manual for further information.
+By default, the sizes of the aperture and sky annulus are determined by the
+median FWHM of the images in each photometric filter, but different options
+make it possible, among others, to directly specify those sizes in pixels, or
+to use apertures and sky annuli that depend on the FWHM of each individual
+image. The celestial coordinates of the objects on which to do photometry,
+if known, can be listed in a text file, in this manner skipping the sources
+detection step and working exclusively with the specified objects.
 
 """
 
