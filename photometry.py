@@ -753,6 +753,16 @@ def main(arguments = None):
     print "%sSources image: %s" % (style.prefix, sources_img_path)
     print "%sRunning SExtractor on the sources image..." % style.prefix ,
     sys.stdout.flush()
+
+    # Remove from the FITS header the path to the on-disk catalog, if present,
+    # thus forcing SExtractor to detect sources on the image. This is necessary
+    # because, if SExtractor (via the seeing.FITSeeingImage class) were run on
+    # the image before it was calibrated astrometrically, the on-disk catalog
+    # would only contain the X and Y image coordinates of the astronomical
+    # objects, using zero for both their right ascensions and declinations.
+    img = fitsimage.FITSImage(sources_img_path)
+    img.delete_keyword(keywords.sex_catalog)
+
     args = (sources_img_path, options.maximum, options.margin)
     kwargs = dict(coaddk = options.coaddk,
                   saturk = options.saturk)
