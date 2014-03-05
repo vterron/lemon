@@ -1092,6 +1092,7 @@ def main(arguments = None):
             history_msg2 = "Image elongation = %.3f" % elongs[path]
 
         shutil.copy2(path, output_path)
+        methods.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
         output_img = fitsimage.FITSImage(output_path)
         output_img.add_history(history_msg1)
