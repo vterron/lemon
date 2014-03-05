@@ -38,6 +38,7 @@ import math
 import os
 import os.path
 import tempfile
+import warnings
 
 # LEMON modules
 import fitsimage
@@ -179,6 +180,20 @@ class QPhot(list):
         super(list, self).__init__()
         self.image = fitsimage.FITSImage(img_path)
         self.coords_path = coords_path
+
+        for ra, dec in methods.load_coordinates(self.coords_path):
+            if ra == 0 and dec == 0:
+                msg = (
+                  "the right ascension and declination of one or more "
+                  "astronomical objects in '%s' is zero. This is a very bad "
+                  "sign: these are the celestial coordinates that SExtractor "
+                  "uses for sources detected on a FITS image that has not been "
+                  "calibrated astrometrically (may that be your case?), and "
+                  "without that it is impossible to do photometry on the "
+                  "desired coordinates" % self.coords_path)
+                # Emit warning only once
+                warnings.warn(msg)
+                break
 
     @property
     def path(self):
