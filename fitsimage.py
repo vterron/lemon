@@ -27,6 +27,7 @@ from __future__ import division
 # tasks which attempt to display graphics will fail, of course, but we are not
 # going to make use of any of them, anyway.
 
+import astropy.io
 import astropy.wcs
 import calendar
 import datetime
@@ -611,9 +612,17 @@ class FITSImage(object):
 
         """
 
+        # astropy.wcs.WCS() is extremely slow (in the order of minutes) if we
+        # work with the in-memory FITS header (self._header). I cannot fathom
+        # the reason, but the problem goes away if we use astropy.io.fits to
+        # load the FITS header, as illustrated in the Astropy documentation:
+        # http://docs.astropy.org/en/stable/wcs/index.html
+        with astropy.io.fits.open(self.path) as hdulist:
+            header = hdulist[0].header
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            wcs = astropy.wcs.WCS(self._header)
+            wcs = astropy.wcs.WCS(header)
         pixcrd = numpy.array([self.center])
         ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
         return ra, dec
