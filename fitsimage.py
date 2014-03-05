@@ -276,7 +276,14 @@ class FITSImage(object):
         try:
             header = handler[0].header
             try:
-                del header[keyword]
+                # Ignore DeprecationWarning: "Deletion of non-existent
+                # keyword [...] In a future PyFITS version Header.__delitem__
+                # may be changed so that this raises a KeyError just like a
+                # dict would. Please update your code so that KeyErrors are
+                # caught and handled when deleting non-existent keywords.
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    del header[keyword]
                 # Update in-memory copy of the FITS header
                 self._header = header
 
