@@ -457,16 +457,19 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    # Print the help and abort the execution if there are not two positional
-    # arguments left after parsing the options, as the user must specify at
-    # least one (only one?) input FITS file and the output LEMON database.
-    if len(args) < 2:
+    # Print the help and abort the execution if there are not three positional
+    # arguments left after parsing the options, as the user must specify the
+    # sources image, at least one (only one?) image on which to do photometry
+    # and the output LEMON database.
+    if len(args) < 3:
         parser.print_help()
         return 2     # 2 is generally used for command line syntax errors
     else:
         sources_img_path = args[0]
         input_paths = set(args[1:-1])
         output_db_path = args[-1]
+
+    assert input_paths
 
     # If the user gives an empty string as the FITS keyword which stores the
     # path to the original image, it is understood as meaning that we want
