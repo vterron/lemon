@@ -1226,7 +1226,7 @@ def main(arguments = None):
 
                 else:
                     msg = "%s: object %d magnitude = %f"
-                    args = db_image, object_id, object_phot.mag
+                    args = db_image.path, object_id, object_phot.mag
                     logging.debug(msg % args)
 
                 # Photometric measurements with a signal-to-noise ratio less
@@ -1237,17 +1237,17 @@ def main(arguments = None):
                 object_snr = object_phot.snr(db_image.gain)
                 if object_snr <= 1:
                     msg = "%s: object %d ignored (SNR = %f <= 1)"
-                    args = db_image, object_id, object_snr
+                    args = db_image.path, object_id, object_snr
                     logging.debug(msg % args)
                     continue
 
                 else:
                     msg = "%s: object %d SNR = %f"
-                    args = db_image, object_id, object_snr
+                    args = db_image.path, object_id, object_snr
                     logging.debug(msg % args)
 
                     msg = "%s: storing measurement for object %d in database"
-                    args = db_image, object_id
+                    args = db_image.path, object_id
                     logging.debug(msg % args)
 
                     args = (object_id,
@@ -1259,7 +1259,7 @@ def main(arguments = None):
                     output_db.add_photometry(*args)
 
                     msg = "%s: measurement for object %d successfully stored"
-                    args = db_image, object_id
+                    args = db_image.path, object_id
                     logging.debug(msg % args)
 
             methods.show_progress(100 * (index + 1) / len(images))
