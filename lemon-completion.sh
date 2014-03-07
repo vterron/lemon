@@ -41,7 +41,7 @@ _lemon_seeing()
 
     opts="--filename --maximum --margin --snr-percentile --mean
     --sources-percentile --suffix --cores --verbose --fsigma
-    --fwhm_dir --esigma --elong_dir --coaddk --fwhmk"
+    --fwhm_dir --esigma --elong_dir --coaddk --saturk --fwhmk"
 
     if [[ ${cur} != -* ]]; then
         _filedir $FITS_EXTS

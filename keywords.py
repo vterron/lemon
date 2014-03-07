@@ -106,8 +106,8 @@ desc['coaddk'] = \
 "observations. If the keyword is missing, we assume a value of one (that " \
 "is, that the observation consisted of a single exposure) [default: %default]"
 
-# Also used by seeing.FITSeeingImage, this keyword stores the effective
-# saturation level, i.e, the result of multiplying the number of ADUs at which
-# a single image would saturate by the number of frames that were co-added.
-saturation_level = 'SATURATION LEVEL'
-
+saturk = 'SATURATION LEVEL'
+desc['saturk'] = \
+"keyword for the effective saturation level, in ADUs: the saturation level " \
+"of a single image times the number of frames that were co-added. It is " \
+"written to the FITS header by the 'seeing' command [default: %default]"
