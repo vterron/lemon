@@ -61,6 +61,24 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
         y_axis = pow(self.y - another.y, 2)
         return math.sqrt(x_axis + y_axis)
 
+class Coordinates(collections.namedtuple('Coordinates', "ra dec")):
+    """ The immutable celestial coordinates of an astronomical object. """
+
+    def distance(self, another):
+        """ The angular distance, in degrees, between two Coordinates. """
+
+        # Formula: cos(A) = sin(d1)sin(d2) + cos(d1)cos(d2)cos(ra1-ra2)
+        # http://www.astronomycafe.net/qadir/q1890.html
+
+        ra1  = math.radians(self.ra)
+        dec1 = math.radians(self.dec)
+        ra2  = math.radians(another.ra)
+        dec2 = math.radians(another.dec)
+        return math.degrees(math.acos(math.sin(dec1) * math.sin(dec2) +
+                                      math.cos(dec1) * math.cos(dec2) *
+                                      math.cos(ra1-ra2)))
+
+
 class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
            "mag, saturated, snr, fwhm, elongation")):
     """ An immutable class with a source detected by SExtractor. """
@@ -89,7 +107,7 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
         """
 
         img_coords = Pixel(x, y)
-        sky_coords = Pixel(alpha, delta)
+        sky_coords = Coordinates(alpha, delta)
         args = img_coords, sky_coords, area, mag, satur, snr, fwhm, elong
         return super(Star, cls).__new__(cls, *args)
 
@@ -103,25 +121,15 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
 
     @property
     def alpha(self):
-        return self.sky_coords.x
+        return self.sky_coords.ra
 
     @property
     def delta(self):
-        return self.sky_coords.y
+        return self.sky_coords.dec
 
     def angular_distance(self, another):
         """ Return the angular distance, in degrees, between two Stars. """
-
-        # Formula: cos(A) = sin(d1)sin(d2) + cos(d1)cos(d2)cos(ra1-ra2)
-        # http://www.astronomycafe.net/qadir/q1890.html
-
-        ra1  = math.radians(self.alpha)
-        dec1 = math.radians(self.delta)
-        ra2  = math.radians(another.alpha)
-        dec2 = math.radians(another.delta)
-        return math.degrees(math.acos(math.sin(dec1) * math.sin(dec2) +
-                                      math.cos(dec1) * math.cos(dec2) *
-                                      math.cos(ra1-ra2)))
+        return self.sky_coords.distance(another.sky_coords)
 
     def distance(self, another):
         """ The Euclidean distance between the image coordinates of two Stars """
@@ -329,6 +337,16 @@ class Catalog(tuple):
 
         """
         return [star.img_coords for star in self]
+
+    def get_sky_coordinates(self):
+         """ Return a list with the celestial coordinates of the stars.
+
+         Return the right ascension and declination of each astronomical source
+         in the SExtractor catalog, as a list of Coordinates objects.
+
+         """
+         return [star.sky_coords for star in self]
+
 
 def sextractor_md5sum(options = None):
     """ Return the MD5 hash of the SExtractor configuration.

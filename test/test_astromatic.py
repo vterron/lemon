@@ -33,7 +33,7 @@ import tempfile
 import unittest
 
 import astromatic
-from astromatic import Pixel, Star, Catalog
+from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
 import fitsimage
 import methods
@@ -86,6 +86,41 @@ class PixelTest(unittest.TestCase):
             array2 = numpy.array([pixel2.x, pixel2.y])
             expected = numpy.linalg.norm(array1 - array2)
             self.assertAlmostEqual(distance, expected)
+
+class CoordinatesTest(unittest.TestCase):
+
+    RIGHT_ASCENSION_RANGE = (0, 360)
+    DECLINATION_RANGE = (-90, 90)
+
+    @classmethod
+    def random(cls):
+        """ Return a random Coordinates object """
+        ra = random.uniform(*cls.RIGHT_ASCENSION_RANGE)
+        dec = random.uniform(*cls.DECLINATION_RANGE)
+        return Coordinates(ra, dec)
+
+    def test_immutability(self):
+        """ Make sure that the Coordinates class is immutable """
+
+        coords = self.random()
+        for name in coords._asdict().iterkeys():
+            value = random.random()
+            self.assertRaises(AttributeError, setattr, coords, name, value)
+            self.assertRaises(AttributeError, delattr, coords, name)
+
+    def test_distance(self):
+
+        # http://www.astronomycafe.net/qadir/q1890.html (Sten Odenwald)
+        coords1 = Coordinates(100.2, -16.58)
+        coords2 = Coordinates(87.5, 7.38)
+        distance = coords1.distance(coords2)
+        self.assertAlmostEqual(distance, 27.054384870767787)
+
+        # http://www.skythisweek.info/angsep.pdf (David Oesper)
+        coords3 = Coordinates(165.458, 56.3825)
+        coords4 = Coordinates(165.933, 61.7511)
+        distance = coords3.distance(coords4)
+        self.assertAlmostEqual(distance, 5.374111607543190)
 
 
 class StarTest(unittest.TestCase):
@@ -352,22 +387,27 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(type(faint_catalog), Catalog)
         self.assertEqual(list(faint_catalog), list(stars))
 
-
-    def test_get_image_coordinates(self):
+    def test_get_image_and_sky_coordinates(self):
 
         catalog = Catalog(self.SAMPLE_CATALOG_PATH)
         self.assertEqual(len(catalog), 127)
         pixels = catalog.get_image_coordinates()
+        coordinates = catalog.get_sky_coordinates()
 
-        # The returned list must contain as many Pixel objects, and in the same
-        # order, as detected sources are in the SExtractor catalog. That is to
-        # say that the x- and y-coordinates of the first Pixel must match those
-        # of the first object in the Catalog, and so on.
+        # The two lists must contain as many Pixel and Coordinates objects,
+        # respectively, and in the same order, as sources there are in the
+        # SExtractor catalog. Therefore, the x- and y-coordinates of the i-th
+        # Pixel object, and the right ascension and declination of the i-th
+        # Coordinates object, must match those of the i-th source in the
+        # Catalog.
 
         self.assertEqual(len(pixels), len(catalog))
-        for pixel, star in zip(pixels, catalog):
+        self.assertEqual(len(coordinates), len(catalog))
+        for pixel, coord, star in zip(pixels, coordinates, catalog):
             self.assertEqual(pixel.x, star.x)
             self.assertEqual(pixel.y, star.y)
+            self.assertEqual(coord.ra, star.alpha)
+            self.assertEqual(coord.dec, star.delta)
 
 
 def get_nonexistent_path(ext = None):

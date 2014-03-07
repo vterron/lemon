@@ -310,39 +310,49 @@ def owner_writable(path, add):
 
     os.chmod(path, mode)
 
-def load_file_list(path, warn = True):
-    """ Load a list of Pixels from a file.
+def load_coordinates(path):
+    """ Load a list of celestial coordinates from a text file.
 
-    The method parses a text file which shall contain two values (the x and y
-    coordinates of a star) per line. These pixels are then returned in a list
-    of tuples. Note that improperly-formatted lines, such as those with tree
-    values or a non-real value, are ignored.
-
-    Keyword arguments:
-    warn - display a warning message for each improperly-formatted line.
+    Parse a text file containing the celestial coordinates of a series of
+    astronomical objects, one per line, and return a generator that yields
+    (alpha, delta) tuples. The file must have exactly two columns, for each
+    right ascension and declination, in this order. ValueError is raised if
+    there are more than two values on any line, of if any right ascension or
+    declination is out of range. Empty lines are ignored.
 
     """
 
-    list_of_pixels = []
-
     with open(path, 'rt') as fd:
         for line in fd:
-            splitted_line = line.split()
-            try:
-                # There should be two and only two numbers per line
-                if len(splitted_line) != 2:
-                    raise IndexError
-                x, y = float(splitted_line[0]), float(splitted_line[1])
-                list_of_pixels.append((x, y))
 
-            # We may attemp to cast something that is not a real number
-            except (ValueError, IndexError):
-                if warn:
-                    print "%sWarning: improperly-formatted line '%s' " \
-                          "ignored." % (style.prefix, line.replace('\n', ''))
+            words = line.split()
+
+            if not words:
                 continue
 
-    return list_of_pixels
+            if len(words) != 2:
+                msg = ("Unable to parse line '%r'. Objects must be listed one "
+                       "per line with coordinate values in columns one (right "
+                       "ascension) and two (declination)" % line)
+                raise ValueError(msg)
+
+            try:
+                ra = float(words[0])
+                if not 0 <= ra < 360:
+                    raise ValueError
+            except ValueError:
+                msg = "Right ascension '%r' not in range [0, 360[ degrees"
+                raise ValueError(msg % ra)
+
+            try:
+                dec = float(words[1])
+                if not -90 <= dec <= 90:
+                    raise ValueError
+            except ValueError:
+                msg = "Declination '%r' not in range [-90, 90] degrees"
+                raise ValueError(msg % dec)
+
+            yield ra, dec
 
 def which(*names):
     """ Search PATH for executable files with the given names.

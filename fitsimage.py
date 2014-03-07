@@ -27,11 +27,14 @@ from __future__ import division
 # tasks which attempt to display graphics will fail, of course, but we are not
 # going to make use of any of them, anyway.
 
+import astropy.io
+import astropy.wcs
 import calendar
 import datetime
 import fnmatch
 import hashlib
 import logging
+import numpy
 import os
 import os.path
 import pyfits
@@ -593,6 +596,36 @@ class FITSImage(object):
     def center(self):
         """ Returns the x, y coordinates of the central pixel of the image. """
         return list(int(round(x / 2)) for x in self.size)
+
+    def center_wcs(self):
+        """ Return the world coordinates of the central pixel of the image.
+
+        Transform the pixel coordinates of the center of the image to world
+        coordinates. Return a two-element tuple with the right ascension and
+        declination. Most of the time the celestial coordinates of the field
+        center can be found in the FITS header, but (a) these keywords are
+        non-standard and (b) it would not be the first time that we come
+        across incorrect (or, at least, not as accurate as we would expect)
+        coordinates. Instead of blindly trusting the FITS header, compute these
+        values ourselves -- provided, of course, that our images are calibrated
+        astrometrically.
+
+        """
+
+        # astropy.wcs.WCS() is extremely slow (in the order of minutes) if we
+        # work with the in-memory FITS header (self._header). I cannot fathom
+        # the reason, but the problem goes away if we use astropy.io.fits to
+        # load the FITS header, as illustrated in the Astropy documentation:
+        # http://docs.astropy.org/en/stable/wcs/index.html
+        with astropy.io.fits.open(self.path) as hdulist:
+            header = hdulist[0].header
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            wcs = astropy.wcs.WCS(header)
+        pixcrd = numpy.array([self.center])
+        ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
+        return ra, dec
 
     def _subscript(self, x1, x2, y1, y2):
         """ Return the string representation of the image subscript.
