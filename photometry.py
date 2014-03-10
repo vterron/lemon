@@ -173,9 +173,9 @@ def parallel_photometry(args):
     msg = "%s: qphot dannulus: %.3f"
     logging.debug(msg % (image.path, pparams.dannulus))
 
-    maximum = image.read_keyword(options.saturk)
-    msg = "%s: saturation level = %d ADUs (keyword '%s')"
-    args = (image.path, maximum, options.saturk)
+    maximum = image.saturation(options.maximum, coaddk = options.coaddk)
+    msg = "%s: saturation level = %d ADUs'"
+    args = (image.path, maximum)
     logging.debug(msg % args)
 
     logging.info("Running qphot on %s" % image.path)

@@ -35,6 +35,7 @@ import fnmatch
 import hashlib
 import logging
 import numpy
+import numbers
 import os
 import os.path
 import pyfits
@@ -46,6 +47,7 @@ import warnings
 
 # LEMON modules
 import astromatic
+import keywords
 import methods
 import passband
 import style
@@ -626,6 +628,42 @@ class FITSImage(object):
         pixcrd = numpy.array([self.center])
         ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
         return ra, dec
+
+    def saturation(self, maximum, coaddk = keywords.coaddk):
+
+        if not isinstance(maximum, numbers.Real):
+            msg = "'maximum' must be an integer or real number"
+            raise TypeError(msg)
+
+        msg = "%s: saturation level of a single image: %d ADUs"
+        logging.debug(msg % (self.path, maximum))
+
+        try:
+            ncoadds = self.read_keyword(coaddk)
+        except KeyError:
+            ncoadds = 1
+            msg = "%s: keyword '%s' not in header, assuming value of one"
+            logging.debug(msg % (self.path, coaddk))
+
+        msg = "%s: value of keyword '%s' must be a positive integer"
+        args = self.path, coaddk
+        error_msg = msg % args
+
+        if not isinstance(ncoadds, numbers.Integral):
+            raise TypeError(error_msg)
+
+        if ncoadds < 1:
+            raise ValueError(error_msg)
+
+        msg = "%s: number of effective coadds (%s keyword) = %d"
+        args = self.path, coaddk, ncoadds
+        logging.debug(msg % args)
+
+        saturation = maximum * ncoadds
+        msg = "%s: effective saturation level = %d x %d = %d"
+        args = self.path, maximum, ncoadds, saturation
+        logging.debug(msg % args)
+        return saturation
 
     def _subscript(self, x1, x2, y1, y2):
         """ Return the string representation of the image subscript.

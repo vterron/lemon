@@ -99,42 +99,10 @@ class FITSeeingImage(fitsimage.FITSImage):
         msg = "%s: width of margin: %d pixels" % (self.path, self.margin)
         logging.debug(msg)
 
-        msg = "%s: saturation level of a single image: %d ADUs"
-        logging.debug(msg % (self.path, maximum))
-
-        # Determine the effective saturation level, which depends on the number
-        # of coadded images. If the keyword is missing, assume a value of one.
-        try:
-            self.ncoadds = self.read_keyword(coaddk)
-            assert isinstance(self.ncoadds, int)
-            if self.ncoadds < 1:
-                msg = "%s: value of %s keyword must be a positive integer"
-                raise ValueError(msg % (self.path, coaddk))
-
-            msg = "%s: number of effective coadds (%s keyword) = %d"
-            logging.debug(msg % (self.path, coaddk, self.ncoadds))
-
-            self.saturation = maximum * self.ncoadds
-            msg = "%s: effective saturation level = %d x %d = %d"
-            logging.debug(msg % (self.path, maximum, self.ncoadds, self.saturation))
-
-            # To be used when the saturation level is saved in the FITS header
-            satur_comment = "ADUs (%s x %d '%s')" % (maximum, self.ncoadds, coaddk)
-
-        except KeyError:
-            self.ncoadds = 1
-            msg = "%s: keyword '%s' not in header, assuming value of one"
-            logging.debug(msg % (self.path, coaddk))
-
-            self.saturation = maximum
-            msg = "%s: saturation level = %d"
-            logging.debug(msg % (self.path, self.saturation))
-
-            satur_comment = "ADUs (missing '%s' keyword)" % coaddk
-
         # Compute the MD5 hash of the SExtractor configuration files and this
         # saturation level, which overrides the definition of SATUR_LEVEL.
-        options = dict(SATUR_LEVEL = str(self.saturation))
+        satur_level = self.saturation(maximum, coaddk = coaddk)
+        options = dict(SATUR_LEVEL = str(satur_level))
         sex_md5sum = astromatic.sextractor_md5sum(options = options)
         msg = "%s: SExtractor MD5 hash: %s" % (self.path, sex_md5sum)
         logging.debug(msg)
@@ -208,7 +176,7 @@ class FITSeeingImage(fitsimage.FITSImage):
                     # about "illegal values" if it receives a Unicode string.
                     self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
-                    args = saturk, self.saturation
+                    args = saturk, satur_level
                     self.update_keyword(*args, comment = satur_comment)
                 except IOError:
                     pass
