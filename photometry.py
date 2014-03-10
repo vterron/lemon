@@ -398,10 +398,6 @@ key_group.add_option('--coaddk', action = 'store', type = 'str',
                      dest = 'coaddk', default = keywords.coaddk,
                      help = keywords.desc['coaddk'])
 
-key_group.add_option('--saturk', action = 'store', type = 'str',
-                     dest = 'saturk', default = keywords.saturk,
-                     help = keywords.desc['saturk'])
-
 key_group.add_option('--gaink', action = 'store', type = 'str',
                      dest = 'gaink', default = keywords.gaink,
                      help = keywords.desc['gaink'])

@@ -729,10 +729,6 @@ key_group.add_option('--coaddk', action = 'store', type = 'str',
                      dest = 'coaddk', default = keywords.coaddk,
                      help = keywords.desc['coaddk'])
 
-key_group.add_option('--saturk', action = 'store', type = 'str',
-                     dest = 'saturk', default = keywords.saturk,
-                     help = keywords.desc['saturk'])
-
 key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = "keyword to which to write the estimated FWHM "

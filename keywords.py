@@ -105,9 +105,3 @@ desc['coaddk'] = \
 "determine the number of counts at which arises saturation in coadded " \
 "observations. If the keyword is missing, we assume a value of one (that " \
 "is, that the observation consisted of a single exposure) [default: %default]"
-
-saturk = 'SATURATION LEVEL'
-desc['saturk'] = \
-"keyword for the effective saturation level, in ADUs: the saturation level " \
-"of a single image times the number of frames that were co-added. It is " \
-"written to the FITS header by the 'seeing' command [default: %default]"
