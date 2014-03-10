@@ -767,8 +767,7 @@ def main(arguments = None):
     img.delete_keyword(keywords.sex_catalog)
 
     args = (sources_img_path, options.maximum, options.margin)
-    kwargs = dict(coaddk = options.coaddk,
-                  saturk = options.saturk)
+    kwargs = dict(coaddk = options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
 

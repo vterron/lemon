@@ -67,8 +67,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     """
 
-    def __init__(self, path, maximum, margin,
-                 coaddk = keywords.coaddk, saturk = keywords.saturk):
+    def __init__(self, path, maximum, margin, coaddk = keywords.coaddk):
         """ Instantiation method for the FITSeeingImage class.
 
         The path to the SExtractor catalog is read from the FITS header: if the
@@ -765,8 +764,7 @@ def parallel_sextractor(args):
 
     try:
         args = path, options.maximum, options.margin
-        kwargs = dict(coaddk = options.coaddk,
-                      saturk = options.saturk)
+        kwargs = dict(coaddk = options.coaddk)
         image = FITSeeingImage(*args, **kwargs)
         fwhm = image.fwhm(per = options.per, mode = mode)
         logging.debug("%s: FWHM = %.3f" % (path, fwhm))
