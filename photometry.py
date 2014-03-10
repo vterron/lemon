@@ -173,9 +173,9 @@ def parallel_photometry(args):
     msg = "%s: qphot dannulus: %.3f"
     logging.debug(msg % (image.path, pparams.dannulus))
 
-    maximum = image.read_keyword(options.saturk)
-    msg = "%s: saturation level = %d ADUs (keyword '%s')"
-    args = (image.path, maximum, options.saturk)
+    maximum = image.saturation(options.maximum, coaddk = options.coaddk)
+    msg = "%s: saturation level = %d ADUs'"
+    args = (image.path, maximum)
     logging.debug(msg % args)
 
     logging.info("Running qphot on %s" % image.path)
@@ -397,10 +397,6 @@ key_group.add_option('--expk', action = 'store', type = 'str',
 key_group.add_option('--coaddk', action = 'store', type = 'str',
                      dest = 'coaddk', default = keywords.coaddk,
                      help = keywords.desc['coaddk'])
-
-key_group.add_option('--saturk', action = 'store', type = 'str',
-                     dest = 'saturk', default = keywords.saturk,
-                     help = keywords.desc['saturk'])
 
 key_group.add_option('--gaink', action = 'store', type = 'str',
                      dest = 'gaink', default = keywords.gaink,
@@ -767,8 +763,7 @@ def main(arguments = None):
     img.delete_keyword(keywords.sex_catalog)
 
     args = (sources_img_path, options.maximum, options.margin)
-    kwargs = dict(coaddk = options.coaddk,
-                  saturk = options.saturk)
+    kwargs = dict(coaddk = options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
 

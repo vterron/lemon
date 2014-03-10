@@ -67,8 +67,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     """
 
-    def __init__(self, path, maximum, margin,
-                 coaddk = keywords.coaddk, saturk = keywords.saturk):
+    def __init__(self, path, maximum, margin, coaddk = keywords.coaddk):
         """ Instantiation method for the FITSeeingImage class.
 
         The path to the SExtractor catalog is read from the FITS header: if the
@@ -83,9 +82,7 @@ class FITSeeingImage(fitsimage.FITSImage):
         example, the effective saturation level equals three times the value of
         'saturation'. The number of effective coadds is read from the 'coaddk'
         parameter. If the keyword is missing, a value of one (that is, that the
-        image consisted of a single exposure) is assumed. The effective
-        saturation level, in ADUs, is written to the FITS header with the
-        keyword 'saturk'.
+        image consisted of a single exposure) is assumed.
 
         The 'margin' argument gives the width, in pixels, of the areas adjacent
         to the edges of the image that are to be ignored when detecting sources
@@ -99,42 +96,10 @@ class FITSeeingImage(fitsimage.FITSImage):
         msg = "%s: width of margin: %d pixels" % (self.path, self.margin)
         logging.debug(msg)
 
-        msg = "%s: saturation level of a single image: %d ADUs"
-        logging.debug(msg % (self.path, maximum))
-
-        # Determine the effective saturation level, which depends on the number
-        # of coadded images. If the keyword is missing, assume a value of one.
-        try:
-            self.ncoadds = self.read_keyword(coaddk)
-            assert isinstance(self.ncoadds, int)
-            if self.ncoadds < 1:
-                msg = "%s: value of %s keyword must be a positive integer"
-                raise ValueError(msg % (self.path, coaddk))
-
-            msg = "%s: number of effective coadds (%s keyword) = %d"
-            logging.debug(msg % (self.path, coaddk, self.ncoadds))
-
-            self.saturation = maximum * self.ncoadds
-            msg = "%s: effective saturation level = %d x %d = %d"
-            logging.debug(msg % (self.path, maximum, self.ncoadds, self.saturation))
-
-            # To be used when the saturation level is saved in the FITS header
-            satur_comment = "ADUs (%s x %d '%s')" % (maximum, self.ncoadds, coaddk)
-
-        except KeyError:
-            self.ncoadds = 1
-            msg = "%s: keyword '%s' not in header, assuming value of one"
-            logging.debug(msg % (self.path, coaddk))
-
-            self.saturation = maximum
-            msg = "%s: saturation level = %d"
-            logging.debug(msg % (self.path, self.saturation))
-
-            satur_comment = "ADUs (missing '%s' keyword)" % coaddk
-
         # Compute the MD5 hash of the SExtractor configuration files and this
         # saturation level, which overrides the definition of SATUR_LEVEL.
-        options = dict(SATUR_LEVEL = str(self.saturation))
+        satur_level = self.saturation(maximum, coaddk = coaddk)
+        options = dict(SATUR_LEVEL = str(satur_level))
         sex_md5sum = astromatic.sextractor_md5sum(options = options)
         msg = "%s: SExtractor MD5 hash: %s" % (self.path, sex_md5sum)
         logging.debug(msg)
@@ -208,8 +173,6 @@ class FITSeeingImage(fitsimage.FITSImage):
                     # about "illegal values" if it receives a Unicode string.
                     self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
-                    args = saturk, self.saturation
-                    self.update_keyword(*args, comment = satur_comment)
                 except IOError:
                     pass
 
@@ -766,10 +729,6 @@ key_group.add_option('--coaddk', action = 'store', type = 'str',
                      dest = 'coaddk', default = keywords.coaddk,
                      help = keywords.desc['coaddk'])
 
-key_group.add_option('--saturk', action = 'store', type = 'str',
-                     dest = 'saturk', default = keywords.saturk,
-                     help = keywords.desc['saturk'])
-
 key_group.add_option('--fwhmk', action = 'store', type = 'str',
                      dest = 'fwhmk', default = keywords.fwhmk,
                      help = "keyword to which to write the estimated FWHM "
@@ -799,8 +758,7 @@ def parallel_sextractor(args):
 
     try:
         args = path, options.maximum, options.margin
-        kwargs = dict(coaddk = options.coaddk,
-                      saturk = options.saturk)
+        kwargs = dict(coaddk = options.coaddk)
         image = FITSeeingImage(*args, **kwargs)
         fwhm = image.fwhm(per = options.per, mode = mode)
         logging.debug("%s: FWHM = %.3f" % (path, fwhm))
