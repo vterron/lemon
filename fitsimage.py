@@ -630,6 +630,20 @@ class FITSImage(object):
         return ra, dec
 
     def saturation(self, maximum, coaddk = keywords.coaddk):
+        """ Return the effective saturation level, in ADUs.
+
+        Return the number of ADUs at which saturation arises. This is the
+        result of multiplying 'maximum', the saturation level of a single
+        frame, by the number of coadded frames, which is read from the keyword
+        'coaddk'. If the keyword cannot be found in the FITS header, a value of
+        one is assumed. TypeError must be an integer or real number, while the
+        number of coadded frames must be an integer; otherwise, TypeError is
+        raised.
+
+        Keyword arguments:
+        coaddk - FITS keyword for the number of coadded frames.
+
+        """
 
         if not isinstance(maximum, numbers.Real):
             msg = "'maximum' must be an integer or real number"
