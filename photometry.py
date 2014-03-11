@@ -911,7 +911,7 @@ def main(arguments = None):
     # aperture and sky annulus are determined by the FWHM of the sources image.
     if not fixed_annuli:
 
-        sources_img_fwhm = sources_img.read_keyword(options.fwhmk)
+        sources_img_fwhm = get_fwhm(sources_img, options)
         sources_aperture = options.aperture * sources_img_fwhm
         sources_annulus  = options.annulus  * sources_img_fwhm
         sources_dannulus = options.dannulus * sources_img_fwhm
@@ -1157,7 +1157,7 @@ def main(arguments = None):
             pfilter_fwhms = []
             for path in images:
                 img = fitsimage.FITSImage(path)
-                img_fwhm = img.read_keyword(options.fwhmk)
+                img_fwhm = get_fwhm(img, options)
                 logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
                 pfilter_fwhms.append(img_fwhm)
 
@@ -1210,7 +1210,7 @@ def main(arguments = None):
 
             """
 
-            fwhm = img.read_keyword(options.fwhmk)
+            fwhm = get_fwhm(img, options)
             aperture = fwhm * options.aperture
             annulus  = fwhm * options.annulus
             dannulus = fwhm * options.dannulus
