@@ -142,6 +142,51 @@ def clean_tmp_coords_file(path):
         msg = "Temporary coordinates file '%s' removed"
         logging.debug(msg % path)
 
+def get_fwhm(img, options):
+
+    try:
+        msg = "%s: reading FWHM from keyword '%s'"
+        args = img.path, options.fwhmk
+        logging.debug(msg % args)
+
+        fwhm = img.read_keyword(options.fwhmk)
+
+        msg = "%s: FWHM = %.3f (keyword '%s')"
+        args = img.path, fwhm, options.fwhmk
+        logging.debug(msg % args)
+        return fwhm
+
+    except KeyError:
+
+        msg = "%s: keyword '%s' not found in header"
+        args = img.path, options.fwhmk
+        logging.debug(msg % args)
+
+        if not isinstance(img, seeing.FITSeeingImage):
+
+            msg = "%s: type of argument 'img' is not FITSeeingImage ('%s')"
+            args = img.path, type(img)
+            logging.debug(msg % args)
+
+            msg = "%s: calling FITSeeingImage.__init__() with 'img'"
+            logging.debug(msg % img.path)
+
+            args = (img.path, options.maximum, options.margin)
+            kwargs = dict(coaddk = options.coaddk)
+            img = seeing.FITSeeingImage(*args, **kwargs)
+
+        msg = "%s: calling FITSeeingImage.fwhm() to compute FWHM"
+        logging.debug(msg % img.path)
+
+        mode = 'mean' if options.mean else  'median'
+        kwargs = dict(per = options.per, mode = mode)
+        fwhm = img.fwhm(**kwargs)
+
+        msg = "%s: FITSeeingImage.fwhm() returned %.3f"
+        args = img.path, fwhm
+        logging.debug(msg % args)
+        return fwhm
+
 def parallel_photometry(args):
     """ Function argument of map_async() to do photometry in parallel.
 
