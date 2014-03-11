@@ -45,6 +45,7 @@ description = \
 """
 
 import math
+import montage_wrapper as montage
 import numpy
 import os
 import os.path
