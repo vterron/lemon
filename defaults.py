@@ -58,3 +58,8 @@ desc['snr_percentile'] = \
 "score are excluded. Note that the percentile is calculated taking into " \
 "account only the astronomical objects within the image margins (see " \
 "the '--margin' option) [default: %default]"
+
+desc['mean'] = \
+"in order to compute the FWHM / elongation of a FITS image, take the " \
+"arithmetic mean of the astronomical objects (detected by SExtractor) " \
+"instead of the median. So you say you prefer a non-robust statistic?"

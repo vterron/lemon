@@ -643,10 +643,7 @@ parser.add_option('--snr-percentile', action = 'store', type = 'float',
                   help = defaults.desc['snr_percentile'])
 
 parser.add_option('--mean', action = 'store_true', dest = 'mean',
-                  help = "take the arithmetic mean, instead of the median, "
-                  "when computing the FWHM / elongation of an image out of "
-                  "the FWHM / elongation of the stars on it detected. Do "
-                  "you prefer a non-robust statistic?")
+                  help = defaults.desc['mean'])
 
 parser.add_option('--sources-percentile', action = 'store', type = 'float',
                   dest = 'stars_per', default = 75.0,
