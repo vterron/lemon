@@ -773,12 +773,17 @@ def main(arguments = None):
         arguments = sys.argv[1:] # ignore argv[0], the script name
     (options, args) = parser.parse_args(args = arguments)
 
-    if len(args) != 1:
+    # Print the help and abort the execution if there are fewer than three
+    # positional arguments left, as the user must specify at least two FITS
+    # images and the output mosaic into which they are assembled.
+    if len(args) < 3:
         parser.print_help()
         return 2 # used for command line syntax errors
     else:
-        assert len(args) == 1
-        xml_path = args[0]
+        assert len(args) >= 3
+        input_paths = set(args[1:-1])
+        output_path = args[-1]
+
 
     # Make sure we are not overwriting an existing file unless the user
     # actually, truly and genuinely (-w option) intended to do so. If that is
