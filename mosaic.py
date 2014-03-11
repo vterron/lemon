@@ -44,6 +44,7 @@ description = \
 
 """
 
+import atexit
 import logging
 import math
 import montage_wrapper as montage
@@ -830,6 +831,7 @@ def main(arguments = None):
     suffix = "_LEMON_%d_mosaic" % pid
     kwargs = dict(suffix = suffix + '_input')
     input_dir = tempfile.mkdtemp(**kwargs)
+    atexit.register(clean_tmp_dir, input_dir)
 
     for path in input_paths:
         source = os.path.abspath(path)
@@ -844,6 +846,7 @@ def main(arguments = None):
 
     kwargs = dict(suffix = suffix + '_output')
     output_dir = tempfile.mkdtemp(**kwargs)
+    atexit.register(clean_tmp_dir, output_dir)
     os.rmdir(output_dir)
 
     # Make sure we are not overwriting an existing file unless the user
