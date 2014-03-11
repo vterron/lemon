@@ -371,6 +371,17 @@ qphot_fixed.add_option('--dannulus-pix', action = 'store', type = 'float',
                        help = "the width of the sky annulus, in pixels")
 parser.add_option_group(qphot_fixed)
 
+fwhm_group = optparse.OptionGroup(parser, "FWHM",
+              "The full width at half maximum of each FITS image is written "
+              "to its header by the 'seeing' command, which is generally run "
+              "before photometry is done. However, it may be the case that "
+              "not all the images with which we have to work now are the "
+              "output of 'seeing' (for example, if the sources image is that "
+              "output by the 'mosaic' command). In these cases, we need to "
+              "compute the FWHM of these images, in the same way the "
+              "'seeing' command does.")
+parser.add_option_group(fwhm_group)
+
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
