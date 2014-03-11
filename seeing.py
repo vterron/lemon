@@ -639,20 +639,11 @@ parser.add_option('--margin', action = 'store', type = 'int',
                   help = defaults.desc['margin'])
 
 parser.add_option('--snr-percentile', action = 'store', type = 'float',
-                  dest = 'per', default = 25,
-                  help = "the score at the given percentile of the "
-                  "signal-to-noise ratio of the stars that are to be included "
-                  "in the calculation of the FWHM and elongation of the stars "
-                  "of a image. Stars whose SNR is below this percentile are "
-                  "excluded. Note that the percentile is calculated taking "
-                  "into account only the stars within the image margins "
-                  "(see the '--margin' option) [default: %default]")
+                  dest = 'per', default = defaults.snr_percentile,
+                  help = defaults.desc['snr_percentile'])
 
 parser.add_option('--mean', action = 'store_true', dest = 'mean',
-                  help = "take the arithmetic mean, instead of the median, "
-                  "when computing the FWHM / elongation of an image out of "
-                  "the FWHM / elongation of the stars on it detected. Do "
-                  "you prefer a non-robust statistic?")
+                  help = defaults.desc['mean'])
 
 parser.add_option('--sources-percentile', action = 'store', type = 'float',
                   dest = 'stars_per', default = 75.0,

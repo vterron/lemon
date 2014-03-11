@@ -142,6 +142,62 @@ def clean_tmp_coords_file(path):
         msg = "Temporary coordinates file '%s' removed"
         logging.debug(msg % path)
 
+def get_fwhm(img, options):
+    """ Return the FWHM of the FITS image.
+
+    Attempt to read the full width at half maximum from the header of the FITS
+    image (keyword options.fwhmk). If the keyword cannot be found, then compute
+    the FWHM by calling FITSeeingImage.fwhm(). In this manner, we can always
+    call this method to get the FWHM of each image, without having to worry
+    about whether it is in the header already. The 'img' argument must be a
+    fitsimage.FITSImage object, while 'options' must be the optparse.Values
+    object returned by optparse.OptionParser.parse_args().
+
+    """
+
+    try:
+        msg = "%s: reading FWHM from keyword '%s'"
+        args = img.path, options.fwhmk
+        logging.debug(msg % args)
+
+        fwhm = img.read_keyword(options.fwhmk)
+
+        msg = "%s: FWHM = %.3f (keyword '%s')"
+        args = img.path, fwhm, options.fwhmk
+        logging.debug(msg % args)
+        return fwhm
+
+    except KeyError:
+
+        msg = "%s: keyword '%s' not found in header"
+        args = img.path, options.fwhmk
+        logging.debug(msg % args)
+
+        if not isinstance(img, seeing.FITSeeingImage):
+
+            msg = "%s: type of argument 'img' is not FITSeeingImage ('%s')"
+            args = img.path, type(img)
+            logging.debug(msg % args)
+
+            msg = "%s: calling FITSeeingImage.__init__() with 'img'"
+            logging.debug(msg % img.path)
+
+            args = (img.path, options.maximum, options.margin)
+            kwargs = dict(coaddk = options.coaddk)
+            img = seeing.FITSeeingImage(*args, **kwargs)
+
+        msg = "%s: calling FITSeeingImage.fwhm() to compute FWHM"
+        logging.debug(msg % img.path)
+
+        mode = 'mean' if options.mean else  'median'
+        kwargs = dict(per = options.per, mode = mode)
+        fwhm = img.fwhm(**kwargs)
+
+        msg = "%s: FITSeeingImage.fwhm() returned %.3f"
+        args = img.path, fwhm
+        logging.debug(msg % args)
+        return fwhm
+
 def parallel_photometry(args):
     """ Function argument of map_async() to do photometry in parallel.
 
@@ -370,6 +426,24 @@ qphot_fixed.add_option('--dannulus-pix', action = 'store', type = 'float',
                        dest = 'dannulus_pix', default = None,
                        help = "the width of the sky annulus, in pixels")
 parser.add_option_group(qphot_fixed)
+
+fwhm_group = optparse.OptionGroup(parser, "FWHM",
+              "The full width at half maximum of each FITS image is written "
+              "to its header by the 'seeing' command, which is generally run "
+              "before photometry is done. However, it may be the case that "
+              "not all the images with which we have to work now are the "
+              "output of 'seeing' (for example, if the sources image is that "
+              "output by the 'mosaic' command). In these cases, we need to "
+              "compute the FWHM of these images, in the same way the "
+              "'seeing' command does.")
+
+fwhm_group.add_option('--snr-percentile', action = 'store', type = 'float',
+                      dest = 'per', default = defaults.snr_percentile,
+                      help = defaults.desc['snr_percentile'])
+
+fwhm_group.add_option('--mean', action = 'store_true', dest = 'mean',
+                      help = defaults.desc['mean'])
+parser.add_option_group(fwhm_group)
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
@@ -837,7 +911,7 @@ def main(arguments = None):
     # aperture and sky annulus are determined by the FWHM of the sources image.
     if not fixed_annuli:
 
-        sources_img_fwhm = sources_img.read_keyword(options.fwhmk)
+        sources_img_fwhm = get_fwhm(sources_img, options)
         sources_aperture = options.aperture * sources_img_fwhm
         sources_annulus  = options.annulus  * sources_img_fwhm
         sources_dannulus = options.dannulus * sources_img_fwhm
@@ -1083,7 +1157,7 @@ def main(arguments = None):
             pfilter_fwhms = []
             for path in images:
                 img = fitsimage.FITSImage(path)
-                img_fwhm = img.read_keyword(options.fwhmk)
+                img_fwhm = get_fwhm(img, options)
                 logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
                 pfilter_fwhms.append(img_fwhm)
 
@@ -1136,7 +1210,7 @@ def main(arguments = None):
 
             """
 
-            fwhm = img.read_keyword(options.fwhmk)
+            fwhm = get_fwhm(img, options)
             aperture = fwhm * options.aperture
             annulus  = fwhm * options.annulus
             dannulus = fwhm * options.dannulus

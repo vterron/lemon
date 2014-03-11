@@ -50,3 +50,16 @@ desc['verbosity'] = \
 "-v tracks INFO events, while two or more enable DEBUG messages. These " \
 "are probably only useful when debugging the module."
 
+snr_percentile = 25
+desc['snr_percentile'] = \
+"the score at the percentile of the signal-to-noise ratio of the " \
+"astronomical objects that are to be included in the calculation of the " \
+"FWHM / elongation of a FITS image. Objects whose SNR is below this " \
+"score are excluded. Note that the percentile is calculated taking into " \
+"account only the astronomical objects within the image margins (see " \
+"the '--margin' option) [default: %default]"
+
+desc['mean'] = \
+"in order to compute the FWHM / elongation of a FITS image, take the " \
+"arithmetic mean of the astronomical objects (detected by SExtractor) " \
+"instead of the median. So you say you prefer a non-robust statistic?"
