@@ -384,6 +384,9 @@ fwhm_group = optparse.OptionGroup(parser, "FWHM",
 fwhm_group.add_option('--snr-percentile', action = 'store', type = 'float',
                       dest = 'per', default = defaults.snr_percentile,
                       help = defaults.desc['snr_percentile'])
+
+fwhm_group.add_option('--mean', action = 'store_true', dest = 'mean',
+                      help = defaults.desc['mean'])
 parser.add_option_group(fwhm_group)
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
