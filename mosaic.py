@@ -849,6 +849,8 @@ def main(arguments = None):
     atexit.register(clean_tmp_dir, output_dir)
     os.rmdir(output_dir)
 
+    montage.mosaic(input_dir, output_dir)
+
     # Make sure we are not overwriting an existing file unless the user
     # actually, truly and genuinely (-w option) intended to do so. If that is
     # what the user actually wants, do not delete the file immediately, but
