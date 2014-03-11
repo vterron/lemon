@@ -143,6 +143,17 @@ def clean_tmp_coords_file(path):
         logging.debug(msg % path)
 
 def get_fwhm(img, options):
+    """ Return the FWHM of the FITS image.
+
+    Attempt to read the full width at half maximum from the header of the FITS
+    image (keyword options.fwhmk). If the keyword cannot be found, then compute
+    the FWHM by calling FITSeeingImage.fwhm(). In this manner, we can always
+    call this method to get the FWHM of each image, without having to worry
+    about whether it is in the header already. The 'img' argument must be a
+    fitsimage.FITSImage object, while 'options' must be the optparse.Values
+    object returned by optparse.OptionParser.parse_args().
+
+    """
 
     try:
         msg = "%s: reading FWHM from keyword '%s'"
