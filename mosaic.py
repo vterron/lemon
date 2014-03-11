@@ -837,6 +837,14 @@ def main(arguments = None):
         link_name = os.path.join(input_dir, basename)
         os.symlink(source, link_name)
 
+    # The output of montage.mosaic() is another directory, to which several
+    # files are written, so we need the path to a second temporary directory.
+    # Delete it before calling mosaic(), as otherwise it will raise IOError
+    # ("Output directory already exists").
+
+    kwargs = dict(suffix = suffix + '_output')
+    output_dir = tempfile.mkdtemp(**kwargs)
+    os.rmdir(output_dir)
 
     # Make sure we are not overwriting an existing file unless the user
     # actually, truly and genuinely (-w option) intended to do so. If that is
