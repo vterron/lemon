@@ -54,6 +54,7 @@ import optparse
 import pyfits
 import shutil
 import sys
+import tempfile
 import traceback
 
 # LEMON modules
@@ -816,6 +817,25 @@ def main(arguments = None):
         assert len(args) >= 3
         input_paths = set(args[1:-1])
         output_path = args[-1]
+
+    # montage.mosaic() requires as first argument the directory containing the
+    # input FITS images but, in order to maintain the same syntax across all
+    # LEMON commands, we receive them as command-line arguments. Thus, create a
+    # temporary directory and symlink from it the input images. Hard links are
+    # not an option because os.link() will raise "OSError: [Errno 18] Invalid
+    # cross-device link" if the temporary directory is created in a different
+    # partition.
+
+    pid = os.getpid()
+    suffix = "_LEMON_%d_mosaic" % pid
+    kwargs = dict(suffix = suffix + '_input')
+    input_dir = tempfile.mkdtemp(**kwargs)
+
+    for path in input_paths:
+        source = os.path.abspath(path)
+        basename = os.path.basename(path)
+        link_name = os.path.join(input_dir, basename)
+        os.symlink(source, link_name)
 
 
     # Make sure we are not overwriting an existing file unless the user
