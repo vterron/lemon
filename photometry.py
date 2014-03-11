@@ -380,6 +380,10 @@ fwhm_group = optparse.OptionGroup(parser, "FWHM",
               "output by the 'mosaic' command). In these cases, we need to "
               "compute the FWHM of these images, in the same way the "
               "'seeing' command does.")
+
+fwhm_group.add_option('--snr-percentile', action = 'store', type = 'float',
+                      dest = 'per', default = defaults.snr_percentile,
+                      help = defaults.desc['snr_percentile'])
 parser.add_option_group(fwhm_group)
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
