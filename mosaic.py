@@ -698,16 +698,6 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-parser.add_option('--tempdir', action = 'store', type = 'str',
-                  dest = 'tempdir', default = None,
-                  help = "directory to which to save a copy of the temporary, "
-                  "aligned images, which are otherwise removed before the "
-                  "program exits. This is primarily useful for debugging "
-                  "purposes, or if you do not want to have to blindly trust "
-                  "the final mosaic but prefer to be able to examine the "
-                  "images from which it was generated and verify that they "
-                  "all were correctly aligned")
-
 check_group = optparse.OptionGroup(parser, "Check-image",
               "Instead of the original images, after their alignment, the "
               "SExtractor check-images can be used when composing the mosaic. "
