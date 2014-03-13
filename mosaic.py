@@ -141,7 +141,7 @@ def main(arguments = None):
         return 2 # used for command line syntax errors
     else:
         assert len(args) >= 3
-        input_paths = set(args[1:-1])
+        input_paths = set(args[:-1])
         output_path = args[-1]
 
     # Refuse to overwrite the output FITS file unless explicitly instructed to
