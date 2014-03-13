@@ -56,6 +56,7 @@ import tempfile
 # LEMON modules
 import customparser
 import fitsimage
+import methods
 import style
 
 def clean_tmp_dir(dir_path):
@@ -148,6 +149,25 @@ def main(arguments = None):
             print msg % (style.prefix, output_path)
             print style.error_exit_message
             return 1
+
+    msg = "%sMaking sure the %d input paths are FITS images..."
+    print msg % (style.prefix, len(input_paths))
+
+    methods.show_progress(0.0)
+    for index, path in enumerate(input_paths):
+        # fitsimage.FITSImage.__init__() raises fitsimage.NonStandardFITS if
+        # one of the paths is not a standard-conforming FITS file. We do not
+        # need the FITSImage object that is created.
+        try:
+            fitsimage.FITSImage(path)
+        except fitsimage.NonStandardFITS:
+            print
+            msg = "'%s' is not a standard FITS file"
+            raise fitsimage.NonStandardFITS(msg % path)
+
+        percentage = (index + 1) / len(input_paths) * 100
+        methods.show_progress(percentage)
+    print # progress bar doesn't include newline
 
     # montage.mosaic() requires as first argument the directory containing the
     # input FITS images but, in order to maintain the same syntax across all
