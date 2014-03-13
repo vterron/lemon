@@ -91,7 +91,7 @@ def clean_tmp_dir(dir_path):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
+parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_IMG"
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
