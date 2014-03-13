@@ -46,25 +46,17 @@ description = \
 
 import atexit
 import logging
-import math
 import montage_wrapper as montage
-import numpy
 import os
 import os.path
-import optparse
-import pyfits
 import shutil
 import sys
 import tempfile
-import traceback
 
 # LEMON modules
 import customparser
-import keywords
 import fitsimage
-import methods
 import style
-import xmlparse
 
 def clean_tmp_dir(dir_path):
     """ Try to delete an entire directory tree. """
