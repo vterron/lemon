@@ -695,10 +695,6 @@ class Mosaic(object):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'output_path', default = 'mosaic.fits',
-                  help = "path to the output FITS image [default: %default]")
-
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
