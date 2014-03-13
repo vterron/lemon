@@ -819,6 +819,18 @@ def main(arguments = None):
         input_paths = set(args[1:-1])
         output_path = args[-1]
 
+    # Refuse to overwrite the output FITS file unless explicitly instructed to
+    # do so. Note that, if the --overwritten option is given, we do not need to
+    # delete the existing file: it will be silently overwritten when the output
+    # of montage.mosaic() is shutil.move()'d to the output path.
+
+    if os.path.exists(output_path):
+        if not options.overwrite:
+            msg = "%sError. The output file '%s' already exists."
+            print msg % (style.prefix, output_path)
+            print style.error_exit_message
+            return 1
+
     # montage.mosaic() requires as first argument the directory containing the
     # input FITS images but, in order to maintain the same syntax across all
     # LEMON commands, we receive them as command-line arguments. Thus, create a
@@ -858,20 +870,6 @@ def main(arguments = None):
     MOSAIC_OUTPUT = 'mosaic.fits'
     src = os.path.join(output_dir, MOSAIC_OUTPUT)
     shutil.move(src, output_path)
-
-    # Make sure we are not overwriting an existing file unless the user
-    # actually, truly and genuinely (-w option) intended to do so. If that is
-    # what the user actually wants, do not delete the file immediately, but
-    # instead wait until the new mosaic is about to be created. In that manner
-    # the file is not lost in case an error is encountered, and we also give
-    # some time to user to change his mind before the old mosaic is gone.
-
-    if os.path.exists(options.output_path):
-        if not options.overwrite:
-            print "%sError. The output file '%s' already exists."  % \
-                  (style.prefix, options.output_path)
-            print style.error_exit_message
-            return 1
 
     # The offsets file must contain strictly valid XML code. Period.
     if not os.path.exists(xml_path):
