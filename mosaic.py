@@ -698,14 +698,6 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-parser.add_option('--fraction', action = 'store', type = 'float',
-                  dest = 'fraction', default = 0.85,
-                  help = "the minimum fraction of data pixels (not "
-                  "corresponding to the margins that were added to each image "
-                  "before the alignment) that must have been combined for "
-                  "each pixel if it is not to be zeroed in the output mosaic "
-                  "[default: %default]")
-
 parser.add_option('--name', action = 'store', type = 'str',
                   dest = 'name', default = 'Reference Mosaic',
                   help = "name of the observed object. The OBJECT keyword of "
