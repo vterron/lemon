@@ -698,13 +698,6 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-parser.add_option('--name', action = 'store', type = 'str',
-                  dest = 'name', default = 'Reference Mosaic',
-                  help = "name of the observed object. The OBJECT keyword of "
-                  "the output mosaic will be set to this value, as according "
-                  "to the FITS Standard this keyword must give 'a name for "
-                  "the object observed' [default: %default]")
-
 parser.add_option('--tempdir', action = 'store', type = 'str',
                   dest = 'tempdir', default = None,
                   help = "directory to which to save a copy of the temporary, "
