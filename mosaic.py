@@ -698,25 +698,6 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-reject_group = optparse.OptionGroup(parser, "Minmax algorithm parameters",
-               "After the alignment is done, all the images are combined "
-               "into the mosaic that results from min-max averaging them. "
-               "Instead of directly combining all the pixels that are in "
-               "the same position, some of them may be rejected: these two "
-               "parameters define the fraction of the highest and lowest "
-               "that are excluded from the averaging (using IRAF's 'minmax' "
-               "rejection algorithm).")
-
-reject_group.add_option('--min', action = 'store', type = 'float',
-                        dest = 'flow', default = 0.10,
-                        help = "fraction of the lowest pixels to be "
-                        "rejected [default: %default]")
-reject_group.add_option('--max', action = 'store', type = 'float',
-                        dest = 'fhigh', default = 0.10,
-                        help = "fraction of the highest pixels to be "
-                        "rejected [default: %default]")
-parser.add_option_group(reject_group)
-
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
