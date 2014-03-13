@@ -81,7 +81,7 @@ def clean_tmp_dir(dir_path):
 
     try:
         kwargs = dict(ignore_errors = False, onerror = log_error)
-        shutil.rmtree(dir_path,**kwargs)
+        shutil.rmtree(dir_path, **kwargs)
 
     finally:
         msg = "Temporary directory '%s' deleted"
