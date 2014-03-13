@@ -695,12 +695,6 @@ class Mosaic(object):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 
-# CCD SITE#2b focus scale = 0.50209205 arcsec/pixel
-parser.add_option('--scale', action = 'store', type = 'float',
-                  dest = 'scale', default = 0.50,
-                  help = "the scale of the images, in arcsec/pixel"
-                  "[default: %default]")
-
 parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'output_path', default = 'mosaic.fits',
                   help = "path to the output FITS image [default: %default]")
