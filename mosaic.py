@@ -698,23 +698,6 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-check_group = optparse.OptionGroup(parser, "Check-image",
-              "Instead of the original images, after their alignment, the "
-              "SExtractor check-images can be used when composing the mosaic. "
-              "This provides a built-in, robust image-reduction feature, "
-              "already present in SExtractor and of which we can take "
-              "advantage in order to interpolate the background map "
-              "('BACKGROUND' check-image type) or subtract the sky "
-              "('-BACKGROUND' type), for example. As the generation of the "
-              "check-images is a CPU-intensive task, this option is None "
-              "by default, meaning that the original images are used.")
-
-check_group.add_option('--check-type', action = 'store', type = 'str',
-                       dest = 'check_type', default = None,
-                       help = "SExtractor check-image to be used in the "
-                       "mosaic for each image.")
-parser.add_option_group(check_group)
-
 reject_group = optparse.OptionGroup(parser, "Minmax algorithm parameters",
                "After the alignment is done, all the images are combined "
                "into the mosaic that results from min-max averaging them. "
