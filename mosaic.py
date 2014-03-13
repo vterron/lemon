@@ -96,6 +96,13 @@ parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_IMG"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
+parser.add_option('--background-match', action = 'store_true',
+                  dest = 'background_match',
+                  help = "include a background-matching step, thus removing "
+                  "any discrepancies in brightness or background. Note that, "
+                  "although an amazing feature of Montage, this makes the "
+                  "assembling of the images take remarkably longer.")
+
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
@@ -172,7 +179,8 @@ def main(arguments = None):
     atexit.register(clean_tmp_dir, output_dir)
     os.rmdir(output_dir)
 
-    montage.mosaic(input_dir, output_dir)
+    kwargs = dict(background_match = options.background_match)
+    montage.mosaic(input_dir, output_dir, **kwargs)
 
     # montage.mosaic() writes several files to the output directory, but we are
     # only interested in one of them: 'mosaic.fits', the mosaic FITS image. We
