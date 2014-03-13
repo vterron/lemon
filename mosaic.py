@@ -851,6 +851,14 @@ def main(arguments = None):
 
     montage.mosaic(input_dir, output_dir)
 
+    # montage.mosaic() writes several files to the output directory, but we are
+    # only interested in one of them: 'mosaic.fits', the mosaic FITS image. We
+    # need to move it to the output path specified by the user.
+
+    MOSAIC_OUTPUT = 'mosaic.fits'
+    src = os.path.join(output_dir, MOSAIC_OUTPUT)
+    shutil.move(src, output_path)
+
     # Make sure we are not overwriting an existing file unless the user
     # actually, truly and genuinely (-w option) intended to do so. If that is
     # what the user actually wants, do not delete the file immediately, but
