@@ -20,27 +20,33 @@
 
 from __future__ import division
 
-description = \
-""" This module receives a series of offsets, aligns their corresponding FITS
-    images and finally combines them all into a single image by averaging them
-    after rejecting a certain fraction of the lowest and highest pixels. The
-    offsets are read from the XML file received as input, which is expected to
-    have been outputted by the 'offset.py' module. Note that, therefore, all
-    the offsets must refer to the same reference image, as only one reference
-    FITS image is created.
+description = """
+Use the Montage (Montage Astronomical Image Mosaic Engine) toolkit [1] to
+assemble the input FITS images into a composite mosaic that preserves their
+flux calibration and positional fidelity. This is a high-level interface to
+mosaic(), a convenience function of the montage-wrapper module which runs the
+mosaicking process from start to end. The input FITS images, all of which must
+have been astrometrically calibrated, are reprojected onto a common coordinate
+system and combined into a mosaic.
 
-    A very important note: as you surely already know, shifting images, as is
-    needed in order to have them aligned, distorts slightly both signal and
-    noise. This means that you should not (even worse, cannot!) do photometry
-    on the resulting image. It should be only used in order to detect sources,
-    as it maximizes the signal-to-noise ratio. Please stand on the shoulders of
-    the photometrist giants and adhere to the standards in our guild.
+Montage is an extremely powerful toolkit, whose algorithms preserve the
+astrometric and photometric accuracy of the input images and perform background
+rectification in such a fashion that its impact on the photometric quality of
+the data is almost negligible [2]. For example, according to the results of an
+accuracy testing, 99.7% of the sources in re-projected synthetic images were
+within 0.1% of the original flux [3]. There are, however, certain assumptions
+of which you should be aware. For example, Montage assumes that the input
+images are all calibrated to an absolute energy scale and that any
+discrepancies between the images are due to variations in their background
+levels that are terrestrial or instrumental in origin [4]
 
-    Note that it is assumed that, for offsets, North is up and East is left.
-    Images for which North is down or East is right are not yet supported, and
-    using them shall have catastrophic results. Yes, this is the unexpected
-    consequence of having most of your astronomers and astronomical software
-    developers based in countries in the Northern hemisphere.
+Note that montage_wrapper is not a replacement for the IPAC Montage mosaicking
+software, whose commands (such as mAdd or mProject) must be present in PATH.
+
+[1]_http://montage.ipac.caltech.edu/
+[2]_http://adsabs.harvard.edu/abs/2003ASPC..295..343B
+[3]_http://montage.ipac.caltech.edu/docs/accuracy.html
+[4]_http://montage.ipac.caltech.edu/docs/algorithms.html
 
 """
 
