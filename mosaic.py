@@ -698,22 +698,6 @@ parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output image if it already exists")
 
-
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
-
-key_group.add_option('--rak', action = 'store', type = 'str',
-                     dest = 'rak', default = keywords.rak,
-                     help = keywords.desc['rak'])
-
-key_group.add_option('--deck', action = 'store', type = 'str',
-                     dest = 'deck', default = keywords.deck,
-                     help = keywords.desc['deck'])
-
-key_group.add_option('--objectk', action = 'store', type = 'str',
-                     dest = 'objectk', default = keywords.objectk,
-                     help = keywords.desc['objectk'])
-parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
