@@ -41,6 +41,7 @@ These are the steps to install LEMON on a clean Debian machine:
 #. Install `IRAF <http://iraf.noao.edu/>`_
 #. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer)
 #. Install `Astrometry.net <http://astrometry.net/use.html>`_
+#. Install `Montage <http://montage-wrapper.readthedocs.org/en/v0.9.5/#installation>`_
 #. ``python ./setup.py``
 #. ``echo 'PATH=$PATH:~/lemon' >> ~/.bashrc``
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
