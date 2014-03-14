@@ -53,6 +53,7 @@ software, whose commands (such as mAdd or mProject) must be present in PATH.
 import atexit
 import logging
 import montage_wrapper as montage
+import multiprocessing
 import os
 import os.path
 import shutil
@@ -109,6 +110,16 @@ parser.add_option('--background-match', action = 'store_true',
                   "any discrepancies in brightness or background. Note that, "
                   "although an amazing feature of Montage, this makes the "
                   "assembling of the images take remarkably longer.")
+
+parser.add_option('--cores', action = 'store', type = 'int',
+                  dest = 'ncores', default = multiprocessing.cpu_count(),
+                  help = "the number of MPI (Message Passing Interface) "
+                  "processes to use with the Montage commands that support "
+                  "parallelization. Note that this requires that the MPI "
+                  "versions of the Montage commands be installed, which is "
+                  "not the case by default. This option defaults to the "
+                  "number of CPUs in the system, which are automatically "
+                  "detected [default: %default]")
 
 customparser.clear_metavars(parser)
 
@@ -206,6 +217,9 @@ def main(arguments = None):
     os.rmdir(output_dir)
 
     kwargs = dict(background_match = options.background_match)
+    if options.ncores > 1:
+        kwargs['mpi'] = True              # use MPI whenever possible
+        kwargs['n_proc'] = options.ncores # number of MPI processes
     montage.mosaic(input_dir, output_dir, **kwargs)
 
     # montage.mosaic() writes several files to the output directory, but we are
