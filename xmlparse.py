@@ -57,56 +57,6 @@ def setup_header(xml_content, dtd):
     lines = lines[:2] + dtd + lines[2:]
     return '\n'.join(lines)
 
-
-class XMLOffset(object):
-    """ The translation offset between two FITS images.
-
-    This class encapsulates the translation offset between two images, the
-    'reference' one and the 'shifted' one, which displacement is given, in
-    pixels, in terms of the reference image.
-
-    """
-
-    def __init__(self, reference, shifted, object_, shifted_filter,
-                 shifted_date, shifted_fwhm, shifted_airmass,
-                 x_offset, y_offset, x_overlap, y_overlap):
-        """ Instantiation method for the XMLOffset class.
-
-        reference - the path to the reference, 'unmoved' FITS image.
-        shifted - the path to the displaced FITS image.
-        object_ - the name of the observed object in the shifted image.
-        shifted_filter - the photometric filter of the shifted image,
-                         encapsulated as a passband.Passband instance.
-        shifted_date - the data of observation of the shifted image, in
-                       seconds after the Unix epoch (aka Unix time)
-        shifted_fwhm - full width at half maximum of the shifted image
-        shifted_airmass - the airmass of the shifted image.
-        x_offset - the offset, in pixels, in the x-axis.
-        y_offset - the offset, in pixels, in the y-axis.
-        x_overlap - the number of stars that overlapped in the x-axis when
-                    the offset was calculated and the images were aligned.
-        y_overlap - the number of stars that overlapped in the y-axis when
-                    the offset was calculated and the images were aligned.
-
-        """
-
-        self.reference = reference
-        self.shifted   = shifted
-        self.object    = object_
-        self.filter    = shifted_filter
-        self.date      = shifted_date
-        self.fwhm      = shifted_fwhm
-        self.airmass   = shifted_airmass
-        self.x         = x_offset
-        self.y         = y_offset
-        self.x_overlap = x_overlap
-        self.y_overlap = y_overlap
-
-    def __cmp__(self, other):
-        """ Comparison operation, sorts XMLOffset instances by their date """
-        return self.date - other.date
-
-
 class XMLOffsetFile(list):
     """ A collection of XMLOffset instances with the same reference image.
 
