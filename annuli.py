@@ -85,7 +85,7 @@ class NotEnoughConstantStars(ValueError):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
+parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_XML_FILE"
 parser.add_option('--output', action = 'store', type = 'str',
                   dest = 'xml_output', default = 'annuli.xml',
                   help = "path of the XML file to which the evaluated "
