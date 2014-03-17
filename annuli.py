@@ -86,13 +86,6 @@ class NotEnoughConstantStars(ValueError):
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_XML_FILE"
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'xml_output', default = 'annuli.xml',
-                  help = "path of the XML file to which the evaluated "
-                  "photometric parameters will be saved. This file can be "
-                  "later parsed by photometry.py in order to use the "
-                  "optimal parameters for each photometric band "
-                  "[default: %default]")
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output XML file if it already exists")
