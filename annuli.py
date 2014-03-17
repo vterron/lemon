@@ -283,12 +283,15 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    # Print the help and abort the execution if there are not two positional
+    # arguments left after parsing the options, as the user must specify at
+    # least one (only one?) input FITS file and the output XML file.
+    if len(args) < 2:
         parser.print_help()
-        return 2  # used for command line syntax errors
-
-    assert len(args) == 1
-    offsets_xml_path = args[0]
+        return 2     # 2 is generally used for command line syntax errors
+    else:
+        input_paths = args[:-1]
+        offsets_xml_path = args[-1]
 
     # The execution of this module, especially when doing long-term monitoring
     # of reasonably crowded fields, may easily take several *days*. The least
@@ -296,14 +299,12 @@ def main(arguments = None):
     # of the waste of billions of valuable CPU cycles, is to avoid to have the
     # output file accidentally overwritten.
 
-    if os.path.exists(options.xml_output):
+    if os.path.exists(offsets_xml_path):
         if not options.overwrite:
-            print "%sError. The output file '%s' already exists." % \
-                  (style.prefix, options.xml_output)
+            msg = "%sError. The output file '%s' already exists."
+            print msg % (style.prefix, offsets_xml_path)
             print style.error_exit_message
             return 1
-        else:
-            os.unlink(options.xml_output)
 
     # To begin with, we need to identify the most constant stars, something for
     # which we have to do photometry on all the stars and for all the images of
@@ -614,9 +615,9 @@ def main(arguments = None):
 
         print style.prefix
         print "%sSaving the evaluated annuli to the '%s' XML file ..." % \
-              (style.prefix, options.xml_output) ,
+              (style.prefix, offsets_xml_path) ,
         sys.stdout.flush()
-        xmlparse.CandidateAnnuli.xml_dump(options.xml_output, evaluated_annuli)
+        xmlparse.CandidateAnnuli.xml_dump(offsets_xml_path, evaluated_annuli)
         print 'done.'
 
         print "%sYou're done ^_^" % style.prefix
