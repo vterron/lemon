@@ -446,6 +446,7 @@ def main(arguments = None):
         prefix = '%s_' % str(pfilter).replace(' ', '_')
         kwargs = dict(prefix = prefix, suffix = '.coordinates')
         coords_fd, coordinates_files[pfilter] = tempfile.mkstemp(**kwargs)
+        atexit.register(methods.clean_tmp_files, coordinates_files[pfilter])
 
         # LEMONdBMiner.get_star() returns a five-element tuple with the x and y
         # coordinates, right ascension, declination and instrumental magnitude
@@ -643,18 +644,6 @@ def main(arguments = None):
 
         print "%sYou're done ^_^" % style.prefix
         return 0
-
-    finally:
-
-        # Last but not least, delete the databases that were initially used to
-        # identify the constant stars and the files to which their coordinates
-        # were temporarily saved.
-
-        try:
-            for path in pixels_files.itervalues():
-                try: os.unlink(path)
-                except OSError: pass
-        except UnboundLocalError: pass
 
 if __name__ == "__main__":
     sys.exit(main())
