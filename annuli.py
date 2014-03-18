@@ -72,6 +72,7 @@ import tempfile
 # LEMON modules
 import customparser
 import diffphot
+import fitsimage
 import keywords
 import methods
 import mining
@@ -313,6 +314,21 @@ def main(arguments = None):
             print msg % (style.prefix, offsets_xml_path)
             print style.error_exit_message
             return 1
+
+    msg = "%sExamining the headers of the %s FITS files given as input..."
+    print msg % (style.prefix, len(input_paths))
+
+    files = photometry.InputFITSFiles()
+    for index, img_path in enumerate(input_paths):
+        img = fitsimage.FITSImage(img_path)
+        pfilter = img.pfilter(options.filterk)
+        files[pfilter].append(img)
+
+        percentage = (index + 1) / len(input_paths) * 100
+        methods.show_progress(percentage)
+
+    print # progress bar doesn't include newline
+    print style.prefix
 
     # To begin with, we need to identify the most constant stars, something for
     # which we have to do photometry on all the stars and for all the images of
