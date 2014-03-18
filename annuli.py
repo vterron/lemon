@@ -352,7 +352,7 @@ def main(arguments = None):
                  '--uik', options.uncimgk]
 
     # The --gain option defaults to None, so we add it to the list of arguments
-    # only if it was given by the user. Otherwise, it would be given a value od
+    # only if it was given by the user. Otherwise, it would be given a value of
     # 'None', a string, which would result in an error when attempted to be
     # converted to float by optparse.
     if options.gain:
