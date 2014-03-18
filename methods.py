@@ -496,12 +496,48 @@ def tmp_chdir(path):
 
 def clean_tmp_files(*paths):
     for path in paths:
+
         if os.path.isdir(path):
-            kwargs = dict(ignore_errors = True)
-            shutil.rmtree(path, **kwargs)
+
+            msg = "Cleaning up temporary directory '%s'"
+            logging.debug(msg % path)
+
+            error_count = [0]
+
+            def log_error(function, path, excinfo):
+                """ Error handler for shutil.rmtree() """
+
+                # nonlocal is not available in Python 2.x so, being it outside
+                # of the local scope, we cannot use 'error_count' as a counter
+                # and rebind it each time we come across an error. But we can
+                # make it a list, which being mutable allows us to modify its
+                # elements inside the function.
+
+                error_count[0] += 1
+                msg = "%s: error deleting '%s' (%s)"
+                args = function, path, excinfo[1]
+                logging.debug(msg % args)
+
+            try:
+                kwargs = dict(ignore_errors = False, onerror = log_error)
+                shutil.rmtree(path, **kwargs)
+
+            finally:
+                msg = "Temporary directory '%s' deleted"
+                if max(error_count) > 0:
+                    msg += " (but there were failed removals)"
+                logging.debug(msg % path)
+
         else:
+
+            msg = "Cleaning up temporary file '%s'"
+            logging.debug(msg % path)
+
             try:
                 os.unlink(path)
-            except OSError:
-                pass
-
+            except OSError, e:
+                msg = "Cannot delete '%s' (%s)"
+                logging.debug(msg % (path, e))
+            else:
+                msg = "Temporary file '%s' removed"
+                logging.debug(msg % path)
