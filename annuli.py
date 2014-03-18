@@ -369,35 +369,37 @@ def main(arguments = None):
     args = basic_args + phot_args + extra_args
     check_run(photometry.main, [str(a) for a in args])
 
-        # Now we need to compute the light curves and find those that are most
-        # constant. This, of course, has to be done for each filter, as a star
-        # identified as constant in Johnson I may be too faint in Johnson B.
-        # In other words: we need to calculate the light curve of each star and
-        # for each filter, and then determine which are the options.nconstant
-        # stars with the lowest standard deviation.
+    # Now we need to compute the light curves and find those that are most
+    # constant. This, of course, has to be done for each filter, as a star
+    # identified as constant in Johnson I may be too faint in Johnson B, for
+    # example. In other words: we need to calculate the light curve of each
+    # star and for each filter, and then determine which are the
+    # options.nconstant stars with the lowest standard deviation.
 
-        diffphot_db_handle, diffphot_db_path = \
-            tempfile.mkstemp(prefix = 'diffphot_', suffix = '.LEMONdB')
-        os.close(diffphot_db_handle)
+    print style.prefix
+    msg = "%sGenerating light curves for initial photometry."
+    print msg % style.prefix
+    print style.prefix
 
-        args = [phot_db_path,
-                '--output', diffphot_db_path, '--overwrite',
-                '--cores', options.ncores,
-                '--minimum-images', options.min_images,
-                '--stars', options.nconstant,
-                '--minimum-stars', options.min_cstars,
-                '--pct', options.pct,
-                '--weights-threshold', options.wminimum,
-                '--max-iters', options.max_iters,
-                '--worst-fraction', options.worst_fraction]
+    kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
+    diffphot_db_handle, diffphot_db_path = tempfile.mkstemp(**kwargs)
+    os.close(diffphot_db_handle)
 
-        [args.append('-v') for x in xrange(options.verbose)]
+    diff_args = [phot_db_path,
+                 '--output', diffphot_db_path, '--overwrite',
+                 '--cores', options.ncores,
+                 '--minimum-images', options.min_images,
+                 '--stars', options.nconstant,
+                 '--minimum-stars', options.min_cstars,
+                 '--pct', options.pct,
+                 '--weights-threshold', options.wminimum,
+                 '--max-iters', options.max_iters,
+                 '--worst-fraction', options.worst_fraction]
 
-        print style.prefix
-        print "%sGenerating light curves for initial photometry." % style.prefix
-        print style.prefix
-        check_run(diffphot.main, [str(a) for a in args])
-        print style.prefix
+    [diff_args.append('-v') for x in xrange(options.verbose)]
+
+    check_run(diffphot.main, [str(a) for a in diff_args])
+    print style.prefix
 
         # Map each photometric filter to the path of the temporary file where
         # the x- and y-, coordinates of each constant star, one per line, will
