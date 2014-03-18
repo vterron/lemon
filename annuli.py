@@ -58,6 +58,7 @@ module in order to automatically use these optimal parameters.
 
 """
 
+import atexit
 import collections
 import logging
 import numpy
@@ -72,6 +73,7 @@ import tempfile
 import customparser
 import diffphot
 import keywords
+import methods
 import mining
 import photometry
 import subprocess
@@ -330,6 +332,7 @@ def main(arguments = None):
 
     kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
     phot_db_handle, phot_db_path = tempfile.mkstemp(**kwargs)
+    atexit.register(methods.clean_tmp_files, phot_db_path)
     os.close(phot_db_handle)
 
     basic_args = input_paths + [phot_db_path, '--overwrite']
@@ -641,9 +644,6 @@ def main(arguments = None):
         # Last but not least, delete the databases that were initially used to
         # identify the constant stars and the files to which their coordinates
         # were temporarily saved.
-
-        try: os.unlink(phot_db_path)
-        except (NameError, OSError): pass
 
         try: os.unlink(diffphot_db_path)
         except (NameError, OSError): pass
