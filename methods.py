@@ -495,6 +495,18 @@ def tmp_chdir(path):
         os.chdir(cwd)
 
 def clean_tmp_files(*paths):
+    """ Try to remove multiple temporary files and directories.
+
+    Loop over the provided positional arguments, calling os.unlink() on files
+    and shutil.rmtree() on directories. Errors never raise an exception, but
+    are logged at DEBUG level. These files are considered to be 'temporary' in
+    the sense that, being no longer necessary, they must be cleaned up, but
+    they are not important enough as to require special handling if they cannot
+    be deleted. After all, if they are located in /tmp/, as they are expected,
+    they will eventually get cleared.
+
+    """
+
     for path in paths:
 
         if os.path.isdir(path):
