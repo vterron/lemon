@@ -320,44 +320,51 @@ def main(arguments = None):
     # always with this subset in order to determine which aperture and sky
     # annulus are the optimal.
 
+    msg = "%sDoing initial photometry with FWHM-derived apertures..."
+    print msg % style.prefix
+    print style.prefix
+
     # mkstemp() returns a tuple containing an OS-level handle to an open file
     # and its absolute pathname. Thus, we need to close the file right after
     # creating it, and tell the photometry module to overwrite (-w) it.
 
-    phot_db_handle, phot_db_path = \
-        tempfile.mkstemp(prefix = 'photometry_', suffix = '.LEMONdB')
+    kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
+    phot_db_handle, phot_db_path = tempfile.mkstemp(**kwargs)
     os.close(phot_db_handle)
 
-    args = [offsets_xml_path,
-            '--output', phot_db_path, '--overwrite',
-            '--maximum', options.maximum,
-            '--margin', options.margin,
-            '--cores', options.ncores,
-            '--aperture', options.aperture,
-            '--annulus', options.annulus,
-            '--dannulus', options.dannulus,
-            '--min-sky', options.min,
-            '--expk', options.exptimek,
-            '--coaddk', options.coaddk,
-            '--gaink', options.gaink,
-            '--uik', options.uncimgk]
+    basic_args = input_paths + [phot_db_path, '--overwrite']
+    phot_args = ['--maximum', options.maximum,
+                 '--margin', options.margin,
+                 '--cores', options.ncores,
+                 '--min-sky', options.min,
+                 '--objectk', options.objectk,
+                 '--filterk', options.filterk,
+                 '--datek', options.datek,
+                 '--timek', options.timek,
+                 '--expk', options.exptimek,
+                 '--coaddk', options.coaddk,
+                 '--gaink', options.gaink,
+                 '--fwhmk', options.fwhmk,
+                 '--airmk', options.airmassk,
+                 '--uik', options.uncimgk]
 
     # The --gain option defaults to None, so we add it to the list of arguments
     # only if it was given by the user. Otherwise, it would be given a value od
     # 'None', a string, which would result in an error when attempted to be
     # converted to float by optparse.
     if options.gain:
-        args += ['--gain', options.gain]
+        phot_args += ['--gain', options.gain]
 
     # Pass as many '-v' options as we have received here
-    [args.append('-v') for x in xrange(options.verbose)]
+    [phot_args.append('-v') for x in xrange(options.verbose)]
 
-    print "%sDoing initial photometry with FWHM-derived apertures..." % style.prefix
-    print style.prefix
+    extra_args = ['--aperture', options.aperture,
+                  '--annulus', options.annulus,
+                  '--dannulus', options.dannulus]
 
-    try:
-        # Non-zero return codes raise subprocess.CalledProcessError
-        check_run(photometry.main, [str(a) for a in args])
+    # Non-zero return codes raise subprocess.CalledProcessError
+    args = basic_args + phot_args + extra_args
+    check_run(photometry.main, [str(a) for a in args])
 
         # Now we need to compute the light curves and find those that are most
         # constant. This, of course, has to be done for each filter, as a star
