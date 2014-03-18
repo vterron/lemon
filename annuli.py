@@ -300,7 +300,7 @@ def main(arguments = None):
         return 2     # 2 is generally used for command line syntax errors
     else:
         input_paths = args[:-1]
-        offsets_xml_path = args[-1]
+        output_xml_path = args[-1]
 
     # The execution of this module, especially when doing long-term monitoring
     # of reasonably crowded fields, may easily take several *days*. The least
@@ -308,10 +308,10 @@ def main(arguments = None):
     # of the waste of billions of valuable CPU cycles, is to avoid to have the
     # output file accidentally overwritten.
 
-    if os.path.exists(offsets_xml_path):
+    if os.path.exists(output_xml_path):
         if not options.overwrite:
             msg = "%sError. The output file '%s' already exists."
-            print msg % (style.prefix, offsets_xml_path)
+            print msg % (style.prefix, output_xml_path)
             print style.error_exit_message
             return 1
 
@@ -633,8 +633,8 @@ def main(arguments = None):
 
     print style.prefix
     msg = "%sSaving the evaluated apertures to the '%s' XML file ..."
-    print msg % (style.prefix, offsets_xml_path) ,
-    xmlparse.CandidateAnnuli.xml_dump(offsets_xml_path, evaluated_annuli)
+    print msg % (style.prefix, output_xml_path) ,
+    xmlparse.CandidateAnnuli.xml_dump(output_xml_path, evaluated_annuli)
     print ' done.'
 
     print "%sYou're done ^_^" % style.prefix
