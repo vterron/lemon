@@ -545,98 +545,89 @@ def main(arguments = None):
                 filter_apertures[0], filter_apertures[-1])
         print msg % args
 
-            # For each candidate aperture, and only with the images taken in
-            # this filter, do photometry on the constant stars and compute the
-            # median of the standard deviation of their light curves as a means
-            # of evaluating the suitability of this combination of parameters.
-            for index, aperture in enumerate(band_apertures):
+        # For each candidate aperture, and only with the images taken in
+        # this filter, do photometry on the constant stars and compute the
+        # median of the standard deviation of their light curves as a means
+        # of evaluating the suitability of this combination of parameters.
+        for index, aperture in enumerate(filter_apertures):
 
-                aper_phot_db_handle, aper_phot_db_path = \
-                    tempfile.mkstemp(prefix = 'photometry_', suffix = '.LEMONdB')
-                os.close(aper_phot_db_handle)
+            print style.prefix
 
-                args = [offsets_xml_path,
-                        '--output', aper_phot_db_path, '--overwrite',
-                        '--passband', pfilter.letter,
-                        '--pixels', pixels_files[pfilter],
-                        '--maximum', options.maximum,
-                        '--margin', options.margin,
-                        '--cores', options.ncores,
-                        '--aperture-pix', aperture,
-                        '--annulus-pix', annulus,
-                        '--dannulus-pix', dannulus,
-                        '--min-sky', options.min,
-                        '--expk', options.exptimek,
-                        '--coaddk', options.coaddk,
-                        '--gaink', options.gaink,
-                        '--uik', options.uncimgk]
+            kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
+            fd, aper_phot_db_path = tempfile.mkstemp(**kwargs)
+            os.close(fd)
 
-                if options.gain:
-                    args += ['--gain', options.gain]
+            paths = [img.path for img in files[pfilter]]
+            basic_args = paths + [aper_phot_db_path, '--overwrite']
+            extra_args = ['--filter', str(pfilter),
+                          '--coordinates', coords_path,
+                          '--aperture-pix', aperture,
+                          '--annulus-pix', annulus,
+                          '--dannulus-pix', dannulus]
 
-                [args.append('-v') for x in xrange(options.verbose)]
+            args = basic_args + phot_args + extra_args
+            check_run(photometry.main, [str(a) for a in args])
 
-                try:
-                    print style.prefix
-                    check_run(photometry.main, [str(a) for a in args])
+            kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
+            fd, aper_diff_db_path = tempfile.mkstemp(**kwargs)
+            os.close(fd)
 
-                    aper_diff_db_handle, aper_diff_db_path = \
-                        tempfile.mkstemp(prefix = 'diffphot_', suffix = '.LEMONdB')
-                    os.close(aper_diff_db_handle)
+            # Reuse the arguments used earlier for diffphot.main(). We only
+            # need to change the first argument (path to the input LEMONdB)
+            # and the third one (path to the output LEMONdB)
+            diff_args[0] = aper_phot_db_path
+            diff_args[2] = aper_diff_db_path
+            check_run(diffphot.main, [str(a) for a in diff_args])
 
-                    args = [aper_phot_db_path,
-                            '--output', aper_diff_db_path, '--overwrite',
-                            '--cores', options.ncores,
-                            '--minimum-images', options.min_images,
-                            '--stars', options.nconstant,
-                            '--minimum-stars', options.min_cstars,
-                            '--pct', options.pct,
-                            '--weights-threshold', options.wminimum,
-                            '--max-iters', options.max_iters,
-                            '--worst-fraction', options.worst_fraction]
+            miner = mining.LEMONdBMiner(aper_diff_db_path)
 
-                    [args.append('-v') for x in xrange(options.verbose)]
+            try:
+                kwargs = dict(minimum = options.min_images)
+                cstars = miner.sort_by_curve_stdev(pfilter, **kwargs)
+            except mining.NoStarsSelectedError:
+                # There are no light curves with at least options.min_images points.
+                # Therefore, much to our sorrow, we cannot evaluate this aperture.
+                msg = "%sNo constant stars for this aperture. Ignoring it..."
+                print msg % style.prefix
+                continue
 
-                    check_run(diffphot.main, [str(a) for a in args])
+            # There must be at most 'nconstant' stars, but there may be fewer
+            # if this aperture causes one or more of the constant stars to be
+            # too faint (INDEF) in so many images as to prevent their lights
+            # curve from being computed.
+            assert len(cstars) <= options.nconstant
 
-                    # Extract the standard deviations and compute their median.
-                    miner = mining.LEMONdBMiner(aper_diff_db_path)
-                    cstars = miner.sort_by_curve_stdev(pfilter, minimum = options.min_images)
+            if len(cstars) < options.pminimum:
+                msg = ("%sJust %d constant stars, fewer than the allowed "
+                       "minimum of %d, had their light curves calculated "
+                       "for this aperture. Ignoring it...")
+                args = style.prefix, len(cstars), options.pminimum
+                print style.prefix
+                continue
 
-                    # There must be at most 'nconstant' stars, but there may be
-                    # fewer if this aperture causes one or more of the constant
-                    # stars to be too faint (INDEF) in so many images as to
-                    # prevent their lights curve from being computed.
-                    assert len(cstars) <= options.nconstant
+            # 'cstars' contains two-element tuples: (ID, stdev)
+            stdevs_median = numpy.median([x[1] for x in cstars])
+            params = (aperture, annulus, dannulus, stdevs_median)
+            candidate = xmlparse.CandidateAnnuli(*params)
+            evaluated_annuli[pfilter].append(candidate)
 
-                    if len(cstars) < options.pminimum:
-                        print "%sJust %d constant stars, fewer than the " \
-                              "minimum allowed of %d, had their" % \
-                              (style.prefix, len(cstars), options.pminimum)
-                        print "%slight curves calculated for this " \
-                              "aperture. Ignoring it..." % style.prefix
+            msg = "%sAperture = %.3f, median stdev (%d stars) = %.4f"
+            args = style.prefix, aperture, len(cstars), stdevs_median
+            print msg % args
 
-                    else:
-                        stdevs_median = numpy.median([x[1] for x in cstars])
-                        params = (aperture, annulus, dannulus, stdevs_median)
-                        candidate = xmlparse.CandidateAnnuli(*params)
-                        evaluated_annuli[pfilter].append(candidate)
-                        print "%sAperture = %.3f, median stdev (%d stars) = %.4f" % \
-                              (style.prefix, aperture, len(cstars), stdevs_median)
+            percentage = (index + 1) / len(filter_apertures) * 100
+            msg = "%s%s progress: %.2f %%"
+            args = style.prefix, pfilter, percentage
+            print msg % args
 
-                # Raised by miner.sort_by_curve_stdev if no stars are found.
-                # In other words: for this aperture not even a single star has
-                # a light curve with at least options.min_images points; thus,
-                # much to our sorrow, we cannot evaluate it.
-                except mining.NoStarsSelectedError:
-                    msg = "%sNo constant stars for this aperture. Ignoring it..."
-                    print msg % style.prefix
+        # Let the user know of the best 'annuli', that is, the one for
+        # which the standard deviation of the constant stars is minimal
+        kwargs = dict(key = operator.attrgetter('stdev'))
+        best_candidate = min(evaluated_annuli[pfilter], **kwargs)
 
-                finally:
-
-                    percentage = (index + 1) / len(band_apertures) * 100
-                    msg = "%s%s progress: %.2f %%"
-                    print msg % (style.prefix, pfilter, percentage)
+        msg = "%sBest aperture found at %.3f pixels with stdev = %.4f"
+        args = style.prefix, best_candidate.aperture, best_candidate.stdev
+        print msg % args
 
                     # Temporary databases no longer needed; ignore errors in
                     # case the file cannot be removed or if something went
@@ -647,14 +638,6 @@ def main(arguments = None):
 
                     try: os.unlink(aper_diff_db_path)
                     except (NameError, OSError): pass
-
-            # Let the user know of the best 'annuli', that is, the one for
-            # which the standard deviation of the constant stars is minimal
-            best_candidate = min(evaluated_annuli[pfilter],
-                                 key = operator.attrgetter('stdev'))
-
-            print "%sBest aperture found at %.3f pixels with stdev = %.4f" % \
-                  (style.prefix, best_candidate.aperture, best_candidate.stdev)
 
         print style.prefix
         print "%sSaving the evaluated annuli to the '%s' XML file ..." % \
