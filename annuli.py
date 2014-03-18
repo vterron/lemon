@@ -383,6 +383,7 @@ def main(arguments = None):
 
     kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
     diffphot_db_handle, diffphot_db_path = tempfile.mkstemp(**kwargs)
+    atexit.register(methods.clean_tmp_files, diffphot_db_path)
     os.close(diffphot_db_handle)
 
     diff_args = [phot_db_path,
@@ -646,9 +647,6 @@ def main(arguments = None):
         # Last but not least, delete the databases that were initially used to
         # identify the constant stars and the files to which their coordinates
         # were temporarily saved.
-
-        try: os.unlink(diffphot_db_path)
-        except (NameError, OSError): pass
 
         try:
             for path in pixels_files.itervalues():
