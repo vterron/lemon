@@ -127,21 +127,6 @@ class InputFITSFiles(collections.defaultdict):
                     warnings.warn(msg % (style.prefix, img))
         return discarded
 
-def clean_tmp_coords_file(path):
-    """ Try to unlink the coordinates file 'path'. """
-
-    msg = "Cleaning up temporary file '%s'"
-    logging.debug(msg % path)
-
-    try:
-        os.unlink(path)
-    except OSError, e:
-        msg = "Cannot delete '%s' (%s)"
-        logging.debug(msg % (path, e))
-    else:
-        msg = "Temporary coordinates file '%s' removed"
-        logging.debug(msg % path)
-
 def get_fwhm(img, options):
     """ Return the FWHM of the FITS image.
 
@@ -896,7 +881,7 @@ def main(arguments = None):
                       text = True)
 
         coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
-        atexit.register(clean_tmp_coords_file, options.coordinates)
+        atexit.register(methods.clean_tmp_files, options.coordinates)
         for ra, dec in sources_coordinates:
             os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
         os.close(coords_fd)
@@ -998,7 +983,7 @@ def main(arguments = None):
 
     # A second coordinates file, listing only non-INDEF objects
     coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
-    atexit.register(clean_tmp_coords_file, options.coordinates)
+    atexit.register(methods.clean_tmp_files, options.coordinates)
 
     ignored_counter = 0
     non_ignored_counter = 0

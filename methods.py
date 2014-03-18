@@ -25,6 +25,7 @@ import math
 import numpy
 import os
 import os.path
+import shutil
 import stat
 import sys
 import tempfile
@@ -493,3 +494,62 @@ def tmp_chdir(path):
     finally:
         os.chdir(cwd)
 
+def clean_tmp_files(*paths):
+    """ Try to remove multiple temporary files and directories.
+
+    Loop over the provided positional arguments, calling os.unlink() on files
+    and shutil.rmtree() on directories. Errors never raise an exception, but
+    are logged at DEBUG level. These files are considered to be 'temporary' in
+    the sense that, being no longer necessary, they must be cleaned up, but
+    they are not important enough as to require special handling if they cannot
+    be deleted. After all, if they are located in /tmp/, as they are expected,
+    they will eventually get cleared.
+
+    """
+
+    for path in paths:
+
+        if os.path.isdir(path):
+
+            msg = "Cleaning up temporary directory '%s'"
+            logging.debug(msg % path)
+
+            error_count = [0]
+
+            def log_error(function, path, excinfo):
+                """ Error handler for shutil.rmtree() """
+
+                # nonlocal is not available in Python 2.x so, being it outside
+                # of the local scope, we cannot use 'error_count' as a counter
+                # and rebind it each time we come across an error. But we can
+                # make it a list, which being mutable allows us to modify its
+                # elements inside the function.
+
+                error_count[0] += 1
+                msg = "%s: error deleting '%s' (%s)"
+                args = function, path, excinfo[1]
+                logging.debug(msg % args)
+
+            try:
+                kwargs = dict(ignore_errors = False, onerror = log_error)
+                shutil.rmtree(path, **kwargs)
+
+            finally:
+                msg = "Temporary directory '%s' deleted"
+                if max(error_count) > 0:
+                    msg += " (but there were failed removals)"
+                logging.debug(msg % path)
+
+        else:
+
+            msg = "Cleaning up temporary file '%s'"
+            logging.debug(msg % path)
+
+            try:
+                os.unlink(path)
+            except OSError, e:
+                msg = "Cannot delete '%s' (%s)"
+                logging.debug(msg % (path, e))
+            else:
+                msg = "Temporary file '%s' removed"
+                logging.debug(msg % path)

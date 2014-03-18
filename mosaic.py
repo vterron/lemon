@@ -51,7 +51,6 @@ software, whose commands (such as mAdd or mProject) must be present in PATH.
 """
 
 import atexit
-import logging
 import montage_wrapper as montage
 import multiprocessing
 import os
@@ -65,38 +64,6 @@ import customparser
 import fitsimage
 import methods
 import style
-
-def clean_tmp_dir(dir_path):
-    """ Try to delete an entire directory tree. """
-
-    msg = "Cleaning up temporary directory '%s'"
-    logging.debug(msg % dir_path)
-
-    error_count = []
-
-    def log_error(function, path, excinfo):
-        """ Error handler for shutil.tree() """
-
-        # nonlocal is not available in Python 2.x so, being it outside of the
-        # local scope, we cannot rebind 'error_count' each time we come across
-        # an error. Instead of initializing it to zero and incrementing it by
-        # one every time this function is called, use it as a list, appending
-        # an element for each error.
-        error_count.append(1)
-        msg = "%s: error deleting '%s' (%s)"
-        args = function, path, excinfo[1]
-        logging.debug(msg % args)
-
-    try:
-        kwargs = dict(ignore_errors = False, onerror = log_error)
-        shutil.rmtree(dir_path, **kwargs)
-
-    finally:
-        msg = "Temporary directory '%s' deleted"
-        if error_count:
-            msg += " (but there were failed removals)"
-        logging.debug(msg % dir_path)
-
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_IMG"
@@ -198,7 +165,7 @@ def main(arguments = None):
     suffix = "_LEMON_%d_mosaic" % pid
     kwargs = dict(suffix = suffix + '_input')
     input_dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(clean_tmp_dir, input_dir)
+    atexit.register(methods.clean_tmp_files, input_dir)
 
     for path in input_paths:
         source = os.path.abspath(path)
@@ -213,7 +180,7 @@ def main(arguments = None):
 
     kwargs = dict(suffix = suffix + '_output')
     output_dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(clean_tmp_dir, output_dir)
+    atexit.register(methods.clean_tmp_files, output_dir)
     os.rmdir(output_dir)
 
     kwargs = dict(background_match = options.background_match)
