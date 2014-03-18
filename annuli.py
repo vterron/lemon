@@ -631,15 +631,14 @@ def main(arguments = None):
         args = style.prefix, best_candidate.aperture, best_candidate.stdev
         print msg % args
 
-        print style.prefix
-        print "%sSaving the evaluated annuli to the '%s' XML file ..." % \
-              (style.prefix, offsets_xml_path) ,
-        sys.stdout.flush()
-        xmlparse.CandidateAnnuli.xml_dump(offsets_xml_path, evaluated_annuli)
-        print 'done.'
+    print style.prefix
+    msg = "%sSaving the evaluated apertures to the '%s' XML file ..."
+    print msg % (style.prefix, offsets_xml_path) ,
+    xmlparse.CandidateAnnuli.xml_dump(offsets_xml_path, evaluated_annuli)
+    print ' done.'
 
-        print "%sYou're done ^_^" % style.prefix
-        return 0
+    print "%sYou're done ^_^" % style.prefix
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
