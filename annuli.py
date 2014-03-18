@@ -402,59 +402,61 @@ def main(arguments = None):
     check_run(diffphot.main, [str(a) for a in diff_args])
     print style.prefix
 
-        # Map each photometric filter to the path of the temporary file where
-        # the x- and y-, coordinates of each constant star, one per line, will
-        # be saved. This file is from now on passed to the photometry module so
-        # that it is not done on all stars (after automatically detecting them)
-        # but instead exclusively on those pixels.
-        pixels_files = {}
+    # Map each photometric filter to the path of the temporary file where the
+    # right ascension and declination of each constant star, one per line, will
+    # be saved. This file is from now on passed, along with the --coordinates
+    # option, to photometry.main(), so that photometry is not done on all the
+    # astronomical objects, but instead exclusively on these ones.
 
-        miner = mining.LEMONdBMiner(diffphot_db_path)
-        for pfilter in miner.pfilters:
+    coordinates_files = {}
 
-            # LEMONdBMiner.sort_by_curve returns a list of two-element tuples,
-            # mapping the ID of each star to the standard deviation of its
-            # light curve in this filter. The list is sorted in increasing
-            # order by the standard deviation. We are only interested in the
-            # first 'options.nconstant', needing at least 'options.pminimum'.
+    miner = mining.LEMONdBMiner(diffphot_db_path)
+    for pfilter in miner.pfilters:
 
-            print "%sIdentifying the %d most constant stars for the %s " \
-                  "filter..." % (style.prefix, options.nconstant, pfilter) ,
-            sys.stdout.flush()
+        # LEMONdBMiner.sort_by_curve() returns a list of two-element tuples,
+        # mapping the ID of each star to the standard deviation of its light
+        # curve in this photometric filter. The list is sorted in increasing
+        # order by the standard deviation. We are only interested in the first
+        # 'options.nconstant', needing at least 'options.pminimum'.
 
-            stars_stdevs = \
-              miner.sort_by_curve_stdev(pfilter, minimum = options.min_images)
-            cstars = stars_stdevs[:options.nconstant]
+        msg = "%sIdentifying the %d most constant stars for the %s filter..."
+        args = style.prefix, options.nconstant, pfilter
+        print msg % args ,
+        sys.stdout.flush()
 
-            if len(cstars) < options.pminimum:
-                msg = "fewer than %d stars identified as constant in the " \
-                      "initial photometry for %s filter" % \
-                      (options.pminimum, pfilter)
-                raise NotEnoughConstantStars(msg)
+        kwargs = dict(minimum = options.min_images)
+        stars_stdevs = miner.sort_by_curve_stdev(pfilter, **kwargs)
+        cstars = stars_stdevs[:options.nconstant]
+
+        if len(cstars) < options.pminimum:
+            msg = ("fewer than %d stars identified as constant in the "
+                   "initial photometry for the %s filter")
+            args = options.pminimum, pfilter
+            raise NotEnoughConstantStars(msg % args)
+        else:
             print 'done.'
 
-            if len(cstars) < options.nconstant:
-                print "%sBut only %d stars were available. Using them all, " \
-                      "anyway." % (style.prefix, len(cstars))
+        if len(cstars) < options.nconstant:
+            msg = "%sBut only %d stars were available. Using them all, anyway."
+            print msg % (style.prefix, len(cstars))
 
-            # Replacing whitespaces with underscores is easier than having to
-            # quote the path to the --pixels file in case the name of the
-            # filter contains them (as optparse would only see up to the
-            # first whitespace).
-            prefix = '%s_' % str(pfilter).replace(' ', '_')
-            pixels_fd, pixels_files[pfilter] = \
-                 tempfile.mkstemp(prefix = prefix, suffix = '.pixels')
+        # Replacing whitespaces with underscores is easier than having to quote
+        # the path to the --coordinates file if the name of the filter contains
+        # them (otherwise, optparse would only see up to the first whitespace).
+        prefix = '%s_' % str(pfilter).replace(' ', '_')
+        kwargs = dict(prefix = prefix, suffix = '.coordinates')
+        coords_fd, coordinates_files[pfilter] = tempfile.mkstemp(**kwargs)
 
-            # LEMONdBMiner.get_star returns a five-element tuple with
-            # the x and y coordinates, right ascension, declination and
-            # instrumental magnitude of the star in the reference image.
-            for star_id, stdev in cstars:
-                star_x, star_y = miner.get_star(star_id)[:2]
-                os.write(pixels_fd, "%f\t%f\n" % (star_x, star_y))
-            os.close(pixels_fd)
+        # LEMONdBMiner.get_star() returns a five-element tuple with the x and y
+        # coordinates, right ascension, declination and instrumental magnitude
+        # of the astronomical object in the sources image.
+        for star_id, _ in cstars:
+            ra, dec = miner.get_star(star_id)[2:4]
+            os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
+        os.close(coords_fd)
 
-            print "%sStar coordinates for %s temporarily saved to %s" % \
-                  (style.prefix, pfilter, pixels_files[pfilter])
+        msg = "%sStar coordinates for %s temporarily saved to %s"
+        print msg % (style.prefix, pfilter, coordinates_files[pfilter])
 
         # The constant stars, the only ones to which we will pay attention from
         # now on, have been identified. So far, so good. Now we will generate
