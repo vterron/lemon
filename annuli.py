@@ -555,6 +555,7 @@ def main(arguments = None):
 
             kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
             fd, aper_phot_db_path = tempfile.mkstemp(**kwargs)
+            atexit.register(methods.clean_tmp_files, aper_phot_db_path)
             os.close(fd)
 
             paths = [img.path for img in files[pfilter]]
@@ -570,6 +571,7 @@ def main(arguments = None):
 
             kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
             fd, aper_diff_db_path = tempfile.mkstemp(**kwargs)
+            atexit.register(methods.clean_tmp_files, aper_diff_db_path)
             os.close(fd)
 
             # Reuse the arguments used earlier for diffphot.main(). We only
@@ -628,16 +630,6 @@ def main(arguments = None):
         msg = "%sBest aperture found at %.3f pixels with stdev = %.4f"
         args = style.prefix, best_candidate.aperture, best_candidate.stdev
         print msg % args
-
-                    # Temporary databases no longer needed; ignore errors in
-                    # case the file cannot be removed or if something went
-                    # wrong even before these variables could be defined.
-
-                    try: os.unlink(aper_phot_db_path)
-                    except (NameError, OSError): pass
-
-                    try: os.unlink(aper_diff_db_path)
-                    except (NameError, OSError): pass
 
         print style.prefix
         print "%sSaving the evaluated annuli to the '%s' XML file ..." % \
