@@ -51,7 +51,6 @@ software, whose commands (such as mAdd or mProject) must be present in PATH.
 """
 
 import atexit
-import logging
 import montage_wrapper as montage
 import multiprocessing
 import os
