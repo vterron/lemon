@@ -25,6 +25,7 @@ import math
 import numpy
 import os
 import os.path
+import shutil
 import stat
 import sys
 import tempfile
@@ -492,4 +493,15 @@ def tmp_chdir(path):
         yield
     finally:
         os.chdir(cwd)
+
+def clean_tmp_files(*paths):
+    for path in paths:
+        if os.path.isdir(path):
+            kwargs = dict(ignore_errors = True)
+            shutil.rmtree(path, **kwargs)
+        else:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
 
