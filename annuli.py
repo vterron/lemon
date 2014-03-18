@@ -475,40 +475,39 @@ def main(arguments = None):
         msg = "%sStar coordinates for %s temporarily saved to %s"
         print msg % (style.prefix, pfilter, coordinates_files[pfilter])
 
-        # The constant stars, the only ones to which we will pay attention from
-        # now on, have been identified. So far, so good. Now we will generate
-        # the light curves of these stars for each candidate set of photometric
-        # parameters. We store the evaluated values in a dictionary in which
-        # each filter maps to a list of xmlparse.CandidateAnnuli instances.
-        evaluated_annuli = collections.defaultdict(list)
+    # The constant astronomical objects, the only ones to which we will pay
+    # attention from now on, have been identified. So far, so good. Now we
+    # generate the light curves of these objects for each candidate set of
+    # photometric parameters. We store the evaluated values in a dictionary in
+    # which each filter maps to a list of xmlparse.CandidateAnnuli instances.
 
-        # Needed in-memory to compute the median FWHM of each filter
-        print "%sLoading XML offsets into memory..." % style.prefix ,
-        sys.stdout.flush()
-        xml_offsets = xmlparse.XMLOffsetFile.load(offsets_xml_path)
-        print 'done.'
+    evaluated_annuli = collections.defaultdict(list)
 
-        for pfilter, path in pixels_files.iteritems():
+    for pfilter, coords_path in coordinates_files.iteritems():
 
-            print style.prefix
-            print "%sFinding the optimal photometric parameters for the " \
-                  "%s filter." % (style.prefix, pfilter)
+        print style.prefix
+        msg = "%sFinding the optimal photometric parameters for the %s filter."
+        print msg % (style.prefix, pfilter)
 
-            band_offsets = [offset for offset in xml_offsets
-                            if offset.filter == pfilter]
+        if len(files[pfilter]) < options.min_images:
+            msg = "fewer than %d images (--minimum-images option) for %s"
+            args = options.min_images, pfilter
+            raise NotEnoughConstantStars(msg % args)
 
-            if len(band_offsets) < options.min_images:
-                msg = "fewer than %d images (--mimages option) for %s" % \
-                      (options.min_images, pfilter)
-                raise NotEnoughConstantStars(msg)
+        # The median FWHM of the images is needed in order to calculate the
+        # range of apertures that we need to evaluate for this filter.
 
-            # The median FWHM of the images in this filter is needed in order
-            # to calculate the range of aperture annuli to be evaluated.
-            print "%sCalculating the median FWHM for this filter..." % style.prefix,
-            sys.stdout.flush()
-            band_fwhms = [offset.fwhm for offset in band_offsets]
-            fwhm = numpy.median(band_fwhms)
-            print 'done.'
+        msg = "%sCalculating the median FWHM for this filter..."
+        print msg % style.prefix ,
+
+        pfilter_fwhms = []
+        for img in files[pfilter]:
+            img_fwhm = photometry.get_fwhm(img, options)
+            logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
+            pfilter_fwhms.append(img_fwhm)
+
+        fwhm = numpy.median(pfilter_fwhms)
+        print ' done.'
 
             # FWHM to range of pixels conversion
             min_aperture = fwhm * options.lower
