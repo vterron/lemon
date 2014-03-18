@@ -509,35 +509,41 @@ def main(arguments = None):
         fwhm = numpy.median(pfilter_fwhms)
         print ' done.'
 
-            # FWHM to range of pixels conversion
-            min_aperture = fwhm * options.lower
-            max_aperture = fwhm * options.upper
-            annulus      = fwhm * options.sky
-            dannulus     = fwhm * options.width
+        # FWHM to range of pixels conversion
+        min_aperture = fwhm * options.lower
+        max_aperture = fwhm * options.upper
+        annulus      = fwhm * options.sky
+        dannulus     = fwhm * options.width
 
-            # The dimensions of the sky annulus remain fixed, while the
-            # aperture is in the range [lower * FWHM, upper FWHM], with
-            # increments of options.step pixels.
-            band_apertures = numpy.arange(min_aperture, max_aperture, options.step)
-            assert band_apertures[0] == min_aperture
+        # The dimensions of the sky annulus remain fixed, while the
+        # aperture is in the range [lower * FWHM, upper FWHM], with
+        # increments of options.step pixels.
+        filter_apertures = numpy.arange(min_aperture, max_aperture, options.step)
+        assert filter_apertures[0] == min_aperture
 
-            print "%sFWHM (%s passband) = %.3f pixels, therefore:" % \
-                  (style.prefix, pfilter, fwhm)
-            print "%sAperture annulus, minimum = %.3f x %.2f = %.3f pixels " % \
-                  (style.prefix, fwhm, options.lower, min_aperture)
-            print "%sAperture annulus, maximum = %.3f x %.2f = %.3f pixels " % \
-                  (style.prefix, fwhm, options.upper, max_aperture)
-            print "%sAperture annulus, step = %.2f pixels, which means that:" % \
-                  (style.prefix, options.step)
-            print "%sAperture annulus, actual maximum = %.3f + %d x %.2f = %.3f pixels" % \
-                  (style.prefix, min_aperture, len(band_apertures),
-                   options.step, max(band_apertures))
-            print "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.sky, annulus)
-            print "%sSky annulus, width = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.width, dannulus)
-            print "%s%d different aperture annuli in the range [%.2f, %.2f] to be evaluated:" % \
-                  (style.prefix, len(band_apertures), band_apertures[0], band_apertures[-1])
+        msg = "%sFWHM (%s passband) = %.3f pixels, therefore:"
+        print msg % (style.prefix, pfilter, fwhm)
+        msg = "%sAperture radius, minimum = %.3f x %.2f = %.3f pixels "
+        print msg % (style.prefix, fwhm, options.lower, min_aperture)
+        msg = "%sAperture radius, maximum = %.3f x %.2f = %.3f pixels "
+        print msg % (style.prefix, fwhm, options.upper, max_aperture)
+        msg = "%sAperture radius, step = %.2f pixels, which means that:"
+        print msg % (style.prefix, options.step)
+
+        msg = "%sAperture radius, actual maximum = %.3f + %d x %.2f = %.3f pixels"
+        args = (style.prefix, min_aperture, len(filter_apertures),
+                options.step, max(filter_apertures))
+        print msg % args
+
+        msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
+        print msg % (style.prefix, fwhm, options.sky, annulus)
+        msg = "%sSky annulus, width = %.3f x %.2f = %.3f pixels"
+        print msg % (style.prefix, fwhm, options.width, dannulus)
+
+        msg = "%s%d different apertures in the range [%.2f, %.2f] to be evaluated:"
+        args = (style.prefix, len(filter_apertures),
+                filter_apertures[0], filter_apertures[-1])
+        print msg % args
 
             # For each candidate aperture, and only with the images taken in
             # this filter, do photometry on the constant stars and compute the
