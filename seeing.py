@@ -38,7 +38,6 @@ import numpy
 import optparse
 import os
 import os.path
-import pyfits
 import scipy.stats
 import scipy.signal
 import shutil
