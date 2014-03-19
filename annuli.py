@@ -299,7 +299,8 @@ def main(arguments = None):
         parser.print_help()
         return 2     # 2 is generally used for command line syntax errors
     else:
-        input_paths = args[:-1]
+        sources_img_path = args[0]
+        input_paths = args[1:-1]
         output_xml_path = args[-1]
 
     # The execution of this module, especially when doing long-term monitoring
@@ -351,7 +352,9 @@ def main(arguments = None):
     atexit.register(methods.clean_tmp_files, phot_db_path)
     os.close(phot_db_handle)
 
-    basic_args = input_paths + [phot_db_path, '--overwrite']
+    basic_args = [sources_img_path] + input_paths + \
+                 [phot_db_path, '--overwrite']
+
     phot_args = ['--maximum', options.maximum,
                  '--margin', options.margin,
                  '--cores', options.ncores,
@@ -559,7 +562,9 @@ def main(arguments = None):
             os.close(fd)
 
             paths = [img.path for img in files[pfilter]]
-            basic_args = paths + [aper_phot_db_path, '--overwrite']
+            basic_args = [sources_img_path] + paths + \
+                         [aper_phot_db_path, '--overwrite']
+
             extra_args = ['--filter', str(pfilter),
                           '--coordinates', coords_path,
                           '--aperture-pix', aperture,
