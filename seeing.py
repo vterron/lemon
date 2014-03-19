@@ -421,62 +421,6 @@ class FITSeeingImage(fitsimage.FITSImage):
             assert mode == 'mean'
             return numpy.mean(elongations)
 
-    def _matrix_representation(self, snr):
-        """ Return a two-dimensional array with the center of each star.
-
-        The method returns a NumPy array in which each object detected by
-        SExtractor in the current instance is represented by a single, non-zero
-        value, located at the coordinates specified by its X_IMAGE and Y_IMAGE
-        parameters in the output catalog. Thus, the array has a value other
-        than zero in the positions corresponding to the center of a star,
-        according to SExtractor, while the (overwhelming) rest are zero.
-
-        Unfortunately, the center of each star is practically never an exact
-        value. Instead, centers will most likely be something like (311.046,
-        887.279), so they have to be rounded to the nearest integer.
-
-        The value of self.margin determines the width in pixels of the 'no
-        man's land' in the image: stars whose center is fewer than this number
-        of pixels from any border (either horizontal or vertical) of the FITS
-        image are not included in the array.
-
-        'snr', on the other hand, is the minimum signal-to-noise ratio,
-        according to SExtractor, that a star must have in order to be present
-        in the array representation of the image. Even a rather modest value is
-        extremely useful to prevent noise (e.g., false positives by SExtractor)
-        from polluting the array. You may use NoneType if no star is to be
-        discarded because of its signal-to-noise ratio.
-
-        ValueError is raised in case no star makes it to the array
-        representation (that is, if all the values in the array are zero).
-        This is most probably caused because the margin is set to a too large a
-        value, although it may also happen if its value is reasonable but there
-        are few stars, located too close to the image borders.
-
-        """
-
-        # Load the data of the FITS image
-        data_fd = pyfits.open(self.path, mode = 'readonly')
-        data = data_fd[0].data
-        data_fd.close(output_verify = 'ignore')
-
-        # Use 8-bit unsigned integer, the smallest NumPy data type.
-        # Ideally we would use an array with 1-bit entries (8x smaller!)
-        matrix_repr = numpy.zeros(data.shape, dtype = numpy.uint8)
-        assert matrix_repr.shape == data.shape
-        matrix_x_size, matrix_y_size = matrix_repr.shape[::-1]
-
-        for star in self:
-            x = int(round(star.x))
-            y = int(round(star.y))
-            if x < matrix_x_size and y < matrix_y_size and \
-               (snr is None or star.snr >= snr):
-                   matrix_repr[y][x] = 1
-
-        if not numpy.any(matrix_repr):
-            raise ValueError("array representation of '%s' is empty" % self.path)
-        return matrix_repr
-
 # This Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
