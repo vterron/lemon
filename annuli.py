@@ -300,7 +300,7 @@ def main(arguments = None):
         return 2     # 2 is generally used for command line syntax errors
     else:
         sources_img_path = args[0]
-        input_paths = args[1:-1]
+        input_paths = list(set(args[1:-1]))
         output_xml_path = args[-1]
 
     # The execution of this module, especially when doing long-term monitoring
