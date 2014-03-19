@@ -21,40 +21,32 @@
 from __future__ import division
 
 description = """
-We aim high here, and hopefully will not fail too miserably, as this module
-attempts to automatically determine which are the optimal aperture and sky
-annuli for aperture photometry in the context of time-series analysis.
+Attempt to automatically find the optimal aperture radius for aperture
+photometry in the context of time-series analysis. This is possible because of
+the premise that, the better an aperture radius, the most stable the resulting
+light curve (that is, the lowest its standard deviation) of the most constant
+astronomical objects in the field will be. In this manner, as we approach the
+optimal aperture radius the aforementioned standard deviation will get lower.
 
-This is possible because of the premise that, the better the photometric
-parameters are, the most stable the light curve (i.e., the lowest its standard
-deviation) of the most constant stars in the field will be. In this manner, how
-good the parameters are can be easily measured, as the aforementioned standard
-deviation will get lower as we get closer to the optimal aperture and sky
-annuli.
+Ideally, we would compare two aperture radii by means of evaluating the light
+curves of all the astronomical objects in the field, but this would be rather
+impractical for large data sets (say a few hundreds of images with thousands of
+objects). Therefore, what we do is to initially identify which are the most
+constant objects so that only they have photometry done on and their light
+curves generated, thus increasing performance many-fold. The most constant
+objects are identified among those automatically detected, using SExtractor,
+on the first image passed as an argument.
 
-Ideally, we would compare two candidate photometric parameters by means of
-evaluating the light curves of all the stars, but this would be rather
-impractical for large data sets (hundreds of images, thousands of stars, or
-even larger). Therefore, what the module does is to initially identify which
-are the most constant objects in the field so that only they have photometry
-done and their light curves is compared, thus increasing performance many-fold.
+The range of the search space is specified in number of times the median FWHM
+of the images in each photometric filter, while the step size is given in
+pixels. The inner radius of the sky annulus and its width, although also
+expressed in FWHMs, is the same for all the apertures. In future releases,
+it should be possible to evaluate different sky annuli too.
 
-The dimensions of the search space are given in terms of the median FWHM of the
-images in each photometric filter, using this value a number of times in order
-to establish both the lower and upper bounds for the apertures that have to be
-evaluated. The search space is explored in a series of steps of a fixed number
-of pixels. The sky annulus, although also expressed in FWHMs, remains, however,
-the same for all the candidate apertures that are evaluated.
-
-As it is the case with photometry.py, this module receives two parameters, the
-first being the reference image, on which sources are detected, and the second
-a LEMON XML file, produced by offsets.py, which lists the translation offsets
-of all the images with respect to the aforementioned reference image.
-
-The output of the module is a LEMON XML file which lists all the photometric
-parameters that, for each photometric filter, were tested during the
-exploration of the search space. This file is later parsed by the photometry.py
-module in order to automatically use these optimal parameters.
+The output of is a LEMON XML file which lists all the aperture radii that,
+for each photometric filter, were evaluated. This file can be passed to the
+'photometry' command with the --annuli option in order to use these optimal
+apertures.
 
 """
 
