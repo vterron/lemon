@@ -21,43 +21,36 @@
 from __future__ import division
 
 description = """
-We aim high here, and hopefully will not fail too miserably, as this module
-attempts to automatically determine which are the optimal aperture and sky
-annuli for aperture photometry in the context of time-series analysis.
+Attempt to automatically find the optimal aperture radius for aperture
+photometry in the context of time-series analysis. This is possible because of
+the premise that, the better an aperture radius, the most stable the resulting
+light curve (that is, the lowest its standard deviation) of the most constant
+astronomical objects in the field will be. In this manner, as we approach the
+optimal aperture radius the aforementioned standard deviation will get lower.
 
-This is possible because of the premise that, the better the photometric
-parameters are, the most stable the light curve (i.e., the lowest its standard
-deviation) of the most constant stars in the field will be. In this manner, how
-good the parameters are can be easily measured, as the aforementioned standard
-deviation will get lower as we get closer to the optimal aperture and sky
-annuli.
+Ideally, we would compare two aperture radii by means of evaluating the light
+curves of all the astronomical objects in the field, but this would be rather
+impractical for large data sets (say a few hundreds of images with thousands of
+objects). Therefore, what we do is to initially identify which are the most
+constant objects so that only they have photometry done on and their light
+curves generated, thus increasing performance many-fold. The most constant
+objects are identified among those automatically detected, using SExtractor,
+on the first image passed as an argument.
 
-Ideally, we would compare two candidate photometric parameters by means of
-evaluating the light curves of all the stars, but this would be rather
-impractical for large data sets (hundreds of images, thousands of stars, or
-even larger). Therefore, what the module does is to initially identify which
-are the most constant objects in the field so that only they have photometry
-done and their light curves is compared, thus increasing performance many-fold.
+The range of the search space is specified in number of times the median FWHM
+of the images in each photometric filter, while the step size is given in
+pixels. The inner radius of the sky annulus and its width, although also
+expressed in FWHMs, is the same for all the apertures. In future releases,
+it should be possible to evaluate different sky annuli too.
 
-The dimensions of the search space are given in terms of the median FWHM of the
-images in each photometric filter, using this value a number of times in order
-to establish both the lower and upper bounds for the apertures that have to be
-evaluated. The search space is explored in a series of steps of a fixed number
-of pixels. The sky annulus, although also expressed in FWHMs, remains, however,
-the same for all the candidate apertures that are evaluated.
-
-As it is the case with photometry.py, this module receives two parameters, the
-first being the reference image, on which sources are detected, and the second
-a LEMON XML file, produced by offsets.py, which lists the translation offsets
-of all the images with respect to the aforementioned reference image.
-
-The output of the module is a LEMON XML file which lists all the photometric
-parameters that, for each photometric filter, were tested during the
-exploration of the search space. This file is later parsed by the photometry.py
-module in order to automatically use these optimal parameters.
+The output of is a LEMON XML file which lists all the aperture radii that,
+for each photometric filter, were evaluated. This file can be passed to the
+'photometry' command with the --annuli option in order to use these optimal
+apertures.
 
 """
 
+import atexit
 import collections
 import logging
 import numpy
@@ -71,7 +64,9 @@ import tempfile
 # LEMON modules
 import customparser
 import diffphot
+import fitsimage
 import keywords
+import methods
 import mining
 import photometry
 import subprocess
@@ -85,14 +80,7 @@ class NotEnoughConstantStars(ValueError):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... OFFSETS_XML_FILE"
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'xml_output', default = 'annuli.xml',
-                  help = "path of the XML file to which the evaluated "
-                  "photometric parameters will be saved. This file can be "
-                  "later parsed by photometry.py in order to use the "
-                  "optimal parameters for each photometric band "
-                  "[default: %default]")
+parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_XML_FILE"
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output XML file if it already exists")
@@ -237,9 +225,15 @@ parser.add_option_group(diffphot_group)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
+key_group.add_option(photometry.parser.get_option('--objectk'))
+key_group.add_option(photometry.parser.get_option('--filterk'))
+key_group.add_option(photometry.parser.get_option('--datek'))
+key_group.add_option(photometry.parser.get_option('--timek'))
 key_group.add_option(photometry.parser.get_option('--expk'))
 key_group.add_option(photometry.parser.get_option('--coaddk'))
 key_group.add_option(photometry.parser.get_option('--gaink'))
+key_group.add_option(photometry.parser.get_option('--fwhmk'))
+key_group.add_option(photometry.parser.get_option('--airmk'))
 key_group.add_option(photometry.parser.get_option('--uik'))
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
@@ -290,12 +284,16 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    # Print the help and abort the execution if there are not two positional
+    # arguments left after parsing the options, as the user must specify at
+    # least one (only one?) input FITS file and the output XML file.
+    if len(args) < 2:
         parser.print_help()
-        return 2  # used for command line syntax errors
-
-    assert len(args) == 1
-    offsets_xml_path = args[0]
+        return 2     # 2 is generally used for command line syntax errors
+    else:
+        sources_img_path = args[0]
+        input_paths = list(set(args[1:-1]))
+        output_xml_path = args[-1]
 
     # The execution of this module, especially when doing long-term monitoring
     # of reasonably crowded fields, may easily take several *days*. The least
@@ -303,14 +301,27 @@ def main(arguments = None):
     # of the waste of billions of valuable CPU cycles, is to avoid to have the
     # output file accidentally overwritten.
 
-    if os.path.exists(options.xml_output):
+    if os.path.exists(output_xml_path):
         if not options.overwrite:
-            print "%sError. The output file '%s' already exists." % \
-                  (style.prefix, options.xml_output)
+            msg = "%sError. The output file '%s' already exists."
+            print msg % (style.prefix, output_xml_path)
             print style.error_exit_message
             return 1
-        else:
-            os.unlink(options.xml_output)
+
+    msg = "%sExamining the headers of the %s FITS files given as input..."
+    print msg % (style.prefix, len(input_paths))
+
+    files = photometry.InputFITSFiles()
+    for index, img_path in enumerate(input_paths):
+        img = fitsimage.FITSImage(img_path)
+        pfilter = img.pfilter(options.filterk)
+        files[pfilter].append(img)
+
+        percentage = (index + 1) / len(input_paths) * 100
+        methods.show_progress(percentage)
+
+    print # progress bar doesn't include newline
+    print style.prefix
 
     # To begin with, we need to identify the most constant stars, something for
     # which we have to do photometry on all the stars and for all the images of
@@ -320,332 +331,311 @@ def main(arguments = None):
     # always with this subset in order to determine which aperture and sky
     # annulus are the optimal.
 
+    msg = "%sDoing initial photometry with FWHM-derived apertures..."
+    print msg % style.prefix
+    print style.prefix
+
     # mkstemp() returns a tuple containing an OS-level handle to an open file
     # and its absolute pathname. Thus, we need to close the file right after
     # creating it, and tell the photometry module to overwrite (-w) it.
 
-    phot_db_handle, phot_db_path = \
-        tempfile.mkstemp(prefix = 'photometry_', suffix = '.LEMONdB')
+    kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
+    phot_db_handle, phot_db_path = tempfile.mkstemp(**kwargs)
+    atexit.register(methods.clean_tmp_files, phot_db_path)
     os.close(phot_db_handle)
 
-    args = [offsets_xml_path,
-            '--output', phot_db_path, '--overwrite',
-            '--maximum', options.maximum,
-            '--margin', options.margin,
-            '--cores', options.ncores,
-            '--aperture', options.aperture,
-            '--annulus', options.annulus,
-            '--dannulus', options.dannulus,
-            '--min-sky', options.min,
-            '--expk', options.exptimek,
-            '--coaddk', options.coaddk,
-            '--gaink', options.gaink,
-            '--uik', options.uncimgk]
+    basic_args = [sources_img_path] + input_paths + \
+                 [phot_db_path, '--overwrite']
+
+    phot_args = ['--maximum', options.maximum,
+                 '--margin', options.margin,
+                 '--cores', options.ncores,
+                 '--min-sky', options.min,
+                 '--objectk', options.objectk,
+                 '--filterk', options.filterk,
+                 '--datek', options.datek,
+                 '--timek', options.timek,
+                 '--expk', options.exptimek,
+                 '--coaddk', options.coaddk,
+                 '--gaink', options.gaink,
+                 '--fwhmk', options.fwhmk,
+                 '--airmk', options.airmassk,
+                 '--uik', options.uncimgk]
 
     # The --gain option defaults to None, so we add it to the list of arguments
-    # only if it was given by the user. Otherwise, it would be given a value od
+    # only if it was given by the user. Otherwise, it would be given a value of
     # 'None', a string, which would result in an error when attempted to be
     # converted to float by optparse.
     if options.gain:
-        args += ['--gain', options.gain]
+        phot_args += ['--gain', options.gain]
 
     # Pass as many '-v' options as we have received here
-    [args.append('-v') for x in xrange(options.verbose)]
+    [phot_args.append('-v') for x in xrange(options.verbose)]
 
-    print "%sDoing initial photometry with FWHM-derived apertures..." % style.prefix
+    extra_args = ['--aperture', options.aperture,
+                  '--annulus', options.annulus,
+                  '--dannulus', options.dannulus]
+
+    # Non-zero return codes raise subprocess.CalledProcessError
+    args = basic_args + phot_args + extra_args
+    check_run(photometry.main, [str(a) for a in args])
+
+    # Now we need to compute the light curves and find those that are most
+    # constant. This, of course, has to be done for each filter, as a star
+    # identified as constant in Johnson I may be too faint in Johnson B, for
+    # example. In other words: we need to calculate the light curve of each
+    # star and for each filter, and then determine which are the
+    # options.nconstant stars with the lowest standard deviation.
+
+    print style.prefix
+    msg = "%sGenerating light curves for initial photometry."
+    print msg % style.prefix
     print style.prefix
 
-    try:
-        # Non-zero return codes raise subprocess.CalledProcessError
-        check_run(photometry.main, [str(a) for a in args])
+    kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
+    diffphot_db_handle, diffphot_db_path = tempfile.mkstemp(**kwargs)
+    atexit.register(methods.clean_tmp_files, diffphot_db_path)
+    os.close(diffphot_db_handle)
 
-        # Now we need to compute the light curves and find those that are most
-        # constant. This, of course, has to be done for each filter, as a star
-        # identified as constant in Johnson I may be too faint in Johnson B.
-        # In other words: we need to calculate the light curve of each star and
-        # for each filter, and then determine which are the options.nconstant
-        # stars with the lowest standard deviation.
+    diff_args = [phot_db_path,
+                 '--output', diffphot_db_path, '--overwrite',
+                 '--cores', options.ncores,
+                 '--minimum-images', options.min_images,
+                 '--stars', options.nconstant,
+                 '--minimum-stars', options.min_cstars,
+                 '--pct', options.pct,
+                 '--weights-threshold', options.wminimum,
+                 '--max-iters', options.max_iters,
+                 '--worst-fraction', options.worst_fraction]
 
-        diffphot_db_handle, diffphot_db_path = \
-            tempfile.mkstemp(prefix = 'diffphot_', suffix = '.LEMONdB')
-        os.close(diffphot_db_handle)
+    [diff_args.append('-v') for x in xrange(options.verbose)]
 
-        args = [phot_db_path,
-                '--output', diffphot_db_path, '--overwrite',
-                '--cores', options.ncores,
-                '--minimum-images', options.min_images,
-                '--stars', options.nconstant,
-                '--minimum-stars', options.min_cstars,
-                '--pct', options.pct,
-                '--weights-threshold', options.wminimum,
-                '--max-iters', options.max_iters,
-                '--worst-fraction', options.worst_fraction]
+    check_run(diffphot.main, [str(a) for a in diff_args])
+    print style.prefix
 
-        [args.append('-v') for x in xrange(options.verbose)]
+    # Map each photometric filter to the path of the temporary file where the
+    # right ascension and declination of each constant star, one per line, will
+    # be saved. This file is from now on passed, along with the --coordinates
+    # option, to photometry.main(), so that photometry is not done on all the
+    # astronomical objects, but instead exclusively on these ones.
 
-        print style.prefix
-        print "%sGenerating light curves for initial photometry." % style.prefix
-        print style.prefix
-        check_run(diffphot.main, [str(a) for a in args])
-        print style.prefix
+    coordinates_files = {}
 
-        # Map each photometric filter to the path of the temporary file where
-        # the x- and y-, coordinates of each constant star, one per line, will
-        # be saved. This file is from now on passed to the photometry module so
-        # that it is not done on all stars (after automatically detecting them)
-        # but instead exclusively on those pixels.
-        pixels_files = {}
+    miner = mining.LEMONdBMiner(diffphot_db_path)
+    for pfilter in miner.pfilters:
 
-        miner = mining.LEMONdBMiner(diffphot_db_path)
-        for pfilter in miner.pfilters:
+        # LEMONdBMiner.sort_by_curve() returns a list of two-element tuples,
+        # mapping the ID of each star to the standard deviation of its light
+        # curve in this photometric filter. The list is sorted in increasing
+        # order by the standard deviation. We are only interested in the first
+        # 'options.nconstant', needing at least 'options.pminimum'.
 
-            # LEMONdBMiner.sort_by_curve returns a list of two-element tuples,
-            # mapping the ID of each star to the standard deviation of its
-            # light curve in this filter. The list is sorted in increasing
-            # order by the standard deviation. We are only interested in the
-            # first 'options.nconstant', needing at least 'options.pminimum'.
+        msg = "%sIdentifying the %d most constant stars for the %s filter..."
+        args = style.prefix, options.nconstant, pfilter
+        print msg % args ,
+        sys.stdout.flush()
 
-            print "%sIdentifying the %d most constant stars for the %s " \
-                  "filter..." % (style.prefix, options.nconstant, pfilter) ,
-            sys.stdout.flush()
+        kwargs = dict(minimum = options.min_images)
+        stars_stdevs = miner.sort_by_curve_stdev(pfilter, **kwargs)
+        cstars = stars_stdevs[:options.nconstant]
 
-            stars_stdevs = \
-              miner.sort_by_curve_stdev(pfilter, minimum = options.min_images)
-            cstars = stars_stdevs[:options.nconstant]
-
-            if len(cstars) < options.pminimum:
-                msg = "fewer than %d stars identified as constant in the " \
-                      "initial photometry for %s filter" % \
-                      (options.pminimum, pfilter)
-                raise NotEnoughConstantStars(msg)
+        if len(cstars) < options.pminimum:
+            msg = ("fewer than %d stars identified as constant in the "
+                   "initial photometry for the %s filter")
+            args = options.pminimum, pfilter
+            raise NotEnoughConstantStars(msg % args)
+        else:
             print 'done.'
 
-            if len(cstars) < options.nconstant:
-                print "%sBut only %d stars were available. Using them all, " \
-                      "anyway." % (style.prefix, len(cstars))
+        if len(cstars) < options.nconstant:
+            msg = "%sBut only %d stars were available. Using them all, anyway."
+            print msg % (style.prefix, len(cstars))
 
-            # Replacing whitespaces with underscores is easier than having to
-            # quote the path to the --pixels file in case the name of the
-            # filter contains them (as optparse would only see up to the
-            # first whitespace).
-            prefix = '%s_' % str(pfilter).replace(' ', '_')
-            pixels_fd, pixels_files[pfilter] = \
-                 tempfile.mkstemp(prefix = prefix, suffix = '.pixels')
+        # Replacing whitespaces with underscores is easier than having to quote
+        # the path to the --coordinates file if the name of the filter contains
+        # them (otherwise, optparse would only see up to the first whitespace).
+        prefix = '%s_' % str(pfilter).replace(' ', '_')
+        kwargs = dict(prefix = prefix, suffix = '.coordinates')
+        coords_fd, coordinates_files[pfilter] = tempfile.mkstemp(**kwargs)
+        atexit.register(methods.clean_tmp_files, coordinates_files[pfilter])
 
-            # LEMONdBMiner.get_star returns a five-element tuple with
-            # the x and y coordinates, right ascension, declination and
-            # instrumental magnitude of the star in the reference image.
-            for star_id, stdev in cstars:
-                star_x, star_y = miner.get_star(star_id)[:2]
-                os.write(pixels_fd, "%f\t%f\n" % (star_x, star_y))
-            os.close(pixels_fd)
+        # LEMONdBMiner.get_star() returns a five-element tuple with the x and y
+        # coordinates, right ascension, declination and instrumental magnitude
+        # of the astronomical object in the sources image.
+        for star_id, _ in cstars:
+            ra, dec = miner.get_star(star_id)[2:4]
+            os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
+        os.close(coords_fd)
 
-            print "%sStar coordinates for %s temporarily saved to %s" % \
-                  (style.prefix, pfilter, pixels_files[pfilter])
+        msg = "%sStar coordinates for %s temporarily saved to %s"
+        print msg % (style.prefix, pfilter, coordinates_files[pfilter])
 
-        # The constant stars, the only ones to which we will pay attention from
-        # now on, have been identified. So far, so good. Now we will generate
-        # the light curves of these stars for each candidate set of photometric
-        # parameters. We store the evaluated values in a dictionary in which
-        # each filter maps to a list of xmlparse.CandidateAnnuli instances.
-        evaluated_annuli = collections.defaultdict(list)
+    # The constant astronomical objects, the only ones to which we will pay
+    # attention from now on, have been identified. So far, so good. Now we
+    # generate the light curves of these objects for each candidate set of
+    # photometric parameters. We store the evaluated values in a dictionary in
+    # which each filter maps to a list of xmlparse.CandidateAnnuli instances.
 
-        # Needed in-memory to compute the median FWHM of each filter
-        print "%sLoading XML offsets into memory..." % style.prefix ,
-        sys.stdout.flush()
-        xml_offsets = xmlparse.XMLOffsetFile.load(offsets_xml_path)
-        print 'done.'
+    evaluated_annuli = collections.defaultdict(list)
 
-        for pfilter, path in pixels_files.iteritems():
+    for pfilter, coords_path in coordinates_files.iteritems():
+
+        print style.prefix
+        msg = "%sFinding the optimal photometric parameters for the %s filter."
+        print msg % (style.prefix, pfilter)
+
+        if len(files[pfilter]) < options.min_images:
+            msg = "fewer than %d images (--minimum-images option) for %s"
+            args = options.min_images, pfilter
+            raise NotEnoughConstantStars(msg % args)
+
+        # The median FWHM of the images is needed in order to calculate the
+        # range of apertures that we need to evaluate for this filter.
+
+        msg = "%sCalculating the median FWHM for this filter..."
+        print msg % style.prefix ,
+
+        pfilter_fwhms = []
+        for img in files[pfilter]:
+            img_fwhm = photometry.get_fwhm(img, options)
+            logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
+            pfilter_fwhms.append(img_fwhm)
+
+        fwhm = numpy.median(pfilter_fwhms)
+        print ' done.'
+
+        # FWHM to range of pixels conversion
+        min_aperture = fwhm * options.lower
+        max_aperture = fwhm * options.upper
+        annulus      = fwhm * options.sky
+        dannulus     = fwhm * options.width
+
+        # The dimensions of the sky annulus remain fixed, while the
+        # aperture is in the range [lower * FWHM, upper FWHM], with
+        # increments of options.step pixels.
+        filter_apertures = numpy.arange(min_aperture, max_aperture, options.step)
+        assert filter_apertures[0] == min_aperture
+
+        msg = "%sFWHM (%s passband) = %.3f pixels, therefore:"
+        print msg % (style.prefix, pfilter, fwhm)
+        msg = "%sAperture radius, minimum = %.3f x %.2f = %.3f pixels "
+        print msg % (style.prefix, fwhm, options.lower, min_aperture)
+        msg = "%sAperture radius, maximum = %.3f x %.2f = %.3f pixels "
+        print msg % (style.prefix, fwhm, options.upper, max_aperture)
+        msg = "%sAperture radius, step = %.2f pixels, which means that:"
+        print msg % (style.prefix, options.step)
+
+        msg = "%sAperture radius, actual maximum = %.3f + %d x %.2f = %.3f pixels"
+        args = (style.prefix, min_aperture, len(filter_apertures),
+                options.step, max(filter_apertures))
+        print msg % args
+
+        msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
+        print msg % (style.prefix, fwhm, options.sky, annulus)
+        msg = "%sSky annulus, width = %.3f x %.2f = %.3f pixels"
+        print msg % (style.prefix, fwhm, options.width, dannulus)
+
+        msg = "%s%d different apertures in the range [%.2f, %.2f] to be evaluated:"
+        args = (style.prefix, len(filter_apertures),
+                filter_apertures[0], filter_apertures[-1])
+        print msg % args
+
+        # For each candidate aperture, and only with the images taken in
+        # this filter, do photometry on the constant stars and compute the
+        # median of the standard deviation of their light curves as a means
+        # of evaluating the suitability of this combination of parameters.
+        for index, aperture in enumerate(filter_apertures):
 
             print style.prefix
-            print "%sFinding the optimal photometric parameters for the " \
-                  "%s filter." % (style.prefix, pfilter)
 
-            band_offsets = [offset for offset in xml_offsets
-                            if offset.filter == pfilter]
+            kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
+            fd, aper_phot_db_path = tempfile.mkstemp(**kwargs)
+            atexit.register(methods.clean_tmp_files, aper_phot_db_path)
+            os.close(fd)
 
-            if len(band_offsets) < options.min_images:
-                msg = "fewer than %d images (--mimages option) for %s" % \
-                      (options.min_images, pfilter)
-                raise NotEnoughConstantStars(msg)
+            paths = [img.path for img in files[pfilter]]
+            basic_args = [sources_img_path] + paths + \
+                         [aper_phot_db_path, '--overwrite']
 
-            # The median FWHM of the images in this filter is needed in order
-            # to calculate the range of aperture annuli to be evaluated.
-            print "%sCalculating the median FWHM for this filter..." % style.prefix,
-            sys.stdout.flush()
-            band_fwhms = [offset.fwhm for offset in band_offsets]
-            fwhm = numpy.median(band_fwhms)
-            print 'done.'
+            extra_args = ['--filter', str(pfilter),
+                          '--coordinates', coords_path,
+                          '--aperture-pix', aperture,
+                          '--annulus-pix', annulus,
+                          '--dannulus-pix', dannulus]
 
-            # FWHM to range of pixels conversion
-            min_aperture = fwhm * options.lower
-            max_aperture = fwhm * options.upper
-            annulus      = fwhm * options.sky
-            dannulus     = fwhm * options.width
+            args = basic_args + phot_args + extra_args
+            check_run(photometry.main, [str(a) for a in args])
 
-            # The dimensions of the sky annulus remain fixed, while the
-            # aperture is in the range [lower * FWHM, upper FWHM], with
-            # increments of options.step pixels.
-            band_apertures = numpy.arange(min_aperture, max_aperture, options.step)
-            assert band_apertures[0] == min_aperture
+            kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
+            fd, aper_diff_db_path = tempfile.mkstemp(**kwargs)
+            atexit.register(methods.clean_tmp_files, aper_diff_db_path)
+            os.close(fd)
 
-            print "%sFWHM (%s passband) = %.3f pixels, therefore:" % \
-                  (style.prefix, pfilter, fwhm)
-            print "%sAperture annulus, minimum = %.3f x %.2f = %.3f pixels " % \
-                  (style.prefix, fwhm, options.lower, min_aperture)
-            print "%sAperture annulus, maximum = %.3f x %.2f = %.3f pixels " % \
-                  (style.prefix, fwhm, options.upper, max_aperture)
-            print "%sAperture annulus, step = %.2f pixels, which means that:" % \
-                  (style.prefix, options.step)
-            print "%sAperture annulus, actual maximum = %.3f + %d x %.2f = %.3f pixels" % \
-                  (style.prefix, min_aperture, len(band_apertures),
-                   options.step, max(band_apertures))
-            print "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.sky, annulus)
-            print "%sSky annulus, width = %.3f x %.2f = %.3f pixels" % \
-                  (style.prefix, fwhm, options.width, dannulus)
-            print "%s%d different aperture annuli in the range [%.2f, %.2f] to be evaluated:" % \
-                  (style.prefix, len(band_apertures), band_apertures[0], band_apertures[-1])
+            # Reuse the arguments used earlier for diffphot.main(). We only
+            # need to change the first argument (path to the input LEMONdB)
+            # and the third one (path to the output LEMONdB)
+            diff_args[0] = aper_phot_db_path
+            diff_args[2] = aper_diff_db_path
+            check_run(diffphot.main, [str(a) for a in diff_args])
 
-            # For each candidate aperture, and only with the images taken in
-            # this filter, do photometry on the constant stars and compute the
-            # median of the standard deviation of their light curves as a means
-            # of evaluating the suitability of this combination of parameters.
-            for index, aperture in enumerate(band_apertures):
+            miner = mining.LEMONdBMiner(aper_diff_db_path)
 
-                aper_phot_db_handle, aper_phot_db_path = \
-                    tempfile.mkstemp(prefix = 'photometry_', suffix = '.LEMONdB')
-                os.close(aper_phot_db_handle)
+            try:
+                kwargs = dict(minimum = options.min_images)
+                cstars = miner.sort_by_curve_stdev(pfilter, **kwargs)
+            except mining.NoStarsSelectedError:
+                # There are no light curves with at least options.min_images points.
+                # Therefore, much to our sorrow, we cannot evaluate this aperture.
+                msg = "%sNo constant stars for this aperture. Ignoring it..."
+                print msg % style.prefix
+                continue
 
-                args = [offsets_xml_path,
-                        '--output', aper_phot_db_path, '--overwrite',
-                        '--passband', pfilter.letter,
-                        '--pixels', pixels_files[pfilter],
-                        '--maximum', options.maximum,
-                        '--margin', options.margin,
-                        '--cores', options.ncores,
-                        '--aperture-pix', aperture,
-                        '--annulus-pix', annulus,
-                        '--dannulus-pix', dannulus,
-                        '--min-sky', options.min,
-                        '--expk', options.exptimek,
-                        '--coaddk', options.coaddk,
-                        '--gaink', options.gaink,
-                        '--uik', options.uncimgk]
+            # There must be at most 'nconstant' stars, but there may be fewer
+            # if this aperture causes one or more of the constant stars to be
+            # too faint (INDEF) in so many images as to prevent their lights
+            # curve from being computed.
+            assert len(cstars) <= options.nconstant
 
-                if options.gain:
-                    args += ['--gain', options.gain]
+            if len(cstars) < options.pminimum:
+                msg = ("%sJust %d constant stars, fewer than the allowed "
+                       "minimum of %d, had their light curves calculated "
+                       "for this aperture. Ignoring it...")
+                args = style.prefix, len(cstars), options.pminimum
+                print style.prefix
+                continue
 
-                [args.append('-v') for x in xrange(options.verbose)]
+            # 'cstars' contains two-element tuples: (ID, stdev)
+            stdevs_median = numpy.median([x[1] for x in cstars])
+            params = (aperture, annulus, dannulus, stdevs_median)
+            candidate = xmlparse.CandidateAnnuli(*params)
+            evaluated_annuli[pfilter].append(candidate)
 
-                try:
-                    print style.prefix
-                    check_run(photometry.main, [str(a) for a in args])
+            msg = "%sAperture = %.3f, median stdev (%d stars) = %.4f"
+            args = style.prefix, aperture, len(cstars), stdevs_median
+            print msg % args
 
-                    aper_diff_db_handle, aper_diff_db_path = \
-                        tempfile.mkstemp(prefix = 'diffphot_', suffix = '.LEMONdB')
-                    os.close(aper_diff_db_handle)
+            percentage = (index + 1) / len(filter_apertures) * 100
+            msg = "%s%s progress: %.2f %%"
+            args = style.prefix, pfilter, percentage
+            print msg % args
 
-                    args = [aper_phot_db_path,
-                            '--output', aper_diff_db_path, '--overwrite',
-                            '--cores', options.ncores,
-                            '--minimum-images', options.min_images,
-                            '--stars', options.nconstant,
-                            '--minimum-stars', options.min_cstars,
-                            '--pct', options.pct,
-                            '--weights-threshold', options.wminimum,
-                            '--max-iters', options.max_iters,
-                            '--worst-fraction', options.worst_fraction]
+        # Let the user know of the best 'annuli', that is, the one for
+        # which the standard deviation of the constant stars is minimal
+        kwargs = dict(key = operator.attrgetter('stdev'))
+        best_candidate = min(evaluated_annuli[pfilter], **kwargs)
 
-                    [args.append('-v') for x in xrange(options.verbose)]
+        msg = "%sBest aperture found at %.3f pixels with stdev = %.4f"
+        args = style.prefix, best_candidate.aperture, best_candidate.stdev
+        print msg % args
 
-                    check_run(diffphot.main, [str(a) for a in args])
+    print style.prefix
+    msg = "%sSaving the evaluated apertures to the '%s' XML file ..."
+    print msg % (style.prefix, output_xml_path) ,
+    xmlparse.CandidateAnnuli.xml_dump(output_xml_path, evaluated_annuli)
+    print ' done.'
 
-                    # Extract the standard deviations and compute their median.
-                    miner = mining.LEMONdBMiner(aper_diff_db_path)
-                    cstars = miner.sort_by_curve_stdev(pfilter, minimum = options.min_images)
-
-                    # There must be at most 'nconstant' stars, but there may be
-                    # fewer if this aperture causes one or more of the constant
-                    # stars to be too faint (INDEF) in so many images as to
-                    # prevent their lights curve from being computed.
-                    assert len(cstars) <= options.nconstant
-
-                    if len(cstars) < options.pminimum:
-                        print "%sJust %d constant stars, fewer than the " \
-                              "minimum allowed of %d, had their" % \
-                              (style.prefix, len(cstars), options.pminimum)
-                        print "%slight curves calculated for this " \
-                              "aperture. Ignoring it..." % style.prefix
-
-                    else:
-                        stdevs_median = numpy.median([x[1] for x in cstars])
-                        params = (aperture, annulus, dannulus, stdevs_median)
-                        candidate = xmlparse.CandidateAnnuli(*params)
-                        evaluated_annuli[pfilter].append(candidate)
-                        print "%sAperture = %.3f, median stdev (%d stars) = %.4f" % \
-                              (style.prefix, aperture, len(cstars), stdevs_median)
-
-                # Raised by miner.sort_by_curve_stdev if no stars are found.
-                # In other words: for this aperture not even a single star has
-                # a light curve with at least options.min_images points; thus,
-                # much to our sorrow, we cannot evaluate it.
-                except mining.NoStarsSelectedError:
-                    msg = "%sNo constant stars for this aperture. Ignoring it..."
-                    print msg % style.prefix
-
-                finally:
-
-                    percentage = (index + 1) / len(band_apertures) * 100
-                    msg = "%s%s progress: %.2f %%"
-                    print msg % (style.prefix, pfilter, percentage)
-
-                    # Temporary databases no longer needed; ignore errors in
-                    # case the file cannot be removed or if something went
-                    # wrong even before these variables could be defined.
-
-                    try: os.unlink(aper_phot_db_path)
-                    except (NameError, OSError): pass
-
-                    try: os.unlink(aper_diff_db_path)
-                    except (NameError, OSError): pass
-
-            # Let the user know of the best 'annuli', that is, the one for
-            # which the standard deviation of the constant stars is minimal
-            best_candidate = min(evaluated_annuli[pfilter],
-                                 key = operator.attrgetter('stdev'))
-
-            print "%sBest aperture found at %.3f pixels with stdev = %.4f" % \
-                  (style.prefix, best_candidate.aperture, best_candidate.stdev)
-
-        print style.prefix
-        print "%sSaving the evaluated annuli to the '%s' XML file ..." % \
-              (style.prefix, options.xml_output) ,
-        sys.stdout.flush()
-        xmlparse.CandidateAnnuli.xml_dump(options.xml_output, evaluated_annuli)
-        print 'done.'
-
-        print "%sYou're done ^_^" % style.prefix
-        return 0
-
-    finally:
-
-        # Last but not least, delete the databases that were initially used to
-        # identify the constant stars and the files to which their coordinates
-        # were temporarily saved.
-
-        try: os.unlink(phot_db_path)
-        except (NameError, OSError): pass
-
-        try: os.unlink(diffphot_db_path)
-        except (NameError, OSError): pass
-
-        try:
-            for path in pixels_files.itervalues():
-                try: os.unlink(path)
-                except OSError: pass
-        except UnboundLocalError: pass
+    print "%sYou're done ^_^" % style.prefix
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
