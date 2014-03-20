@@ -12,9 +12,9 @@
 #     source ~/.lemon-completion.sh
 
 
-FITS_EXTS="@(fit?(s)|FIT?(S))"
-XML_EXTS="@(xml|XML)"
-LEMONDB_EXTS="@(LEMONdB|lemondb)"
+FITS_EXTS="fit?(s)|FIT?(S)"
+XML_EXTS="xml|XML"
+LEMONDB_EXTS="LEMONdB|lemondb"
 
 # Match the current word against the list given as argument
 _match()
@@ -29,7 +29,7 @@ _lemon_import()
     --datek --expk= --objectk --uik"
 
     if [[ ${cur} != -* ]]; then
-        _filedir $FITS_EXTS
+        _filedir @($FITS_EXTS)
     else
 	_match "${opts}"
     fi
@@ -44,7 +44,7 @@ _lemon_seeing()
     --fwhm_dir --esigma --elong_dir --coaddk --saturk --fwhmk"
 
     if [[ ${cur} != -* ]]; then
-        _filedir $FITS_EXTS
+        _filedir @($FITS_EXTS)
     else
 	_match "${opts}"
     fi
@@ -64,7 +64,7 @@ _lemon_mosaic()
 
     case $prev in
 	--output)
-	    _filedir $FITS_EXTS
+	    _filedir @($FITS_EXTS)
 	    return 0
 	    ;;
 	--check-type)
@@ -76,7 +76,7 @@ _lemon_mosaic()
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $XML_EXTS
+        _filedir @($XML_EXTS)
     fi
 }
 
@@ -85,11 +85,11 @@ _lemon_astrometry()
     local opts
     opts="--suffix --verbose --ra --dec --radius"
     if [[ ${prev} == --output ]]; then
-	_filedir $FITS_EXTS
+	_filedir @($FITS_EXTS)
     elif [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $FITS_EXTS
+        _filedir @($FITS_EXTS)
     fi
 }
 
@@ -103,11 +103,11 @@ _lemon_annuli()
     --max-iters --worst-fraction --expk --coaddk --gaink --uik"
 
     if [[ ${prev} == --output ]]; then
-	_filedir $XML_EXTS
+	_filedir @($XML_EXTS)
     elif [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $XML_EXTS
+        _filedir @($XML_EXTS)
     fi
 }
 
@@ -121,11 +121,11 @@ _lemon_photometry()
 
     case $prev in
 	--output)
-	    _filedir $LEMONDB_EXTS
+	    _filedir @($LEMONDB_EXTS)
 	    return 0
 	    ;;
 	--annuli)
-	    _filedir $XML_EXTS
+	    _filedir @($XML_EXTS)
 	    return 0
 	    ;;
 	--pixels)
@@ -137,7 +137,7 @@ _lemon_photometry()
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $XML_EXTS
+        _filedir @($XML_EXTS)
     fi
 }
 
@@ -149,11 +149,11 @@ _lemon_diffphot()
     --worst-fraction"
 
     if [[ ${prev} == --output ]]; then
-	_filedir $LEMONDB_EXTS
+	_filedir @($LEMONDB_EXTS)
     elif [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $LEMONDB_EXTS
+        _filedir @($LEMONDB_EXTS)
     fi
 }
 
@@ -165,11 +165,11 @@ _lemon_periods()
     --cores --verbose"
 
     if [[ ${prev} == --output ]]; then
-	_filedir $LEMONDB_EXTS
+	_filedir @($LEMONDB_EXTS)
     elif [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $LEMONDB_EXTS
+        _filedir @($LEMONDB_EXTS)
     fi
 }
 
