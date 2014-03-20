@@ -95,21 +95,19 @@ _lemon_annuli()
 _lemon_photometry()
 {
     local opts
-    opts="--output --overwrite --passband --maximum --margin --gain
-    --annuli --cores --verbose --pixels --min-sky --aperture --annulus
-    --dannulus --individual-fwhm --aperture-pix --annulus-pix
-    --dannulus-pix --expk --coaddk --saturk --gaink --uik"
+
+    opts="--overwrite --filter --maximum --margin --gain --annuli
+    --cores --verbose --coordinates --aperture --annulus --dannulus
+    --min-sky --individual-fwhm --aperture-pix --annulus-pix
+    --dannulus-pix --snr-percentile --mean --objectk --filterk --datek
+    --timek --expk --coaddk --gaink --fwhmk --airmk --uik"
 
     case $prev in
-	--output)
-	    _filedir @($LEMONDB_EXTS)
-	    return 0
-	    ;;
 	--annuli)
 	    _filedir @($XML_EXTS)
 	    return 0
 	    ;;
-	--pixels)
+	--coordinates)
 	    _filedir
 	    return 0
 	    ;;
@@ -118,7 +116,8 @@ _lemon_photometry()
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir @($XML_EXTS)
+	# Input FITS images / output LEMONdB
+        _filedir @($FITS_EXTS|$LEMONDB_EXTS)
     fi
 }
 
