@@ -50,21 +50,6 @@ _lemon_seeing()
     fi
 }
 
-_lemon_offsets()
-{
-    local opts
-    opts="--output --overwrite --cores= --maximum --margin --objectk
-    --percentile --filterk --datek --fwhmk --airmk --expk --coaddk"
-
-    if [[ ${prev} == --output ]]; then
-	_filedir $XML_EXTS
-    elif [[ ${cur} == -* ]]; then
-	_match "${opts}"
-    else
-        _filedir $FITS_EXTS
-    fi
-}
-
 _lemon_mosaic()
 {
     local opts checktypes
@@ -194,8 +179,8 @@ _lemon()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing offsets mosaic astrometry annuli
-    photometry diffphot periods juicer"
+    commands="import seeing astrometry mosaic annuli photometry
+    diffphot periods juicer"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -211,10 +196,6 @@ _lemon()
 	_lemon_seeing
 	return 0
         ;;
-    offsets)
-	_lemon_offsets
-	return 0
-	;;
     mosaic)
 	_lemon_mosaic
 	return 0
