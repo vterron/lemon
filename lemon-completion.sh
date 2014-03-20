@@ -26,7 +26,7 @@ _lemon_import()
 {
     local opts
     opts="--object --pattern --counts --filename --follow --exact
-    --datek --expk= --objectk --uik"
+    --datek --timek --expk= --objectk --uik"
 
     if [[ ${cur} != -* ]]; then
         _filedir @($FITS_EXTS)
