@@ -52,31 +52,13 @@ _lemon_seeing()
 
 _lemon_mosaic()
 {
-    local opts checktypes
-
-    opts="--scale --output --overwrite --fraction --name --tempdir
-    --check-type --min --max --rak --deck --objectk"
-
-    # The different types of check-image available in SExtractor
-    checktypes="NONE IDENTICAL BACKGROUND BACKGROUND_RMS MINIBACK_RMS
-    MINIBACKGROUND -BACKGROUND FILTERED OBJECTS -OBJECTS APERTURES
-    SEGMENTATION"
-
-    case $prev in
-	--output)
-	    _filedir @($FITS_EXTS)
-	    return 0
-	    ;;
-	--check-type)
-	    _match "${checktypes}"
-	    return 0
-	    ;;
-    esac
+    local opts
+    opts="--overwrite --background-match --cores"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir @($XML_EXTS)
+        _filedir @($FITS_EXTS)
     fi
 }
 
