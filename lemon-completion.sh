@@ -66,9 +66,8 @@ _lemon_astrometry()
 {
     local opts
     opts="--suffix --verbose --ra --dec --radius"
-    if [[ ${prev} == --output ]]; then
-	_filedir @($FITS_EXTS)
-    elif [[ ${cur} == -* ]]; then
+
+    if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
         _filedir @($FITS_EXTS)
