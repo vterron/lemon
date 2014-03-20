@@ -31,14 +31,16 @@ from the user's perspective.
 
 """
 
+import collections
+import itertools
 import logging
 import math
 import os
 import os.path
 import tempfile
+import warnings
 
 # LEMON modules
-import astromatic
 import fitsimage
 import methods
 
@@ -59,17 +61,6 @@ os.environ['PYRAF_NO_DISPLAY'] = '1'
 with methods.tmp_chdir(os.path.dirname(os.path.abspath(__file__))):
     import pyraf.iraf
     from pyraf.iraf import digiphot, apphot  # 'digiphot.apphot' package
-
-# PyRAF versions older than 2.0 caused IRAF's imexpr to raise an obscure
-# exception ("Error in parameter 'a' for task imexpr\n'Key a not found") from
-# time to time. This only happened, at least on our machines, when the work was
-# divided up between multiple processes using the multiprocessing module, and
-# it did not seem to occur with pools of only one worker.
-
-# This line converts a string like '2.0-r1785' to the tuple (2, 0)
-pyraf_version = tuple(int(x) for x in pyraf.__version__[:3].split('.'))
-if pyraf_version < (2, 0):
-    raise ImportError("PyRAF version 2.0 or newer is required")
 
 # Turn PyRAF process caching off; otherwise, if we spawn multiple processes
 # and run them in parallel, each one of them would use the same IRAF running
@@ -93,63 +84,36 @@ func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
 pyraf.subproc.Subprocess.__del__ = func
 
 
-class QPhotResult(object):
-    """ This class simply encapsulates the photometry of a star. In other
-        words, each one of the lines that for each star will be outputted by
-        IRAF's qphot will be parsed and saved as an instance of this class."""
+typename = 'QPhotResult'
+field_names = "x, y, mag, sum, flux, stdev"
+class QPhotResult(collections.namedtuple(typename, field_names)):
+    """ Encapsulate the photometry of an astronomical object. In other words,
+    each one of the lines that for each object are output by IRAF's qphot are
+    parsed and saved as an object of this class.
 
-    def __init__(self, xcenter, ycenter, mag, sum_, flux, stdev):
-        """ Instantiation method for the QPhotResult class.
+    x, y - the x- and y-coordinates of the center of the object.
+    mag - the instrumental magnitude of the object in the aperture.
+    sum - the total number of counts in the aperture *including* the sky.
+    flux - the total number of counts in the aperture *excluding* the sky.
+    stdev - the standard deviation of the best estimate of the sky value,
+            per pixel.
 
-        xcenter - x coordinate of the center of the star.
-        ycenter - y coordinate of the center of the star.
-        mag - the instrumental magnitude of the star in the aperture.
-        sum_ - the total number of counts in the aperture _including_ the sky.
-        flux - the total number of counts in the aperture _excluding_ the sky.
-        stdev - the standard deviation of the best estimate of the sky value,
-                per pixel.
-
-        """
-
-        # Historical note: here there used to be an assertion that made sure
-        # that sum >= flux, as the total number of counts in the aperture
-        # including the sky should never, ever be smaller than when the sky is
-        # excluded. However, this may not be true if we attempt to do
-        # photometry on something that is not an astronomical object.
-        #
-        # How could this possibly happen, you may ask. Well, in our case, at
-        # least, this was due to SExtractor, when sources were detected in the
-        # reference image, which identified some points in the extremely noisy
-        # (because of the flat-field reduction step) margins as stars. Anyway,
-        # I suspect that the assertion may also fail for large (bigger than the
-        # aperture) objects.
-        #
-        # The moral of the story, my developer fellow, is that the S/N of the
-        # star also provides information about, well, whether it is _actually_
-        # a star: negative signal-to-noise ratios clearly indicate that what
-        # had photometry done on was definitely not a star.
-
-        self.x         = xcenter
-        self.y         = ycenter
-        self.magnitude = mag
-        self.sum       = sum_
-        self.flux      = flux
-        self.stdev     = stdev
+    """
 
     def snr(self, gain):
-        """ Return the signal-to-noise ratio of the star.
+        """ Return the signal-to-noise ratio of the photometric measurement.
 
-        The method returns the S/N, a quantitative measure of the accuracy with
-        which the star was observed. The signal-to-noise ratio tells us the
-        relative size of the desired signal to the underlying noise or
+        The method returns the S/N, a quantitative measurement of the accuracy
+        with which the object was observed. The signal-to-noise ratio tells us
+        the relative size of the desired signal to the underlying noise or
         background light. The noise is defined as the standard deviation of a
-        single measurement from the mean of the measurements made on a star.
+        single measurement from the mean of the measurements made on an object.
 
         For photon arrivals, the statistical noise fluctuation is represented
-        by the Poisson distribution, and for bright sources where the sky
+        by the Poisson distribution. For bright sources where the sky
         background is negligible, S/N = total counts / sqrt(total counts).
-        Note that when the sky is not insignificant, the formula becomes
-        S/N = (total counts - sky counts) / sqrt(total counts).
+        When the sky is not insignificant, the formula becomes S/N = (total
+        counts - sky counts) / sqrt(total counts).
 
         Astronomers typically consider a good photoelectric measurement as one
         that has a signal-to-noise ratio of 100, or in other words, the noise
@@ -164,25 +128,23 @@ class QPhotResult(object):
         although one is a common gain among many instruments, results may be
         only approximate.
 
+        As counterintuitive as it seems, IRAF's qphot may return negative
+        values of 'sum': e.g., if one of the steps of the data calibration
+        (such as the bias subtraction) resulted in pixels with negative values.
+        When that is the case, this method returns a negative SNR, which should
+        be viewed as a red flag that something went wrong with this photometric
+        measurement.
+
         """
 
         if gain <= 0:
             raise ValueError("CCD gain must be a positive value")
 
-        # Division by zero must be avoided, as sum and flux can both be zero if
-        # photometry is done on a pair of coordinates that do not correspond to
-        # any star (or, in other words, if the star on which we are doing
-        # photometry is so faint that it is not visible in the image).
-
+        # Division by zero must be avoided, as sum and flux may both be zero if
+        # photometry is done on celestial coordinates that do not correspond to
+        # any astronomical object, or if it is so faint that it is not visible.
         if not self.sum:
             return 0.0
-
-        # Also, sum and flux could be negative if photometry, as already
-        # explained, is done on the margins (overscan area and such) of the
-        # image, where the calibration of the images may have resulted in
-        # pixels with negative values. In that case we do not return zero, but
-        # instead a _negative_ SNR, so that it is clear that almost surely what
-        # had photometry done on was not a star.
 
         elif self.sum < 0.0:
             return -(abs(self.flux * gain) / math.sqrt(abs(self.sum * gain)))
@@ -194,22 +156,44 @@ class QPhotResult(object):
 class QPhot(list):
     """ The photometry of an image, as returned by IRAF's qphot.
 
-    This class encapsulates the photometry done by the qphot (quick aperture
-    photometer) task implemented in IRAF. An instance of QPhotResult will be
-    created for each star detected in the image, except for those stars that
-    were INDEF or saturated -- for these, None is used.
+    This class stores the result of the photometry done by IRAF's qphot (quick
+    aperture photometer) on an image. A QPhotResult object is created for each
+    object listed in the text file: after calling QPhot.run(), this subclass of
+    the built-in list contains the photometric measurement of each astronomical
+    object. The order of these QPhotResult objects is guaranteed to respect
+    that in which coordinates are listed in the text file. In other words: the
+    i-th QPhotResult object corresponds to the i-th astronomical object.
 
     """
 
-    def __init__(self, path):
+    def __init__(self, img_path, coords_path):
         """ Instantiation method for the QPhot class.
 
-        path - path to the image whose photometry is to be done.
+        img_path - path to the FITS image on which to do photometry.
+        coords_path - path to the text file with the celestial coordinates
+                      (right ascension and declination) of the astronomical
+                      objects to be measured. These objects must be listed
+                      one per line, in two columns.
 
         """
 
         super(list, self).__init__()
-        self.image = fitsimage.FITSImage(path)
+        self.image = fitsimage.FITSImage(img_path)
+        self.coords_path = coords_path
+
+        for ra, dec in methods.load_coordinates(self.coords_path):
+            if ra == 0 and dec == 0:
+                msg = (
+                  "the right ascension and declination of one or more "
+                  "astronomical objects in '%s' is zero. This is a very bad "
+                  "sign: these are the celestial coordinates that SExtractor "
+                  "uses for sources detected on a FITS image that has not been "
+                  "calibrated astrometrically (may that be your case?), and "
+                  "without that it is impossible to do photometry on the "
+                  "desired coordinates" % self.coords_path)
+                # Emit warning only once
+                warnings.warn(msg)
+                break
 
     @property
     def path(self):
@@ -217,172 +201,140 @@ class QPhot(list):
         return self.image.path
 
     def clear(self):
-        """ Remove from the instance the photometry of all the stars. """
+        """ Remove all the photometric measurements. """
         del self[:]
 
-    def run(self, annulus, dannulus, aperture, exptimek, pixels):
-        """ Run IRAF's qphot on the image.
+    def run(self, annulus, dannulus, aperture, exptimek):
+        """ Run IRAF's qphot on the FITS image.
 
-        This method is a wrapper, equivalent to (1) running 'qphot' on an image
-        and (2) using 'txdump' in order to extract some fields from the text
-        database that the former outputs. The goal of this routine is to make
-        it possible to easily do photometry on an image, saving in the current
-        instance the information for all the objects (that is, when running
-        txdump the parameter 'expr' is set to 'yes').
+        This method is a wrapper, equivalent to (1) running 'qphot' on a FITS
+        image and (2) using 'txdump' in order to extract some fields from the
+        resulting text database. This subroutine, therefore, allows to easily
+        do photometry on a FITS image, storing as a sequence of QPhotResult
+        objects the photometric measurements. The method returns the number
+        of astronomical objects on which photometry has been done.
 
-        This method may be seen as a low-level routine: INDEF stars will have
-        *a magnitude of None*, but it does not pay attention to the saturation
-        levels. For that, you will have to use the photometry function, defined
-        in this very module. That, and not this one, is the routine you are
-        expected to use to do photometry on your images.
+        No matter how convenient, QPhot.run() should still be seen as a
+        low-level method: INDEF objects will have a magnitude and standard
+        deviation of None, but it does not pay attention to the saturation
+        levels -- the sole reason for this being that IRAF's qphot, per se,
+        provides no way of knowing if one or more pixels in the aperture are
+        above some saturation level. For this very reason, the recommended
+        approach to doing photometry is to use photometry(), a convenience
+        function defined below.
 
-        In the first step, photometry will be done for the objects whose
-        coordinates are listed in 'pixels', a sequence of two-element tuples
-        (x- and y- values). These coordinates are saved to a temporary file,
-        which is given as input to 'qphot' to do photometry on these pixels.
+        In the first step, photometry is done, using qphot, on the astronomical
+        objects whose coordinates have been listed, one per line, in the text
+        file passed as an argument to QPhot.__init__(). The output of this IRAF
+        task is saved to temporary file (a), an APPHOT text database from which
+        'txdump' extracts the fields to another temporary file, (b). Then this
+        file is parsed, the information of each of its lines, one per object,
+        used in order to create a QPhotResult object. All previous photometric
+        measurements are lost every time this method is run. All the temporary
+        files (a, b) are guaranteed to be deleted on exit, even if an error is
+        encountered.
 
-        The output of 'qphot' is saved to a second temporary file (b), on which
-        'txdump' is run to extract the fields from the APPHOT text database
-        that was produced by 'qphot' to a third temporary file (c). This last
-        file is then parsed, the information of each of its lines used in order
-        to create an instance of QPhotResult, one per star, which is added to
-        the current instance. Note that previous results will be lost if this
-        method is run twice on the same instance.
-
-        All the temporary files (a, b, c) are guaranteed to be deleted before
-        the method exits, even if an error is encountered. The method returns
-        the number of stars whose photometry has been done.
+        An important note: you may find extremely confusing that, although the
+        input that this method accepts are celestial coordinates (the right
+        ascension and declination of the astronomical objects to be measured),
+        the resulting QPhotResult objects store the x- and y-coordinates of
+        their centers. The reason for this is that IRAF's qphot supports
+        'world' coordinates as the system of the input coordinates, but the
+        output coordinate system options are 'logical', 'tv', and 'physical':
+        http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?qphot
 
         Arguments:
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
-        aperture - the single aperture radius, in pixels.
+        aperture - the aperture radius, in pixels.
         exptimek - the image header keyword containing the exposure time. Needed
                    by qphot in order to normalize the computed magnitudes to an
                    exposure time of one time unit.
-        pixels - list of instances of Pixel which encapsulate the image
-                 coordinates that will be passed to IRAF's qphot. It set to None
-                 (the default value) or left empty, these coordinates will be
-                 obtained by running SExtractor on the image.
 
         """
 
-        self.clear() # empty the current instance
+        self.clear() # empty object
 
         try:
-            # The task qphot will receive a text file with the coordinates for
-            # the objects to be measured. We need, then, to create a temporary
-            # file, with the coordinates of the stars, one per line.
-            coords_fd, stars_coords = \
-                tempfile.mkstemp(prefix = os.path.basename(self.path),
-                                 suffix = '.qphot_coords', text = True)
-            for pixel in pixels:
-                os.write(coords_fd, "%f\t%f\n" % (pixel.x, pixel.y))
-            os.close(coords_fd)
-
-            # Temporary file to which the text database produced by qphot will
-            # be saved. Even if empty, it must be deleted before calling
-            # qphot. Otherwise, an error message, stating that the operation
-            # "would overwrite existing file", will be thrown.
+            # Temporary file to which the APPHOT text database produced by
+            # qphot will be saved. Even if empty, it must be deleted before
+            # calling qphot. Otherwise, an error message, stating that the
+            # operation "would overwrite existing file", will be thrown.
             output_fd, qphot_output = \
                 tempfile.mkstemp(prefix = os.path.basename(self.path),
                                  suffix = '.qphot_output', text = True)
             os.close(output_fd)
             os.unlink(qphot_output)
 
-            # The list of the fields passed to qphot
-            qphot_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
-
-            # Run IRAF's qphot on the image and save the output to our
-            # temporary file. Note that cbox *must* be set to zero, as
-            # otherwise IRAF's qphot will compute accurate centers for each
-            # object using the centroid centering algorithm. This is generally
-            # a good thing, but in this case we need the photometry to be done
-            # exactly on the specified coordinates.
+            # Run qphot on the image and save the output to our temporary
+            # file. Note that cbox *must* be set to zero, as otherwise qphot
+            # will compute accurate centers for each object using the centroid
+            # centering algorithm. This is generally a good thing, but in our
+            # case we want the photometry to be done exactly on the specified
+            # coordinates.
 
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
-                          aperture = aperture, coords = stars_coords,
+                          aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
-                          interactive = 'no')
+                          wcsin = 'world', interactive = 'no')
 
             apphot.qphot(self.path, **kwargs)
 
-            # Make sure the outpout was written to where we said
+            # Make sure the output was written to where we said
             assert os.path.exists(qphot_output)
 
-            # Now extract the specified records from the qphot output. We need
-            # the path (the file, even empty, must be deleted, as IRAF won't
-            # overwrite it) another temporary file to which save the output;
-            # IRAF's txdump 'Stdout' (why the upper case?) redirection must
-            # be to a file handle or string.
-
+            # Now extract the records from the APPHOT text database. We need
+            # the path of another temporary file to which to save them. Even
+            # if empty, we need to delete the temporary file created by
+            # mkstemp(), as IRAF will not overwrite it.
             txdump_fd, txdump_output = \
                 tempfile.mkstemp(prefix = os.path.basename(self.path),
                                  suffix ='.qphot_txdump', text = True)
             os.close(txdump_fd)
             os.unlink(txdump_output)
 
-            # The cast of Stdout to string is needed as txdump won't work with
-            # unicode, if we happen to come across it -- it would insist on
-            # that redirection must be to a file handle or string.
-            pyraf.iraf.txdump(qphot_output, fields = ','.join(qphot_fields),
+            # The type casting of Stdout to string is needed as txdump will not
+            # work with unicode, if we happen to come across it: PyRAF requires
+            # that redirection be to a file handle or string.
+
+            txdump_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
+            pyraf.iraf.txdump(qphot_output, fields = ','.join(txdump_fields),
                               Stdout = str(txdump_output), expr = 'yes')
 
-            # Now open the outut file again and parse the output of 'txdump',
-            # creating an instance of QPhotResult and saving it in the current
-            # instance for each line of the file.
-            txdump_fd = open(txdump_output, 'rt')
-            txdump_lines = txdump_fd.readlines()
+            # Now open the output file again and parse the output of txdump,
+            # creating a QPhotResult object for each record.
+            with open(txdump_output, 'rt') as txdump_fd:
+                for line in txdump_fd:
 
-            assert len(txdump_lines) == len(pixels)
-            for line, pixel in zip(txdump_lines, pixels):
-                try:
-                    # The i-th line in the file corresponds to the i-th pixel.
-                    splitted_line = line.split()
-                    xcenter = float(splitted_line[0]) # same value as pixel.x
-                    ycenter = float(splitted_line[1]) # same value as pixel.y
-
-                    if __debug__:
-                        epsilon = 0.001  # a thousandth of a pixel!
-                        assert abs(xcenter - pixel.x) < epsilon
-                        assert abs(ycenter - pixel.y) < epsilon
+                    fields = line.split()
+                    xcenter = float(fields[0])
+                    ycenter = float(fields[1])
 
                     try:
-                        mag_str = splitted_line[2]
+                        mag_str = fields[2]
                         mag     = float(mag_str)
-                    except ValueError:  # raised by float("INDEF")
+                    except ValueError:  # float("INDEF")
                         assert mag_str == 'INDEF'
                         mag = None
 
-                    sum_ = float(splitted_line[3])
-                    flux = float(splitted_line[4])
+                    sum_ = float(fields[3])
+                    flux = float(fields[4])
 
                     try:
-                        stdev_str = splitted_line[5]
+                        stdev_str = fields[5]
                         stdev = float(stdev_str)
-                    except ValueError:  # raised by float("INDEF")
+                    except ValueError:  # float("INDEF")
                         assert stdev_str == 'INDEF'
                         stdev = None
 
-                    star_phot = QPhotResult(xcenter, ycenter, mag, sum_, flux, stdev)
-                    self.append(star_phot)
-
-                except IndexError:
-                    raise  # we aren't expecting any improperly formatted line
+                    args = xcenter, ycenter, mag, sum_, flux, stdev
+                    self.append(QPhotResult(*args))
 
         finally:
 
-            # Remove the temporary files, as we do not longer need them. The
-            # try-except is needed to prevents raised exceptions in case a file
-            # does not get to be created -- that is, if an IRAF task fails or
-            # the execution of the module is aborted by the user. NameError is
-            # needed because an exception may be raised before the variables
-            # are declared.
-
-            try:
-                os.unlink(stars_coords)
-            except (NameError, OSError):
-                pass
+            # Remove temporary files. The try-except is necessary because the
+            # deletion may fail (OSError), or something could go wrong and an
+            # exception be raised before the variables are defined (NameError).
 
             try:
                 os.unlink(qphot_output)
@@ -396,140 +348,111 @@ class QPhot(list):
 
         return len(self)
 
-def run(xml_offset, aperture, annulus, dannulus,
-        maximum, exptimek, uncimgk, pixels):
-    """ Do photometry on an image.
 
-    The method receives a xmlparse.XMLOffset instance and runs IRAF's qphot in
-    the shifted image on those those stars whose coordinates are listed in the
-    'pixels' keyword argument. Where the stars are in the shifted image is
-    determined by applying to their cooredinates the translation offset given
-    by the XMLOffset instance, thus aligning both images and 'correcting' the
-    star coordinates.
+def run(img, coords_path,
+        aperture, annulus, dannulus,
+        maximum, exptimek, uncimgk):
+    """ Do photometry on a FITS image.
 
-    Returns a qphot.QPhot instance, which contains a magnitude of None for
-    INDEF stars and positive infinity for saturated stars (those with one or
-    more pixels in the aperture above the saturation level).
+    This convenience function does photometry on a FITSImage object, measuring
+    the astronomical objects listed in the 'coords_path' text file. Note that
+    the FITS image *must* have been previously calibrated astrometrically, so
+    that the right ascensions and declinations listed in the text file are
+    meaningful. Returns a QPhot object, using None as the magnitude of those
+    astronomical objects that are INDEF (i.e., so faint that qphot could not
+    measure anything) and positive infinity if they are saturated (i.e., if
+    one or more pixels in the aperture are above the saturation level).
 
     Arguments:
-    xml_offset - a XMLOffset instance, encapsulating the translation offset
-                 between the reference and the shifted FITS images.
-    aperture - the single aperture radius, in pixels.
+    img - the fitsimage.FITSImage object on which to do photometry.
+    coords_path - the text file containing the celestial coordinates for the
+                  astronomical objects to be measured. These objects must be
+                  listed one per line, in two columns: right ascension and
+                  declination, in this order.
+    aperture - the aperture radius, in pixels.
     annulus - the inner radius of the sky annulus, in pixels.
     dannulus - the width of the sky annulus, in pixels.
-    maximum - level at which arises saturation in the shifted image, in
-              ADUs. If one or more pixels in the aperture of the star are above
-              this value, it will be considered to be saturated. For coadded
+    maximum - number of ADUs at which saturation arises. If one or more pixels
+              in the aperture are above this value, the magnitude of the
+              astronomical object is set to positive infinity. For coadded
               observations, the effective saturation level is obtained by
               multiplying this value by the number of coadded images.
     exptimek - the image header keyword containing the exposure time. Needed
                by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
-    uncimgk - keyword for the relative path to the uncalibrated shifted image;
-              which will be one used to check whether pixels are saturated.
-              This value may be set to an empty string or None if saturation is
-              to be checked for on the same image in which photometry is done.
-    pixels - sequence of instances of Pixel which encapsulate the image
-             coordinates that will be passed to IRAF's qphot.
+    uncimgk - the image header keyword containing the path to the image used to
+              check for saturation. It is expected to be the original FITS file
+              (that is, before any calibration step, since corrections such as
+              flat-fielding may move a saturated pixel below the saturation
+              level) of the very image on which photometry is done. If this
+              argument is set to an empty string or None, saturation is checked
+              for on the same FITS image used for photometry, 'img'.
 
     """
 
-    # The instantiation method of FITSImage makes sure that the image on which
-    # photometry will be done does exist and is standard-conforming.
-    shifted_image = fitsimage.FITSImage(xml_offset.shifted)
-
-    # Apply the offset to the coordinates of each star.
-    shifted_pixels = []
-    for pixel in pixels:
-        x = pixel.x + xml_offset.x
-        y = pixel.y + xml_offset.y
-        shifted = astromatic.Pixel(x, y)
-        shifted_pixels.append(shifted)
-
-    if __debug__:
-        assert len(pixels) == len(shifted_pixels)
-        epsilon = 0.001  # a thousandth of a pixel!
-        for pixel, shifted in zip(pixels, shifted_pixels):
-            assert abs(shifted.x - xml_offset.x - pixel.x) < epsilon
-            assert abs(shifted.y - xml_offset.y - pixel.y) < epsilon
-
-    # And, finally, do photometry on the shifted image
-    img_qphot = QPhot(shifted_image.path)
-    img_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
+    img_qphot = QPhot(img.path, coords_path)
+    img_qphot.run(annulus, dannulus, aperture, exptimek)
 
     # How do we know whether one or more pixels in the aperture are above a
     # saturation threshold? As suggested by Frank Valdes at the IRAF.net
     # forums, we can make a mask of the saturated values, on which we can do
-    # photometry using the same aperture. If we get a non-zero flux, we know
-    # it has saturation. [URL http://iraf.net/phpBB2/viewtopic.php?t=90621]
-    #
-    # In order to check for the saturation of a star, we can use the same image
-    # on which we are doing photometry or, as Matilde Fernandez suggested, the
-    # _original_ image -- the raw one, before any calibration step, as
-    # processes such as flat-fielding may move a saturated pixel below the
-    # saturation level. Far-sighted as we are, the path to this primeval image
-    # was stored in the FITS header by the import.py module, the first of the
-    # pipeline. However, in case we want to use the same image, or if the
-    # keyword is not available for these images, 'uncimgk' may be set to None.
-
-    # Note that, if 'uncimgk' is given, the path to the original image will be
-    # loaded and the execution of the script aborted. The path stored in the
-    # keyword is trusted blindly, so you better do not modify it to a different
-    # value.
+    # photometry using the same aperture. If we get a non-zero flux, we know it
+    # has saturation: http://iraf.net/forum/viewtopic.php?showtopic=1466068
 
     if not uncimgk:
-        orig_img_path = shifted_image.path
+        orig_img_path = img.path
 
     else:
-        orig_img_path = shifted_image.read_keyword(uncimgk)
+        orig_img_path = img.read_keyword(uncimgk)
         if not os.path.exists(orig_img_path):
-            msg = "image %s (keyword '%s' of image %s) does not exist" % \
-                  (orig_img_path, uncimgk, shifted_image.path)
-            raise IOError(msg)
+            msg = "image %s (keyword '%s' of image %s) does not exist"
+            args = orig_img_path, uncimgk, img.path
+            raise IOError(msg % args)
 
     try:
-        # The temporary file to which the saturation mask is saved
+        # Temporary file to which the saturation mask is saved
         basename = os.path.basename(orig_img_path)
         mkstemp_prefix = "%s_satur_mask_%d_ADUS_" % (basename, maximum)
-        mask_fd, satur_mask_path = \
-            tempfile.mkstemp(prefix = mkstemp_prefix,
-                             suffix = '.fits', text = True)
+        kwargs = dict(prefix = mkstemp_prefix,
+                      suffix = '.fits', text = True)
+        mask_fd, satur_mask_path = tempfile.mkstemp(**kwargs)
+        os.close(mask_fd)
 
         # IRAF's imexpr won't overwrite the file. Instead, it will raise an
         # IrafError exception stating that "IRAF task terminated abnormally
-        # ERROR (1121, "FXF: EOF encountered while reading FITS file", with the
-        # path to the output file. It seems it is attempting to read it (and
-        # failing, since it's empty) even although it is the output path.
-        # Anyway, we can fix this by simply deleting it.
-        os.close(mask_fd)
+        # ERROR (1121, "FXF: EOF encountered while reading FITS file".
         os.unlink(satur_mask_path)
 
         # The expression that will be given to 'imexpr'. The space after the
-        # colon is needed to avoid sexigesimal intepretation. 'a' is the first
+        # colon is needed to avoid sexigesimal interpretation. 'a' is the first
         # and only operand, linked to our image at the invokation of the task.
         expr = "a>%d ? 1 : 0" % maximum
-        logging.debug("%s: imexpr = '%s'" % (shifted_image.path, expr))
-        logging.debug("%s: a = %s" % (shifted_image.path, orig_img_path))
+        logging.debug("%s: imexpr = '%s'" % (img.path, expr))
+        logging.debug("%s: a = %s" % (img.path, orig_img_path))
         pyraf.iraf.images.imexpr(expr, a = orig_img_path,
                                  output = satur_mask_path, verbose = 'no')
 
         # Now we just do photometry again, on the same pixels, but this time on
-        # the saturation mask. Those stars for which we get a non-zero flux
+        # the saturation mask. Those objects for which we get a non-zero flux
         # will be known to be saturated and their magnitude set to infinity.
-        mask_qphot = QPhot(satur_mask_path)
-        mask_qphot.run(annulus, dannulus, aperture, exptimek, shifted_pixels)
+        mask_qphot = QPhot(satur_mask_path, coords_path)
+        mask_qphot.run(annulus, dannulus, aperture, exptimek)
 
         assert len(img_qphot) == len(mask_qphot)
-        for star_phot, star_mask in zip(img_qphot, mask_qphot):
-            assert star_phot.x == star_mask.x
-            assert star_phot.y == star_mask.y
+        for object_phot, object_mask in itertools.izip(img_qphot, mask_qphot):
+            assert object_phot.x == object_mask.x
+            assert object_phot.y == object_mask.y
 
-            if star_mask.flux > 0:
-                star_phot.mag = float('infinity')
+            if object_mask.flux > 0:
+                object_phot = object_phot._replace(mag = float('infinity'))
     finally:
+
+        # Remove saturation mask. The try-except is necessary because the
+        # deletion may fail (OSError), or something could go wrong and an
+        # exception be raised before the variable is defined (NameError).
+
         try:
             os.unlink(satur_mask_path)
-        # NameError needed as something may go wrong before it's declared
         except (NameError, OSError):
             pass
 

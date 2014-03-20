@@ -105,9 +105,3 @@ desc['coaddk'] = \
 "determine the number of counts at which saturation arises in coadded " \
 "observations. If the keyword is missing, we assume a value of one (that " \
 "is, that the observation consisted of a single exposure) [default: %default]"
-
-# Also used by seeing.FITSeeingImage, this keyword stores the effective
-# saturation level, i.e, the result of multiplying the number of ADUs at which
-# a single image would saturate by the number of frames that were co-added.
-saturation_level = 'SATURATION LEVEL'
-

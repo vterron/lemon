@@ -33,6 +33,7 @@ LEMON stands on the shoulders of many giants, using excellent, robust programs d
 These are the steps to install LEMON on a clean Debian machine:
 
 1. ``apt-get install git python-dev python-pip libfreetype6-dev libpng-dev csh libx11-dev libxml2-dev libxslt-dev libblas-dev liblapack-dev``
+#. ``apt-get install openmpi-dev`` # you may need this to compile Montage
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
 #. ``pip install numpy>=1.7.1``
@@ -41,6 +42,7 @@ These are the steps to install LEMON on a clean Debian machine:
 #. Install `IRAF <http://iraf.noao.edu/>`_
 #. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer)
 #. Install `Astrometry.net <http://astrometry.net/use.html>`_
+#. Install the MPI-enabled `Montage <http://montage.ipac.caltech.edu/docs/download2.html>`_ binaries [#]_
 #. ``python ./setup.py``
 #. ``echo 'PATH=$PATH:~/lemon' >> ~/.bashrc``
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
@@ -51,3 +53,11 @@ Note that, starting from version 2.16, IRAF is now released `under a free softwa
 .. |logo| image:: ./Misc/lemon-icon_200px.png
           :width: 200 px
           :alt: LEMON icon
+
+.. [#] Edit these two lines in ``Montage/Makefile.LINUX`` before doing ``make``
+
+::
+
+  # uncomment the next two lines to build MPI modules
+  # MPICC  =	mpicc
+  # BINS = 	$(SBINS) $(MBINS)

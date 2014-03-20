@@ -190,37 +190,15 @@ class DBStar(object):
         return DBStar(id_, pfilter, phot_info, times_indexes, dtype = dtype)
 
 
-class PhotometricParameters(object):
-    """ Encapsulates the parameters used for photometry """
-    def __init__(self, aperture, annulus, dannulus):
-        self.aperture = aperture
-        self.annulus  = annulus
-        self.dannulus = dannulus
+# The parameters used for aperture photometry
+typename = 'PhotometricParameters'
+field_names = "aperture, annulus, dannulus"
+PhotometricParameters = collections.namedtuple(typename, field_names)
 
-
-class ReferenceImage(object):
-    """ Encapculates the image used for the offsets calculation """
-    def __init__(self, path, pfilter, unix_time, object_, airmass, gain):
-        self.path = path
-        self.pfilter  = pfilter
-        self.unix_time = unix_time
-        self.object = object_
-        self.airmass = airmass
-        self.gain = gain
-
-
-class Image(ReferenceImage):
-    """ Encapsulates the images shifted from the reference one """
-    def __init__(self, path, pfilter, pparams, unix_time, object_, airmass,
-                 gain, xoffset, yoffset, xoverlap, yoverlap):
-        args = path, pfilter, unix_time, object_, airmass, gain
-        super(Image, self).__init__(*args)
-        self.pparams = pparams  # photometric parameters
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-        self.xoverlap = xoverlap
-        self.yoverlap = yoverlap
-
+# A FITS image
+typename = 'Image'
+field_names = "path pfilter unix_time object airmass gain ra dec"
+Image = collections.namedtuple(typename, field_names)
 
 class LightCurve(object):
     """ The data points of a graph of light intensity of a celestial object.
@@ -454,13 +432,17 @@ class LEMONdB(object):
             UNIQUE (key))
         ''')
 
+        # STARS table: 'x' and 'y' are the x- and y-image coordinates of the
+        # stars (or, by extension, any astronomical object) in the FITS file
+        # on which they are detected (what we call the "sources image").
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS stars (
             id   INTEGER PRIMARY KEY,
             x    REAL NOT NULL,
             y    REAL NOT NULL,
-            ra   REAL,
-            dec  REAL,
+            ra   REAL NOT NULL,
+            dec  REAL NOT NULL,
             imag REAL NOT NULL)
         ''')
 
@@ -500,50 +482,37 @@ class LEMONdB(object):
         self._execute("CREATE INDEX IF NOT EXISTS cand_filter "
                       "ON candidate_parameters(filter_id)")
 
-        self._execute('''
-        CREATE TABLE IF NOT EXISTS rimage (
-           path       TEXT NOT NULL,
-           filter_id  INTEGER NOT NULL,
-           unix_time  REAL NOT NULL,
-           object     TEXT,
-           airmass    REAL NOT NULL,
-           gain       REAL NOT NULL,
-           FOREIGN KEY (filter_id) REFERENCES photometric_filters(id))
-        ''')
+        # IMAGES table: the 'sources' column stores Boolean values as integers
+        # 0 (False) and 1 (True), indicating the FITS image on which sources
+        # were detected. Only one image must have 'sources' set to True; all
+        # the others must be False.
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS images (
             id         INTEGER PRIMARY KEY,
-            unix_time  REAL NOT NULL,
             path       TEXT NOT NULL,
             filter_id  INTEGER NOT NULL,
-            pparams_id INTEGER NOT NULL,
+            unix_time  REAL NOT NULL,
             object     TEXT,
             airmass    REAL NOT NULL,
             gain       REAL NOT NULL,
-            xoffset    REAL NOT NULL,
-            xoverlap   INTEGER NOT NULL,
-            yoffset    REAL NOT NULL,
-            yoverlap   INTEGER NOT NULL,
+            ra         REAL NOT NULL,
+            dec        REAL NOT NULL,
+            sources    INTEGER NOT NULL,
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
-            FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
-            UNIQUE (unix_time, filter_id))
+            UNIQUE (filter_id, unix_time))
 
         ''')
 
         self._execute("CREATE INDEX IF NOT EXISTS img_by_filter_time "
                       "ON images(filter_id, unix_time)")
 
-        # This table stores as a blob entire FITS files. The 'id' value should
-        # be that of the FITS file in the IMAGES table. However, we do not use
-        # a foreign key constraint here because the reference image is stored
-        # in a different table, RIMAGE. For it we will use zero as the ID.
-
+        # Store as a blob entire FITS files.
         self._execute('''
         CREATE TABLE IF NOT EXISTS raw_images (
             id   INTEGER PRIMARY KEY,
             fits BLOB NOT NULL,
-            UNIQUE (id, fits))
+            FOREIGN KEY (id) REFERENCES images(id))
         ''')
 
         self._execute('''
@@ -713,55 +682,102 @@ class LEMONdB(object):
                       "ORDER BY c.stdev ASC", t)
         return [xmlparse.CandidateAnnuli(*args) for args in self._rows]
 
-    @property
-    def rimage(self):
-        """ Return a ReferenceImage instance, or None if there isn't any"""
-        self._execute("SELECT r.path, p.name, r.unix_time, "
-                      "       r.object, r.airmass, r.gain "
-                      "FROM rimage AS r, photometric_filters AS p "
-                      "ON r.filter_id = p.id")
+    def _get_simage_id(self):
+        """ Return the ID of the image on which sources were detected.
+
+        Return the ID of the FITS file that was used to detect sources: it can
+        be identified in the IMAGES table because it is the only row where the
+        value of the SOURCES column is equal to one. Raises KeyError if the
+        sources image (LEMONdB.simage) has not yet been set.
+
+        """
+
+        self._execute("SELECT id FROM images WHERE sources = 1")
         rows = list(self._rows)
         if not rows:
-            return None
+            msg = "sources image has not yet been set"
+            raise KeyError(msg)
         else:
             assert len(rows) == 1
-            args = list(rows[0])
-            args[1] = passband.Passband(args[1])
-            return ReferenceImage(*args)
+            return rows[0][0]
 
-    @rimage.setter
-    def rimage(self, rimage):
-        """ Set the reference image that was used to compute the offsets """
-        self._add_pfilter(rimage.pfilter)
-        t = (rimage.path, hash(rimage.pfilter), rimage.unix_time,
-             rimage.object, rimage.airmass, rimage.gain)
-        self._execute("DELETE FROM rimage")
-        self._execute("INSERT INTO rimage VALUES (?, ?, ?, ?, ?, ?)", t)
+    @property
+    def simage(self):
+        """ Return the FITS image on which sources were detected.
+
+        Return an Image object with the information about the FITS file that
+        was used to detect sources. The Image.path attribute is just that, a
+        path, but a copy of the FITS image is also stored in the database, and
+        is available through the LEMONdB.mosaic attribute. Returns None if the
+        sources image has not yet been set.
+
+        """
+
+        try:
+            id_ = self._get_simage_id()
+        except KeyError:
+            return None
+
+        t = (id_,)
+        self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
+                      "       i.airmass, i.gain, i.ra, i.dec "
+                      "FROM images AS i, photometric_filters AS p "
+                      "ON i.filter_id = p.id "
+                      "WHERE i.id = ?", t)
+
+        rows = list(self._rows)
+        assert len(rows) == 1
+        args = list(rows[0])
+        args[1] = passband.Passband(args[1])
+        return Image(*args)
+
+    @simage.setter
+    def simage(self, image):
+        """ Set the FITS image on which sources were detected.
+
+        Receives an Image object with information about the FITS file that was
+        used to detect sources and stores it in the LEMONdB. The file to which
+        Image.path refers must exist and be readable, as it is also stored in
+        the database and accessible through the LEMON.mosaic attribute.
+
+        """
+
+        try:
+            self.add_image(image)
+        except DuplicateImageError:
+            pass
+
+        with open(image.path, 'rb') as fd:
+            blob = fd.read()
+
+        # The sources image is the only one with  SOURCES == 1
+        id_ = self._get_image_id(image.unix_time, image.pfilter)
+        self._execute("UPDATE images SET sources = 0")
+        self._execute("UPDATE images SET sources = 1 WHERE id = ?", (id_,))
+        t = (id_, buffer(blob))
+        self._execute("INSERT OR REPLACE INTO raw_images VALUES (?, ?)", t)
 
     def add_image(self, image):
-        """ Store an image into the database.
+        """ Store information about a FITS image in the database.
 
         Raises DuplicateImageError if the Image has the same Unix time and
-        photometric filter that another instance already stored in the LEMON
-        database (as these two values must be unique; that is, we cannot have
+        photometric filter that another image already stored in the LEMON
+        database (as these two values must be unique; i.e., we cannot have
         two or more images with the same Unix time and photometric filter).
 
         """
 
-        # Use a SAVEPOINT to, if the insertion of the Image fails, be able to
-        # roll back the insertion of the filter and photometric parameters
+        # Use a SAVEPOINT to, if the insertion of the Image fails, be able
+        # to roll back the insertion of the photometric filter.
 
         mark = self._savepoint()
         self._add_pfilter(image.pfilter)
-        pparams_id = self._add_pparams(image.pparams)
 
-        t = (None, image.unix_time, image.path, hash(image.pfilter),
-             pparams_id, image.object, image.airmass, image.gain,
-             image.xoffset, image.xoverlap, image.yoffset, image.yoverlap)
-
+        t = (None, image.path, hash(image.pfilter), image.unix_time,
+             image.object, image.airmass, image.gain, image.ra, image.dec, 0)
         try:
             self._execute("INSERT INTO images "
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
@@ -777,9 +793,9 @@ class LEMONdB(object):
                               "WHERE id = ?", (hash(pfilter),))
                 assert [(1,)] == list(self._rows)
 
-            msg = "Image with Unix time %.4f (%s) and filter %s already in " \
-                  "database" % (unix_time, methods.utctime(unix_time), pfilter)
-            raise DuplicateImageError(msg)
+            msg = "Image with Unix time %.4f (%s) and filter %s already in database"
+            args = (unix_time, methods.utctime(unix_time), pfilter)
+            raise DuplicateImageError(msg % args)
 
     def _get_image_id(self, unix_time, pfilter):
         """ Return the ID of the Image with this Unix time and filter.
@@ -809,8 +825,7 @@ class LEMONdB(object):
 
         image_id = self._get_image_id(unix_time, pfilter)
         self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
-                      "       i.airmass, i.gain, i.xoffset, i.yoffset, "
-                      "       i.xoverlap, i.yoverlap, i.pparams_id "
+                      "       i.airmass, i.gain, i.ra, i.dec "
                       "FROM images AS i, photometric_filters AS p "
                       "ON i.filter_id = p.id "
                       "WHERE i.id = ?", (image_id,))
@@ -822,14 +837,8 @@ class LEMONdB(object):
             raise KeyError(msg % args)
         else:
             assert len(rows) == 1
-            row = rows[0]
-
-            pparams_id = row[-1]
-            pparams = self._get_pparams(pparams_id)
-
-            args = list(row[:-1])
+            args = list(rows[0])
             args[1] = passband.Passband(args[1])
-            args.insert(2, pparams)
             return Image(*args)
 
     def add_star(self, star_id, x, y, ra, dec, imag):
@@ -837,10 +846,10 @@ class LEMONdB(object):
 
         This method only stores the 'description' of the star, that is, its
         image and celestial coordinates, as well as its instrumental magnitude
-        in the reference image. To add the photometric records and the light
-        curves, use LEMONdB.add_photometry and add_light_curve, respectively.
-        Raises DuplicateStarError if the specified ID was already used for
-        another star in the database.
+        in the image on which it was detected. To add photometric records and
+        light curves, use the LEMONdB.add_photometry() and add_light_curve(),
+        methods respectively. Raises DuplicateStarError if the specified ID
+        was already used for another star in the database.
 
         """
 
@@ -858,9 +867,9 @@ class LEMONdB(object):
         """ Return the coordinates and magnitude of a star.
 
         The method returns a five-element tuple with, in this order: the x- and
-        y- coordinates of the star in the reference image, the right ascension
-        and declination and its instrumental magnitude in the reference image.
-        Raises KeyError is no star in the database has this ID.
+        y- coordinates of the star in the image on which it was detected, the
+        right ascension and declination and its instrumental magnitude in the
+        sources image. Raises KeyError is no star in the database has this ID.
 
         """
 
@@ -979,16 +988,11 @@ class LEMONdB(object):
     def pfilters(self):
         """ Return the photometric filters for which there is data.
 
-        The method returns a sorted list of the photometric filters for which
-        the database has photometric records. Note that this means that a
-        filter for which there are images (LEMONdB.add_image) but no
-        photometric records (those added with LEMONdB.add_photometry) will not
-        be included in the returned list.
-
-        The photometric filter of the reference image is ignored. This
-        means that if, say, it was observed in the Johnson I filter while the
-        rest of the images of the campaign were taken in Johnson B, only the
-        latter will be returned.
+        Return a sorted list of the photometric filters for which the database
+        has photometric records. This means that a filter for which images were
+        added using LEMONdB.add_image() but that have no associated photometric
+        records (LEMONdB.add_photometry()) will not be included in the returned
+        list.
 
         """
 
@@ -1271,10 +1275,8 @@ class LEMONdB(object):
         """ Return the airmasses of the images in a photometric filter.
 
         The method returns a dictionary which maps the Unix time of each of the
-        images in this photometric filter to their airmasses. The airmass of
-        the reference image is irrelevant, as photometry is not done on it, so
-        it is not considered and never included in the returned dictionary. If
-        no images were taken in this filter, an empty dictionary is returned.
+        images in this photometric filter to their airmasses. If no images were
+        taken in this filter, an empty dictionary is returned.
 
         """
 
@@ -1491,41 +1493,32 @@ class LEMONdB(object):
 
     @property
     def mosaic(self):
-        """ Save to disk the FITS file used as reference frame.
+        """ Save to disk the FITS file on which sources were detected.
 
-        The method saves to disk the FITS file, stored as a blob in the
-        database, that was used as a reference frame. The file is copied to a
-        temporary location with the '.fits' extension. Returns the path to the
-        FITS file, or None if the reference frame has no FITS file associated.
-        It is important to note that the FITS file is saved to a *different*
-        temporary location every time this method is called, so accessing the
-        LEMONdB.mosaic attribute multiple times means that the same number of
-        copies of the file will be copied to disk.
+        This method saves to a temporary location, with the '.fits' extension,
+        the FITS file that was used to detect sources, stored as a blob in the
+        database. Returns the path to the FITS file, or None if the sources
+        image has not yet been set. It is important to note that the FITS file
+        is saved to a *different* temporary location every time this method is
+        called, so accessing the LEMONdB.mosaic attribute multiple times means
+        that the same number of copies of the file will be saved to disk.
 
         """
 
-        self._execute("SELECT fits FROM raw_images WHERE id = 0")
-        rows = list(self._rows)
-        if not rows:
+        try:
+            id_ = self._get_simage_id()
+        except KeyError:
             return None
-        else:
-            assert len(rows) == 1
-            assert len(rows[0]) == 1
-            blob = rows[0][0]
-            fd, path = tempfile.mkstemp(suffix = '.fits')
-            os.write(fd, blob)
-            os.close(fd)
-            return path
 
-    @mosaic.setter
-    def mosaic(self, path):
-        """ Insert in the LEMONdB the FITS file of the reference frame """
-
-        with open(path, 'rb') as fd:
-            blob = fd.read()
-        t = (0, buffer(blob))
-        self._execute("DELETE FROM raw_images WHERE id = 0")
-        self._execute("INSERT INTO raw_images VALUES (?, ?)", t)
+        self._execute("SELECT fits FROM raw_images WHERE id = ?", (id_,))
+        rows = list(self._rows)
+        assert len(rows) == 1
+        assert len(rows[0]) == 1
+        blob = rows[0][0]
+        fd, path = tempfile.mkstemp(suffix = '.fits')
+        os.write(fd, blob)
+        os.close(fd)
+        return path
 
     def star_closest_to_image_coords(self, x, y):
         """ Find the star closest to the image x- and y-coordinates.

@@ -18,8 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import optparse
 import textwrap
+
+# LEMON modules
+import passband
 
 class NewlinesFormatter(optparse.IndentedHelpFormatter):
     """ This quick-and-dirty trick prevents optparse from stripping newlines
@@ -41,6 +45,41 @@ class NewlinesFormatter(optparse.IndentedHelpFormatter):
 
         return formatted_text.rstrip()
 
+def check_passband(option, opt, value):
+    """ Type-checking function for the 'passband' optparse option type.
+
+    This is the type-checking function for 'passband', a custom optparse type
+    that accepts a string with the name of a photometric filter and returns
+    it as a passband.Passband object. 'option' is an optpase.Option instance,
+    'opt' is the option string (e.g., -f), and 'value' is the string from the
+    command line that must be checked and converted to a Passband object.
+
+    In case of doubt, please refer to:
+    http://docs.python.org/2.7/library/optparse.html#adding-new-types
+
+    """
+
+    try:
+        return passband.Passband(value)
+    except ValueError, e:
+        msg = "option %s: invalid photometric filter: %r (%s)"
+        raise optparse.OptionValueError(msg % (opt, value, e))
+
+class PassbandOption(optparse.Option):
+    """ Custom optparse option type encapsulating a photometric filter.
+
+    This subclass of optparse's Option class implements 'passband', a custom
+    option type: it receives a string with the name of a photometric filter,
+    such as 'Johnson V', and returns it as a passband.Passband object. This
+    option supports all the photometric systems allowed by the Passband class.
+
+    """
+
+    # A tuple of type names
+    TYPES = optparse.Option.TYPES + ('passband',)
+    # A dictionary mapping type names to type-checking functions
+    TYPE_CHECKER = copy.copy(optparse.Option.TYPE_CHECKER)
+    TYPE_CHECKER['passband'] = check_passband
 
 def get_parser(description):
     """ Return the OptionParser object used in the LEMON modules.
@@ -49,13 +88,17 @@ def get_parser(description):
     Its 'description' argument (a paragraph of text giving a brief overview of
     the program) is set to the value of the argument of the same name, while
     the NewlinesFormatter class is used for printing help text ('formatter'
-    argument). This parser does not include the default -h and --help options.
+    argument). This parser adds a custom option type, 'passband', which
+    receives a string with the name of a photometric filter and converts it to
+    a passband.Passband object. Neither the default -h nor --help options are
+    included.
 
     """
 
     kwargs = dict(description = description,
                   add_help_option = False,
-                  formatter = NewlinesFormatter())
+                  formatter = NewlinesFormatter(),
+                  option_class = PassbandOption)
     parser = optparse.OptionParser(**kwargs)
     return parser
 

@@ -12,9 +12,9 @@
 #     source ~/.lemon-completion.sh
 
 
-FITS_EXTS="@(fit?(s)|FIT?(S))"
-XML_EXTS="@(xml|XML)"
-LEMONDB_EXTS="@(LEMONdB|lemondb)"
+FITS_EXTS="fit?(s)|FIT?(S)"
+XML_EXTS="xml|XML"
+LEMONDB_EXTS="LEMONdB|lemondb"
 
 # Match the current word against the list given as argument
 _match()
@@ -26,10 +26,10 @@ _lemon_import()
 {
     local opts
     opts="--object --pattern --counts --filename --follow --exact
-    --datek --expk= --objectk --uik"
+    --datek --timek --expk= --objectk --uik"
 
     if [[ ${cur} != -* ]]; then
-        _filedir $FITS_EXTS
+        _filedir @($FITS_EXTS)
     else
 	_match "${opts}"
     fi
@@ -43,55 +43,22 @@ _lemon_seeing()
     --sources-percentile --suffix --cores --verbose --fsigma
     --fwhm_dir --esigma --elong_dir --coaddk --fwhmk"
 
-    if [[ ${cur} != -* ]]; then
-        _filedir $FITS_EXTS
-    else
-	_match "${opts}"
-    fi
-}
-
-_lemon_offsets()
-{
-    local opts
-    opts="--output --overwrite --cores= --maximum --margin --objectk
-    --percentile --filterk --datek --fwhmk --airmk --expk --coaddk"
-
-    if [[ ${prev} == --output ]]; then
-	_filedir $XML_EXTS
-    elif [[ ${cur} == -* ]]; then
+    if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $FITS_EXTS
+	_filedir @($FITS_EXTS)
     fi
 }
 
 _lemon_mosaic()
 {
-    local opts checktypes
-
-    opts="--scale --output --overwrite --fraction --name --tempdir
-    --check-type --min --max --rak --deck --objectk"
-
-    # The different types of check-image available in SExtractor
-    checktypes="NONE IDENTICAL BACKGROUND BACKGROUND_RMS MINIBACK_RMS
-    MINIBACKGROUND -BACKGROUND FILTERED OBJECTS -OBJECTS APERTURES
-    SEGMENTATION"
-
-    case $prev in
-	--output)
-	    _filedir $FITS_EXTS
-	    return 0
-	    ;;
-	--check-type)
-	    _match "${checktypes}"
-	    return 0
-	    ;;
-    esac
+    local opts
+    opts="--overwrite --background-match --cores"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $XML_EXTS
+        _filedir @($FITS_EXTS)
     fi
 }
 
@@ -99,51 +66,48 @@ _lemon_astrometry()
 {
     local opts
     opts="--suffix --verbose --ra --dec --radius"
-    if [[ ${prev} == --output ]]; then
-	_filedir $FITS_EXTS
-    elif [[ ${cur} == -* ]]; then
+
+    if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $FITS_EXTS
+        _filedir @($FITS_EXTS)
     fi
 }
 
 _lemon_annuli()
 {
     local opts
-    opts="--output --overwrite --margin --gain --cores --verbose
-    --aperture --annulus --dannulus --min-sky --constant
-    --minimum-constant --lower --upper --step --sky --width --maximum
-    --minimum-images --minimum-stars --pct --weights-threshold
-    --max-iters --worst-fraction --expk --coaddk --gaink --uik"
+    opts="--overwrite --margin --gain --cores --verbose --aperture
+    --annulus --dannulus --min-sky --constant --minimum-constant
+    --lower --upper --step --sky --width --maximum --minimum-images
+    --minimum-stars --pct --weights-threshold --max-iters
+    --worst-fraction -objectk --filterk --datek --timek --expk
+    --coaddk --gaink --fwhmk --airmk --uik"
 
-    if [[ ${prev} == --output ]]; then
-	_filedir $XML_EXTS
-    elif [[ ${cur} == -* ]]; then
+    if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $XML_EXTS
+	# Input FITS images / output XML file
+        _filedir @($FITS_EXTS|$XML_EXTS)
     fi
 }
 
 _lemon_photometry()
 {
     local opts
-    opts="--output --overwrite --passband --maximum --margin --gain
-    --annuli --cores --verbose --pixels --min-sky --aperture --annulus
-    --dannulus --individual-fwhm --aperture-pix --annulus-pix
-    --dannulus-pix --expk --coaddk --gaink --uik"
+
+    opts="--overwrite --filter --maximum --margin --gain --annuli
+    --cores --verbose --coordinates --aperture --annulus --dannulus
+    --min-sky --individual-fwhm --aperture-pix --annulus-pix
+    --dannulus-pix --snr-percentile --mean --objectk --filterk --datek
+    --timek --expk --coaddk --gaink --fwhmk --airmk --uik"
 
     case $prev in
-	--output)
-	    _filedir $LEMONDB_EXTS
-	    return 0
-	    ;;
 	--annuli)
-	    _filedir $XML_EXTS
+	    _filedir @($XML_EXTS)
 	    return 0
 	    ;;
-	--pixels)
+	--coordinates)
 	    _filedir
 	    return 0
 	    ;;
@@ -152,7 +116,8 @@ _lemon_photometry()
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $XML_EXTS
+	# Input FITS images / output LEMONdB
+        _filedir @($FITS_EXTS|$LEMONDB_EXTS)
     fi
 }
 
@@ -164,11 +129,11 @@ _lemon_diffphot()
     --worst-fraction"
 
     if [[ ${prev} == --output ]]; then
-	_filedir $LEMONDB_EXTS
+	_filedir @($LEMONDB_EXTS)
     elif [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $LEMONDB_EXTS
+        _filedir @($LEMONDB_EXTS)
     fi
 }
 
@@ -180,11 +145,11 @@ _lemon_periods()
     --cores --verbose"
 
     if [[ ${prev} == --output ]]; then
-	_filedir $LEMONDB_EXTS
+	_filedir @($LEMONDB_EXTS)
     elif [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir $LEMONDB_EXTS
+        _filedir @($LEMONDB_EXTS)
     fi
 }
 
@@ -194,8 +159,8 @@ _lemon()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing offsets mosaic astrometry annuli
-    photometry diffphot periods juicer"
+    commands="import seeing astrometry mosaic annuli photometry
+    diffphot periods juicer"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -211,10 +176,6 @@ _lemon()
 	_lemon_seeing
 	return 0
         ;;
-    offsets)
-	_lemon_offsets
-	return 0
-	;;
     mosaic)
 	_lemon_mosaic
 	return 0
