@@ -77,18 +77,18 @@ _lemon_astrometry()
 _lemon_annuli()
 {
     local opts
-    opts="--output --overwrite --margin --gain --cores --verbose
-    --aperture --annulus --dannulus --min-sky --constant
-    --minimum-constant --lower --upper --step --sky --width --maximum
-    --minimum-images --minimum-stars --pct --weights-threshold
-    --max-iters --worst-fraction --expk --coaddk --gaink --uik"
+    opts="--overwrite --margin --gain --cores --verbose --aperture
+    --annulus --dannulus --min-sky --constant --minimum-constant
+    --lower --upper --step --sky --width --maximum --minimum-images
+    --minimum-stars --pct --weights-threshold --max-iters
+    --worst-fraction -objectk --filterk --datek --timek --expk
+    --coaddk --gaink --fwhmk --airmk --uik"
 
-    if [[ ${prev} == --output ]]; then
-	_filedir @($XML_EXTS)
-    elif [[ ${cur} == -* ]]; then
+    if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-        _filedir @($XML_EXTS)
+	# Input FITS images / output XML file
+        _filedir @($FITS_EXTS|$XML_EXTS)
     fi
 }
 
