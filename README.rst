@@ -8,8 +8,8 @@ LEMON is a CCD differential-photometry pipeline, written in Python, developed at
 
 A first overview of LEMON, now slightly outdated, was presented some time ago at `<http://adsabs.harvard.edu/abs/2011hsa6.conf..755T>`_.
 
-Modules
-=======
+Commands
+========
 
 The pipeline consists of **ten command-line scripts**, which implement the data reduction and analysis steps and are usually run sequentially, although depending on your needs only a specific subset of them may be used. In this sense, and following the Unix
 tools philosophy ("*write programs that do one thing and do it well*"), LEMON can be viewed as a set of tasks that *may* be used as a pipeline.
