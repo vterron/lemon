@@ -11,19 +11,25 @@ A first overview of LEMON, now slightly outdated, was presented some time ago at
 Commands
 ========
 
-The pipeline consists of **ten command-line scripts**, which implement the data reduction and analysis steps and are usually run sequentially, although depending on your needs only a specific subset of them may be used. In this sense, and following the Unix
+The pipeline consists of **nine commands**, which implement the data reduction and analysis steps and are usually run sequentially, although depending on your needs only a specific subset of them may be used. In this sense, and following the Unix
 tools philosophy ("*write programs that do one thing and do it well*"), LEMON can be viewed as a set of tasks that *may* be used as a pipeline.
 
-* import.py — group all the images of a campaign
-* seeing.py — find image with best seeing
-* offsets.py — determine translation offsets
-* mosaic.py — create master frame
-* astrometry.py — astrometric calibration
-* annuli.py — find best parameters for photometry
-* photometry.py — simply do photometry
-* diffphot.py — generate light curves
-* periods.py — string-length method
-* mining.py — identify *interesting* stars
+.. code::
+
+  usage: lemon [--help] COMMAND [ARGS]
+
+  The available commands are:
+     import       Group the images of an observing campaign
+     seeing       Identify image with best astronomical seeing
+     astrometry   Calibrate the images astrometrically
+     mosaic       Assemble the images into a mosaic
+     annuli       Find optimal parameters for photometry
+     photometry   Perform aperture photometry
+     diffphot     Generate light curves
+     periods      Dworetsky's string-length method
+     juicer       LEMONdB browser and variability analyzer
+
+  See 'lemon COMMAND' for more information on a specific command.
 
 Installation
 ============
