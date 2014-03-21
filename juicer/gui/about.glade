@@ -13,7 +13,7 @@
     <property name="urgency_hint">True</property>
     <property name="has_separator">False</property>
     <property name="program_name">Lemon Juicer</property>
-    <property name="version">0.1</property>
+    <property name="version">x.x.x</property>
     <property name="copyright" translatable="yes">Copyright &#xA9; YYYY V&#xED;ctor Terr&#xF3;n &amp; Matilde Fern&#xE1;ndez
 Institute of Astrophysics of Andalusia, IAA-CSIC</property>
     <property name="comments" translatable="yes">Lemon Juicer is a scientific tool for automated variable stars detection and analysis and part of the LEMON (Long-term Photometric Monitoring) pipeline.</property>

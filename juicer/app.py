@@ -55,6 +55,7 @@ import plot
 import snr
 import search
 import util
+from version import __version__
 
 # Make sure that stock icons are shown in buttons, as with the default options
 # this is not always the case. I have not been able to find out whether this is
@@ -951,6 +952,11 @@ class LEMONJuicerGUI(object):
         now = datetime.datetime.now()
         copyright = copyright.replace('YYYY', str(now.year))
         about.set_copyright(copyright)
+
+        # Replace 'x.x.x' with the current version
+        version_str = about.get_version()
+        assert version_str == 'x.x.x'
+        about.set_version(__version__)
 
         about.run()
         about.destroy()
