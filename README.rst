@@ -11,8 +11,7 @@ A first overview of LEMON, now slightly outdated, was presented some time ago at
 Commands
 ========
 
-The pipeline consists of **nine commands**, which implement the data reduction and analysis steps and are usually run sequentially, although depending on your needs only a specific subset of them may be used. In this sense, and following the Unix
-tools philosophy ("*write programs that do one thing and do it well*"), LEMON can be viewed as a set of tasks that *may* be used as a pipeline.
+The pipeline consists of **nine commands**, which implement the data reduction and analysis steps and are usually run sequentially, although depending on your needs only a specific subset of them may be used. In this sense, LEMON can be viewed as a set of tasks that *may* be used as a pipeline.
 
 .. code::
 
