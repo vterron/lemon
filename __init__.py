@@ -1,1 +1,3 @@
-# Dummy file to make this directory a package.
+#! /usr/bin/env python
+
+from version import __version_info__
