@@ -33,6 +33,8 @@ The pipeline consists of **nine commands**, which implement the data reduction a
 Installation
 ============
 
+- Current version: **0.2**
+
 LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for many of them there are not (yet?) Debian packages available, so they have to be installed manually — the configuration of IRAF and PyRAF, although heavily simplified in recent versions, is particularly tedious and painful.
 
 These are the steps to install LEMON on a clean Debian machine:
