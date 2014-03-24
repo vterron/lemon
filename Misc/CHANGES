@@ -1,0 +1,24 @@
+0.2 (2014-03-24)
+================
+
+- Remove the 'offsets' command (6b473af)
+- Identify astronomical objects by their α and δ (2dff622)
+- Use IPAC's Montage to assemble images into a mosaic (abc2438)
+- Do astrometry on multiple FITS files at once (027819c)
+- Add LEMON icon — by Sofía León (e7b72e9)
+- Use a local build of Astrometry.net for calibration (9b8a82a)
+- Enforce a minimum version of dependencies (10575ec)
+- Add support for Cousins, Gunn, SDSS, 2MASS, Strömgren and H-alpha (8bad300)
+- Use Travis for continuous integration (5d23b2f)
+- Start writing the documentation using Sphinx (e8e8632)
+- Add Bash completion support (31937c5)
+- Add the 'lemon' porcelain command (c48ed0e)
+- Allow simultaneous observations (d808766)
+- Switch from xml.dom.minidom to lxml — much faster (c5a9b34)
+- Use .LEMONdB as the database extension (fcfe881)
+- Add Juicer, the GUI for data analysis (675953e)
+- Add unit tests for several modules (f52f9c8)
+
+0.1 (2012-06-04)
+================
+- Initial release
