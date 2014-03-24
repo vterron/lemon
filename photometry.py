@@ -174,7 +174,7 @@ def get_fwhm(img, options):
         msg = "%s: calling FITSeeingImage.fwhm() to compute FWHM"
         logging.debug(msg % img.path)
 
-        mode = 'mean' if options.mean else  'median'
+        mode = 'mean' if options.mean else 'median'
         kwargs = dict(per = options.per, mode = mode)
         fwhm = img.fwhm(**kwargs)
 
