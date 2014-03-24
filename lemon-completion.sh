@@ -79,10 +79,11 @@ _lemon_annuli()
     local opts
     opts="--overwrite --margin --gain --cores --verbose --aperture
     --annulus --dannulus --min-sky --constant --minimum-constant
-    --lower --upper --step --sky --width --maximum --minimum-images
-    --minimum-stars --pct --weights-threshold --max-iters
-    --worst-fraction -objectk --filterk --datek --timek --expk
-    --coaddk --gaink --fwhmk --airmk --uik"
+    --lower --upper --step --sky --width --snr-percentile --mean
+    --maximum --minimum-images --minimum-stars --pct
+    --weights-threshold --max-iters --worst-fraction -objectk
+    --filterk --datek --timek --expk --coaddk --gaink --fwhmk
+    --airmk --uik"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
