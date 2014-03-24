@@ -201,6 +201,7 @@ search_group.add_option('--width', action = 'store', type = 'float',
                         "apertures. [default = %default]")
 
 search_group.add_option(photometry.parser.get_option('--snr-percentile'))
+search_group.add_option(photometry.parser.get_option('--mean'))
 parser.add_option_group(search_group)
 
 const_group = optparse.OptionGroup(parser, "Stars eligibility",
