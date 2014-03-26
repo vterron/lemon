@@ -737,6 +737,13 @@ class LEMONJuicerGUI(object):
         factory.add_default()
 
     def __init__(self, db_path = None):
+        """ Initialize a LEMONJuicerGUI object.
+
+        Keyword arguments:
+        db_path - LEMONdB to open when Juicer starts.
+
+        """
+
         super(LEMONJuicerGUI, self).__init__()
 
         builder = gtk.Builder()
