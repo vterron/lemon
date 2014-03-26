@@ -1,4 +1,4 @@
-su#! /usr/bin/env python
+#! /usr/bin/env python
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
