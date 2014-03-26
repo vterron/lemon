@@ -737,7 +737,7 @@ class LEMONJuicerGUI(object):
         factory.add_default()
 
     def __init__(self, *args, **kwds):
-        super(LEMONJuicerGUI, self).__init__(*args, **kwds)
+        super(LEMONJuicerGUI, self).__init__()
 
         builder = gtk.Builder()
         builder.add_from_file(glade.GUI_MAIN)
