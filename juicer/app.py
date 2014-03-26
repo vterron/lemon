@@ -736,8 +736,15 @@ class LEMONJuicerGUI(object):
         factory.add('Compass', iconset)
         factory.add_default()
 
-    def __init__(self, *args, **kwds):
-        super(LEMONJuicerGUI, self).__init__(*args, **kwds)
+    def __init__(self, db_path = None):
+        """ Initialize a LEMONJuicerGUI object.
+
+        Keyword arguments:
+        db_path - LEMONdB to open when Juicer starts.
+
+        """
+
+        super(LEMONJuicerGUI, self).__init__()
 
         builder = gtk.Builder()
         builder.add_from_file(glade.GUI_MAIN)
@@ -844,6 +851,9 @@ class LEMONJuicerGUI(object):
         # correlation) are numbered sequentially and in Roman numerals: i.e.,
         # the first one is labeled with 'I', the second with 'II', etc.
         self.nampl_searches = 0
+
+        if db_path:
+            self.open_db(db_path)
 
     def handle_view_in_chart_accelerator(self, *args):
         """ Show in the Finding Chart the star in the current StarDetailsGUI.
@@ -1104,6 +1114,10 @@ class LEMONJuicerGUI(object):
                     self.open_amplitudes_xml(path)
 
     def open_db(self, path):
+
+        if not os.path.exists(path):
+            msg = "database '%s' does not exist" % path
+            raise IOError(msg)
 
         # If this is not the first LEMONdB that is opened, warn the user that
         # the current one will be closed, unless the operation is aborted.
