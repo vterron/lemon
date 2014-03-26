@@ -465,6 +465,11 @@ parser.add_option('--suffix', action = 'store', type = 'str',
                   help = "string to be appended to output images, before "
                   "the file extension, of course [default: %default]")
 
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
+                  help = "if you want to add no suffix to the file (i.e. "
+                  "overwrite it) you need to activate this option. This "
+                  "is just a safety-catch to prevent mistakes. ")
+
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = defaults.ncores,
                   help = defaults.desc['ncores'])
@@ -855,7 +860,12 @@ def main(arguments = None):
             history_msg1 = "Image FWHM = %.3f" % fwhms[path]
             history_msg2 = "Image elongation = %.3f" % elongs[path]
 
-        shutil.copy2(path, output_path)
+        if os.path.abspath(path) == os.path.abspath(output_path) and options.overwrite:
+            # Files are the same, but overwrite active, kill'em all!
+            pass
+        else:
+            shutil.copy2(path, output_path)
+
         methods.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
         output_img = fitsimage.FITSImage(output_path)
