@@ -736,7 +736,7 @@ class LEMONJuicerGUI(object):
         factory.add('Compass', iconset)
         factory.add_default()
 
-    def __init__(self, *args, **kwds):
+    def __init__(self):
         super(LEMONJuicerGUI, self).__init__()
 
         builder = gtk.Builder()
