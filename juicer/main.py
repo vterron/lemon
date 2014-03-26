@@ -20,8 +20,8 @@
 
 import app
 
-def main():
-    juicer = app.LEMONJuicerGUI()
+def main(**kwargs):
+    juicer = app.LEMONJuicerGUI(**kwargs)
     juicer.run()
 
 if __name__ == "__main__":

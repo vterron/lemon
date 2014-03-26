@@ -736,7 +736,7 @@ class LEMONJuicerGUI(object):
         factory.add('Compass', iconset)
         factory.add_default()
 
-    def __init__(self):
+    def __init__(self, db_path = None):
         super(LEMONJuicerGUI, self).__init__()
 
         builder = gtk.Builder()
@@ -844,6 +844,9 @@ class LEMONJuicerGUI(object):
         # correlation) are numbered sequentially and in Roman numerals: i.e.,
         # the first one is labeled with 'I', the second with 'II', etc.
         self.nampl_searches = 0
+
+        if db_path:
+            self.open_db(db_path)
 
     def handle_view_in_chart_accelerator(self, *args):
         """ Show in the Finding Chart the star in the current StarDetailsGUI.

@@ -77,7 +77,10 @@ if __name__ == "__main__":
 
         elif command == 'juicer':
             import juicer.main
-            juicer.main.main()
+            kwargs = {}
+            if args:
+                kwargs['db_path'] = args[0]
+            juicer.main.main(**kwargs)
 
         else:
 
