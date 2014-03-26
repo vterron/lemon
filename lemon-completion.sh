@@ -154,6 +154,11 @@ _lemon_periods()
     fi
 }
 
+_lemon_juicer()
+{
+    _filedir @($LEMONDB_EXTS)
+}
+
 _lemon()
 {
     local cur prev commands
@@ -199,6 +204,10 @@ _lemon()
 	;;
     periods)
 	_lemon_periods
+	return 0
+	;;
+    juicer)
+	_lemon_juicer
 	return 0
 	;;
     esac
