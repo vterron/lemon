@@ -1115,6 +1115,10 @@ class LEMONJuicerGUI(object):
 
     def open_db(self, path):
 
+        if not os.path.exists(path):
+            msg = "database '%s' does not exist" % path
+            raise IOError(msg)
+
         # If this is not the first LEMONdB that is opened, warn the user that
         # the current one will be closed, unless the operation is aborted.
         if self.db is not None:
