@@ -182,11 +182,11 @@ class FindingChartDialog(object):
         if event.button == 3 and None not in click:
             star_id = self.db.star_closest_to_image_coords(*click)[0]
             # LEMONdB.get_star() returns (x, y, ra, dec, imag)
-            x, y = self.db.get_star(star_id)[:2]
+            ra, dec = self.db.get_star(star_id)[2:4]
             kwargs = dict(layer = self.MARKERS_LAYER,
                           edgecolor = 'red',
                           s = self.MARK_RADIUS)
-            self.aplpy_plot.show_markers(x, y, **kwargs)
+            self.aplpy_plot.show_markers(ra, dec, **kwargs)
             self.selected_star_id = star_id
             self.goto_button.set_sensitive(True)
             # Pressing Enter activates 'Go to Star'
@@ -204,11 +204,11 @@ class FindingChartDialog(object):
 
         """
 
-        x, y = self.db.get_star(star_id)[:2]
+        ra, dec = self.db.get_star(star_id)[2:4]
         kwargs = dict(layer = self.MARKERS_LAYER,
                       edgecolor = '#24ff29',
                       s = self.MARK_RADIUS)
-        self.aplpy_plot.show_markers(x, y, **kwargs)
+        self.aplpy_plot.show_markers(ra, dec, **kwargs)
         self.navig.home()
 
         self.selected_star_id = star_id
