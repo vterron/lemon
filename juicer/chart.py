@@ -120,6 +120,9 @@ class FindingChartDialog(object):
         self.figure.canvas.mpl_connect('button_press_event', self.mark_closest_star)
         self.aplpy_plot.show_grayscale()
 
+        self.aplpy_plot.add_grid()
+        self.aplpy_plot.grid.set_alpha(0.2)
+
         # The dialog has always the same width; the height is adjusted
         # proportionally depending on the dimensions of the FITS image.
         size = data.shape[::-1]
