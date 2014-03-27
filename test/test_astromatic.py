@@ -387,25 +387,19 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(type(faint_catalog), Catalog)
         self.assertEqual(list(faint_catalog), list(stars))
 
-    def test_get_image_and_sky_coordinates(self):
+    def test_get_sky_coordinates(self):
 
         catalog = Catalog(self.SAMPLE_CATALOG_PATH)
         self.assertEqual(len(catalog), 127)
-        pixels = catalog.get_image_coordinates()
         coordinates = catalog.get_sky_coordinates()
 
-        # The two lists must contain as many Pixel and Coordinates objects,
-        # respectively, and in the same order, as sources there are in the
-        # SExtractor catalog. Therefore, the x- and y-coordinates of the i-th
-        # Pixel object, and the right ascension and declination of the i-th
-        # Coordinates object, must match those of the i-th source in the
-        # Catalog.
+        # There should be as many Coordinates objects, and in the same order,
+        # as sources there are in the SExtractor catalog. Therefore, the right
+        # ascension and declination of the i-th Coordinates object must match
+        # those of the i-th source in the Catalog.
 
-        self.assertEqual(len(pixels), len(catalog))
         self.assertEqual(len(coordinates), len(catalog))
-        for pixel, coord, star in zip(pixels, coordinates, catalog):
-            self.assertEqual(pixel.x, star.x)
-            self.assertEqual(pixel.y, star.y)
+        for coord, star in zip(coordinates, catalog):
             self.assertEqual(coord.ra, star.alpha)
             self.assertEqual(coord.dec, star.delta)
 
