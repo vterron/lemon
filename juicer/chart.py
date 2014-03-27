@@ -20,8 +20,10 @@
 
 from __future__ import division
 
+import atexit
 import aplpy
 import gtk
+import methods
 import os
 import pyfits
 
@@ -110,6 +112,7 @@ class FindingChartDialog(object):
 
         # Temporarily save to disk the FITS file used as a reference frame
         path = self.db.mosaic
+        atexit.register(methods.clean_tmp_files, path)
         with pyfits.open(path) as hdu:
             data = hdu[0].data
 
