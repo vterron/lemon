@@ -195,12 +195,12 @@ class FindingChartDialog(object):
     def mark_star(self, star_id):
         """ Mark a star in the finding chart.
 
-        Read from the LEMONdB the x- and y-image coordinates of the star whose
-        ID is 'star_id' and overlay a green marker of radius MARK_RADIUS on the
-        APLpy plot. Any existing markers are removed. The original view of the
-        plot is restored (as if the user had clicked the 'Home' button in the
-        navigation toolbar), undoing any zooming and panning and taking us to
-        the first, default view of the FITS image.
+        Read from the LEMONdB the right ascension and declination of the star
+        whose ID is 'star_id' and overlay a green marker of radius MARK_RADIUS
+        on the APLpy plot. Any existing markers are removed. The original view
+        of the plot is restored (as if the user had clicked the 'Home' button
+        in the navigation toolbar), undoing any zooming and panning and taking
+        us to the first, default view of the FITS image.
 
         """
 
