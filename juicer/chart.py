@@ -20,8 +20,10 @@
 
 from __future__ import division
 
+import atexit
 import aplpy
 import gtk
+import methods
 import os
 import pyfits
 
@@ -110,16 +112,16 @@ class FindingChartDialog(object):
 
         # Temporarily save to disk the FITS file used as a reference frame
         path = self.db.mosaic
+        atexit.register(methods.clean_tmp_files, path)
+        with pyfits.open(path) as hdu:
+            data = hdu[0].data
 
-        try:
-            with pyfits.open(path) as hdu:
-                data = hdu[0].data
-        finally:
-            os.unlink(path)
-
-        self.aplpy_plot = aplpy.FITSFigure(data, figure = self.figure)
+        self.aplpy_plot = aplpy.FITSFigure(path, figure = self.figure)
         self.figure.canvas.mpl_connect('button_press_event', self.mark_closest_star)
         self.aplpy_plot.show_grayscale()
+
+        self.aplpy_plot.add_grid()
+        self.aplpy_plot.grid.set_alpha(0.2)
 
         # The dialog has always the same width; the height is adjusted
         # proportionally depending on the dimensions of the FITS image.
@@ -166,12 +168,12 @@ class FindingChartDialog(object):
     def mark_closest_star(self, event):
         """ Callback function for 'button_press_event'.
 
-        Find the closest star to the x- and y- image coordinates where the user
-        has right-clicked and overlay a red marker of radius MARK_RADIUS on the
-        APLpy plot. This marker disappears when the user clicks again, so only
-        one marker is displayed at all times. Clicks outside of the plot (axes)
-        are ignored. This method must be connected to the Matplotlib event
-        manager, which is part of the FigureCanvasBase.
+        Find the closest star to the right ascension and declination where the
+        user has right-clicked and overlay a red marker of radius MARK_RADIUS
+        on the APLpy plot. This marker disappears when the user clicks again,
+        so only one marker is displayed at all times. Clicks outside of the
+        plot (axes) are ignored. This method must be connected to the
+        Matplotlib event manager, which is part of the FigureCanvasBase.
 
         """
 
@@ -183,11 +185,11 @@ class FindingChartDialog(object):
         if event.button == 3 and None not in click:
             star_id = self.db.star_closest_to_image_coords(*click)[0]
             # LEMONdB.get_star() returns (x, y, ra, dec, imag)
-            x, y = self.db.get_star(star_id)[:2]
+            ra, dec = self.db.get_star(star_id)[2:4]
             kwargs = dict(layer = self.MARKERS_LAYER,
                           edgecolor = 'red',
                           s = self.MARK_RADIUS)
-            self.aplpy_plot.show_markers(x, y, **kwargs)
+            self.aplpy_plot.show_markers(ra, dec, **kwargs)
             self.selected_star_id = star_id
             self.goto_button.set_sensitive(True)
             # Pressing Enter activates 'Go to Star'
@@ -196,20 +198,20 @@ class FindingChartDialog(object):
     def mark_star(self, star_id):
         """ Mark a star in the finding chart.
 
-        Read from the LEMONdB the x- and y-image coordinates of the star whose
-        ID is 'star_id' and overlay a green marker of radius MARK_RADIUS on the
-        APLpy plot. Any existing markers are removed. The original view of the
-        plot is restored (as if the user had clicked the 'Home' button in the
-        navigation toolbar), undoing any zooming and panning and taking us to
-        the first, default view of the FITS image.
+        Read from the LEMONdB the right ascension and declination of the star
+        whose ID is 'star_id' and overlay a green marker of radius MARK_RADIUS
+        on the APLpy plot. Any existing markers are removed. The original view
+        of the plot is restored (as if the user had clicked the 'Home' button
+        in the navigation toolbar), undoing any zooming and panning and taking
+        us to the first, default view of the FITS image.
 
         """
 
-        x, y = self.db.get_star(star_id)[:2]
+        ra, dec = self.db.get_star(star_id)[2:4]
         kwargs = dict(layer = self.MARKERS_LAYER,
                       edgecolor = '#24ff29',
                       s = self.MARK_RADIUS)
-        self.aplpy_plot.show_markers(x, y, **kwargs)
+        self.aplpy_plot.show_markers(ra, dec, **kwargs)
         self.navig.home()
 
         self.selected_star_id = star_id
