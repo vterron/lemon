@@ -165,12 +165,12 @@ class FindingChartDialog(object):
     def mark_closest_star(self, event):
         """ Callback function for 'button_press_event'.
 
-        Find the closest star to the x- and y- image coordinates where the user
-        has right-clicked and overlay a red marker of radius MARK_RADIUS on the
-        APLpy plot. This marker disappears when the user clicks again, so only
-        one marker is displayed at all times. Clicks outside of the plot (axes)
-        are ignored. This method must be connected to the Matplotlib event
-        manager, which is part of the FigureCanvasBase.
+        Find the closest star to the right ascension and declination where the
+        user has right-clicked and overlay a red marker of radius MARK_RADIUS
+        on the APLpy plot. This marker disappears when the user clicks again,
+        so only one marker is displayed at all times. Clicks outside of the
+        plot (axes) are ignored. This method must be connected to the
+        Matplotlib event manager, which is part of the FigureCanvasBase.
 
         """
 
