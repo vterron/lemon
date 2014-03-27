@@ -13,7 +13,7 @@ virtualenv:
 before_install:
   # Fix "Permission denied" errors in tests involving multiprocessing
   # http://github.com/travis-ci/travis-core/issues/187
-  - sudo rmdir /dev/shm
+  - sudo rm -rf /dev/shm
   - sudo ln -Tsf /{run,dev}/shm
 
   # SCAMP requires libplplotd.so.9, but Ubuntu 12.04 installs libplplotd.so.11
