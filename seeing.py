@@ -860,7 +860,7 @@ def main(arguments = None):
             history_msg1 = "Image FWHM = %.3f" % fwhms[path]
             history_msg2 = "Image elongation = %.3f" % elongs[path]
             
-        if os.path.samefile(path, output_path) and options.overwrite:
+        if os.path.abspath(path) == os.path.abspath(output_path) and options.overwrite:
             # Files are the same, but overwrite active, kill'em all!
             pass
         else:
