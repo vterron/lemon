@@ -328,16 +328,6 @@ class Catalog(tuple):
 
         return super(Catalog, cls).__new__(cls, stars)
 
-    def get_image_coordinates(self):
-        """ Return as a list the image coordinates of the stars in the catalog.
-
-        The method loops over the stars present in the SExtractor catalog,
-        encapsulating the image coordinates of each star in a Pixel instance,
-        all of which are returned in a list.
-
-        """
-        return [star.img_coords for star in self]
-
     def get_sky_coordinates(self):
          """ Return a list with the celestial coordinates of the stars.
 
