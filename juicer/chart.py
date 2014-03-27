@@ -110,14 +110,10 @@ class FindingChartDialog(object):
 
         # Temporarily save to disk the FITS file used as a reference frame
         path = self.db.mosaic
+        with pyfits.open(path) as hdu:
+            data = hdu[0].data
 
-        try:
-            with pyfits.open(path) as hdu:
-                data = hdu[0].data
-        finally:
-            os.unlink(path)
-
-        self.aplpy_plot = aplpy.FITSFigure(data, figure = self.figure)
+        self.aplpy_plot = aplpy.FITSFigure(path, figure = self.figure)
         self.figure.canvas.mpl_connect('button_press_event', self.mark_closest_star)
         self.aplpy_plot.show_grayscale()
 
