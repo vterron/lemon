@@ -523,11 +523,11 @@ class StarDetailsGUI(object):
             self.starinfo_view.append_column(column)
 
         store = self.starinfo_store
-        x, y, ra, dec, imag = self.db.get_star(star_id)
-        store.append(('Right ascension', '%s' % methods.ra_str(ra), True))
-        store.append(('Right ascension', '%.4f deg' % ra, True))
-        store.append(('Declination', '%s' % methods.dec_str(dec), True))
-        store.append(('Declination', '%.4f deg' % dec, True))
+        x, y, self.ra, self.dec, imag = self.db.get_star(star_id)
+        store.append(('Right ascension', '%s' % methods.ra_str(self.ra), True))
+        store.append(('Right ascension', '%.4f deg' % self.ra, True))
+        store.append(('Declination', '%s' % methods.dec_str(self.dec), True))
+        store.append(('Declination', '%.4f deg' % self.dec, True))
         store.append(('Magnitude', '%.3f' % imag, True))
         store.append(('x-coordinate', '%.2f' % x, True))
         store.append(('y-coordinate', '%.2f' % y, True))
