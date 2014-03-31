@@ -769,6 +769,11 @@ class LEMONJuicerGUI(object):
         self.finding_chart_menuitem.set_sensitive(False)
         self.finding_chart_button.set_sensitive(False)
 
+        # Append version number to the title
+        title = self._main_window.get_title()
+        title += " " + __version__
+        self._main_window.set_title(title)
+
         # Manually connect to the 'toggled' signal, storing the handler ID. We
         # need it in order to suppress the signal that is emitted when we set
         # the state of the gtk.ToggleToolButton with set_active(), but there
