@@ -54,6 +54,7 @@ import mining
 import plot
 import snr
 import search
+import simbad
 import util
 from version import __version__
 
@@ -523,11 +524,11 @@ class StarDetailsGUI(object):
             self.starinfo_view.append_column(column)
 
         store = self.starinfo_store
-        x, y, ra, dec, imag = self.db.get_star(star_id)
-        store.append(('Right ascension', '%s' % methods.ra_str(ra), True))
-        store.append(('Right ascension', '%.4f deg' % ra, True))
-        store.append(('Declination', '%s' % methods.dec_str(dec), True))
-        store.append(('Declination', '%.4f deg' % dec, True))
+        x, y, self.ra, self.dec, imag = self.db.get_star(star_id)
+        store.append(('Right ascension', '%s' % methods.ra_str(self.ra), True))
+        store.append(('Right ascension', '%.4f deg' % self.ra, True))
+        store.append(('Declination', '%s' % methods.dec_str(self.dec), True))
+        store.append(('Declination', '%.4f deg' % self.dec, True))
         store.append(('Magnitude', '%.3f' % imag, True))
         store.append(('x-coordinate', '%.2f' % x, True))
         store.append(('y-coordinate', '%.2f' % y, True))
@@ -642,6 +643,18 @@ class StarDetailsGUI(object):
         args = 'clicked', self.save_light_curve_points
         export_button.connect(*args)
 
+        # Button to look up the star in the SIMBAD astronomical database.
+        # Render a stock button, STOCK_INFO, but use a different label.
+
+        arg = 'look-up-star-in-simbad-button'
+        self.look_up_in_simbad_button = self._builder.get_object(arg)
+        alignment = self.look_up_in_simbad_button.get_children()[0]
+        hbox = alignment.get_children()[0]
+        image, label = hbox.get_children()
+        label.set_text("Look up in SIMBAD")
+
+        args = 'clicked', self.handle_look_up_in_simbad
+        self.look_up_in_simbad_button.connect(*args)
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
@@ -663,6 +676,19 @@ class StarDetailsGUI(object):
         main_window = self.parent
         main_window.handle_finding_chart(self, set_visibility = True)
         main_window.finding_chart_dialog.mark_star(self.id)
+
+    def handle_look_up_in_simbad(self, widget):
+        """ Look up the star in the SIMBAD database.
+
+        This is the callback function for the 'Look up in SIMBAD' button
+        (button_press_event). It submits a coordinate-query to the SIMBAD
+        database, opening the page in the same window (if possible) of the
+        default browser.
+
+        """
+
+        args = (self.ra, self.dec)
+        simbad.coordinate_query(*args)
 
 
 class SNRThresholdDialog(object):
@@ -808,6 +834,12 @@ class LEMONJuicerGUI(object):
                 self.handle_view_in_chart_accelerator)
         self.global_accelators.connect_group(*args)
 
+        # Use <Ctrl>S to look up the astronomical object in SIMBAD
+        key, modifier = gtk.accelerator_parse('<Control>S')
+        args = (key, modifier, gtk.ACCEL_VISIBLE,
+                self.handle_look_up_in_simbad_accelerator)
+        self.global_accelators.connect_group(*args)
+
         self._main_window.set_size_request(*self.MIN_SIZE)
         self._main_window.show()
         self._builder = builder
@@ -860,13 +892,13 @@ class LEMONJuicerGUI(object):
         if db_path:
             self.open_db(db_path)
 
-    def handle_view_in_chart_accelerator(self, *args):
-        """ Show in the Finding Chart the star in the current StarDetailsGUI.
+    def _activate_StarDetailsGUI_button(self, name):
+        """ Activate a button of the current StarDetailsGUI.
 
         If the current page in the gtk.Notebook corresponds to a StarDetailsGUI
         instance (that is, all pages except for the first one, with index zero,
-        which contains the list of stars), call its handle_view_star_in_chart()
-        method.
+        which contains the list of stars), call the activate() method of its
+        'name' button.
 
         """
 
@@ -874,7 +906,29 @@ class LEMONJuicerGUI(object):
         if index:
             star_id = self._notebook.get_nth_page(index).id
             star_details = self.open_stars[star_id]
-            star_details.view_in_chart_button.activate()
+            getattr(star_details, name).activate()
+
+    def handle_view_in_chart_accelerator(self, *args):
+        """ Show the star in the Finding Chart.
+
+        Activate the 'Show in Finding Chart' button of the star in the current
+        StarDetailsGUI.
+
+        """
+
+        name = 'view_in_chart_button'
+        self._activate_StarDetailsGUI_button(name)
+
+    def handle_look_up_in_simbad_accelerator(self, *args):
+        """ Look up the star in the SIMBAD database, using the default browser.
+
+        Activate the 'Look up in SIMBAD' button of the star in the current
+        StarDetailsGUI.
+
+        """
+
+        name = 'look_up_in_simbad_button'
+        self._activate_StarDetailsGUI_button(name)
 
     def save_plot_airmasses_checkbox(self, widget):
         """ Airmasses are not plotted here (that is done StarDetailsGUI), but
