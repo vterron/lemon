@@ -887,13 +887,13 @@ class LEMONJuicerGUI(object):
         if db_path:
             self.open_db(db_path)
 
-    def handle_view_in_chart_accelerator(self, *args):
-        """ Show in the Finding Chart the star in the current StarDetailsGUI.
+    def _activate_StarDetailsGUI_button(self, name):
+        """ Activate a button of the current StarDetailsGUI.
 
         If the current page in the gtk.Notebook corresponds to a StarDetailsGUI
         instance (that is, all pages except for the first one, with index zero,
-        which contains the list of stars), call its handle_view_star_in_chart()
-        method.
+        which contains the list of stars), call the activate() method of its
+        'name' button.
 
         """
 
@@ -901,23 +901,29 @@ class LEMONJuicerGUI(object):
         if index:
             star_id = self._notebook.get_nth_page(index).id
             star_details = self.open_stars[star_id]
-            star_details.view_in_chart_button.activate()
+            getattr(star_details, name).activate()
+
+    def handle_view_in_chart_accelerator(self, *args):
+        """ Show the star in the Finding Chart.
+
+        Activate the 'Show in Finding Chart' button of the star in the current
+        StarDetailsGUI.
+
+        """
+
+        name = 'view_in_chart_button'
+        self._activate_StarDetailsGUI_button(name)
 
     def handle_look_up_in_simbad_accelerator(self, *args):
         """ Look up the star in the SIMBAD database, using the default browser.
 
-        If the current page in the gtk.Notebook corresponds to a StarDetailsGUI
-        instance (that is, all pages except for the first one, with index zero,
-        which contains the list of stars), call its handle_look_up_in_simbad()
-        method.
+        Activate the 'Look up in SIMBAD' button of the star in the current
+        StarDetailsGUI.
 
         """
 
-        index = self._notebook.get_current_page()
-        if index:
-            star_id = self._notebook.get_nth_page(index).id
-            star_details = self.open_stars[star_id]
-            star_details.look_up_in_simbad_button.activate()
+        name = 'look_up_in_simbad_button'
+        self._activate_StarDetailsGUI_button(name)
 
     def save_plot_airmasses_checkbox(self, widget):
         """ Airmasses are not plotted here (that is done StarDetailsGUI), but
