@@ -642,6 +642,16 @@ class StarDetailsGUI(object):
         args = 'clicked', self.save_light_curve_points
         export_button.connect(*args)
 
+        # Button to look up the star in the SIMBAD astronomical database.
+        # Render a stock button, STOCK_INFO, but use a different label.
+
+        arg = 'look-up-star-in-simbad-button'
+        self.look_up_in_simbad_button = self._builder.get_object(arg)
+        alignment = self.look_up_in_simbad_button.get_children()[0]
+        hbox = alignment.get_children()[0]
+        image, label = hbox.get_children()
+        label.set_text("Look up in SIMBAD")
+
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
