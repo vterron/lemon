@@ -829,6 +829,12 @@ class LEMONJuicerGUI(object):
                 self.handle_view_in_chart_accelerator)
         self.global_accelators.connect_group(*args)
 
+        # Use <Ctrl>S to look up the astronomical object in SIMBAD
+        key, modifier = gtk.accelerator_parse('<Control>S')
+        args = (key, modifier, gtk.ACCEL_VISIBLE,
+                self.handle_look_up_in_simbad_accelerator)
+        self.global_accelators.connect_group(*args)
+
         self._main_window.set_size_request(*self.MIN_SIZE)
         self._main_window.show()
         self._builder = builder
