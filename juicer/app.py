@@ -897,6 +897,22 @@ class LEMONJuicerGUI(object):
             star_details = self.open_stars[star_id]
             star_details.view_in_chart_button.activate()
 
+    def handle_look_up_in_simbad_accelerator(self, *args):
+        """ Look up the star in the SIMBAD database, using the default browser.
+
+        If the current page in the gtk.Notebook corresponds to a StarDetailsGUI
+        instance (that is, all pages except for the first one, with index zero,
+        which contains the list of stars), call its handle_look_up_in_simbad()
+        method.
+
+        """
+
+        index = self._notebook.get_current_page()
+        if index:
+            star_id = self._notebook.get_nth_page(index).id
+            star_details = self.open_stars[star_id]
+            star_details.look_up_in_simbad_button.activate()
+
     def save_plot_airmasses_checkbox(self, widget):
         """ Airmasses are not plotted here (that is done StarDetailsGUI), but
         we need to update the configuration file with the new value of the
