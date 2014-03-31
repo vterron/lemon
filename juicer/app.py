@@ -653,6 +653,8 @@ class StarDetailsGUI(object):
         image, label = hbox.get_children()
         label.set_text("Look up in SIMBAD")
 
+        args = 'clicked', self.handle_look_up_in_simbad
+        self.look_up_in_simbad_button.connect(*args)
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
