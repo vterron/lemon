@@ -54,6 +54,7 @@ import mining
 import plot
 import snr
 import search
+import simbad
 import util
 from version import __version__
 
@@ -673,6 +674,19 @@ class StarDetailsGUI(object):
         main_window = self.parent
         main_window.handle_finding_chart(self, set_visibility = True)
         main_window.finding_chart_dialog.mark_star(self.id)
+
+    def handle_look_up_in_simbad(self, widget):
+        """ Look up the star in the SIMBAD database.
+
+        This is the callback function for the 'Look up in SIMBAD' button
+        (button_press_event). It submits a coordinate-query to the SIMBAD
+        database, opening the page in the same window (if possible) of the
+        default browser.
+
+        """
+
+        args = (self.ra, self.dec)
+        simbad.coordinate_query(*args)
 
 
 class SNRThresholdDialog(object):
