@@ -900,6 +900,12 @@ def main(arguments = None):
         else:
             src = seeing_tmp_paths[path]
             shutil.copy2(src, output_path)
+            # We have already registered clean-up functions to remove these
+            # images on exit, but ideally they should only be necessary in
+            # case an error occurs before we reach this point. It is better
+            # to remove the temporary output images when they are no longer
+            # necessary.
+            methods.clean_tmp_files(src)
 
         methods.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
