@@ -406,7 +406,7 @@ def sextractor_version():
     """
 
     # For example: "SExtractor version 2.8.6 (2009-04-09)"
-    PATTERN = "^SExtractor version (\d\.\d\.\d) \(\d{4}-\d{2}-\d{2}\)$"
+    PATTERN = "^SExtractor version (\d\.\d{1,2}\.\d{1,2}) \(\d{4}-\d{2}-\d{2}\)$"
 
     for executable in SEXTRACTOR_COMMANDS:
         if methods.which(executable):
