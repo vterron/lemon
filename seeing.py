@@ -571,6 +571,9 @@ def parallel_sextractor(args):
         os.close(fd)
         shutil.copy2(path, output_path)
 
+        # Allow FITSeeingImage.__init__() to write to the FITS header
+        methods.owner_writable(output_path, True) # chmod u+w
+
         args = output_path, options.maximum, options.margin
         kwargs = dict(coaddk = options.coaddk)
         image = FITSeeingImage(*args, **kwargs)
