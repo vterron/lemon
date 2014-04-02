@@ -32,6 +32,7 @@ number of sources is at a given percentile and which has the best FWHM.
 
 """
 
+import atexit
 import logging
 import multiprocessing
 import numpy
@@ -683,6 +684,13 @@ def main(arguments = None):
         path, output_tmp_path, fwhm, elong, stars = queue.get()
         all_images.add(path)
         seeing_tmp_paths[path] = output_tmp_path
+
+        # The clean-up function cannot be registered in parallel_sextractor()
+        # because it would remove the temporary FITS file when the process
+        # terminates (instead of when our program exits, which is what we
+        # need). Do it here, to make sure that whatever happens next these
+        # temporary files are always deleted.
+        atexit.register(methods.clean_tmp_files, output_tmp_path)
 
         fwhms[path]  = fwhm
         elongs[path] = elong
