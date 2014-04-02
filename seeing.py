@@ -666,6 +666,11 @@ def main(arguments = None):
     fwhm_discarded = set()
     elong_discarded = set()
 
+    # Dictionary mapping each input image to the temporary output file: a copy
+    # of the input image but whose FITS header has been updated with the path
+    # to the SExtractor catalog and the MD5 hash of the configuration files.
+    seeing_tmp_paths = dict()
+
     # Extract the four-element tuples (path to the image, FWHM, elongation and
     # number of sources detected by SExtractor) from the multiprocessing' queue
     # and store the values in three independent dictionaries; these provide
@@ -675,8 +680,10 @@ def main(arguments = None):
     nstars = {}
 
     for _ in xrange(queue.qsize()):
-        path, fwhm, elong, stars = queue.get()
+        path, output_tmp_path, fwhm, elong, stars = queue.get()
         all_images.add(path)
+        seeing_tmp_paths[path] = output_tmp_path
+
         fwhms[path]  = fwhm
         elongs[path] = elong
         nstars[path] = stars
@@ -880,7 +887,8 @@ def main(arguments = None):
             return 1
 
         else:
-            shutil.copy2(path, output_path)
+            src = seeing_tmp_paths[path]
+            shutil.copy2(src, output_path)
 
         methods.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
