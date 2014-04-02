@@ -40,8 +40,8 @@ _lemon_seeing()
     local opts
 
     opts="--filename --maximum --margin --snr-percentile --mean
-    --sources-percentile --suffix --cores --verbose --fsigma
-    --fwhm_dir --esigma --elong_dir --coaddk --fwhmk"
+    --sources-percentile --suffix --overwrite --cores --verbose
+    --fsigma --fwhm_dir --esigma --elong_dir --coaddk --fwhmk"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"

@@ -465,6 +465,9 @@ parser.add_option('--suffix', action = 'store', type = 'str',
                   help = "string to be appended to output images, before "
                   "the file extension, of course [default: %default]")
 
+parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
+                  help = "overwrite any output file if it already exists")
+
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = defaults.ncores,
                   help = defaults.desc['ncores'])
@@ -855,7 +858,17 @@ def main(arguments = None):
             history_msg1 = "Image FWHM = %.3f" % fwhms[path]
             history_msg2 = "Image elongation = %.3f" % elongs[path]
 
-        shutil.copy2(path, output_path)
+        if os.path.exists(output_path) and not options.overwrite:
+            msg = ("%sError. Output FITS file '%s' already exists. "
+                   "You need to use --overwrite.")
+            args = style.prefix, output_path
+            print msg % args
+            print style.error_exit_message
+            return 1
+
+        else:
+            shutil.copy2(path, output_path)
+
         methods.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
         output_img = fitsimage.FITSImage(output_path)
