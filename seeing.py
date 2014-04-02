@@ -466,9 +466,7 @@ parser.add_option('--suffix', action = 'store', type = 'str',
                   "the file extension, of course [default: %default]")
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "if you want to add no suffix to the file (i.e. "
-                  "overwrite it) you need to activate this option. This "
-                  "is just a safety-catch to prevent mistakes. ")
+                  help = "overwrite any output file if it already exists")
 
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = defaults.ncores,
