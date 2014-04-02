@@ -32,6 +32,7 @@ number of sources is at a given percentile and which has the best FWHM.
 
 """
 
+import atexit
 import logging
 import multiprocessing
 import numpy
@@ -42,6 +43,7 @@ import scipy.stats
 import scipy.signal
 import shutil
 import sys
+import tempfile
 import time
 
 # LEMON modules
@@ -546,10 +548,12 @@ def parallel_sextractor(args):
     the options of the program, and runs SExtractor on the image. The median or
     mean (depending whether the --mean option was given) FWHM and elongation of
     the stars in the image is also computed. Nothing is returned; instead, the
-    result is saved to the global variable 'queue' as a four-element tuple: (a)
-    path of the image, (b) FWHM, (c) elongation and (d) number of objects that
-    were detected by SExtractor. Nothing is added to 'queue' in case an error
-    is encountered.
+    result is saved to the global variable 'queue' as a five-element tuple: (1)
+    path of the input image, (2) path of the temporary output image (a copy of
+    the input image, with the path to the SExtractor catalog and the MD5 hash
+    of the configuration files written to its header), (3) FWHM, (4) elongation
+    and (5) number of objects that were detected by SExtractor. Nothing is
+    added to 'queue' in case an error is encountered.
 
     """
 
@@ -557,7 +561,20 @@ def parallel_sextractor(args):
     mode = options.mean and 'mean' or 'median'
 
     try:
-        args = path, options.maximum, options.margin
+
+        # FITSeeingImage.__init__() writes to the header of the FITS image the
+        # path to the SExtractor catalog and the MD5 hash of the configuration
+        # files. Work on a copy of the input image so as not to modify it.
+        kwargs = dict(prefix = '%s_' % os.path.basename(path),
+                      suffix = '.fits')
+        fd, output_path = tempfile.mkstemp(**kwargs)
+        os.close(fd)
+        shutil.copy2(path, output_path)
+
+        # Allow FITSeeingImage.__init__() to write to the FITS header
+        methods.owner_writable(output_path, True) # chmod u+w
+
+        args = output_path, options.maximum, options.margin
         kwargs = dict(coaddk = options.coaddk)
         image = FITSeeingImage(*args, **kwargs)
         fwhm = image.fwhm(per = options.per, mode = mode)
@@ -566,7 +583,7 @@ def parallel_sextractor(args):
         logging.debug("%s: Elongation = %.3f" % (path, elong))
         nstars = len(image)
         logging.debug("%s: %d sources detected" % (path, nstars))
-        queue.put((path, fwhm, elong, nstars))
+        queue.put((path, output_path, fwhm, elong, nstars))
 
     except fitsimage.NonStandardFITS:
         logging.info("%s ignored (non-standard FITS)" % path)
@@ -653,6 +670,11 @@ def main(arguments = None):
     fwhm_discarded = set()
     elong_discarded = set()
 
+    # Dictionary mapping each input image to the temporary output file: a copy
+    # of the input image but whose FITS header has been updated with the path
+    # to the SExtractor catalog and the MD5 hash of the configuration files.
+    seeing_tmp_paths = dict()
+
     # Extract the four-element tuples (path to the image, FWHM, elongation and
     # number of sources detected by SExtractor) from the multiprocessing' queue
     # and store the values in three independent dictionaries; these provide
@@ -662,8 +684,17 @@ def main(arguments = None):
     nstars = {}
 
     for _ in xrange(queue.qsize()):
-        path, fwhm, elong, stars = queue.get()
+        path, output_tmp_path, fwhm, elong, stars = queue.get()
         all_images.add(path)
+        seeing_tmp_paths[path] = output_tmp_path
+
+        # The clean-up function cannot be registered in parallel_sextractor()
+        # because it would remove the temporary FITS file when the process
+        # terminates (instead of when our program exits, which is what we
+        # need). Do it here, to make sure that whatever happens next these
+        # temporary files are always deleted.
+        atexit.register(methods.clean_tmp_files, output_tmp_path)
+
         fwhms[path]  = fwhm
         elongs[path] = elong
         nstars[path] = stars
@@ -867,7 +898,14 @@ def main(arguments = None):
             return 1
 
         else:
-            shutil.copy2(path, output_path)
+            src = seeing_tmp_paths[path]
+            shutil.copy2(src, output_path)
+            # We have already registered clean-up functions to remove these
+            # images on exit, but ideally they should only be necessary in
+            # case an error occurs before we reach this point. It is better
+            # to remove the temporary output images when they are no longer
+            # necessary.
+            methods.clean_tmp_files(src)
 
         methods.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
