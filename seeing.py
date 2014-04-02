@@ -860,9 +860,14 @@ def main(arguments = None):
             history_msg1 = "Image FWHM = %.3f" % fwhms[path]
             history_msg2 = "Image elongation = %.3f" % elongs[path]
 
-        if os.path.abspath(path) == os.path.abspath(output_path) and options.overwrite:
-            # Files are the same, but overwrite active, kill'em all!
-            pass
+        if os.path.exists(output_path) and not options.overwrite:
+            msg = ("%sError. Output FITS file '%s' already exists. "
+                   "You need to use --overwrite.")
+            args = style.prefix, output_path
+            print msg % args
+            print style.error_exit_message
+            return 1
+
         else:
             shutil.copy2(path, output_path)
 
