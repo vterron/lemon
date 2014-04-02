@@ -547,10 +547,12 @@ def parallel_sextractor(args):
     the options of the program, and runs SExtractor on the image. The median or
     mean (depending whether the --mean option was given) FWHM and elongation of
     the stars in the image is also computed. Nothing is returned; instead, the
-    result is saved to the global variable 'queue' as a four-element tuple: (a)
-    path of the image, (b) FWHM, (c) elongation and (d) number of objects that
-    were detected by SExtractor. Nothing is added to 'queue' in case an error
-    is encountered.
+    result is saved to the global variable 'queue' as a five-element tuple: (1)
+    path of the input image, (2) path of the temporary output image (a copy of
+    the input image, with the path to the SExtractor catalog and the MD5 hash
+    of the configuration files written to its header), (3) FWHM, (4) elongation
+    and (5) number of objects that were detected by SExtractor. Nothing is
+    added to 'queue' in case an error is encountered.
 
     """
 
