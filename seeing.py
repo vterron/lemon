@@ -42,6 +42,7 @@ import scipy.stats
 import scipy.signal
 import shutil
 import sys
+import tempfile
 import time
 
 # LEMON modules
@@ -557,7 +558,17 @@ def parallel_sextractor(args):
     mode = options.mean and 'mean' or 'median'
 
     try:
-        args = path, options.maximum, options.margin
+
+        # FITSeeingImage.__init__() writes to the header of the FITS image the
+        # path to the SExtractor catalog and the MD5 hash of the configuration
+        # files. Work on a copy of the input image so as not to modify it.
+        kwargs = dict(prefix = '%s_' % os.path.basename(path),
+                      suffix = '.fits')
+        fd, output_path = tempfile.mkstemp(**kwargs)
+        os.close(fd)
+        shutil.copy2(path, output_path)
+
+        args = output_path, options.maximum, options.margin
         kwargs = dict(coaddk = options.coaddk)
         image = FITSeeingImage(*args, **kwargs)
         fwhm = image.fwhm(per = options.per, mode = mode)
@@ -566,7 +577,7 @@ def parallel_sextractor(args):
         logging.debug("%s: Elongation = %.3f" % (path, elong))
         nstars = len(image)
         logging.debug("%s: %d sources detected" % (path, nstars))
-        queue.put((path, fwhm, elong, nstars))
+        queue.put((path, output_path, fwhm, elong, nstars))
 
     except fitsimage.NonStandardFITS:
         logging.info("%s ignored (non-standard FITS)" % path)
