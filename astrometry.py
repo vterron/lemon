@@ -122,6 +122,11 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     with tempfile.NamedTemporaryFile(**kwargs) as fd:
         output_path = fd.name
 
+    # If the field solved, Astrometry.net creates a <base>.solved output file
+    # that contains (binary) 1. That is: if this file does not exist, we know
+    # that an astrometric solution could not be found.
+    solved_file = os.path.join(output_dir, root + '.solved')
+
     # --dir: place all output files in the specified directory.
     # --no-plots: don't create any plots of the results.
     # --new-fits: the new FITS file containing the WCS header.
@@ -157,9 +162,19 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 
     try:
         subprocess.check_call(args)
+
+        # .solved file must exist and contain a binary one
+        with open(solved_file, 'rb') as fd:
+            if ord(fd.read()) != 1:
+                raise AstrometryNetUnsolvedField(path)
+
         return output_path
+
     except subprocess.CalledProcessError, e:
         raise AstrometryNetError(e.returncode, e.cmd)
+    # If .solved file doesn't exist or contain one
+    except (IOError, AstrometryNetUnsolvedField):
+        raise AstrometryNetUnsolvedField(path)
     finally:
         shutil.rmtree(output_dir, ignore_errors = True)
 
