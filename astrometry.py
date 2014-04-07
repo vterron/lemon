@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import warnings
 
 # LEMON modules
 import customparser
@@ -329,7 +330,13 @@ def main(arguments = None):
                       radius = options.radius,
                       verbosity = options.verbose)
 
-        output_path = astrometry_net(img.path, **kwargs)
+        try:
+            output_path = astrometry_net(img.path, **kwargs)
+        except AstrometryNetUnsolvedField:
+            msg = "%s did not solve. Ignored." % img.path
+            print style.prefix + msg
+            warnings.warn(msg, RuntimeWarning)
+            continue
 
         try:
             shutil.move(output_path, dest_path)
