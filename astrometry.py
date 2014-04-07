@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import warnings
 
 # LEMON modules
 import customparser
@@ -57,6 +58,15 @@ class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
     pass
 
+class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
+    """ Raised if Astrometry.net could not solve the field """
+
+    def __init__(self, path):
+        self.path = path
+
+    def __str__(self):
+        return "%s: could not solve field" % self.path
+
 def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     """ Do astrometry on a FITS image using Astrometry.net.
 
@@ -76,10 +86,19 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     heavy. At the time of this writing, the entire set of indexes built from
     the 2MASS catalog [4] has a total size of ~32 gigabytes.
 
+    Raises AstrometryNetError if Astrometry.net exits with a non-zero status
+    code, and AstrometryNetUnsolvedField if an astrometric solution cannot be
+    found. The latter usually happens because Astrometry.net has to stop at
+    some point: as long as a reasonable number of stars are detected, there are
+    gazillions of possible matches between the image and the sky to check, so
+    it gives up when the CPU time limit is hit [5]. This limit can be set in
+    the backend.cfg file, by default located in /usr/local/astrometry/etc/.
+
     [1] http://astrometry.net/
     [2] http://astrometry.net/doc/build.html
     [3] http://astrometry.net/doc/readme.html#getting-index-files
     [4] http://data.astrometry.net/4200/
+    [5] https://groups.google.com/d/msg/astrometry/ORVkOk0jSZg/PeCMeAJodyAJ
 
     Keyword arguments:
 
@@ -112,6 +131,11 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     kwargs = dict(prefix = '%s_astrometry_' % root, suffix = ext)
     with tempfile.NamedTemporaryFile(**kwargs) as fd:
         output_path = fd.name
+
+    # If the field solved, Astrometry.net creates a <base>.solved output file
+    # that contains (binary) 1. That is: if this file does not exist, we know
+    # that an astrometric solution could not be found.
+    solved_file = os.path.join(output_dir, root + '.solved')
 
     # --dir: place all output files in the specified directory.
     # --no-plots: don't create any plots of the results.
@@ -148,9 +172,19 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 
     try:
         subprocess.check_call(args)
+
+        # .solved file must exist and contain a binary one
+        with open(solved_file, 'rb') as fd:
+            if ord(fd.read()) != 1:
+                raise AstrometryNetUnsolvedField(path)
+
         return output_path
+
     except subprocess.CalledProcessError, e:
         raise AstrometryNetError(e.returncode, e.cmd)
+    # If .solved file doesn't exist or contain one
+    except (IOError, AstrometryNetUnsolvedField):
+        raise AstrometryNetUnsolvedField(path)
     finally:
         shutil.rmtree(output_dir, ignore_errors = True)
 
@@ -296,7 +330,13 @@ def main(arguments = None):
                       radius = options.radius,
                       verbosity = options.verbose)
 
-        output_path = astrometry_net(img.path, **kwargs)
+        try:
+            output_path = astrometry_net(img.path, **kwargs)
+        except AstrometryNetUnsolvedField:
+            msg = "%s did not solve. Ignored." % img.path
+            print style.prefix + msg
+            warnings.warn(msg, RuntimeWarning)
+            continue
 
         try:
             shutil.move(output_path, dest_path)
