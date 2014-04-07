@@ -11,6 +11,7 @@
 # 2) Add the following line to your .bashrc/.zshrc:
 #     source ~/.lemon-completion.sh
 
+shopt -s extglob
 
 FITS_EXTS="fit?(s)|FIT?(S)"
 XML_EXTS="xml|XML"
