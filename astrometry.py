@@ -57,6 +57,15 @@ class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
     pass
 
+class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
+    """ Raised if Astrometry.net could not solve the field """
+
+    def __init__(self, path):
+        self.path = path
+
+    def __str__(self):
+        return "%s: could not solve field" % self.path
+
 def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     """ Do astrometry on a FITS image using Astrometry.net.
 
