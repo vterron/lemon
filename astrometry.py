@@ -192,6 +192,13 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
 
+parser.add_option('--radius', action = 'store', type = 'float',
+                  dest = 'radius', default = 1,
+                  help = "only search in indexes within this number of "
+                  "degrees of the field center, whose coordinates are read "
+                  "from the FITS header of each image (keywords --rak and "
+                  "--deck). [default: %default]")
+
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
                   help = "string to be appended to output images, before "
@@ -203,30 +210,6 @@ parser.add_option('-v', '--verbose', action = 'count',
                   "level is also passed down to Astrometry.net, causing "
                   "it to be increasingly chattier as more -v flags are "
                   "given")
-
-coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
-               "Although one of its main advantages is that it is a blind "
-               "calibration tool, the execution of Astrometry.net can be "
-               "enormously sped up (in more than an order of magnitude, in "
-               "fact) if we know the approximate coordinates of the image. "
-               "If that is your case, you may use these options to restrict "
-               "the search to those indexes close to the field center. \n"
-               "\n"
-               "Note, however, that as images are processed we always rely "
-               "on the median of the coordinates that were solved for the "
-               "previous ones. The consequence of this is that, even if the "
-               "approximate coordinates of our field are not known, only the "
-               "calibration of the first image will be actually blind. Viewed "
-               "from another perspective, this also means that the speed-up "
-               "gained with these options approaches zero as the number of "
-               "images to solve increases.")
-
-coords_group.add_option('--radius', action = 'store', type = 'float',
-                        dest = 'radius', default = 1,
-                        help = "only search in indexes within this number "
-                        "of degrees of the field center given by --ra and "
-                        "--dec [default: %default]")
-parser.add_option_group(coords_group)
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
