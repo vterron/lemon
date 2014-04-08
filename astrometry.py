@@ -220,12 +220,6 @@ coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
                "gained with these options approaches zero as the number of "
                "images to solve increases.")
 
-coords_group.add_option('--ra', action = 'store', type = 'float',
-                        dest = 'ra', help = "Right ascension, in degrees")
-
-coords_group.add_option('--dec', action = 'store', type = 'float',
-                        dest = 'dec', help = "Declination, in degrees")
-
 coords_group.add_option('--radius', action = 'store', type = 'float',
                         dest = 'radius', default = 1,
                         help = "only search in indexes within this number "
@@ -273,19 +267,6 @@ def main(arguments = None):
     else:
         input_paths = args[:-1]
         output_dir = args[-1]
-
-    # If the right ascension is specified but not the declination, or vice
-    # versa, Astrometry.net ignores the received coordinate since it needs both
-    # in order to restrict the search to those indexes close to the center that
-    # they define. If this happens, raise an error and abort the execution, as
-    # the user may have passed only one by accident, or in the assumption that,
-    # even if only one is known, it can still help Astrometry.net reduce the
-    # number of indexes that must be searched.
-
-    if (options.ra and not options.dec) or (not options.ra and options.dec):
-           msg = "%sError: --ra and --dec must be used together or not at all."
-           print msg % style.prefix
-           sys.exit(style.error_exit_message)
 
     # No index can be within the search area if the radius is not > 0
     if options.radius <= 0:
