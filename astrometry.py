@@ -288,6 +288,13 @@ def main(arguments = None):
         output_filename = root + options.suffix + ext
         dest_path = os.path.join(output_dir, output_filename)
 
+        try:
+            ra  = float(img.read_keyword(options.rak))
+            dec = float(img.read_keyword(options.deck))
+
+        except (ValueError, KeyError), e:
+            ra = dec = radius = None
+
         kwargs = dict(ra = ra,
                       dec = dec,
                       radius = options.radius,
