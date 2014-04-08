@@ -34,6 +34,7 @@ import warnings
 import customparser
 import defaults
 import fitsimage
+import keywords
 import methods
 import style
 
@@ -226,6 +227,11 @@ coords_group.add_option('--radius', action = 'store', type = 'float',
                         "of degrees of the field center given by --ra and "
                         "--dec [default: %default]")
 parser.add_option_group(coords_group)
+
+key_group = optparse.OptionGroup(parser, "FITS Keywords",
+                                 keywords.group_description)
+
+parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
