@@ -231,6 +231,10 @@ parser.add_option_group(coords_group)
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
+key_group.add_option('--rak', action = 'store', type = 'str',
+                     dest = 'rak', default = keywords.rak,
+                     help = keywords.desc['rak'])
+
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
