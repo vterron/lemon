@@ -196,8 +196,17 @@ parser.add_option('--radius', action = 'store', type = 'float',
                   dest = 'radius', default = 1,
                   help = "only search in indexes within this number of "
                   "degrees of the field center, whose coordinates are read "
-                  "from the FITS header of each image (keywords --rak and "
-                  "--deck). [default: %default]")
+                  "from the FITS header of each image (see --rak and --deck). "
+                  "In case these keywords cannot be read or contain invalid "
+                  "values, the image is solved blindly, as if the --blind "
+                  "option had been used. [default: %default]")
+
+parser.add_option('--blind', action = 'store_true', dest = 'blind',
+                  help = "ignore --radius, --rak and --deck and solve the "
+                  "images blindly. A necessity in case the FITS headers of "
+                  "your data have no information about the telescope "
+                  "pointing, or when they do but it is deemed to be "
+                  "entirely unreliable")
 
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
@@ -288,30 +297,39 @@ def main(arguments = None):
         output_filename = root + options.suffix + ext
         dest_path = os.path.join(output_dir, output_filename)
 
-        try:
-            msg = "%s: reading α from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.rak))
-            ra  = float(img.read_keyword(options.rak))
-            msg = "%s: α = %.5f" % (img.path, ra)
-            logging.debug(msg)
-
-            msg = "%s: reading δ from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.deck))
-            dec = float(img.read_keyword(options.deck))
-            msg = "%s: δ = %.5f" % (img.path, dec)
-            logging.debug(msg)
-
-            msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
-            logging.debug(msg)
-
-        except (ValueError, KeyError), e:
-            msg = "%s: %s" % (img.path, str(e))
-            logging.debug(msg)
-            ra = dec = radius = None
-            msg = "%s: could not read coordinates from FITS header"
+        if options.blind:
+            msg = "%s: solving the image blindly (--blind option)"
             logging.debug(msg % img.path)
-            msg = "%s: using α = δ = radius = None"
+            ra = dec = None
+            msg = "%s: using α = δ = None"
             logging.debug(msg % img.path)
+
+        else:
+
+            try:
+                msg = "%s: reading α from FITS header (keyword '%s')"
+                logging.debug(msg % (img.path, options.rak))
+                ra  = float(img.read_keyword(options.rak))
+                msg = "%s: α = %.5f" % (img.path, ra)
+                logging.debug(msg)
+
+                msg = "%s: reading δ from FITS header (keyword '%s')"
+                logging.debug(msg % (img.path, options.deck))
+                dec = float(img.read_keyword(options.deck))
+                msg = "%s: δ = %.5f" % (img.path, dec)
+                logging.debug(msg)
+
+                msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
+                logging.debug(msg)
+
+            except (ValueError, KeyError), e:
+                msg = "%s: %s" % (img.path, str(e))
+                logging.debug(msg)
+                ra = dec = None
+                msg = "%s: could not read coordinates from FITS header"
+                logging.debug(msg % img.path)
+                msg = "%s: using α = δ = None"
+                logging.debug(msg % img.path)
 
         kwargs = dict(ra = ra,
                       dec = dec,
