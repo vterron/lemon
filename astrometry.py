@@ -297,30 +297,39 @@ def main(arguments = None):
         output_filename = root + options.suffix + ext
         dest_path = os.path.join(output_dir, output_filename)
 
-        try:
-            msg = "%s: reading α from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.rak))
-            ra  = float(img.read_keyword(options.rak))
-            msg = "%s: α = %.5f" % (img.path, ra)
-            logging.debug(msg)
-
-            msg = "%s: reading δ from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.deck))
-            dec = float(img.read_keyword(options.deck))
-            msg = "%s: δ = %.5f" % (img.path, dec)
-            logging.debug(msg)
-
-            msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
-            logging.debug(msg)
-
-        except (ValueError, KeyError), e:
-            msg = "%s: %s" % (img.path, str(e))
-            logging.debug(msg)
-            ra = dec = radius = None
-            msg = "%s: could not read coordinates from FITS header"
+        if options.blind:
+            msg = "%s: solving the image blindly (--blind option)"
             logging.debug(msg % img.path)
+            ra = dec = radius = None
             msg = "%s: using α = δ = radius = None"
             logging.debug(msg % img.path)
+
+        else:
+
+            try:
+                msg = "%s: reading α from FITS header (keyword '%s')"
+                logging.debug(msg % (img.path, options.rak))
+                ra  = float(img.read_keyword(options.rak))
+                msg = "%s: α = %.5f" % (img.path, ra)
+                logging.debug(msg)
+
+                msg = "%s: reading δ from FITS header (keyword '%s')"
+                logging.debug(msg % (img.path, options.deck))
+                dec = float(img.read_keyword(options.deck))
+                msg = "%s: δ = %.5f" % (img.path, dec)
+                logging.debug(msg)
+
+                msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
+                logging.debug(msg)
+
+            except (ValueError, KeyError), e:
+                msg = "%s: %s" % (img.path, str(e))
+                logging.debug(msg)
+                ra = dec = radius = None
+                msg = "%s: could not read coordinates from FITS header"
+                logging.debug(msg % img.path)
+                msg = "%s: using α = δ = radius = None"
+                logging.debug(msg % img.path)
 
         kwargs = dict(ra = ra,
                       dec = dec,
