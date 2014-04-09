@@ -186,7 +186,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     except (IOError, AstrometryNetUnsolvedField):
         raise AstrometryNetUnsolvedField(path)
     finally:
-        shutil.rmtree(output_dir, ignore_errors = True)
+        methods.clean_tmp_files(output_dir)
 
 
 parser = customparser.get_parser(description)
@@ -347,8 +347,7 @@ def main(arguments = None):
         try:
             shutil.move(output_path, dest_path)
         except (IOError, OSError):
-            try: os.unlink(output_path)
-            except (IOError, OSError): pass
+            methods.clean_tmp_files(output_path)
 
         output_img = fitsimage.FITSImage(dest_path)
 
