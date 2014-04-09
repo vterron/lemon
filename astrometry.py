@@ -22,7 +22,6 @@
 from __future__ import division
 
 import logging
-import numpy
 import optparse
 import os
 import shutil
@@ -35,6 +34,7 @@ import warnings
 import customparser
 import defaults
 import fitsimage
+import keywords
 import methods
 import style
 
@@ -192,6 +192,13 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
 
+parser.add_option('--radius', action = 'store', type = 'float',
+                  dest = 'radius', default = 1,
+                  help = "only search in indexes within this number of "
+                  "degrees of the field center, whose coordinates are read "
+                  "from the FITS header of each image (keywords --rak and "
+                  "--deck). [default: %default]")
+
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
                   help = "string to be appended to output images, before "
@@ -204,35 +211,18 @@ parser.add_option('-v', '--verbose', action = 'count',
                   "it to be increasingly chattier as more -v flags are "
                   "given")
 
-coords_group = optparse.OptionGroup(parser, "Approximate coordinates",
-               "Although one of its main advantages is that it is a blind "
-               "calibration tool, the execution of Astrometry.net can be "
-               "enormously sped up (in more than an order of magnitude, in "
-               "fact) if we know the approximate coordinates of the image. "
-               "If that is your case, you may use these options to restrict "
-               "the search to those indexes close to the field center. \n"
-               "\n"
-               "Note, however, that as images are processed we always rely "
-               "on the median of the coordinates that were solved for the "
-               "previous ones. The consequence of this is that, even if the "
-               "approximate coordinates of our field are not known, only the "
-               "calibration of the first image will be actually blind. Viewed "
-               "from another perspective, this also means that the speed-up "
-               "gained with these options approaches zero as the number of "
-               "images to solve increases.")
+key_group = optparse.OptionGroup(parser, "FITS Keywords",
+                                 keywords.group_description)
 
-coords_group.add_option('--ra', action = 'store', type = 'float',
-                        dest = 'ra', help = "Right ascension, in degrees")
+key_group.add_option('--rak', action = 'store', type = 'str',
+                     dest = 'rak', default = keywords.rak,
+                     help = keywords.desc['rak'])
 
-coords_group.add_option('--dec', action = 'store', type = 'float',
-                        dest = 'dec', help = "Declination, in degrees")
+key_group.add_option('--deck', action = 'store', type = 'str',
+                     dest = 'deck', default = keywords.deck,
+                     help = keywords.desc['deck'])
 
-coords_group.add_option('--radius', action = 'store', type = 'float',
-                        dest = 'radius', default = 1,
-                        help = "only search in indexes within this number "
-                        "of degrees of the field center given by --ra and "
-                        "--dec [default: %default]")
-parser.add_option_group(coords_group)
+parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
@@ -275,19 +265,6 @@ def main(arguments = None):
         input_paths = args[:-1]
         output_dir = args[-1]
 
-    # If the right ascension is specified but not the declination, or vice
-    # versa, Astrometry.net ignores the received coordinate since it needs both
-    # in order to restrict the search to those indexes close to the center that
-    # they define. If this happens, raise an error and abort the execution, as
-    # the user may have passed only one by accident, or in the assumption that,
-    # even if only one is known, it can still help Astrometry.net reduce the
-    # number of indexes that must be searched.
-
-    if (options.ra and not options.dec) or (not options.ra and options.dec):
-           msg = "%sError: --ra and --dec must be used together or not at all."
-           print msg % style.prefix
-           sys.exit(style.error_exit_message)
-
     # No index can be within the search area if the radius is not > 0
     if options.radius <= 0:
         msg = "%sError: --radius must a positive number of degrees"
@@ -304,13 +281,6 @@ def main(arguments = None):
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    # Store the approximate coordinates, if provided, in a list. For each FITS
-    # image, we use as right ascension and declination, with which to restrict
-    # the search, the median of the coordinates that Astrometry.net has solved
-    # for all the previous images.
-    options.ra = [options.ra] if options.ra is not None else []
-    options.dec = [options.dec] if options.dec is not None else []
-
     for path in input_paths:
         img = fitsimage.FITSImage(path)
         # Add the suffix to the basename of the FITS image
@@ -318,12 +288,30 @@ def main(arguments = None):
         output_filename = root + options.suffix + ext
         dest_path = os.path.join(output_dir, output_filename)
 
-        # The approximate right ascension and declination, when the --ra and
-        # --dec options are not used, will be None only in the first iteration.
-        # For the rest of the loop, we use the median of the coordinates found
-        # so far.
-        ra = numpy.median(options.ra) if options.ra else None
-        dec = numpy.median(options.dec) if options.dec else None
+        try:
+            msg = "%s: reading α from FITS header (keyword '%s')"
+            logging.debug(msg % (img.path, options.rak))
+            ra  = float(img.read_keyword(options.rak))
+            msg = "%s: α = %.5f" % (img.path, ra)
+            logging.debug(msg)
+
+            msg = "%s: reading δ from FITS header (keyword '%s')"
+            logging.debug(msg % (img.path, options.deck))
+            dec = float(img.read_keyword(options.deck))
+            msg = "%s: δ = %.5f" % (img.path, dec)
+            logging.debug(msg)
+
+            msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
+            logging.debug(msg)
+
+        except (ValueError, KeyError), e:
+            msg = "%s: %s" % (img.path, str(e))
+            logging.debug(msg)
+            ra = dec = radius = None
+            msg = "%s: could not read coordinates from FITS header"
+            logging.debug(msg % img.path)
+            msg = "%s: using α = δ = radius = None"
+            logging.debug(msg % img.path)
 
         kwargs = dict(ra = ra,
                       dec = dec,
@@ -356,12 +344,6 @@ def main(arguments = None):
 
         msg = "%s%s solved and saved to %s"
         print  msg % (style.prefix, img.path, output_img.path)
-
-        # Read RA and DEC from the Astrometry.net WCS solution
-        ra = output_img.read_keyword('CRVAL1')
-        dec = output_img.read_keyword('CRVAL2')
-        options.ra.append(ra)
-        options.dec.append(dec)
 
     print "%sYou're done ^_^" % style.prefix
     return 0
