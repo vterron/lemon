@@ -196,8 +196,10 @@ parser.add_option('--radius', action = 'store', type = 'float',
                   dest = 'radius', default = 1,
                   help = "only search in indexes within this number of "
                   "degrees of the field center, whose coordinates are read "
-                  "from the FITS header of each image (keywords --rak and "
-                  "--deck). [default: %default]")
+                  "from the FITS header of each image (see --rak and --deck). "
+                  "In case these keywords cannot be read or contain invalid "
+                  "values, the image is solved blindly, as if the --blind "
+                  "option had been used. [default: %default]")
 
 parser.add_option('--blind', action = 'store_true', dest = 'blind',
                   help = "ignore --radius, --rak and --deck and solve the "
