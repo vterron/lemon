@@ -199,6 +199,13 @@ parser.add_option('--radius', action = 'store', type = 'float',
                   "from the FITS header of each image (keywords --rak and "
                   "--deck). [default: %default]")
 
+parser.add_option('--blind', action = 'store_true', dest = 'blind',
+                  help = "ignore --radius, --rak and --deck and solve the "
+                  "images blindly. A necessity in case the FITS headers of "
+                  "your data have no information about the telescope "
+                  "pointing, or when they do but it is deemed to be "
+                  "entirely unreliable")
+
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
                   help = "string to be appended to output images, before "
