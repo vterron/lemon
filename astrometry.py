@@ -300,8 +300,8 @@ def main(arguments = None):
         if options.blind:
             msg = "%s: solving the image blindly (--blind option)"
             logging.debug(msg % img.path)
-            ra = dec = radius = None
-            msg = "%s: using α = δ = radius = None"
+            ra = dec = None
+            msg = "%s: using α = δ = None"
             logging.debug(msg % img.path)
 
         else:
@@ -325,10 +325,10 @@ def main(arguments = None):
             except (ValueError, KeyError), e:
                 msg = "%s: %s" % (img.path, str(e))
                 logging.debug(msg)
-                ra = dec = radius = None
+                ra = dec = None
                 msg = "%s: could not read coordinates from FITS header"
                 logging.debug(msg % img.path)
-                msg = "%s: using α = δ = radius = None"
+                msg = "%s: using α = δ = None"
                 logging.debug(msg % img.path)
 
         kwargs = dict(ra = ra,
