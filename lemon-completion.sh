@@ -66,7 +66,7 @@ _lemon_mosaic()
 _lemon_astrometry()
 {
     local opts
-    opts="--suffix --verbose --ra --dec --radius"
+    opts="--radius --blind --suffix --verbose --rak --deck"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
