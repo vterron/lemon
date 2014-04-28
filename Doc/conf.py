@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -41,7 +42,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'LEMON'
-copyright = u'2013, Víctor Terrón'
+year = datetime.date.today().year
+url = u'<a href="http://github.com/vterron">Víctor Terrón</a>'
+copyright = u"{0} {1}".format(year, url)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
