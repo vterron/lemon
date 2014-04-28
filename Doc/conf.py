@@ -136,7 +136,12 @@ html_theme_path = ['_themes']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+# sourcelink.html -- a link to the source of the current document
+# searchbox.html -- the "quick search" box
+
+html_sidebars = {
+    'index':    ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
