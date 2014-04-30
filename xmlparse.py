@@ -74,6 +74,15 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     photometry (aperture, annulus, dannulus) to the standard deviation of the
     light curves of the most constant stars.
 
+    Fields:
+    aperture - the aperture radius, in pixels.
+    annulus - the inner radius of the sky annulus, in pixels.
+    dannulus - the width of the sky annulus, in pixels.
+    stdev - the median, arithmetic mean or a similar statistical measure of the
+            standard deviation of the light curves of the astronomical objects
+            when photometry is done using these aperture, annulus and dannulus
+            values.
+
     """
 
     XML_DTD = [
@@ -96,24 +105,6 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     "]>",
     ""]
 
-
-    def __init__(self, aperture, annulus, dannulus, stdev):
-        """ Instantiation method.
-
-        aperture - the aperture radius, in pixels.
-        annulus - the inner radius of the sky annulus, in pixels.
-        dannulus - the width of the sky annulus, in pixels.
-        stdev - the median, arithmetic mean or a similar statistical measure
-                of the standard deviation of the light curves of the evaluated
-                stars when photometry is done using these aperture, annulus
-                and dannulus values.
-
-        """
-
-        self.aperture = aperture
-        self.annulus  = annulus
-        self.dannulus = dannulus
-        self.stdev    = stdev
 
     def __eq__(self, other):
         return self.aperture == other.aperture and \
