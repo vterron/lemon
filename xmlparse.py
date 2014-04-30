@@ -55,7 +55,10 @@ def setup_header(xml_content, dtd):
     lines = lines[:2] + dtd + lines[2:]
     return '\n'.join(lines)
 
-class CandidateAnnuli(object):
+
+typename = 'CandidateAnnuli'
+field_names = "aperture, annulus, dannulus, stdev"
+class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     """ Encapsulates the quality of a set of photometric parameters.
 
     How do we determine how 'good' a set of aperture, annulus and dannulus
