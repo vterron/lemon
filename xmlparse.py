@@ -21,11 +21,9 @@
 import collections
 import copy
 import json
-import lxml.etree
 import operator
 
 # LEMON modules
-import methods
 import passband
 
 typename = 'CandidateAnnuli'
