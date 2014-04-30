@@ -131,8 +131,8 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
         with open(path, 'wt') as fd:
             json.dump(data, fd, indent=2)
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         """ Load a series of CandidateAnnuli instances from an XML file.
 
         This method reverses the functionality of xml_dump(), reading an XML
@@ -159,7 +159,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
         # their standard deviation, in increasing order.
         for values in data.itervalues():
             for index in xrange(len(values)):
-                values[index] = CandidateAnnuli(**values[index])
+                values[index] = cls(**values[index])
             values.sort(key=operator.attrgetter('stdev'))
 
         # Use Passband objects as keys
