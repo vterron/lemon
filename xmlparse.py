@@ -28,18 +28,6 @@ import operator
 import methods
 import passband
 
-def validate_dtd(path):
-    """ Validate an XML file against a DTD.
-
-    The method validates an Extensible Markup Language (XML) against a Document
-    Type Definition (DTD) referenced by the document, raising the appropriate
-    exception if an error is encountered, and doing nothing otherwise.
-
-    """
-
-    dtd_parser = lxml.etree.XMLParser(dtd_validation = True)
-    lxml.etree.parse(path, dtd_parser)
-
 def setup_header(xml_content, dtd):
     """ Add to an XML file the creation time and the Document Type Definition.
 
