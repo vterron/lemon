@@ -132,7 +132,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
             json.dump(data, fd, indent=2)
 
     @staticmethod
-    def xml_load(xml_path):
+    def load(path):
         """ Load a series of CandidateAnnuli instances from an XML file.
 
         This method reverses the functionality of xml_dump(), reading an XML
@@ -152,26 +152,18 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
 
         """
 
-        with open(xml_path, 'r') as _: pass
-        root = lxml.etree.parse(xml_path).getroot()
+        with open(path, 'rt') as fd:
+            data = json.load(fd)
 
-        # For each passband, the optimal aperture and sky annuli are stored as
-        # attributes of the <band> entity, so that the optimal parameters for
-        # aperture photometry can be quickly identified in the XML file. When
-        # the candidate annuli are de-serialized, however, these attributes can
-        # be ignored, as the best parameters are also listed as <candidate>
-        # entities for each photometric passband.
+        # Convert the dictionaries back to namedtuples, and then sort them by
+        # their standard deviation, in increasing order.
+        for values in data.itervalues():
+            for index in xrange(len(values)):
+                values[index] = CandidateAnnuli(**values[index])
+            values.sort(key=operator.attrgetter('stdev'))
 
-        annuli = collections.defaultdict(list)
-        for band in root:
-            pfilter = passband.Passband(band.get('name'))
-            attrs = 'aperture', 'annulus', 'dannulus', 'stdev'
-            for candidate in band:
-                cand = CandidateAnnuli(*[float(candidate.get(x)) for x in attrs])
-                annuli[pfilter].append(cand)
+        # Use Passband objects as keys
+        for pfilter in data.iterkeys():
+            data[passband.Passband(pfilter)] = data.pop(pfilter)
 
-        # Sort the CandidateAnnuli for each filter by their standard deviation
-        for candidates in annuli.itervalues():
-            candidates.sort(key = operator.attrgetter('stdev'))
-
-        return annuli
+        return data
