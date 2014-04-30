@@ -105,13 +105,6 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     "]>",
     ""]
 
-
-    def __eq__(self, other):
-        return self.aperture == other.aperture and \
-               self.annulus == other.annulus and \
-               self.dannulus == other.dannulus and \
-               self.stdev == other.stdev
-
     def __ne__(self, other):
         return not self == other
 
