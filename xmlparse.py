@@ -104,8 +104,8 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     "]>",
     ""]
 
-    @classmethod
-    def dump(cls, annuli, path):
+    @staticmethod
+    def dump(annuli, path):
         """ Save a series of CadidateAnnuli objects to a JSON file.
 
         Serialize 'annuli' to a JSON file. It must be a dictionary which maps
