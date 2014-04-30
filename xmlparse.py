@@ -73,13 +73,15 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
         for values in data.itervalues():
             for index in xrange(len(values)):
                 values[index] = values[index]._asdict()
+            values.sort(key=operator.itemgetter('stdev'))
 
         # Use strings, not Passband objects, as keys
         for pfilter in data.iterkeys():
             data[str(pfilter)] = data.pop(pfilter)
 
         with open(path, 'wt') as fd:
-            json.dump(data, fd, indent=2)
+            kwargs = dict(indent=2, sort_keys=True)
+            json.dump(data, fd, **kwargs)
 
     @classmethod
     def load(cls, path):
