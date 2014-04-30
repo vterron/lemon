@@ -59,20 +59,17 @@ def setup_header(xml_content, dtd):
 typename = 'CandidateAnnuli'
 field_names = "aperture, annulus, dannulus, stdev"
 class CandidateAnnuli(collections.namedtuple(typename, field_names)):
-    """ Encapsulates the quality of a set of photometric parameters.
+    """ Encapsulate the quality of a set of photometric parameters.
 
-    How do we determine how 'good' a set of aperture, annulus and dannulus
-    values are for photometry? What we do is to look at the median (or even the
-    arithmetic mean, for this matter both approaches are statistically sound)
-    standard deviation of the light curves of the most constant stars. It
-    follows that the better (i.e., most appropiate for the images being
-    reduced) the parameters, the lower this standard deviation will be.
+    How do we determine how good a set of parameters for aperture photometry
+    is? In order to compare them, we need to identify the most constant stars
+    (or, by extension, any other astronomical object) in the field and compute
+    their light curves. The better the aperture, annulus and dannulus that we
+    use are, the lower the standard deviation of the resulting curves.
 
-    This class simply encapsulates these four values. You may think of it as a
-    surjective function (as two different sets of parameters may result in the
-    same values) which links a three-element tuple with the parameters used for
-    photometry (aperture, annulus, dannulus) to the standard deviation of the
-    light curves of the most constant stars.
+    This class simply encapsulates these four values, mapping the parameters
+    for aperture photometry (aperture, annulus and dannulus) to the standard
+    deviation of the light curves of the most constant astronomical objects.
 
     Fields:
     aperture - the aperture radius, in pixels.
