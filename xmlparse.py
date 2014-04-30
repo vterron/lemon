@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import collections
+import copy
+import json
 import lxml.etree
 import operator
 
@@ -103,7 +105,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     ""]
 
     @classmethod
-    def xml_dump(cls, xml_path, annuli, encoding = 'utf-8'):
+    def dump(cls, annuli, path):
         """ Save multiple CadidateAnnuli instances to an XML file.
 
         This method dumps to a file the XML representation of a dictionary
@@ -126,60 +128,20 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
 
         """
 
-        root = lxml.etree.Element('annuli')
+        # Being a subclass of tuple, JSON serializes namedtuples as lists. We
+        # need to convert them to ordered dictionaries (namedtuple._asdict())
+        # first, so that the field names are not lost in the serialization.
+        data = copy.deepcopy(annuli)
+        for values in data.itervalues():
+            for index in xrange(len(values)):
+                values[index] = values[index]._asdict()
 
-        for pfilter in sorted(annuli.iterkeys()):
+        # Use strings, not Passband objects, as keys
+        for pfilter in data.iterkeys():
+            data[str(pfilter)] = data.pop(pfilter)
 
-            # Identify the candidate parameters for which the standard
-            # deviation of the curves of the most constant stars is minimal.
-            best = min(annuli[pfilter], key = operator.attrgetter('stdev'))
-
-            # Three attributes (i.e., values within the start-tag) identify the
-            # optimal photometric parameters for this photometric filters. In
-            # this manner, the aperture and sky annuli that are more adequate
-            # for aperture photometry can be easily identified in the XML file.
-            # The median or arithmetic mean of the standard deviation of the
-            # light curves of the constant stars when photometry was done in
-            # order to evaluate these parameters is also stored for debugging
-            # purposes.
-
-            kwargs = {'name' : str(pfilter),
-                      'aperture' : '%.5f' % best.aperture,
-                      'annulus' : '%.5f' % best.annulus,
-                      'dannulus' : '%.5f' % best.dannulus,
-                      'stdev' : '%.8f' % best.stdev}
-            band_element = lxml.etree.Element('band', **kwargs)
-
-            # Although most of the time only the optimal photometric parameters
-            # will be of interest, it is also worth saving all the aperture and
-            # sky annuli that were evaluated and the median or mean stardard
-            # deviation that resulted from using them. Note that the optimal
-            # parameters are included here again, as the purpose of this
-            # listing is to provide a compendium of all the photometric
-            # parameters that were taken into consideration. The photometric
-            # parameters will be listed sorted on two keys: the aperture
-            # annulus itself (primary) and the sky annulus (secondary).
-
-            annuli[pfilter].sort(key = operator.attrgetter('annulus', 'aperture'))
-            for candidate in annuli[pfilter]:
-                kwargs = {'aperture' : '%.5f' % candidate.aperture,
-                          'annulus' : '%.5f' % candidate.annulus,
-                          'dannulus' : '%.5f' % candidate.dannulus,
-                          'stdev' : '%.8f' % candidate.stdev}
-                cand_element = lxml.etree.Element('candidate', **kwargs)
-                band_element.append(cand_element)
-
-            root.append(band_element)
-
-        kwargs = {'encoding' : encoding, 'xml_declaration': True,
-                  'pretty_print' : True, 'standalone' : True}
-        xml_content = lxml.etree.tostring(root, **kwargs)
-        xml_content = setup_header(xml_content, cls.XML_DTD)
-
-        with open(xml_path, 'wt') as fd:
-            fd.write(xml_content)
-        validate_dtd(xml_path)
-
+        with open(path, 'wt') as fd:
+            json.dump(data, fd, indent=2)
 
     @staticmethod
     def xml_load(xml_path):
