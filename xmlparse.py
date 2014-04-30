@@ -84,26 +84,6 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
 
     """
 
-    XML_DTD = [
-    "",
-    "<!DOCTYPE annuli [",
-    "<!ELEMENT annuli (band*)>",
-    "",
-    "<!ELEMENT band (candidate*)>",
-    "<!ATTLIST band name     CDATA #REQUIRED>",
-    "<!ATTLIST band aperture CDATA #REQUIRED>",
-    "<!ATTLIST band annulus  CDATA #REQUIRED>",
-    "<!ATTLIST band dannulus CDATA #REQUIRED>",
-    "<!ATTLIST band stdev    CDATA #REQUIRED>",
-    "",
-    "<!ELEMENT candidate EMPTY>",
-    "<!ATTLIST candidate aperture CDATA #REQUIRED>",
-    "<!ATTLIST candidate annulus  CDATA #REQUIRED>",
-    "<!ATTLIST candidate dannulus CDATA #REQUIRED>",
-    "<!ATTLIST candidate stdev    CDATA #REQUIRED>",
-    "]>",
-    ""]
-
     @staticmethod
     def dump(annuli, path):
         """ Save a series of CadidateAnnuli objects to a JSON file.
