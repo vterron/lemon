@@ -105,11 +105,6 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     "]>",
     ""]
 
-    def __repr__(self):
-        """ The unambiguous string representation of a CandidateAnnuli """
-        return "%s(%r, %r, %r, %r)" % (self.__class__.__name__, self.aperture,
-                                       self.annulus, self.dannulus, self.stdev)
-
     @classmethod
     def xml_dump(cls, xml_path, annuli, encoding = 'utf-8'):
         """ Save multiple CadidateAnnuli instances to an XML file.
