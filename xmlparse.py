@@ -106,25 +106,13 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
 
     @classmethod
     def dump(cls, annuli, path):
-        """ Save multiple CadidateAnnuli instances to an XML file.
+        """ Save a series of CadidateAnnuli objects to a JSON file.
 
-        This method dumps to a file the XML representation of a dictionary
-        which maps each photometric filter to a list of the CandidateInstances
-        that for it were evaluated. This offers a functionality similar to that
-        of the pickle module, with the additional advantages of being
-        human-readable, easily understood and parseable virtually everywhere.
-
-        The generated XML file is a standalone document, which means that the
-        Document Type Definitions (DTD), defining the document structure with a
-        list of legal elements, is also included. This information is used by
-        the XML processor in order to validate the code.
-
-        xml_path - the path to which to save the XML file. Any existing file
-                   will be mercilessly overwritten without warning.
-        annuli - a dictionary mapping each photometric filter to a list of
-                 CandidateInstances, encapsulating the quality of a set of
-                 photometric parameters.
-        encoding - the character encoding system to use.
+        Serialize 'annuli' to a JSON file. It must be a dictionary which maps
+        each photometric filter (a Passband object) to a sequence of the
+        corresponding CandidateAnnuli objects -- i.e., the different aperture
+        photometric parameters that were evaluated for that filter. The output
+        file will be mercilessly overwritten if it already exists.
 
         """
 
