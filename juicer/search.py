@@ -23,6 +23,7 @@ from __future__ import division
 
 import functools
 import gtk
+import json
 import lxml.etree
 import operator
 import re
@@ -161,32 +162,20 @@ class AmplitudesSearchPage(object):
         self.label = 'Amplitudes %s' % methods.int_to_roman(order)
         return self.label
 
-    def toxml(self, encoding = 'utf-8'):
-        """ Return the XML representation of the object.
+    def dump(self, path):
+        """ Write JSON serialization to a file, overwrite if it exists """
 
-        The method returns a string with the standalone XML representation of
-        the AmplitudesSearchPage object. It includes both the XML header and
-        the Document Type Definition (DTD).
+        data = dict(database_id = self.id,
+                    include_ratios = self.include_ratios,
+                    description = self.description.get_label(),
+                    field = self.field_name,
+                    stars = [])
 
-        """
-
-        kwargs = dict(include_ratios = str(self.include_ratios).lower(),
-                      database_id = self.id)
-        root = lxml.etree.Element('AmplitudesSearchResult', **kwargs)
-
-        description_element = lxml.etree.Element('description')
-        description_element.text = self.description.get_label()
-        root.append(description_element)
-
-        field_element = lxml.etree.Element('field')
-        field_element.text = self.field_name
-        root.append(field_element)
-
+        filters_order = {}
+        # Map each photometric filter to its order
         for index, pfilter in enumerate(self.pfilters):
-            kwargs = dict(order = str(index))
-            pfilter_element = lxml.etree.Element('filter', **kwargs)
-            pfilter_element.text = str(pfilter)
-            root.append(pfilter_element)
+            filters_order[str(pfilter)] = index
+        data['filters_order'] = filters_order
 
         for row in self.store:
 
@@ -194,8 +183,7 @@ class AmplitudesSearchPage(object):
             row = list(row)
 
             id_ = row[0]
-            kwargs = dict(id = str(id_))
-            star_element = lxml.etree.Element('star', **kwargs)
+            star_data = dict(id = id_, amplitudes = [])
 
             # When the ratios (between each amplitude and its comparison
             # standard deviation) are not included, the columns in the
@@ -217,20 +205,18 @@ class AmplitudesSearchPage(object):
 
             args = self.pfilters, amplitudes, ratios
             for pfilter, amplitude, ratio in zip(*args):
-                kwargs = dict(filter = str(pfilter))
+                record = dict(filter = str(pfilter),
+                              value = amplitude)
                 if self.include_ratios:
-                    kwargs['ratio'] = str(ratio)
+                    record['ratio'] = ratio
 
-                pfilter_element = lxml.etree.Element('amplitude', **kwargs)
-                pfilter_element.text = str(amplitude)
-                star_element.append(pfilter_element)
+                star_data['amplitudes'].append(record)
 
-            root.append(star_element)
+            data['stars'].append(star_data)
 
-        kwargs = dict(encoding = encoding, xml_declaration = True,
-                      pretty_print = True, standalone = True)
-        xml_content = lxml.etree.tostring(root, **kwargs)
-        return xmlparse.setup_header(xml_content, self.XML_DTD)
+        with open(path, 'wt') as fd:
+            kwargs = dict(indent=2, sort_keys=True)
+            json.dump(data, fd, **kwargs)
 
     def xml_dump(self, path, encoding = 'utf-8'):
         """ Write the XML representation of the object to a file.
