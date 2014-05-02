@@ -45,27 +45,6 @@ class AmplitudesSearchPage(object):
 
     """
 
-    XML_DTD = [
-    "",
-    "<!DOCTYPE AmplitudesSearchResult [",
-    "<!ELEMENT AmplitudesSearchResult (description, field, filter+, star+)>",
-    "<!ATTLIST AmplitudesSearchResult include_ratios CDATA  #REQUIRED>",
-    "<!ATTLIST AmplitudesSearchResult database_id CDATA  #REQUIRED>",
-    "",
-    "<!ELEMENT description (#PCDATA)>",
-    "<!ELEMENT field (#PCDATA)>",
-    "",
-    "<!ELEMENT filter (#PCDATA)>",
-    "<!ATTLIST filter order CDATA  #REQUIRED>",
-    "",
-    "<!ELEMENT star (amplitude+)>",
-    "<!ATTLIST star id CDATA  #REQUIRED>",
-    "<!ELEMENT amplitude (#PCDATA)>",
-    "<!ATTLIST amplitude filter CDATA  #REQUIRED>",
-    "<!ATTLIST amplitude ratio CDATA  #IMPLIED>",
-    "]>",
-    ""]
-
     def __init__(self, pfilters, include_ratios, description, id_, field_name):
         """ Instantiation method for the AmplitudesSearchPage class.
 
