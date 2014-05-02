@@ -219,11 +219,11 @@ class AmplitudesSearchPage(object):
             json.dump(data, fd, **kwargs)
 
     def export_to_file(self, widget):
-        """ Let the user choose where the object is saved to an XML file.
+        """ Let the user choose where the object is saved to a JSON file.
 
         Prompt a gtk.FileChooserDialog to let the user browse for the location
-        where the XML file with the representation of the AmplitudesSearchPage
-        will be saved, and write the file to disk (see 'xml_dump' method) only
+        where the JSON file with the serialization of the AmplitudesSearchPage
+        will be saved, and write the file to disk (see the dump() method) only
         if 'Save' is clicked. The dialog suggests a filename based on the name
         of the observed field and the title of the search, but only if the
         'get_label' method has been called at least once.
@@ -242,9 +242,9 @@ class AmplitudesSearchPage(object):
 
             # If AmplitudesSearchPage.get_label has been called, use the label
             # that it returned, and the name of the observed field, to suggest
-            # a filename for the XML file. Except for the Roman numerals, it is
-            # in lower case (e.g., "ngc2264_amplitudes_IV.xml" is suggested for
-            # "NGC2264" and "Amplitudes IV"). Do not suggest anything if
+            # a filename for the JSON file. Except for the Roman numerals, it
+            # is in lower case (e.g., "ngc2264_amplitudes_IV.json" is suggested
+            # for "NGC2264" and "Amplitudes IV"). Do not suggest anything if
             # get_label has not been called.
 
             try:
@@ -254,14 +254,14 @@ class AmplitudesSearchPage(object):
                 # 'IC 5146' to 'ic_5146'
                 field = re.sub(r'\s', '_', self.field_name.lower())
                 args = field, title
-                filename = '%s_%s.xml' % args
+                filename = '%s_%s.json' % args
                 chooser.set_current_name(filename)
             except AttributeError:
                 pass
 
             response = chooser.run()
             if response == gtk.RESPONSE_OK:
-                self.xml_dump(chooser.get_filename())
+                self.dump(chooser.get_filename())
 
     @classmethod
     def xml_load(cls, path):
