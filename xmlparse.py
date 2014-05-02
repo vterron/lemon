@@ -55,21 +55,30 @@ def setup_header(xml_content, dtd):
     lines = lines[:2] + dtd + lines[2:]
     return '\n'.join(lines)
 
-class CandidateAnnuli(object):
-    """ Encapsulates the quality of a set of photometric parameters.
 
-    How do we determine how 'good' a set of aperture, annulus and dannulus
-    values are for photometry? What we do is to look at the median (or even the
-    arithmetic mean, for this matter both approaches are statistically sound)
-    standard deviation of the light curves of the most constant stars. It
-    follows that the better (i.e., most appropiate for the images being
-    reduced) the parameters, the lower this standard deviation will be.
+typename = 'CandidateAnnuli'
+field_names = "aperture, annulus, dannulus, stdev"
+class CandidateAnnuli(collections.namedtuple(typename, field_names)):
+    """ Encapsulate the quality of a set of photometric parameters.
 
-    This class simply encapsulates these four values. You may think of it as a
-    surjective function (as two different sets of parameters may result in the
-    same values) which links a three-element tuple with the parameters used for
-    photometry (aperture, annulus, dannulus) to the standard deviation of the
-    light curves of the most constant stars.
+    How do we determine how good a set of parameters for aperture photometry
+    is? In order to compare them, we need to identify the most constant stars
+    (or, by extension, any other astronomical object) in the field and compute
+    their light curves. The better the aperture, annulus and dannulus that we
+    use are, the lower the standard deviation of the resulting curves.
+
+    This class simply encapsulates these four values, mapping the parameters
+    for aperture photometry (aperture, annulus and dannulus) to the standard
+    deviation of the light curves of the most constant astronomical objects.
+
+    Fields:
+    aperture - the aperture radius, in pixels.
+    annulus - the inner radius of the sky annulus, in pixels.
+    dannulus - the width of the sky annulus, in pixels.
+    stdev - the median, arithmetic mean or a similar statistical measure of the
+            standard deviation of the light curves of the astronomical objects
+            when photometry is done using these aperture, annulus and dannulus
+            values.
 
     """
 
@@ -92,39 +101,6 @@ class CandidateAnnuli(object):
     "<!ATTLIST candidate stdev    CDATA #REQUIRED>",
     "]>",
     ""]
-
-
-    def __init__(self, aperture, annulus, dannulus, stdev):
-        """ Instantiation method.
-
-        aperture - the aperture radius, in pixels.
-        annulus - the inner radius of the sky annulus, in pixels.
-        dannulus - the width of the sky annulus, in pixels.
-        stdev - the median, arithmetic mean or a similar statistical measure
-                of the standard deviation of the light curves of the evaluated
-                stars when photometry is done using these aperture, annulus
-                and dannulus values.
-
-        """
-
-        self.aperture = aperture
-        self.annulus  = annulus
-        self.dannulus = dannulus
-        self.stdev    = stdev
-
-    def __eq__(self, other):
-        return self.aperture == other.aperture and \
-               self.annulus == other.annulus and \
-               self.dannulus == other.dannulus and \
-               self.stdev == other.stdev
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __repr__(self):
-        """ The unambiguous string representation of a CandidateAnnuli """
-        return "%s(%r, %r, %r, %r)" % (self.__class__.__name__, self.aperture,
-                                       self.annulus, self.dannulus, self.stdev)
 
     @classmethod
     def xml_dump(cls, xml_path, annuli, encoding = 'utf-8'):
