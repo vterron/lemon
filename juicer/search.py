@@ -218,20 +218,6 @@ class AmplitudesSearchPage(object):
             kwargs = dict(indent=2, sort_keys=True)
             json.dump(data, fd, **kwargs)
 
-    def xml_dump(self, path, encoding = 'utf-8'):
-        """ Write the XML representation of the object to a file.
-
-        Save the standalone XML representation of the AmplitudesSearchPage
-        object to disk, silently overwriting 'path' if it already exists. The
-        output file is then validated against its Document Type Definition,
-        raising the appropriate exception if an error is encountered.
-
-        """
-
-        with open(path, 'wt') as fd:
-            fd.write(self.toxml(encoding = encoding))
-        xmlparse.validate_dtd(path)
-
     def export_to_file(self, widget):
         """ Let the user choose where the object is saved to an XML file.
 
