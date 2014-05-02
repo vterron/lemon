@@ -23,7 +23,7 @@ from __future__ import division
 
 import functools
 import gtk
-import lxml.etree
+import json
 import operator
 import re
 
@@ -33,7 +33,6 @@ import methods
 import mining
 import passband
 import util
-import xmlparse
 
 class AmplitudesSearchPage(object):
     """ Encapsulates a gtk.HBox with (1) a description of the search for stars
@@ -43,27 +42,6 @@ class AmplitudesSearchPage(object):
     the main gtk.GtkNotebook of the LEMONJuicerGUI class.
 
     """
-
-    XML_DTD = [
-    "",
-    "<!DOCTYPE AmplitudesSearchResult [",
-    "<!ELEMENT AmplitudesSearchResult (description, field, filter+, star+)>",
-    "<!ATTLIST AmplitudesSearchResult include_ratios CDATA  #REQUIRED>",
-    "<!ATTLIST AmplitudesSearchResult database_id CDATA  #REQUIRED>",
-    "",
-    "<!ELEMENT description (#PCDATA)>",
-    "<!ELEMENT field (#PCDATA)>",
-    "",
-    "<!ELEMENT filter (#PCDATA)>",
-    "<!ATTLIST filter order CDATA  #REQUIRED>",
-    "",
-    "<!ELEMENT star (amplitude+)>",
-    "<!ATTLIST star id CDATA  #REQUIRED>",
-    "<!ELEMENT amplitude (#PCDATA)>",
-    "<!ATTLIST amplitude filter CDATA  #REQUIRED>",
-    "<!ATTLIST amplitude ratio CDATA  #IMPLIED>",
-    "]>",
-    ""]
 
     def __init__(self, pfilters, include_ratios, description, id_, field_name):
         """ Instantiation method for the AmplitudesSearchPage class.
@@ -77,7 +55,7 @@ class AmplitudesSearchPage(object):
         parameters used in the search, is set to 'description'.
 
         The 'id_' parameter is the unique identifier of the LEMONdB: when the
-        object is serialized it is written to the XML file to map the results
+        object is serialized it is written to the JSON file to map the results
         of the search to the database to which they correspond. It is necessary
         to avoid, when we are working with a LEMONdB, loading search results
         for a different one. Lastly, 'field_name' is a string containing the
@@ -116,7 +94,7 @@ class AmplitudesSearchPage(object):
         self.id = id_
         self.field_name = field_name
 
-        # The button to export the search results to an XML file
+        # The button to export the search results to a JSON file
         save_button = self.builder.get_object('save-button')
         save_button.connect('clicked', self.export_to_file)
 
@@ -161,32 +139,20 @@ class AmplitudesSearchPage(object):
         self.label = 'Amplitudes %s' % methods.int_to_roman(order)
         return self.label
 
-    def toxml(self, encoding = 'utf-8'):
-        """ Return the XML representation of the object.
+    def dump(self, path):
+        """ Write JSON serialization to a file, overwrite if it exists """
 
-        The method returns a string with the standalone XML representation of
-        the AmplitudesSearchPage object. It includes both the XML header and
-        the Document Type Definition (DTD).
+        data = dict(database_id = self.id,
+                    include_ratios = self.include_ratios,
+                    description = self.description.get_label(),
+                    field = self.field_name,
+                    stars = [])
 
-        """
-
-        kwargs = dict(include_ratios = str(self.include_ratios).lower(),
-                      database_id = self.id)
-        root = lxml.etree.Element('AmplitudesSearchResult', **kwargs)
-
-        description_element = lxml.etree.Element('description')
-        description_element.text = self.description.get_label()
-        root.append(description_element)
-
-        field_element = lxml.etree.Element('field')
-        field_element.text = self.field_name
-        root.append(field_element)
-
+        filters_order = {}
+        # Map each photometric filter to its order
         for index, pfilter in enumerate(self.pfilters):
-            kwargs = dict(order = str(index))
-            pfilter_element = lxml.etree.Element('filter', **kwargs)
-            pfilter_element.text = str(pfilter)
-            root.append(pfilter_element)
+            filters_order[str(pfilter)] = index
+        data['filters_order'] = filters_order
 
         for row in self.store:
 
@@ -194,8 +160,7 @@ class AmplitudesSearchPage(object):
             row = list(row)
 
             id_ = row[0]
-            kwargs = dict(id = str(id_))
-            star_element = lxml.etree.Element('star', **kwargs)
+            star_data = dict(id = id_, amplitudes = [])
 
             # When the ratios (between each amplitude and its comparison
             # standard deviation) are not included, the columns in the
@@ -217,41 +182,25 @@ class AmplitudesSearchPage(object):
 
             args = self.pfilters, amplitudes, ratios
             for pfilter, amplitude, ratio in zip(*args):
-                kwargs = dict(filter = str(pfilter))
+                record = dict(filter = str(pfilter),
+                              value = amplitude)
                 if self.include_ratios:
-                    kwargs['ratio'] = str(ratio)
+                    record['ratio'] = ratio
 
-                pfilter_element = lxml.etree.Element('amplitude', **kwargs)
-                pfilter_element.text = str(amplitude)
-                star_element.append(pfilter_element)
+                star_data['amplitudes'].append(record)
 
-            root.append(star_element)
-
-        kwargs = dict(encoding = encoding, xml_declaration = True,
-                      pretty_print = True, standalone = True)
-        xml_content = lxml.etree.tostring(root, **kwargs)
-        return xmlparse.setup_header(xml_content, self.XML_DTD)
-
-    def xml_dump(self, path, encoding = 'utf-8'):
-        """ Write the XML representation of the object to a file.
-
-        Save the standalone XML representation of the AmplitudesSearchPage
-        object to disk, silently overwriting 'path' if it already exists. The
-        output file is then validated against its Document Type Definition,
-        raising the appropriate exception if an error is encountered.
-
-        """
+            data['stars'].append(star_data)
 
         with open(path, 'wt') as fd:
-            fd.write(self.toxml(encoding = encoding))
-        xmlparse.validate_dtd(path)
+            kwargs = dict(indent=2, sort_keys=True)
+            json.dump(data, fd, **kwargs)
 
     def export_to_file(self, widget):
-        """ Let the user choose where the object is saved to an XML file.
+        """ Let the user choose where the object is saved to a JSON file.
 
         Prompt a gtk.FileChooserDialog to let the user browse for the location
-        where the XML file with the representation of the AmplitudesSearchPage
-        will be saved, and write the file to disk (see 'xml_dump' method) only
+        where the JSON file with the serialization of the AmplitudesSearchPage
+        will be saved, and write the file to disk (see the dump() method) only
         if 'Save' is clicked. The dialog suggests a filename based on the name
         of the observed field and the title of the search, but only if the
         'get_label' method has been called at least once.
@@ -270,9 +219,9 @@ class AmplitudesSearchPage(object):
 
             # If AmplitudesSearchPage.get_label has been called, use the label
             # that it returned, and the name of the observed field, to suggest
-            # a filename for the XML file. Except for the Roman numerals, it is
-            # in lower case (e.g., "ngc2264_amplitudes_IV.xml" is suggested for
-            # "NGC2264" and "Amplitudes IV"). Do not suggest anything if
+            # a filename for the JSON file. Except for the Roman numerals, it
+            # is in lower case (e.g., "ngc2264_amplitudes_IV.json" is suggested
+            # for "NGC2264" and "Amplitudes IV"). Do not suggest anything if
             # get_label has not been called.
 
             try:
@@ -282,66 +231,51 @@ class AmplitudesSearchPage(object):
                 # 'IC 5146' to 'ic_5146'
                 field = re.sub(r'\s', '_', self.field_name.lower())
                 args = field, title
-                filename = '%s_%s.xml' % args
+                filename = '%s_%s.json' % args
                 chooser.set_current_name(filename)
             except AttributeError:
                 pass
 
             response = chooser.run()
             if response == gtk.RESPONSE_OK:
-                self.xml_dump(chooser.get_filename())
+                self.dump(chooser.get_filename())
 
     @classmethod
-    def xml_load(cls, path):
-        """ Load an AmplitudesSearchPage object from an XML file.
+    def load(cls, path):
+        """ Deserialize a AmplitudesSearchPage object from a JSON file.
 
-        The opposite of toxml, this class method parses 'path', de-serializing
-        the XML representation of an AmplitudesSearchPage object and returning
-        it. The XML files generated by LEMON are always standalone documents,
-        meaning that the Document Type Definitions (DTD), defining the document
-        structure with a list of legal elements, are also included. If the XML
-        file cannot be validated, the appropriate exception will be raised.
+        The opposite of dump(), this method parses a JSON file and returns the
+        AmplitudesSearchPage object that was previously serialized to it.
 
         """
 
-        # Raise a Python built-in exception if the file cannot be read; these
-        # are more understandable than those that lxml would throw, with error
-        # messages such as "failed to load external entity".
-        with open(path, 'r') as _: pass
-        root = lxml.etree.parse(path).getroot()
+        with open(path, 'rt') as fd:
+            data = json.load(fd)
 
-        elements = list(root.iterchildren(tag = 'description'))
-        assert len(elements) == 1
-        description = elements[0].text
-
-        elements = list(root.iterchildren(tag = 'field'))
-        assert len(elements) == 1
-        field_name = elements[0].text
-
-        # Encapsulate the photometric filters as Passband instances,
-        # and sort them by the value of their 'order' XML attribute.
-        filter_elements = root.iterchildren(tag = 'filter')
-        orders = dict((e.text, e.get('order')) for e in filter_elements)
+        # Encapsulate the photometric filters as Passband objects, then sort
+        # them according to the dictionary that maps them to column indexes.
+        orders = data['filters_order']
         pfilters = [passband.Passband(k) for k in orders.iterkeys()]
         pfilters.sort(key = lambda x: orders[str(x)])
 
-        id_ = root.get('database_id')
-        include_ratios = root.get('include_ratios').title() == str(True)
+        include_ratios = data['include_ratios']
+        description = data['description']
+        id_ = data['database_id']
+        field_name = data['field']
+
         result = cls(pfilters, include_ratios, description, id_, field_name)
 
-        for star_element in root.iterchildren(tag = 'star'):
-            star_id = int(star_element.get('id'))
-
-            # The order of the amplitudes must match that of the filters
-            elements = list(star_element.iterchildren(tag = 'amplitude'))
-            elements.sort(key = lambda x: orders[x.get('filter')])
+        for star_data in data['stars']:
+            star_id = star_data['id']
 
             amplitudes = []
             ratios = []
 
-            for e in elements:
-                amplitudes.append(float(e.text))
-                ratio = float(e.get('ratio')) if include_ratios else None
+            # The order of the amplitudes must match that of the filters
+            kwargs = dict(key = lambda x: orders[str(x['filter'])])
+            for record in sorted(star_data['amplitudes'], **kwargs):
+                amplitudes.append(record['value'])
+                ratio = record['ratio'] if include_ratios else None
                 ratios.append(ratio)
 
             result.add(star_id, amplitudes, ratios = ratios)
