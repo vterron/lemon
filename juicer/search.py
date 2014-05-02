@@ -24,7 +24,6 @@ from __future__ import division
 import functools
 import gtk
 import json
-import lxml.etree
 import operator
 import re
 
@@ -34,7 +33,6 @@ import methods
 import mining
 import passband
 import util
-import xmlparse
 
 class AmplitudesSearchPage(object):
     """ Encapsulates a gtk.HBox with (1) a description of the search for stars
