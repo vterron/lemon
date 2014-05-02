@@ -66,11 +66,11 @@ import customparser
 import diffphot
 import fitsimage
 import keywords
+import json_parse
 import methods
 import mining
 import photometry
 import subprocess
-import xmlparse
 
 class NotEnoughImages(ValueError):
     pass
@@ -477,7 +477,7 @@ def main(arguments = None):
     # attention from now on, have been identified. So far, so good. Now we
     # generate the light curves of these objects for each candidate set of
     # photometric parameters. We store the evaluated values in a dictionary in
-    # which each filter maps to a list of xmlparse.CandidateAnnuli instances.
+    # which each filter maps to a list of json_parse.CandidateAnnuli objects.
 
     evaluated_annuli = collections.defaultdict(list)
 
@@ -610,7 +610,7 @@ def main(arguments = None):
             # 'cstars' contains two-element tuples: (ID, stdev)
             stdevs_median = numpy.median([x[1] for x in cstars])
             params = (aperture, annulus, dannulus, stdevs_median)
-            candidate = xmlparse.CandidateAnnuli(*params)
+            candidate = json_parse.CandidateAnnuli(*params)
             evaluated_annuli[pfilter].append(candidate)
 
             msg = "%sAperture = %.3f, median stdev (%d stars) = %.4f"
@@ -634,7 +634,7 @@ def main(arguments = None):
     print style.prefix
     msg = "%sSaving the evaluated apertures to the '%s' XML file ..."
     print msg % (style.prefix, output_xml_path) ,
-    xmlparse.CandidateAnnuli.xml_dump(output_xml_path, evaluated_annuli)
+    json_parse.CandidateAnnuli.xml_dump(output_xml_path, evaluated_annuli)
     print ' done.'
 
     print "%sYou're done ^_^" % style.prefix

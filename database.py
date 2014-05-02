@@ -40,9 +40,9 @@ import sqlite3
 import tempfile
 
 # LEMON modules
+import json_parse
 import methods
 import passband
-import xmlparse
 
 class DBStar(object):
     """ Encapsulates the instrumental photometric information for a star.
@@ -635,14 +635,14 @@ class LEMONdB(object):
     def add_candidate_pparams(self, candidate_annuli, pfilter):
         """ Store a CandidateAnnuli instance into the LEMONdB.
 
-        The method links an xmlparse.CandidateAnnuli instance to a photometric
-        filter, adding a new record to the CANDIDATE_PARAMETERS table. This
-        allows us to store in the LEMONdB the photometric parameters what were
-        evaluated for each photometric filter, and how good they were (the
-        lower the standard deviation, the better). Please refer to the docs of
-        the xmlparse.CandidateAnnuli class and the annuli module for further
-        information on how the optimal parameters for aperture photometry are
-        identified.
+        The method links an json_parse.CandidateAnnuli instance to a
+        photometric filter, adding a new record to the CANDIDATE_PARAMETERS
+        table. This allows us to store in the LEMONdB the photometric
+        parameters what were evaluated for each photometric filter, and how
+        good they were (the lower the standard deviation, the better). Please
+        refer to the documentation of the json_parse.CandidateAnnuli class and
+        the annuli module for further information on how the optimal parameters
+        for aperture photometry are identified.
 
         Adding, for the same filter, a CandidateAnnuli with the same aperture,
         annulus and dannulus (sky annulus) that a previously added object, but
@@ -680,7 +680,7 @@ class LEMONdB(object):
                       "ON c.pparams_id = p.id "
                       "WHERE c.filter_id = ? "
                       "ORDER BY c.stdev ASC", t)
-        return [xmlparse.CandidateAnnuli(*args) for args in self._rows]
+        return [json_parse.CandidateAnnuli(*args) for args in self._rows]
 
     def _get_simage_id(self):
         """ Return the ID of the image on which sources were detected.

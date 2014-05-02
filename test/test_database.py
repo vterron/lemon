@@ -49,7 +49,7 @@ from database import \
    UnknownStarError)
 
 from diffphot import Weights
-from xmlparse import CandidateAnnuli
+from json_parse import CandidateAnnuli
 import test.test_fitsimage
 
 NITERS = 100      # How many times each test case is run with random data
@@ -912,8 +912,8 @@ class LEMONdBTest(unittest.TestCase):
     OBSERVED_PROB = 0.50  # Probability of a star being observed in each image,
                           # needed some test cases which use random sets of data
 
-    # Minimum and maximum number of random xmlparse.CandidateAnnuli objects to
-    # be added and retrieved from random databases in the test cases of the
+    # Minimum and maximum number of random json_parse.CandidateAnnuli objects
+    # to be added and retrieved from random databases in the test cases of the
     # LEMONdB.add_candidate_pparams and get_candidate_pparams methods.
     MIN_CANDIDATE_PPARAMS = 1
     MAX_CANDIDATE_PPARAMS = 128
