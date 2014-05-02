@@ -55,7 +55,7 @@ class AmplitudesSearchPage(object):
         parameters used in the search, is set to 'description'.
 
         The 'id_' parameter is the unique identifier of the LEMONdB: when the
-        object is serialized it is written to the XML file to map the results
+        object is serialized it is written to the JSON file to map the results
         of the search to the database to which they correspond. It is necessary
         to avoid, when we are working with a LEMONdB, loading search results
         for a different one. Lastly, 'field_name' is a string containing the
@@ -94,7 +94,7 @@ class AmplitudesSearchPage(object):
         self.id = id_
         self.field_name = field_name
 
-        # The button to export the search results to an XML file
+        # The button to export the search results to a JSON file
         save_button = self.builder.get_object('save-button')
         save_button.connect('clicked', self.export_to_file)
 
