@@ -40,7 +40,7 @@ LEMON stands on the shoulders of many giants, using excellent, robust programs d
 
 These are the steps to install LEMON on a clean Debian machine:
 
-1. ``apt-get install git python-dev python-pip libfreetype6-dev libpng-dev csh libx11-dev libxml2-dev libxslt-dev libblas-dev liblapack-dev gfortran``
+1. ``apt-get install git python-dev python-pip libfreetype6-dev libpng-dev csh libx11-dev libblas-dev liblapack-dev gfortran``
 #. ``apt-get install openmpi-dev`` # you may need this to compile Montage
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
