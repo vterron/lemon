@@ -83,7 +83,7 @@ parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_XML_FILE"
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output XML file if it already exists")
+                  help = "overwrite output JSON file if it already exists")
 
 parser.add_option(photometry.parser.get_option('--margin'))
 parser.add_option(photometry.parser.get_option('--gain'))
