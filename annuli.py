@@ -634,7 +634,7 @@ def main(arguments = None):
     print style.prefix
     msg = "%sSaving the evaluated apertures to the '%s' XML file ..."
     print msg % (style.prefix, output_xml_path) ,
-    json_parse.CandidateAnnuli.xml_dump(output_xml_path, evaluated_annuli)
+    json_parse.CandidateAnnuli.dump(evaluated_annuli, output_xml_path)
     print ' done.'
 
     print "%sYou're done ^_^" % style.prefix

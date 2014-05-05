@@ -550,7 +550,7 @@ def main(arguments = None):
             print style.error_exit_message
             return 1
         else:
-            xml_annuli = json_parse.CandidateAnnuli.xml_load(options.xml_annuli)
+            xml_annuli = json_parse.CandidateAnnuli.load(options.xml_annuli)
             print "%sPhotometric paramaters read from the '%s' file." % \
                   (style.prefix, os.path.basename(options.xml_annuli))
 
