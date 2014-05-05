@@ -289,14 +289,14 @@ def main(arguments = None):
 
     # Print the help and abort the execution if there are not two positional
     # arguments left after parsing the options, as the user must specify at
-    # least one (only one?) input FITS file and the output XML file.
+    # least one (only one?) input FITS file and the output JSON file.
     if len(args) < 2:
         parser.print_help()
         return 2     # 2 is generally used for command line syntax errors
     else:
         sources_img_path = args[0]
         input_paths = list(set(args[1:-1]))
-        output_xml_path = args[-1]
+        output_json_path = args[-1]
 
     # The execution of this module, especially when doing long-term monitoring
     # of reasonably crowded fields, may easily take several *days*. The least
@@ -304,10 +304,10 @@ def main(arguments = None):
     # of the waste of billions of valuable CPU cycles, is to avoid to have the
     # output file accidentally overwritten.
 
-    if os.path.exists(output_xml_path):
+    if os.path.exists(output_json_path):
         if not options.overwrite:
             msg = "%sError. The output file '%s' already exists."
-            print msg % (style.prefix, output_xml_path)
+            print msg % (style.prefix, output_json_path)
             print style.error_exit_message
             return 1
 
@@ -632,9 +632,9 @@ def main(arguments = None):
         print msg % args
 
     print style.prefix
-    msg = "%sSaving the evaluated apertures to the '%s' XML file ..."
-    print msg % (style.prefix, output_xml_path) ,
-    json_parse.CandidateAnnuli.dump(evaluated_annuli, output_xml_path)
+    msg = "%sSaving the evaluated apertures to the '%s' JSON file ..."
+    print msg % (style.prefix, output_json_path) ,
+    json_parse.CandidateAnnuli.dump(evaluated_annuli, output_json_path)
     print ' done.'
 
     print "%sYou're done ^_^" % style.prefix
