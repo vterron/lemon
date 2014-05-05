@@ -551,7 +551,7 @@ def main(arguments = None):
             return 1
         else:
             xml_annuli = json_parse.CandidateAnnuli.load(options.xml_annuli)
-            print "%sPhotometric paramaters read from the '%s' file." % \
+            print "%sPhotometric parameters read from the '%s' file." % \
                   (style.prefix, os.path.basename(options.xml_annuli))
 
     # Even if the annuli XML is used by the module, the aperture and sky annuli
