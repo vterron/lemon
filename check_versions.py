@@ -159,6 +159,3 @@ for module, version in [
       hook = RequireModuleVersionHook(module, version, get__version__)
       sys.meta_path.append(hook)
 
-lxml_hook = RequireModuleVersionHook('lxml', (3, 2, 3), get_lxml_version)
-sys.meta_path.append(lxml_hook)
-
