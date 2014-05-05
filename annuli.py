@@ -43,10 +43,9 @@ pixels. The inner radius of the sky annulus and its width, although also
 expressed in FWHMs, is the same for all the apertures. In future releases,
 it should be possible to evaluate different sky annuli too.
 
-The output of is a LEMON XML file which lists all the aperture radii that,
-for each photometric filter, were evaluated. This file can be passed to the
-'photometry' command with the --annuli option in order to use these optimal
-apertures.
+The output of is a JSON file which lists all the aperture radii that, for each
+photometric filter, were evaluated. This file can be passed to the 'photometry'
+command with the --annuli option in order to use these optimal apertures.
 
 """
 
