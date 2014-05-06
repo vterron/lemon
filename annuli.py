@@ -609,7 +609,9 @@ def main(arguments = None):
             # 'cstars' contains two-element tuples: (ID, stdev)
             stdevs_median = numpy.median([x[1] for x in cstars])
             params = (aperture, annulus, dannulus, stdevs_median)
-            candidate = json_parse.CandidateAnnuli(*params)
+            # NumPy floating-point data types are not JSON serializable
+            args = (float(x) for x in params)
+            candidate = json_parse.CandidateAnnuli(*args)
             evaluated_annuli[pfilter].append(candidate)
 
             msg = "%sAperture = %.3f, median stdev (%d stars) = %.4f"
