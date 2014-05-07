@@ -978,8 +978,10 @@ class LEMONdBTest(unittest.TestCase):
             # filter again, but using a different standard deviation. This
             # should replace the record we added previously, and for that
             # reason we need to update 'added' accordingly.
-            candidate.stdev = random.random()
-            added[pfilter][-1].stdev = candidate.stdev
+            candidate = candidate._replace(stdev = random.random())
+
+            kwargs = dict(stdev = candidate.stdev)
+            added[pfilter][-1] = added[pfilter][-1]._replace(**kwargs)
             db.add_candidate_pparams(candidate, pfilter)
 
             for pfilter, expected in added.iteritems():
