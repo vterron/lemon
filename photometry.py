@@ -79,7 +79,7 @@ DANNULUS_TOO_THIN_MSG = \
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = multiprocessing.Queue()
+queue = methods.Queue()
 
 class InputFITSFiles(collections.defaultdict):
     """ Map each photometric filter to a list of FITS files.
@@ -197,7 +197,7 @@ def parallel_photometry(args):
     the FITS image listed in options.coordinates, using the aperture, annulus
     and dannulus defined by the PhotometricParameters object. The result is
     another three-element tuple, which is put into the module-level 'queue'
-    multiprocessing.Queue object. This tuple contains (1) a database.Image
+    object, a process shared queue. This tuple contains (1) a database.Image
     object, (2) a database.PhotometricParameters object and (3) a qphot.QPhot
     object -- therefore mapping each FITS file and the parameters used for
     photometry to the measurements returned by qphot.
