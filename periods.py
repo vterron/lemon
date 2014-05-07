@@ -264,7 +264,7 @@ customparser.clear_metavars(parser)
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = multiprocessing.Queue()
+queue = methods.Queue()
 
 def parallel_periods(args):
     """ Method argument of map_async to compute periods in parallel.
