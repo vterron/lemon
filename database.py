@@ -466,7 +466,7 @@ class LEMONdB(object):
         # Map (1) a set of photometric parameters and (2) a photometric filter
         # to a standard deviation. This table is populated by the photometry
         # module when the --annuli option is used, storing here the contents
-        # of the XML file with all the candidate photometric parameters.
+        # of the JSON file with all the candidate photometric parameters.
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS candidate_parameters (
