@@ -64,12 +64,12 @@ import customparser
 import database
 import defaults
 import fitsimage
+import json_parse
 import keywords
 import methods
 import qphot
 import seeing
 import style
-import xmlparse
 
 # Message of the warning that is issued when the width of the sky annulus is
 # smaller than the number of pixels specified with the --min-sky option.
@@ -550,8 +550,7 @@ def main(arguments = None):
             print style.error_exit_message
             return 1
         else:
-            xml_annuli = \
-                xmlparse.CandidateAnnuli.xml_load(options.xml_annuli)
+            xml_annuli = json_parse.CandidateAnnuli.load(options.xml_annuli)
             print "%sPhotometric paramaters read from the '%s' file." % \
                   (style.prefix, os.path.basename(options.xml_annuli))
 
