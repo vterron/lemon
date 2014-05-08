@@ -75,7 +75,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
             values.sort(key=operator.itemgetter('stdev'))
 
         # Use strings, not Passband objects, as keys
-        for pfilter in data.iterkeys():
+        for pfilter in data.keys():
             data[str(pfilter)] = data.pop(pfilter)
 
         with open(path, 'wt') as fd:
@@ -106,7 +106,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
             values.sort(key=operator.attrgetter('stdev'))
 
         # Use Passband objects as keys
-        for pfilter in data.iterkeys():
+        for pfilter in data.keys():
             data[passband.Passband(pfilter)] = data.pop(pfilter)
 
         return data
