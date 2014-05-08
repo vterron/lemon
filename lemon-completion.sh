@@ -14,7 +14,7 @@
 shopt -s extglob
 
 FITS_EXTS="fit?(s)|FIT?(S)"
-XML_EXTS="xml|XML"
+JSON_EXTS="json|JSON"
 LEMONDB_EXTS="LEMONdB|lemondb"
 
 # Match the current word against the list given as argument
@@ -89,8 +89,8 @@ _lemon_annuli()
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
-	# Input FITS images / output XML file
-        _filedir @($FITS_EXTS|$XML_EXTS)
+	# Input FITS images / output JSON file
+        _filedir @($FITS_EXTS|$JSON_EXTS)
     fi
 }
 
@@ -106,7 +106,7 @@ _lemon_photometry()
 
     case $prev in
 	--annuli)
-	    _filedir @($XML_EXTS)
+	    _filedir @($JSON_EXTS)
 	    return 0
 	    ;;
 	--coordinates)
