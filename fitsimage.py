@@ -257,6 +257,33 @@ class FITSImage(object):
             # Update in-memory copy of the FITS header
             self._header = header
 
+        except ValueError, e:
+
+            # ValueError is raised if a HIERARCH keyword is used and the total
+            # length (keyword, equal sign string and value) is greater than 80
+            # characters. The default exception message is a bit cryptic ("The
+            # keyword {...} with its value is too long"), so add some more
+            # information to help the user understand what went wrong.
+
+            pattern = "The keyword .*? with its value is too long"
+            if re.match(pattern, str(e)):
+                assert len(keyword) > 8
+                msg = ("%s: keyword '%s' could not be updated (\"%s\"). Note "
+                       "that PyFITS does not support CONTINUE for HIERARCH. "
+                       "In other words: if your keyword has more than eight "
+                       "characters or contains spaces, the total length of "
+                       "the keyword with its value cannot be longer than %d "
+                       "characters.")
+                args = self.path, keyword, str(e), pyfits.Card.length
+                logging.warning(msg % args)
+                raise ValueError(msg % args)
+            else:
+                # Different ValueError, re-raise it
+                msg = "%s: keyword '%s' could not be updated (%s)"
+                args = self.path, keyword, e
+                logging.warning(msg % args)
+                raise
+
         except Exception, e:
             msg = "%s: keyword '%s' could not be updated (%s)"
             args = self.path, keyword, e
