@@ -226,6 +226,12 @@ class FITSImage(object):
         exist. Note that, although always upper-case inside the FITS file,
         keywords are here case-insensitive, for user's convenience.
 
+        Raises ValueError if a HIERARCH keyword (that is, a keyword longer than
+        eight characters or that contains spaces) and its value exceed eighty
+        characters. The reason for this limitation is that PyFITS does not
+        support CONTINUE for HIERARCH. If the value is too long, therefore,
+        make sure that the keyword does not need to be HIERARCH-ed.
+
         Keyword arguments:
         comment - the comment to be added to the keyword.
 
