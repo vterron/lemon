@@ -31,6 +31,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import traceback
 import time
 import warnings
 
@@ -618,3 +619,27 @@ class Queue(multiprocessing.queues.Queue):
     def empty(self):
         """ Reliable implementation of multiprocessing.Queue.empty() """
         return not self.qsize()
+
+def print_exception_traceback(func):
+    """ Decorator to print the stack trace of an exception.
+
+    This decorator catches any exception raised by the decorated function,
+    prints its information to the standard output (traceback.print_exc()) and
+    re-raises it. In particular, this may be used to decorate functions called
+    through the multiprocessing module, since exceptions in spawned child
+    processes do not print stack traces.
+
+    The idea for this decorator comes from Chuan Ji's blog:
+    http://seasonofcode.com/posts/python-multiprocessing-and-exceptions.html
+
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            traceback.print_exc()
+            print
+            raise
+    return wrapper
