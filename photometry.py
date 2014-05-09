@@ -183,6 +183,7 @@ def get_fwhm(img, options):
         logging.debug(msg % args)
         return fwhm
 
+@methods.print_exception_traceback
 def parallel_photometry(args):
     """ Function argument of map_async() to do photometry in parallel.
 

@@ -266,6 +266,7 @@ customparser.clear_metavars(parser)
 # See http://stackoverflow.com/a/3217427/184363
 queue = methods.Queue()
 
+@methods.print_exception_traceback
 def parallel_periods(args):
     """ Method argument of map_async to compute periods in parallel.
 
