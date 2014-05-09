@@ -388,7 +388,6 @@ def main(arguments = None):
                           for star_id, light_curve
                           in zip(db.star_ids, all_light_curves))
         result = pool.map_async(parallel_periods, map_async_args)
-        #[parallel_periods(x) for x in map_async_args]
 
         methods.show_progress(0.0)
         while not result.ready():
