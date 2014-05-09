@@ -96,8 +96,8 @@ desc['typek'] = \
 "'flat' or 'object', to cite some of the most common [default: %default]"
 
 # Used by seeing.FITSeeingImage to 'cache' the SExtractor catalog
-sex_catalog = 'SEX CATALOG'
-sex_md5sum  = 'SEX MD5SUM'
+sex_catalog = 'SEX-CAT'
+sex_md5sum  = 'SEX-MD5'
 
 coaddk = 'NCOADDS'
 desc['coaddk'] = \

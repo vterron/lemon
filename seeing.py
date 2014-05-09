@@ -169,12 +169,15 @@ class FITSeeingImage(fitsimage.FITSImage):
 
                 try:
                     # Update the FITS header with the path and MD5; give up
-                    # silently in case we don't have permissions to do it. The
-                    # cast to str is needed as PyFITS has complained sometimes
+                    # silently in case we do not have permissions to do it
+                    # (IOError) or if the length of the HIERARCH keyword, equal
+                    # sign and value is longer than 80 characters (ValueError,
+                    # see FITSImage.update_keyword() for details). The cast to
+                    # str is needed because PyFITS has complained sometimes
                     # about "illegal values" if it receives a Unicode string.
                     self.update_keyword(keywords.sex_catalog, str(self.catalog_path))
                     self.update_keyword(keywords.sex_md5sum, sex_md5sum)
-                except IOError:
+                except (IOError, ValueError):
                     pass
 
 
