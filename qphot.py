@@ -307,7 +307,19 @@ class QPhot(list):
                 for line in txdump_fd:
 
                     fields = line.split()
-                    xcenter = float(fields[0])
+
+                    try:
+                        xcenter_str = fields[0]
+                        xcenter     = float(xcenter_str)
+                        msg = "%s: xcenter = %.8f" % (self.path, xcenter)
+                        logging.debug(msg)
+                    except ValueError, e:
+                        msg = "%s: can't convert xcenter = '%s' to float (%s)"
+                        logging.debug(msg % (self.path, xcenter_str, str(e)))
+                        msg = "%s: xcenter set to -1 (fallback value)"
+                        logging.debug(msg % self.path)
+                        xcenter = -1
+
                     ycenter = float(fields[1])
 
                     try:
