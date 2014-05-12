@@ -320,7 +320,17 @@ class QPhot(list):
                         logging.debug(msg % self.path)
                         xcenter = -1
 
-                    ycenter = float(fields[1])
+                    try:
+                        ycenter_str = fields[1]
+                        ycenter     = float(ycenter_str)
+                        msg = "%s: ycenter = %.8f" % (self.path, ycenter)
+                        logging.debug(msg)
+                    except ValueError, e:
+                        msg = "%s: can't convert ycenter = '%s' to float (%s)"
+                        logging.debug(msg % (self.path, ycenter_str, str(e)))
+                        msg = "%s: ycenter set to -1 (fallback value)"
+                        logging.debug(msg % self.path)
+                        ycenter = -1
 
                     try:
                         mag_str = fields[2]
