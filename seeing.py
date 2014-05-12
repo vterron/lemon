@@ -542,6 +542,7 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
+@methods.print_exception_traceback
 def parallel_sextractor(args):
     """ Run SExtractor and compute the FWHM and elongation of a FITS image.
 
