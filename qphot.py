@@ -243,6 +243,20 @@ class QPhot(list):
         output coordinate system options are 'logical', 'tv', and 'physical':
         http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?qphot
 
+        The x- and y-coordinates of the centers of the astronomical objects may
+        be reported as -1 if their celestial coordinates fall considerably off
+        those of the FITS image on which photometry is done. This is caused by
+        a bug in IRAF, which, as of v.2.16.1, outputs invalid floating-point
+        numbers (such as '-299866.375-58') when the astronomical object is
+        approximately >= 100 degrees off the image boundaries. In those cases,
+        the fallback value of -1 does not give us any other information than
+        that the object falls off the image. This must probably be one of the
+        least important bugs ever, considering how wrong the input celestial
+        coordinates must be.
+
+        Bug report that we have submitted to the IRAF development team:
+        [URL] http://iraf.net/forum/viewtopic.php?showtopic=1468373
+
         Arguments:
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
