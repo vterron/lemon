@@ -308,6 +308,14 @@ class QPhot(list):
 
                     fields = line.split()
 
+                    # As of IRAF v.2.16.1, the qphot task may output an invalid
+                    # floating-point number (such as "-299866.375-58") when the
+                    # coordinates of the object to be measured fall considerably
+                    # off (>= ~100 degrees) the image. That raises ValueError
+                    # ("invalid literal for float()") when we attempt to convert
+                    # the output xcenter or ycenter to float. In those cases, we
+                    # use -1 as the fallback value.
+
                     try:
                         xcenter_str = fields[0]
                         xcenter     = float(xcenter_str)
