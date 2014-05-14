@@ -38,8 +38,6 @@ from test import unittest
 import test.dss_images
 
 TESTS_PACKAGE = 'test'
-TESTS_PREFIX = 'test_'
-TESTS_EXTENSION = '.py'
 
 if __name__ == "__main__":
 
