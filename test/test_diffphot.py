@@ -25,7 +25,7 @@ import math
 import numpy
 import random
 
-from . import unittest
+from test import unittest
 import passband
 import test_database
 from database import DBStar

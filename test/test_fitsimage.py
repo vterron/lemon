@@ -30,7 +30,7 @@ import tempfile
 import warnings
 
 # LEMON modules
-from . import unittest
+from test import unittest
 import fitsimage
 
 NITERS = 10  # How many times random-data tests case are run

@@ -25,7 +25,7 @@ import os.path
 import random
 import string
 
-from . import unittest
+from test import unittest
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
                      JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA, \
                      UNKNOWN

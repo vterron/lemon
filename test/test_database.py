@@ -32,7 +32,7 @@ import string
 import tempfile
 import time
 
-from . import unittest
+from test import unittest
 import passband
 from database import \
   (DBStar,

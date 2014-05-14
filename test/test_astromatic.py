@@ -31,7 +31,7 @@ import stat
 import subprocess
 import tempfile
 
-from . import unittest
+from test import unittest
 import astromatic
 from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
