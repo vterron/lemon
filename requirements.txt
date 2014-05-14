@@ -14,4 +14,5 @@ mock>=1.0.1
 pyfits>=3.1.2
 pyraf>=2.1.1
 uncertainties>=2.4.1
+unittest2>=0.5.1
 montage-wrapper>=0.9.7
