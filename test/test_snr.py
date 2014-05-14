@@ -20,9 +20,9 @@
 
 import random
 import numpy
-import unittest
 import uncertainties
 
+from . import unittest
 from snr import *
 
 NITERS  = 1000   # How many times each test case is run with random data

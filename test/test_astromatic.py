@@ -30,8 +30,8 @@ import shutil
 import stat
 import subprocess
 import tempfile
-import unittest
 
+from . import unittest
 import astromatic
 from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images

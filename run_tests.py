@@ -29,7 +29,7 @@ we cannot use TestLoader.discover(), which is not available until 2.7.
 
 import os
 import sys
-import unittest
+from test import unittest
 
 # This import checks whether the FITS images used by some tests are where
 # expected and, if that is not the case, automatically downloads them from the

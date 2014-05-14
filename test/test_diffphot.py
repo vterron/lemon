@@ -24,8 +24,8 @@ import copy
 import math
 import numpy
 import random
-import unittest
 
+from . import unittest
 import passband
 import test_database
 from database import DBStar

@@ -31,8 +31,8 @@ import sqlite3
 import string
 import tempfile
 import time
-import unittest
 
+from . import unittest
 import passband
 from database import \
   (DBStar,
