@@ -46,9 +46,6 @@ if __name__ == "__main__":
     loader = unittest.TestLoader()
     tests = loader.discover(TESTS_PACKAGE)
     runner = unittest.runner.TextTestRunner(verbosity = 2)
-
-    if sys.version_info[:2] == (2, 7):
-        runner.failfast = True
-
+    runner.failfast = True
     runner.run(tests)
 
