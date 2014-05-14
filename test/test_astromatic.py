@@ -30,8 +30,8 @@ import shutil
 import stat
 import subprocess
 import tempfile
-import unittest
 
+from test import unittest
 import astromatic
 from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
@@ -341,21 +341,17 @@ class CatalogTest(unittest.TestCase):
         """ Make sure that the Catalog class is immutable """
 
         catalog = Catalog(self.SAMPLE_CATALOG_PATH)
-        args = setattr, catalog, 'path', self.SAMPLE_INCOMPLETE_PATH
-        self.assertRaises(AttributeError, *args)
-        self.assertRaises(AttributeError, delattr, catalog, 'path')
-
-        # Encapsulate item assignment and deletion for assertRaises
-        def assign(catalog, index, star):
-            catalog[index] = star
-
-        def delete(catalog, index):
-            del catalog[index]
+        with self.assertRaises(AttributeError):
+            catalog.path = self.SAMPLE_INCOMPLETE_PATH
+        with self.assertRaises(AttributeError):
+            del catalog.path
 
         for index in xrange(len(catalog)):
             star = StarTest.random()
-            self.assertRaises(TypeError, assign, catalog, index, star)
-            self.assertRaises(TypeError, delete, catalog, index)
+            with self.assertRaises(TypeError):
+                catalog[index] = star
+            with self.assertRaises(TypeError):
+                del catalog[index]
 
     def test_from_sequence(self):
 
@@ -529,13 +525,14 @@ class SExtractorFunctionsTest(unittest.TestCase):
                 self.assertRaises(*args)
 
         # TypeError raised if 'options' is not a dictionary
-        args = TypeError, astromatic.sextractor_md5sum
         kwargs = dict(options = ['DETECT_MINAREA', '5'])
-        self.assertRaises(*args, **kwargs)
+        with self.assertRaises(TypeError):
+            astromatic.sextractor_md5sum(**kwargs)
 
         # ... or if any of its elements is not a string
         kwargs['options'] = {'DETECT_MINAREA' : 125}
-        self.assertRaises(*args, **kwargs)
+        with self.assertRaises(TypeError):
+            astromatic.sextractor_md5sum(**kwargs)
 
     def test_sextractor_version(self):
 
@@ -575,8 +572,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         environment_copy = copy.deepcopy(os.environ)
         with mock.patch.object(os, 'environ', environment_copy) as mocked:
             mocked['PATH'] = ''
-            func = astromatic.sextractor_version
-            self.assertRaises(astromatic.SExtractorNotInstalled, func)
+            with self.assertRaises(astromatic.SExtractorNotInstalled):
+                astromatic.sextractor_version()
 
     def test_sextractor(self):
 
@@ -610,8 +607,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         environment_copy = copy.deepcopy(os.environ)
         with mock.patch.object(os, 'environ', environment_copy) as mocked:
             mocked['PATH'] = ''
-            args = astromatic.sextractor, img_path
-            self.assertRaises(astromatic.SExtractorNotInstalled, *args)
+            with self.assertRaises(astromatic.SExtractorNotInstalled):
+                astromatic.sextractor(img_path)
 
         # IOError is raised if any of the four SExtractor configuration files
         # is not readable or does no exist. To test that, mock the module-level
@@ -653,8 +650,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         version = tuple(version)
 
         with mock.patch.object(astromatic, 'SEXTRACTOR_REQUIRED_VERSION', version):
-            args = astromatic.sextractor, img_path
-            self.assertRaises(astromatic.SExtractorUpgradeRequired, *args)
+            with self.assertRaises(astromatic.SExtractorUpgradeRequired):
+                astromatic.sextractor(img_path)
 
         # The SExtractorError exception is raised if anything goes wrong during
         # the execution of SExtractor (in more technical terms, if its return
@@ -667,8 +664,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # (1) Try to run SExtractor on a non-existent image
         kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
         nonexistent_path = get_nonexistent_path(ext = '.fits')
-        args = astromatic.sextractor, nonexistent_path
-        self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
+        with self.assertRaises(astromatic.SExtractorError):
+            astromatic.sextractor(nonexistent_path, **kwargs)
 
         # (2) The DETECT_MINAREA parameter (minimum number of pixels above the
         # threshold needed to trigger detection) expects an integer. Assigning
@@ -676,8 +673,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # range") and abort its execution.
 
         kwargs['options'] = dict(DETECT_MINAREA = 'Y')
-        args = astromatic.sextractor, img_path
-        self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
+        with self.assertRaises(astromatic.SExtractorError):
+            astromatic.sextractor(img_path, **kwargs)
         del kwargs['options']
 
         # (3) Try to run SExtractor on a nonexistent FITS extension.
@@ -686,23 +683,27 @@ class SExtractorFunctionsTest(unittest.TestCase):
         hdulist.close()
 
         kwargs['ext'] = nextensions + 1
-        self.assertRaises(astromatic.SExtractorError, *args, **kwargs)
+        with self.assertRaises(astromatic.SExtractorError):
+            astromatic.sextractor(img_path, **kwargs)
 
         # TypeError raised if 'options' is not a dictionary
-        args = astromatic.sextractor, img_path
         kwargs = dict(options = ['DETECT_MINAREA', '5'])
-        self.assertRaises(TypeError, *args, **kwargs)
+        with self.assertRaises(TypeError):
+            astromatic.sextractor(img_path, **kwargs)
 
         # ... or if any of its elements is not a string.
         kwargs['options'] = {'DETECT_MINAREA' : 125}
-        self.assertRaises(TypeError, *args, **kwargs)
+        with self.assertRaises(TypeError):
+            astromatic.sextractor(img_path, **kwargs)
 
         # TypeError also raised if 'ext' is not an integer...
         kwargs = dict(ext = 0.56)
-        self.assertRaises(TypeError, *args, **kwargs)
+        with self.assertRaises(TypeError):
+            astromatic.sextractor(img_path, **kwargs)
 
         # ... even if it is a float but has nothing after the decimal point
         # (for which the built-in is_integer() function would return True).
         kwargs = dict(ext = 0.0)
-        self.assertRaises(TypeError, *args, **kwargs)
+        with self.assertRaises(TypeError):
+            astromatic.sextractor(img_path, **kwargs)
 

@@ -27,10 +27,10 @@ import random
 import shutil
 import stat
 import tempfile
-import unittest
 import warnings
 
 # LEMON modules
+from test import unittest
 import fitsimage
 
 NITERS = 10  # How many times random-data tests case are run
@@ -132,20 +132,22 @@ class FITSImageTest(unittest.TestCase):
             mode = stat.S_IMODE(os.stat(nonreadable_path)[stat.ST_MODE])
             mode ^= stat.S_IRUSR
             os.chmod(nonreadable_path, mode)
-            self.assertRaises(IOError, FITSImage, nonreadable_path)
+            with self.assertRaises(IOError):
+                FITSImage(nonreadable_path)
 
         # ... or if it simply does not exist
         nonexistent_path = path
         self.assertFalse(os.path.exists(nonexistent_path))
-        self.assertRaises(IOError, FITSImage, nonexistent_path)
+        with self.assertRaises(IOError):
+            FITSImage(nonexistent_path)
 
         # NonStandardFITS raised if the FITS file does not conform to the FITS
         # standard. When this is the case, the 'SIMPLE' keyword is expected to
         # be False (as, according to the Standard, "A [logical constant] of F
         # signifies that the file does not conform to this standard").
         nonstandard_path = self.random_data(SIMPLE = False)[0]
-        args = FITSImage, nonstandard_path
-        self.assertRaises(fitsimage.NonStandardFITS, *args)
+        with self.assertRaises(fitsimage.NonStandardFITS):
+            FITSImage(nonstandard_path)
         os.unlink(nonstandard_path)
 
         # It may also happen that the 'SIMPLE' keyword does not exist
@@ -163,8 +165,8 @@ class FITSImageTest(unittest.TestCase):
             msg = "(?s)Error validating header for .+ file is corrupted."
             warnings.filterwarnings('ignore', message=msg)
 
-            args = FITSImage, nonstandard_path
-            self.assertRaises(fitsimage.NonStandardFITS, *args)
+            with self.assertRaises(fitsimage.NonStandardFITS):
+                FITSImage(nonstandard_path)
             os.unlink(nonstandard_path)
 
         # NonStandardFITS exception must also be raised when we try to open
@@ -172,7 +174,8 @@ class FITSImageTest(unittest.TestCase):
         # types that could be used for this, try to open (a) an empty file...
         with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
             empty_path = fd.name
-            self.assertRaises(fitsimage.NonStandardFITS, FITSImage, empty_path)
+            with self.assertRaises(fitsimage.NonStandardFITS):
+                FITSImage(empty_path)
 
         # ... and (b) a non-empty text file.
         with tempfile.NamedTemporaryFile(suffix = '.fits') as fd:
@@ -180,7 +183,8 @@ class FITSImageTest(unittest.TestCase):
             fd.write("consectetur adipisicing elit\n")
             fd.flush()
             text_path = fd.name
-            self.assertRaises(fitsimage.NonStandardFITS, FITSImage, text_path)
+            with self.assertRaises(fitsimage.NonStandardFITS):
+                FITSImage(text_path)
 
     def test_unlink(self):
         for _ in xrange(NITERS):
@@ -254,7 +258,8 @@ class FITSImageTest(unittest.TestCase):
             self.assertAlmostEqual(img.read_keyword(keyword), wind_speed)
             self.assertAlmostEqual(img.read_keyword('HIERARCH ' + keyword), wind_speed)
             # KeyError raised if 'HIERARCH' does not include a whitespace
-            self.assertRaises(KeyError, img.read_keyword, 'HIERARCH' + keyword)
+            with self.assertRaises(KeyError):
+                img.read_keyword('HIERARCH' + keyword)
 
         # Keywords are case-insensitive
         keyword = 'FILTER'
@@ -280,9 +285,12 @@ class FITSImageTest(unittest.TestCase):
         # keyword cannot be found in the FITS header.
 
         with self.random() as img:
-            self.assertRaises(TypeError, img.read_keyword, None)
-            self.assertRaises(ValueError, img.read_keyword, '')
-            self.assertRaises(KeyError, img.read_keyword, 'EXPTIME')
+            with self.assertRaises(TypeError):
+                img.read_keyword(None)
+            with self.assertRaises(ValueError):
+                img.read_keyword('')
+            with self.assertRaises(KeyError):
+                img.read_keyword('EXPTIME')
 
     def test_update_keyword(self):
 
@@ -356,20 +364,24 @@ class FITSImageTest(unittest.TestCase):
             # Keywords are case-insensitive
             keyword = 'oBJeCT'
             img.delete_keyword(keyword)
-            self.assertRaises(KeyError, img.read_keyword, keyword.upper())
+            with self.assertRaises(KeyError):
+                img.read_keyword(keyword.upper())
 
             # Create a second FITSImage object referring to the same file. This
             # re-reads the image from disk and we can verify that the keyword
             # was not only removed from the in-memory copy of the FITS header.
             img2 = FITSImage(img.path)
-            self.assertRaises(KeyError, img2.read_keyword, keyword)
+            with self.assertRaises(KeyError):
+                img2.read_keyword(keyword)
 
             # Remove a keyword longer than eight characters.
             keyword = 'INSTRUMENT'
             img.delete_keyword(keyword)
             # Try both ways, with and without 'HIERARCH'.
-            self.assertRaises(KeyError, img.read_keyword, keyword)
-            self.assertRaises(KeyError, img.read_keyword, 'HIERARCH ' + keyword)
+            with self.assertRaises(KeyError):
+                img.read_keyword(keyword)
+            with self.assertRaises(KeyError):
+                img.read_keyword('HIERARCH ' + keyword)
 
     def test_date(self):
 
@@ -503,7 +515,8 @@ class FITSImageTest(unittest.TestCase):
             """ Assert that a random FITS image with the 'keywords' FITS
             keywords raises 'exception' when its date() method is called."""
             with self.random(**keywords) as img:
-                self.assertRaises(exception, img.date)
+                with self.assertRaises(exception):
+                    img.date()
 
         # Keyword DATE-OBS not found
         keywords = {'EXPTIME' : 1500}

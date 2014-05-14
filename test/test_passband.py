@@ -24,8 +24,8 @@ import functools
 import os.path
 import random
 import string
-import unittest
 
+from test import unittest
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
                      JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA, \
                      UNKNOWN
@@ -101,7 +101,8 @@ class PassbandTest(unittest.TestCase):
         for letter in string.ascii_uppercase:
             if letter not in valid_letters:
                 name = "%s %s" % (system, letter)
-                self.assertRaises(InvalidPassbandLetter, Passband, name)
+                with self.assertRaises(InvalidPassbandLetter):
+                    Passband(name)
 
         # There are some rare cases in which the letter of the photometric
         # filter cannot be identified and NonRecognizedPassband is raised.
@@ -116,7 +117,8 @@ class PassbandTest(unittest.TestCase):
 
         for pattern in patterns:
             name = pattern % values
-            self.assertRaises(NonRecognizedPassband, Passband, name)
+            with self.assertRaises(NonRecognizedPassband):
+                Passband(name)
 
     def test_johnson_filters(self):
         self._test_photometric_system(JOHNSON)
@@ -152,7 +154,8 @@ class PassbandTest(unittest.TestCase):
 
         for letter in string.ascii_uppercase:
             if letter not in passband.ALL_LETTERS:
-                self.assertRaises(NonRecognizedPassband, Passband, letter)
+                with self.assertRaises(NonRecognizedPassband):
+                    Passband(letter)
 
     def test_all(self):
 

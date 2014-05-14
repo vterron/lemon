@@ -20,9 +20,9 @@
 
 import random
 import numpy
-import unittest
 import uncertainties
 
+from test import unittest
 from snr import *
 
 NITERS  = 1000   # How many times each test case is run with random data
@@ -262,7 +262,8 @@ class SNRTest(unittest.TestCase):
 
         errors = (0.1, 0.25)
         weights = (0.25, 0.50, 0.35)
-        self.assertRaises(ValueError, mean_error, errors, weights = weights)
+        with self.assertRaises(ValueError):
+            mean_error(errors, weights = weights)
 
         # It does not matter if the weights do not sum up to one, as they will
         # be internally normalized by the method. This means that the weights
@@ -365,7 +366,8 @@ class SNRTest(unittest.TestCase):
 
         snrs = (100, 200)
         weights = (0.25, 0.50, 0.35)
-        self.assertRaises(ValueError, mean_snr, snrs, weights = weights)
+        with self.assertRaises(ValueError):
+            mean_snr(snrs, weights = weights)
 
         for _ in xrange(NITERS):
             how_many = random.randint(MIN_NERR, MAX_NERR)

@@ -21,11 +21,12 @@
 from __future__ import division
 
 import copy
+import functools
 import math
 import numpy
 import random
-import unittest
 
+from test import unittest
 import passband
 import test_database
 from database import DBStar
@@ -69,7 +70,8 @@ class WeightsTest(unittest.TestCase):
             self.rcoefficients.append(self.rcoeffs(size))
 
     def test_new(self):
-        self.assertRaises(ValueError, Weights, [])
+        with self.assertRaises(ValueError):
+            Weights([])
         for coeffs in self.rcoefficients:
             w = Weights(coeffs)
             assertSequencesAlmostEqual(self, w, coeffs)
@@ -88,7 +90,8 @@ class WeightsTest(unittest.TestCase):
         assertSequencesAlmostEqual(self, w2.rescale(2), [1/3, 2/3])
 
         w3 = Weights([3])
-        self.assertRaises(ValueError, w3.rescale, 0)
+        with self.assertRaises(ValueError):
+            w3.rescale(0)
 
         # Random cases in which one of the coefficients is discarded
         for coeffs in self.rcoefficients:
@@ -135,8 +138,10 @@ class WeightsTest(unittest.TestCase):
         w4 = Weights.inversely_proportional([1, 2, 3])
         assertSequencesAlmostEqual(self, w4, [6/11, 3/11, 2/11])
 
-        self.assertRaises(ValueError, Weights.inversely_proportional, [])
-        self.assertRaises(ValueError, Weights.inversely_proportional, [0, 1, 2])
+        with self.assertRaises(ValueError):
+            Weights.inversely_proportional([])
+        with self.assertRaises(ValueError):
+            Weights.inversely_proportional([0, 1, 2])
 
         for coeffs in self.rcoefficients:
             iweights = Weights.inversely_proportional(coeffs)
@@ -175,7 +180,8 @@ class WeightsTest(unittest.TestCase):
         # ValueError raised if sequences are of a different size
         w1 = Weights([1, 2, 3])
         w2 = Weights([1, 2, 3, 4])
-        self.assertRaises(ValueError, w1.absolute_percent_change, w2)
+        with self.assertRaises(ValueError):
+            w1.absolute_percent_change(w2)
 
         # We also need to test the 'minimum' keyword:
         # 1st coefficient, percent change =  2.5 <-- maximum
@@ -198,10 +204,10 @@ class WeightsTest(unittest.TestCase):
         # Finally, a too high minimum value discards all the weights, which
         # causes the method to raise the ValueError exception. This also
         # happens in the value of 'minimum' is negative or zero.
-        args = w1.absolute_percent_change, w2
-        self.assertRaises(ValueError, *args, minimum = 2.5)
-        self.assertRaises(ValueError, *args, minimum = -0.132)
-        self.assertRaises(ValueError, *args, minimum =  0)
+        func = functools.partial(w1.absolute_percent_change, w2)
+        self.assertRaises(ValueError, func, minimum = 2.5)
+        self.assertRaises(ValueError, func, minimum = -0.132)
+        self.assertRaises(ValueError, func, minimum =  0)
 
     def test_random(self):
         for _ in xrange(NITERS):
@@ -296,18 +302,21 @@ class StarSetTest(unittest.TestCase):
                 self.assertTrue(_eq_(istar, ostar))
 
         # The sequence of stars cannot be empty
-        self.assertRaises(ValueError, StarSet, [])
+        with self.assertRaises(ValueError):
+            StarSet([])
 
         # The DBStars cannot be empty either
         stars = self.rDBStars(nrecords = 0)
-        self.assertRaises(ValueError, StarSet, stars)
+        with self.assertRaises(ValueError):
+            StarSet(stars)
 
         # All DBStars must have the same photometric filter...
         stars = self.rDBStars()
         rstar = random.choice(stars)
         rstar.pfilter = rstar.pfilter.different()
         self.assertEqual(2, len(set(s.pfilter for s in stars)))
-        self.assertRaises(ValueError, StarSet, stars)
+        with self.assertRaises(ValueError):
+            StarSet(stars)
 
         # ... and Unix times. To check for this we first generate a list of
         # random DBStars and then add to it another one with the same number
@@ -321,14 +330,16 @@ class StarSetTest(unittest.TestCase):
                 stars.append(dstar)
                 break
 
-        self.assertRaises(ValueError, StarSet, stars)
+        with self.assertRaises(ValueError):
+            StarSet(stars)
 
         # There cannot be duplicate IDs among the DBStars
         stars = self.rDBStars()
         rstar1, rstar2 = random.sample(stars, 2)
         rstar1.id = rstar2.id
         self.assertEqual(len(stars) - 1, len(set(s.id for s in stars)))
-        self.assertRaises(ValueError, StarSet, stars)
+        with self.assertRaises(ValueError):
+            StarSet(stars)
 
     def test_star_ids_len_and_nimages(self):
 
@@ -603,10 +614,10 @@ class StarSetTest(unittest.TestCase):
         # ValueError if the number of coefficients in Weights does not match
         # that of stars in the StarSet.
         weights = Weights.random(nstars - 1)
-        args = set_.light_curve, weights, star
-        self.assertRaises(ValueError, *args)
+        func = functools.partial(set_.light_curve, weights, star)
+        self.assertRaises(ValueError, func)
         weights = Weights.random(nstars + 1)
-        self.assertRaises(ValueError, *args)
+        self.assertRaises(ValueError, func)
         weights = Weights.random(nstars)
         set_.light_curve(weights, star) # this works!
 
@@ -620,8 +631,8 @@ class StarSetTest(unittest.TestCase):
             dstar = self.rDBStars(**kwargs)[0]
             if set(dstar._unix_times) != set(star._unix_times):
                 weights = Weights.random(nstars)
-                args = set_.light_curve, weights, dstar
-                self.assertRaises(ValueError, *args)
+                with self.assertRaises(ValueError):
+                    set_.light_curve(weights, dstar)
                 break
 
     def test_light_curve_basic_case(self):
@@ -807,11 +818,11 @@ class StarSetTest(unittest.TestCase):
         set_, star = self.random_set(nstars)
         weights = Weights.random(nstars)
 
-        args = set_.light_curve, weights, star
-        self.assertRaises(IndexError, *args, _exclude_index = -2)
-        self.assertRaises(IndexError, *args, _exclude_index = -1)
-        self.assertRaises(IndexError, *args, _exclude_index = nstars)
-        self.assertRaises(IndexError, *args, _exclude_index = nstars + 1)
+        func = functools.partial(set_.light_curve, weights, star)
+        self.assertRaises(IndexError, func, _exclude_index = -2)
+        self.assertRaises(IndexError, func, _exclude_index = -1)
+        self.assertRaises(IndexError, func, _exclude_index = nstars)
+        self.assertRaises(IndexError, func, _exclude_index = nstars + 1)
 
         # Nothing goes wrong, of course, for valid indexes
         for index in xrange(nstars):
@@ -871,7 +882,8 @@ class StarSetTest(unittest.TestCase):
         # so the number of images of the stars in a set can never be zero
         for index in xrange(NITERS):
             set_ = self.random_set(nrecords = 1)[0]
-            self.assertRaises(ValueError, set_.broeg_weights)
+            with self.assertRaises(ValueError):
+                set_.broeg_weights()
 
     # The small data set used to test StarSet.broeg_weights: the instrumental
     # magnitudes of three stars, observed in three images, whose light curves
@@ -999,7 +1011,8 @@ class StarSetTest(unittest.TestCase):
             set_, _ = self.random_set(size = size)
             fraction = 1.0 - random.random() # (0.0, 1.0]
             self.assertTrue(0 < fraction <= 1)
-            self.assertRaises(ValueError, set_.worst, fraction)
+            with self.assertRaises(ValueError):
+                set_.worst(fraction)
 
     def _assert_worst(self, star_set, fraction, expected_indexes):
         """ Assert that the StarSet correctly identifies the worst stars.
@@ -1322,7 +1335,8 @@ class StarSetTest(unittest.TestCase):
             set_ = self.random_set(size = size)[0]
             fraction = 1.0 - random.random() # (0.0, 1.0]
             self.assertTrue(0 < fraction <= 1)
-            self.assertRaises(ValueError, set_.best, fraction)
+            with self.assertRaises(ValueError):
+                set_.best(fraction)
 
     def test_best_number_of_stars_out_of_range(self):
 
