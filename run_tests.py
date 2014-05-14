@@ -43,20 +43,12 @@ TESTS_EXTENSION = '.py'
 
 if __name__ == "__main__":
 
-    names = []
-    for path in os.listdir(TESTS_PACKAGE):
-        if path.startswith(TESTS_PREFIX) and path.endswith(TESTS_EXTENSION):
-            # The module name, such as 'test.test_passband'
-            module = '%s.%s' % (TESTS_PACKAGE, path[:-len(TESTS_EXTENSION)])
-            names.append(module)
-
-    suite = unittest.TestLoader().loadTestsFromNames(names)
-    runner = unittest.TextTestRunner(verbosity = 2)
+    loader = unittest.TestLoader()
+    tests = loader.discover(TESTS_PACKAGE)
+    runner = unittest.runner.TextTestRunner(verbosity = 2)
 
     if sys.version_info[:2] == (2, 7):
         runner.failfast = True
 
-    result = runner.run(suite)
-    how_many_errors = len(result.errors) + len(result.failures)
-    sys.exit(how_many_errors)
+    runner.run(tests)
 
