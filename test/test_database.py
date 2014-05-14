@@ -150,7 +150,8 @@ class DBStarTest(unittest.TestCase):
         id_, pfilter, phot_info, times_indexes = DBStarTest.random_data()
         row_index = random.randint(0, 2)
         phot_info = numpy.delete(phot_info, row_index, axis = 0)
-        self.assertRaises(ValueError, DBStar, id_, pfilter, phot_info, times_indexes)
+        with self.assertRaises(ValueError):
+            DBStar(id_, pfilter, phot_info, times_indexes)
 
     def test_len(self):
         for _ in xrange(NITERS):
@@ -349,7 +350,8 @@ class DBStarTest(unittest.TestCase):
             nonsubset = DBStarTest.random()
             if not nonsubset.issubset(star):
                 break
-        self.assertRaises(KeyError, star._trim_to, nonsubset)
+        with self.assertRaises(KeyError):
+            star._trim_to(nonsubset)
 
     def test_complete_for(self):
         for _ in xrange(NITERS):
@@ -686,11 +688,13 @@ class LightCurveTest(unittest.TestCase):
         rindex = random.choice(range(len(cweights)))
         cweights = cweights.rescale(rindex) # remove rindex-th coefficient
         assert len(cstars) != len(cweights)
-        self.assertRaises(ValueError, LightCurve, pfilter, cstars, cweights)
+        with self.assertRaises(ValueError):
+            LightCurve(pfilter, cstars, cweights)
 
         # Same exception also raised if there are no comparison stars
         cstars = cweights = []
-        self.assertRaises(ValueError, LightCurve, pfilter, cstars, cweights)
+        with self.assertRaises(ValueError):
+            LightCurve(pfilter, cstars, cweights)
 
     def test_add_len_and_getitem(self):
         for _ in xrange(NITERS):
@@ -716,7 +720,8 @@ class LightCurveTest(unittest.TestCase):
         self.assertEqual(points.next(), point2)
         self.assertEqual(points.next(), point3)
         self.assertEqual(points.next(), point1)
-        self.assertRaises(StopIteration, lambda: points.next())
+        with self.assertRaises(StopIteration):
+            points.next()
 
         # ... and the random test cases
         for _ in xrange(NITERS):
@@ -752,7 +757,8 @@ class LightCurveTest(unittest.TestCase):
         # ValueError is raised if the LightCuve is empty
         curve = self.random()
         assert not len(curve)
-        self.assertRaises(ValueError, lambda: curve.stdev)
+        with self.assertRaises(ValueError):
+            curve.stdev
 
     def test_weights(self):
         for _ in xrange(NITERS):
@@ -1045,8 +1051,8 @@ class LEMONdBTest(unittest.TestCase):
         all_utimes = itertools.chain(*[x.keys() for x in added_images.values()])
         nonexistent_unix_time = different_runix_time(all_utimes)
         pfilter = random.choice(added_images.keys())
-        args = nonexistent_unix_time, pfilter
-        self.assertRaises(KeyError, db.get_image, *args)
+        with self.assertRaises(KeyError):
+            db.get_image(nonexistent_unix_time, pfilter)
 
         # (2) Missing photometric filter. We need a fresh LEMONdB here as all
         # the photometric filters that the Passband class can encapsulate may
@@ -1056,13 +1062,13 @@ class LEMONdBTest(unittest.TestCase):
         db.add_image(image)
 
         nonexistent_filter = image.pfilter.different()
-        args = image.unix_time, nonexistent_filter
-        self.assertRaises(KeyError, db.get_image, *args)
+        with self.assertRaises(KeyError):
+            db.get_image(image.unix_time, nonexistent_filter)
 
         # (3) Missing Unix time *and* photometric filter
         nonexistent_unix_time = different_runix_time([image.unix_time])
-        args = nonexistent_unix_time, nonexistent_filter
-        self.assertRaises(KeyError, db.get_image, *args)
+        with self.assertRaises(KeyError):
+            db.get_image(nonexistent_unix_time, nonexistent_filter)
 
         # LEMONdB.add_image raises DuplicateImageError if we add an image with
         # the same date of observation *and* photometric filter that another
@@ -1093,7 +1099,8 @@ class LEMONdBTest(unittest.TestCase):
         assert img1.pfilter == img2.pfilter
 
         before_tables = tables_status(db)
-        self.assertRaises(DuplicateImageError, db.add_image, img2)
+        with self.assertRaises(DuplicateImageError):
+            db.add_image(img2)
         self.assertEqual(tables_status(db), before_tables)
 
     @classmethod
@@ -1153,14 +1160,16 @@ class LEMONdBTest(unittest.TestCase):
         # already used for another star in the database.
         star_info = list(self.random_star_info())
         star_info[0] = random.choice(stars.keys()) # reuse an ID
-        self.assertRaises(DuplicateStarError, db.add_star, *star_info)
+        with self.assertRaises(DuplicateStarError):
+            db.add_star(*star_info)
 
         # KeyError must be raised if there is no star for the given
         # ID. We need to generate one not already in the database
         while True:
             id_ = random.randint(self.MIN_ID, self.MAX_ID)
             if id_ not in stars.iterkeys():
-                self.assertRaises(KeyError, db.get_star, id_)
+                with self.assertRaises(KeyError):
+                    db.get_star(id_)
                 break
 
     def test_len(self):
@@ -1305,7 +1314,8 @@ class LEMONdBTest(unittest.TestCase):
         db.add_image(img)
 
         args = [star_id, img.unix_time, img.pfilter, 14.5, 100]
-        self.assertRaises(UnknownStarError, db.add_photometry, *args)
+        with self.assertRaises(UnknownStarError):
+            db.add_photometry(*args)
         # But if the star is added before, it works, of course
         db.add_star(*star_info)
         db.add_photometry(*args)
@@ -1318,30 +1328,34 @@ class LEMONdBTest(unittest.TestCase):
         # (1) Missing Unix time
         nonexistent_unix_time = different_runix_time([img.unix_time])
         args = star_id, nonexistent_unix_time, img.pfilter, 15.4, 125
-        self.assertRaises(UnknownImageError, db.add_photometry, *args)
+        with self.assertRaises(UnknownImageError):
+            db.add_photometry(*args)
 
         # (2) Missing photometric filter
         nonexistent_filter = passband.Passband('Z')
         self.assertTrue(nonexistent_filter not in db.pfilters)
         args = star_id, img.unix_time, nonexistent_filter, 16.5, 175
-        self.assertRaises(UnknownImageError, db.add_photometry, *args)
+        with self.assertRaises(UnknownImageError):
+            db.add_photometry(*args)
 
         # (3) Missing Unix time *and* photometric filter
         args = star_id, nonexistent_unix_time, nonexistent_filter, 17.8, 235
-        self.assertRaises(UnknownImageError, db.add_photometry, *args)
+        with self.assertRaises(UnknownImageError):
+            db.add_photometry(*args)
 
         # DuplicatePhotometryError is raised if we attempt to add a second
         # record for the same star, Unix time and photometric filter (that is,
         # if more than one photometric record is added for the same Image).
         args = [star_id, img.unix_time, img.pfilter, 13.2, 125]
-        self.assertRaises(DuplicatePhotometryError, db.add_photometry, *args)
+        with self.assertRaises(DuplicatePhotometryError):
+            db.add_photometry(*args)
 
         # LEMONdB.get_photometry raises KeyError if the star ID does not
         # match that of any of the stars already stored in the database
         nonexistent_id = 3
         self.assertTrue(nonexistent_id not in db.star_ids)
-        args = nonexistent_id, johnson_V
-        self.assertRaises(KeyError, db.get_photometry, *args)
+        with self.assertRaises(KeyError):
+            db.get_photometry(nonexistent_id, johnson_V)
 
         # If the star has no records in a filter, an empty DBStar is returned
         empty_star = db.get_photometry(star_id, johnson_V)
@@ -1405,7 +1419,8 @@ class LEMONdBTest(unittest.TestCase):
         while True:
             star_id = random.randint(self.MIN_ID, self.MAX_ID)
             if star_id not in stars_ids:
-                self.assertRaises(KeyError, db._star_pfilters, star_id)
+                with self.assertRaises(KeyError):
+                    db._star_pfilters(star_id)
                 break
 
     def test_add_and_get_light_curve(self):
@@ -1503,7 +1518,8 @@ class LEMONdBTest(unittest.TestCase):
         args = star1_id, curve
         before_tables = tables_status(db)
         self.assertTrue(star1_id not in db.star_ids)
-        self.assertRaises(UnknownStarError, db.add_light_curve, *args)
+        with self.assertRaises(UnknownStarError):
+            db.add_light_curve(*args)
         self.assertEqual(tables_status(db), before_tables)
 
         # Let's add the star and one of the comparison stars. The method must
@@ -1511,7 +1527,8 @@ class LEMONdBTest(unittest.TestCase):
         # Once we add it, the light curve can finally be added to the LEMONdB.
         add_test_star(db, star1_id, star2_id)
         before_tables = tables_status(db)
-        self.assertRaises(UnknownStarError, db.add_light_curve, *args)
+        with self.assertRaises(UnknownStarError):
+            db.add_light_curve(*args)
         self.assertEqual(tables_status(db), before_tables)
 
         add_test_star(db, star3_id)
@@ -1529,7 +1546,8 @@ class LEMONdBTest(unittest.TestCase):
 
         args = star2_id, curve
         before_tables = tables_status(db)
-        self.assertRaises(UnknownImageError, db.add_light_curve, *args)
+        with self.assertRaises(UnknownImageError):
+            db.add_light_curve(*args)
         self.assertEqual(tables_status(db), before_tables)
 
         add_test_img(db, img3)
@@ -1541,7 +1559,8 @@ class LEMONdBTest(unittest.TestCase):
 
         # Attempt to insert it again... (and fail)
         before_tables = tables_status(db)
-        self.assertRaises(DuplicateLightCurvePointError, db.add_light_curve, *args)
+        with self.assertRaises(DuplicateLightCurvePointError):
+            db.add_light_curve(*args)
         self.assertEqual(tables_status(db), before_tables)
 
         # Generate the light curve of the third star (uses both the first and
@@ -1556,9 +1575,9 @@ class LEMONdBTest(unittest.TestCase):
         duplicate_curve = copy.deepcopy(curve)
         duplicate_curve.add(*point)
 
-        args = db.add_light_curve, star3_id, duplicate_curve
         before_tables = tables_status(db)
-        self.assertRaises(DuplicateLightCurvePointError, *args)
+        with self.assertRaises(DuplicateLightCurvePointError):
+            db.add_light_curve(star3_id, duplicate_curve)
         self.assertEqual(tables_status(db), before_tables)
 
         db.add_light_curve(star3_id, curve) # the good one works, of course!
@@ -1572,16 +1591,17 @@ class LEMONdBTest(unittest.TestCase):
         curve = LightCurveTest.random(**kwargs)
         curve = LightCurveTest.populate(curve, [img1, img2, img3])
 
-        args = star4_id, curve
         before_tables = tables_status(db)
-        self.assertRaises(ValueError, db.add_light_curve, *args)
+        with self.assertRaises(ValueError):
+            db.add_light_curve(star4_id, curve)
         self.assertEqual(tables_status(db), before_tables)
 
         # The LEMONdB.get_light_curve method, on the other hand, raises
         # KeyError if the star with the given ID is not in the database...
         nstar_id = 17 # any other new value would work
         self.assertTrue(nstar_id not in db.star_ids)
-        self.assertRaises(KeyError, db.get_light_curve, nstar_id, pfilter)
+        with self.assertRaises(KeyError):
+            db.get_light_curve(nstar_id, pfilter)
 
         # ... and returns None if the star exists but there is no curve
         add_test_star(db, nstar_id)
@@ -1593,8 +1613,8 @@ class LEMONdBTest(unittest.TestCase):
         # After this, LEMONdB.get_light_curve must raise sqlite3.IntegrityError
         args = nstar_id, img1.unix_time, img1.pfilter, 7.4, 100
         db._add_curve_point(*args)
-        args = nstar_id, pfilter
-        self.assertRaises(sqlite3.IntegrityError, db.get_light_curve, *args)
+        with self.assertRaises(sqlite3.IntegrityError):
+            db.get_light_curve(nstar_id, pfilter)
 
     def test_add_and_get_period_and_get_periods(self):
         db = LEMONdB(':memory:')
@@ -1688,7 +1708,8 @@ class LEMONdBTest(unittest.TestCase):
 
         args = star_id, pfilter, period, step
         before_tables = tables_status(db)
-        self.assertRaises(UnknownStarError, db.add_period, *args)
+        with self.assertRaises(UnknownStarError):
+            db.add_period(*args)
         self.assertEqual(tables_status(db), before_tables)
         # If the star is added, the ID is no longer unknown
         db.add_star(*LEMONdBTest.random_star_info(id_ = star_id))
@@ -1696,22 +1717,25 @@ class LEMONdBTest(unittest.TestCase):
 
         # DuplicatePeriodError is raised if the same is added twice
         before_tables = tables_status(db)
-        self.assertRaises(DuplicatePeriodError, db.add_period, *args)
+        with self.assertRaises(DuplicatePeriodError):
+            db.add_period(*args)
         self.assertEqual(tables_status(db), before_tables)
 
         # A period is considered duplicate even if we use a different value;
         # which must be unique is the (star ID, photometric filter) pair
-        args = star_id, pfilter, 3755, 13
         before_tables = tables_status(db)
-        self.assertRaises(DuplicatePeriodError, db.add_period, *args)
+        with self.assertRaises(DuplicatePeriodError):
+            db.add_period(star_id, pfilter, 3755, 13)
         self.assertEqual(tables_status(db), before_tables)
 
         # Both LEMONdB.get_period and LEMONdB.get_periods must raise KeyError
         # id the star with the specified ID is not stored in the database
         star2_id = 89
         assert star2_id not in db.star_ids
-        self.assertRaises(KeyError, db.get_period, star2_id, pfilter)
-        self.assertRaises(KeyError, db.get_periods, star2_id)
+        with self.assertRaises(KeyError):
+            db.get_period(star2_id, pfilter)
+        with self.assertRaises(KeyError):
+            db.get_periods(star2_id)
 
     def test_airmasses(self):
         db = LEMONdB(':memory:')
@@ -1801,7 +1825,8 @@ class LEMONdBTest(unittest.TestCase):
         # that of any of the stars already stored in the database
         nstar_id = 13
         assert nstar_id not in db.star_ids
-        self.assertRaises(KeyError, db.get_phase_diagram, nstar_id, pfilter, 65)
+        with self.assertRaises(KeyError):
+            db.get_phase_diagram(nstar_id, pfilter, 65)
 
     def test_most_similar_magnitude(self):
 
@@ -2042,7 +2067,8 @@ class LEMONdBTest(unittest.TestCase):
 
         # (7) Exception raised if there are no images in the LEMONdB
         db = LEMONdB(':memory:')
-        self.assertRaises(ValueError, lambda: db.field_name)
+        with self.assertRaises(ValueError):
+            db.field_name
 
     def test_set_and_get_metadata(self):
 
@@ -2073,8 +2099,10 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db._get_metadata(str(key)), value)
 
         # Neither the key nor the value can be None...
-        self.assertRaises(ValueError, db._set_metadata, None, value)
-        self.assertRaises(ValueError, db._set_metadata, key, None)
+        with self.assertRaises(ValueError):
+            db._set_metadata(None, value)
+        with self.assertRaises(ValueError):
+            db._set_metadata(key, None)
 
         # ... but empty strings are allowed
         db._set_metadata('P.I.', '')     # useless
@@ -2095,7 +2123,8 @@ class LEMONdBTest(unittest.TestCase):
         self.assertAlmostEqual(db.date, now, **kwargs)
 
         # Any value is valid, except None (which raises ValueError)
-        self.assertRaises(ValueError, setattr, db, 'date', None)
+        with self.assertRaises(ValueError):
+            db.date = None
 
     def test_author(self):
 
@@ -2105,7 +2134,8 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db.author, name)
         db.author = new_name = 'Baby Doe' # now update it
         self.assertEqual(db.author, new_name)
-        self.assertRaises(ValueError, setattr, db, 'author', None)
+        with self.assertRaises(ValueError):
+            db.author = None
 
     def test_hostname(self):
 
@@ -2115,14 +2145,16 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db.author, host)
         db.author = new_host = 'github.com' # now update it
         self.assertEqual(db.author, new_host)
-        self.assertRaises(ValueError, setattr, db, 'hostname', None)
+        with self.assertRaises(ValueError):
+            db.hostname = None
 
     def test_star_closest_to_image_coords(self):
 
         db = LEMONdB(':memory:')
 
         point = (100, 100) # or any other value
-        self.assertRaises(ValueError, db.star_closest_to_image_coords, *point)
+        with self.assertRaises(ValueError):
+            db.star_closest_to_image_coords(*point)
 
         star_1 = list(self.random_star_info(id_ = 1))
         star_1[1:3] = (156.32, 569.31) # x and y-coordinates
