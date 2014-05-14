@@ -27,8 +27,6 @@ we cannot use TestLoader.discover(), which is not available until 2.7.
 
 """
 
-import os
-import sys
 from test import unittest
 
 # This import checks whether the FITS images used by some tests are where
