@@ -19,11 +19,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This is a convenience script for loading all the unit tests in the test/
-directory and running them. Test modules are automatically detected: those
-files which start with 'test_' and have the '.py' extension (such as
-test/test_passband.py) are treated as such. For Python 2.6 compatibility,
-we cannot use TestLoader.discover(), which is not available until 2.7.
+This is a convenience script for finding all the unit tests in the ./test/
+directory and running them. Test modules are automatically detected, using
+TestLoader.discover(), which loads the test files that match the Unix-shell
+pattern 'test*.py' (such as ./test/test_passband.py).
 
 """
 
