@@ -68,9 +68,9 @@ rm $IRAF_TAR
 cd ~
 
 if [[ $ARCH_64_BITS == 1 ]]; then
-    SEXTRACTOR_RPM="sextractor-2.8.6-1.x86_64.rpm"
+    SEXTRACTOR_RPM="sextractor-2.19.5-1.x86_64.rpm"
 else
-    SEXTRACTOR_RPM="sextractor-2.8.6-1.i386.rpm"
+    SEXTRACTOR_RMP="sextractor-2.19.5-1.i386.rpm"
 fi
 
 SEXTRACTOR_URL=$DOWNLOADS_SERVER$SEXTRACTOR_RPM
