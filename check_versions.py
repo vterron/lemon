@@ -33,6 +33,9 @@ import imp
 import re
 import sys
 
+# LEMON module
+import astromatic
+
 def version_to_str(version):
     """ From (0, 2, 4) to '0.2.4' for example """
     return '.'.join(str(x) for x in version)
@@ -161,4 +164,14 @@ for module, version in [
 
 lxml_hook = RequireModuleVersionHook('lxml', (3, 2, 3), get_lxml_version)
 sys.meta_path.append(lxml_hook)
+
+# If the minimum version is not met, raise SExtractorUpgradeRequired as
+# soon as possible, instead of waiting until we attempt to run SExtractor.
+sextractor_version = astromatic.sextractor_version()
+sextractor_minimum = astromatic.SEXTRACTOR_REQUIRED_VERSION
+if not sextractor_version >= sextractor_minimum:
+    msg = "SExtractor >= %s is required, found %s"
+    args = (version_to_str(sextractor_minimum),
+            version_to_str(sextractor_version))
+    raise astromatic.SExtractorUpgradeRequired(msg % args)
 
