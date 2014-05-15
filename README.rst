@@ -48,7 +48,7 @@ These are the steps to install LEMON on a clean Debian machine:
 #. ``pip install -r pre-requirements.txt``
 #. ``pip install -r requirements.txt``
 #. Install `IRAF <http://iraf.noao.edu/>`_
-#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.8.6 or newer)
+#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.19.5 or newer)
 #. Install `Astrometry.net <http://astrometry.net/use.html>`_
 #. Install the MPI-enabled `Montage <http://montage.ipac.caltech.edu/docs/download2.html>`_ binaries [#]_
 #. ``python ./setup.py``
