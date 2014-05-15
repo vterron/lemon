@@ -39,7 +39,7 @@ SEXTRACTOR_PARAMS = os.path.join(CONFIG_FILES_DIR, 'sextractor.param')
 SEXTRACTOR_FILTER = os.path.join(CONFIG_FILES_DIR, 'sextractor.conv')
 SEXTRACTOR_STARNNW = os.path.join(CONFIG_FILES_DIR, 'sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
-SEXTRACTOR_REQUIRED_VERSION = (2, 8, 6)
+SEXTRACTOR_REQUIRED_VERSION = (2, 19, 5)
 
 class SExtractorNotInstalled(StandardError):
     pass
