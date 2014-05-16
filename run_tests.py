@@ -26,6 +26,7 @@ pattern 'test*.py' (such as ./test/test_passband.py).
 
 """
 
+import sys
 from test import unittest
 
 # This import checks whether the FITS images used by some tests are where
@@ -42,5 +43,6 @@ if __name__ == "__main__":
     tests = loader.discover(TESTS_PACKAGE)
     runner = unittest.runner.TextTestRunner(verbosity = 2)
     runner.failfast = True
-    runner.run(tests)
+    result = runner.run(tests)
+    sys.exit(not result.wasSuccessful())
 
