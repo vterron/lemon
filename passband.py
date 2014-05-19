@@ -177,6 +177,23 @@ class Passband(object):
     as 'V' — we do not know whether it belongs to the Johnson, Strömgren or
     Gunn system, but we can still work with it.
 
+    In addition to the above, user-defined (custom) photometric filters are
+    supported via the CONFIG_FILENAME configuration file. They may be defined
+    as options in the CUSTOM_SECTION. For example:
+
+    [custom_filters]
+    BEROS = B (EROS-2 survey)
+    REROS = R (EROS-2 survey)
+    NO = Blank Filter
+
+    This defines three custom filters: 'BEROS', 'REROS' and 'NO' (the filter
+    names that can be found in the headers of your FITS files). The associated
+    values are their descriptions, used by both repr() and str() to return a
+    user-friendly string representation. A filter name is custom if it compares
+    equal (case-insensitively) to one of these definitions. Regular expressions
+    are not allowed. In fact, all non-alphanumerics are backslashed, so regexp
+    metacharacters in it are ignored
+
     """
 
     SYSTEM_LETTERS = {JOHNSON : tuple('UBVRIJHKLMN'),
