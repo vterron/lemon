@@ -33,7 +33,9 @@ other way around (as V has a shorter wavelength than I).
 
 """
 
+import ConfigParser
 import itertools
+import os.path
 import random
 import re
 import string
@@ -46,6 +48,32 @@ TWOMASS = '2MASS'
 STROMGREN = 'Strömgren'
 HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
+
+CONFIG_FILENAME = '.lemonrc'
+CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
+CUSTOM_SECTION = 'custom_filters'
+
+def load_custom_filters(path = CONFIG_PATH):
+    """ Load the name and description of the user custom photometric filters.
+
+    Parse a ConfigParser configuration file, CONFIG_PATH by default, and return
+    a generator that yields two-element tuples, (option, value), for each of
+    the options in the section CUSTOM_SECTION. Each option is expected to be
+    the name of a custom photometric filter (e.g., 'NO'), and the associated
+    value the description that str(Passband) must show (e.g., 'Blank filter').
+    The case of the options is preserved. In case the file does not exist or
+    CUSTOM_SECTION is not present or empty, nothing is returned.
+
+    """
+
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    if os.path.exists(path):
+        parser.read([path])
+    # (name, description) pairs for each filter
+    if parser.has_section(CUSTOM_SECTION):
+        for item in parser.items(CUSTOM_SECTION):
+            yield item
 
 # The case-insensitive regular expression that the name of a filter must match
 # in order to consider that it belongs to each photometric system. For example,
