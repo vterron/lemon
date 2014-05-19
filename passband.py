@@ -447,8 +447,13 @@ class Passband(object):
         if letter == 'KS':
              letter = 'Ks'
 
-        if system == UNKNOWN:
-          return letter
+        # User-defined filters have their description stored in the 'letter'
+        # attribute, which is undeniably confusing. The reason for this is that
+        # it allows us to consistently use the same attributes ('system' and
+        # 'letter') for all the Passband objects, regardless of what type of
+        # photometric filter they are.
+        if system in [CUSTOM, UNKNOWN]:
+            return letter
 
         if system in (GUNN, SDSS):
             letter = letter.lower()
