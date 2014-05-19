@@ -96,9 +96,11 @@ CUSTOM_FILTERS = dict(load_custom_filters())
 class NonRecognizedPassband(ValueError):
     """ Raised when the photometric filter cannot be identified """
 
-    ERROR_NOTE = "If this is a legitimate filter name, and you think LEMON " \
-                 "should be able to recognize it, please let us know at " \
-                 "http://github.com/vterron/lemon/issues"
+    ERROR_NOTE = ("If this is a legitimate filter name, and you think LEMON "
+                  "should be able to recognize it, please let us know at "
+                  "[http://github.com/vterron/lemon/issues]. In the meantime, "
+                  "you can define your own filters in the %s file, as options "
+                  "of the [%s] section" % (CONFIG_PATH, CUSTOM_SECTION))
 
     def __init__(self, name, path = None, keyword = None):
         """ Instantiation method for the NonRecognizedPassband class.
