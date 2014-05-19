@@ -88,6 +88,9 @@ REGEXPS = {JOHNSON : 'Johnson|John',
            STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
            HALPHA : 'H(a(lpha)?)?\d{4}'}
 
+# Map each custom filter to its description. For example:
+# {'REROS': 'R (EROS-2 survey)', 'NO': 'Blank Filter'}
+CUSTOM_FILTERS = dict(load_custom_filters())
 
 class NonRecognizedPassband(ValueError):
     """ Raised when the photometric filter cannot be identified """
