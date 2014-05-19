@@ -543,12 +543,18 @@ class Passband(object):
         this, a random integer in the range [6000, 7000] is used.
 
         """
-
         MIN_WAVELENGTH = 6000
         MAX_WAVELENGTH = 7000
 
-        system = random.choice(cls.SYSTEM_LETTERS.keys() + [HALPHA])
-        if system == HALPHA:
+        keys = cls.SYSTEM_LETTERS.keys() + [HALPHA]
+        if CUSTOM_FILTERS:
+            keys += [CUSTOM]
+
+        system = random.choice(keys)
+        if system == CUSTOM:
+            name = random.choice(CUSTOM_FILTERS.keys())
+            return cls(name)
+        elif system == HALPHA:
             wavelength = random.randrange(MIN_WAVELENGTH, MAX_WAVELENGTH)
             return cls("%s %04d" % (system, wavelength))
         else:
