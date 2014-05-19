@@ -354,6 +354,14 @@ class Passband(object):
         most, if not all, of the ways in which the name of a filter may be
         written, assuming sane astronomers, under normal circumstances.
 
+        If that is not your case, you may define your own photometric filters
+        in the CONFIG_FILENAME configuration file, listing them as options of
+        the CUSTOM_SECTION. For example, a line such as 'NO = Blank Filter'
+        defines the 'NO' (case-insentitive) filter, with 'Blank Filter' as it
+        associated description. The former should be the filter name that you
+        expect to come across in your FITS images, while the description is
+        what both repr() and str() use to return a string representation.
+
         The NonRecognizedPassband exception is raised if the photometric letter
         cannot be determined, and InvalidPassbandLetter if, although correctly
         extracted, the letter does not belong to the photometric system (e.g.,
