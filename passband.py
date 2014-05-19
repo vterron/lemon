@@ -48,6 +48,7 @@ TWOMASS = '2MASS'
 STROMGREN = 'Strömgren'
 HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
+CUSTOM = 'Custom'
 
 CONFIG_FILENAME = '.lemonrc'
 CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
