@@ -265,3 +265,45 @@ class PassbandTest(unittest.TestCase):
             pfilter = Passband.random()
             self.assertNotEqual(pfilter, pfilter.different())
 
+    def test_load_custom_filters(self):
+
+        section_header = "[%s]" % passband.CUSTOM_SECTION
+
+        # Name and description of user-defined filters
+        custom1 = "R-EROS", "R (EROS-2 survey)"
+        custom2 = "NO", "Blank Filter"
+        custom_filters = [custom1, custom2]
+
+        data = '\n'.join([section_header] +
+                         ["%s = %s" % x for x in custom_filters])
+
+        with methods.tempinput(data) as path:
+            loaded = list(passband.load_custom_filters(path))
+            self.assertEqual(len(custom_filters), len(loaded))
+            for input, output in zip(custom_filters, loaded):
+                # For example, ('R-EROS', 'R (EROS-2 survey)')
+                self.assertEqual(input[0], output[0])
+                self.assertEqual(input[1], output[1])
+
+        def assert_returns_nothing(path):
+            """ Assert that Passband.load_custom_filters() does not return
+            anything when the 'path' configuration file is parsed"""
+            self.assertEqual([], list(passband.load_custom_filters(path)))
+
+        # Does not return anything if:
+        # (1) The configuration file file does not exist
+        with methods.tempinput('') as path:
+            pass
+        self.assertFalse(os.path.exists(path))
+        assert_returns_nothing(path)
+
+        # (2) Does not have the CUSTOM_SECTION section
+        data = ""
+        with methods.tempinput(data) as path:
+            assert_returns_nothing(path)
+
+        # (3) The CUSTOM_SECTION section is empty
+        data = section_header
+        with methods.tempinput(data) as path:
+            assert_returns_nothing(path)
+
