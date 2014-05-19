@@ -405,8 +405,9 @@ class Passband(object):
         the corresponding letters contained in Passband.SYSTEM_LETTERS. That
         is, for each supported photometric system (Johnson, Cousins, Gunn,
         etc), a Passband object is created for each of the letters defined by
-        it (e.g., in the case of Johnson, UBVRIJHKLMN). H-alpha filters are
-        *not* included as they do not choose a letter from among a discrete
+        it (e.g., in the case of Johnson, UBVRIJHKLMN). Although user-defined
+        filters do not have letters, they are also included. H-alpha filters
+        are not, however, as they do not choose a letter from among a discrete
         set, but instead use their wavelength.
 
         """
