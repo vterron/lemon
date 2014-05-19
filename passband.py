@@ -361,6 +361,13 @@ class Passband(object):
 
         """
 
+        # User-defined (custom) photometric filters are a particular case and
+        # have their own initializer, __init__custom(). It returns True if the
+        # filter name was identified as belonging to a custom filter and the
+        # object therefore initialized, so we can exit from __init__().
+        if self.__init__custom(filter_name):
+            return
+
         # E.g., from "_Johnson_(V)_" to "JohnsonV"
         name = re.sub('[\s\-_\(\)]', '', filter_name)
 
