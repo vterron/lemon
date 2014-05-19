@@ -303,6 +303,48 @@ class Passband(object):
         else:
             return letter
 
+    def __init__custom(self, filter_name):
+        """ Instantiate a custom photometric filter.
+
+        This method is called at the beginning of __init__() in order to check
+        whether 'filter_name' corresponds to a custom photometric filter, those
+        defined in the CONFIG_FILENAME ConfigParser configuration file, section
+        CUSTOM_SECTION. If that is the case, this method sets the value of the
+        'letter' and 'system' attributes and returns True (which indicates to
+        __init__() that the object was been successfully initialized and there
+        is nothing else that must be done). Otherwise, False is returned.
+
+        Note that, while 'system' is (not surprisingly) set to CUSTOM, 'letter'
+        is assigned the value of the description of the filter. This is, well,
+        undeniably confusing, but there is reason to our madness: it allows us
+        to consistently use the same attributes for all the Passband objects,
+        regardless of what type of photometric filter they are.
+
+        A photometric filter is considered custom if 'filter_name' matches the
+        name *or* the description of one of the custom filters defined in the
+        configuration file. Regular expressions are not allowed (in fact, all
+        non-alphanumerics are backslashed, so regexp metacharacters in it are
+        ignored). The two strings must be equal, although the comparison is
+        case-insensitive.
+
+        The reason why filter names are allowed to match the description is so
+        that eval(repr(Passband)) works. For example, if the configuration file
+        defines 'NO' as a custom filter, with the associated description 'Blank
+        Filter', repr(Passband('No')) returns 'Passband('Blank Filter') and
+        str() 'Blank Filter'. Since we may want to create a Passband object
+        from that string representation, with eval(), we need to match it too.
+
+        """
+
+        for name, description in CUSTOM_FILTERS.iteritems():
+            regexp = '|'.join(re.escape(x) for x in [name, description])
+            if re.match(regexp, filter_name, re.IGNORECASE):
+                self.letter = description
+                self.system = CUSTOM
+                return True
+        else:
+            return False
+
     def __init__(self, filter_name):
         """ Instantiation method for the Passband class.
 
