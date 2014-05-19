@@ -485,10 +485,12 @@ class Passband(object):
         and lexicographically by the name of the system in case the letters
         are the same (e.g., Cousins I < Johnson I < SDSS i').
 
-        An exception to this rule are H-alpha filters: they are compared by
-        their wavelength, and are always greater than the filters of other
-        photometric systems (for example, 2MASS Ks < Johnson N < H-alpha
-        6563 < H-alpha 6607).
+        There are two exceptions to this rule: first, user-defined (custom)
+        filters are always smaller than the rest of photometric filters, and
+        compared between them lexicographically, by their description. Second,
+        H-alpha filters: they are compared by their wavelength, and are always
+        greater than the filters of other photometric systems (for example,
+        2MASS Ks < Johnson N < H-alpha 6563 < H-alpha 6607).
 
         """
 
