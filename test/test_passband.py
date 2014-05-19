@@ -256,7 +256,8 @@ class PassbandTest(unittest.TestCase):
         for _ in xrange(NITERS):
             pfilter = Passband.random()
             self.assertTrue(pfilter.system in Passband.ALL_SYSTEMS)
-            if pfilter.system != HALPHA: # H-alpha filters have no letter
+            # Neither custom nor H-alpha filters have letter
+            if pfilter.system not in [CUSTOM, HALPHA]:
                 self.assertTrue(pfilter.letter in Passband.SYSTEM_LETTERS[pfilter.system])
 
     def test_different(self):
