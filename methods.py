@@ -643,3 +643,27 @@ def print_exception_traceback(func):
             print
             raise
     return wrapper
+
+@contextlib.contextmanager
+def tempinput(data):
+    """ A context manager to work with StringIO-like temporary files.
+
+    The open() built-in command only takes filenames, so we cannot feed to it a
+    StringIO. This context manager writes 'data' to a temporary file, ensuring
+    that it is cleaned up afterwards. In this manner, we can work in a similar
+    manner to what we would have done with StringIO, as the data is written to
+    disk only temporarily and transparently to us.
+
+    with tempinput('some data\more data') as path:
+        open(path)
+
+    Taken from Martijn Pieters's answer on Stack Overflow:
+    [URL] https://stackoverflow.com/a/11892712/184363
+
+    """
+
+    fd, path = tempfile.mkstemp()
+    os.write(fd, data)
+    os.close(fd)
+    yield path
+    os.unlink(path)
