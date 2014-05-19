@@ -433,7 +433,8 @@ class Passband(object):
 
         Return a nice string representation of the photometric filter, such as
         'Johnson V', 'Cousins R', 'Gunn r', 'SDSS g'', '2MASS Ks', 'Stromgren
-        y', 'H-alpha 6317' and, if the system is not known, simply 'V'. Note
+        y', 'H-alpha 6317' and, if the system is not known, simply 'V'. For
+        user-defined photometric filters, their description is returned. Note
         that the letter of the Gunn, Strömgren and SDSS filters is written in
         lowercase, and that an apostrophe is affixed to the latter. Strömgren
         is written as 'Stromgren', removing the umlaut, so that the returned
