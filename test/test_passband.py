@@ -216,15 +216,25 @@ class PassbandTest(unittest.TestCase):
             for index in xrange(0, len(pfilters) - 1):
                 first  = pfilters[index]
                 second = pfilters[index + 1]
+                ncustoms = sum(1 for p in [first, second] if p.system == CUSTOM)
                 nhalphas = sum(1 for p in [first, second] if p.system == HALPHA)
 
-                if not nhalphas:
+                if not nhalphas and not ncustoms:
                     first_index  = letter_index(first.letter)
                     second_index = letter_index(second.letter)
                     self.assertTrue(first_index <= second_index)
                     # If letters are equal, sort lexicographically by the system
                     if first.letter == second.letter:
                         self.assertTrue(first.system <= second.system)
+
+                # Custom filters are smaller than others system
+                elif ncustoms == 1:
+                    first.system  == CUSTOM
+                    second.system != CUSTOM
+
+                elif ncustoms == 2:
+                    # Two custom filters are compared lexicographically
+                    self.assertTrue(first.letter <= second.letter)
 
                 # H-alpha filters are greater than other systems
                 elif nhalphas == 1:
