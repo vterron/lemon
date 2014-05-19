@@ -492,16 +492,30 @@ class Passband(object):
 
         """
 
-        self_alpha =   self.system == HALPHA
-        other_alpha = other.system == HALPHA
+        # If both filters are custom, sort them lexicographically, by their
+        # description (stored in the 'letter' attribute). Custom filters are
+        # smaller than all the other filters.
+
+        self_custom  =  self.system == CUSTOM
+        other_custom = other.system == CUSTOM
+
+        if self_custom or other_custom:
+            if self_custom and other_custom:
+                return cmp(self.letter, other.letter)
+            else:
+                # Note: int(True) == 1; int(False) == 0
+                return int(other_custom) - int(self_custom)
 
         # If both filters are H-alpha, sort by their wavelength.
         # H-alpha filters are greater than all the other filters
+
+        self_alpha =   self.system == HALPHA
+        other_alpha = other.system == HALPHA
+
         if self_alpha or other_alpha:
             if self_alpha and other_alpha:
                 return int(self.letter) - int(other.letter)
             else:
-                # Note: int(True) == 1; int(False) == 0
                 return int(self_alpha) - int(other_alpha)
 
         # If the photometric systems are different, sort by letter.
