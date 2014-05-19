@@ -25,10 +25,13 @@ import os.path
 import random
 import string
 
+# LEMON modules
+import methods
+import passband
 from test import unittest
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
                      JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA, \
-                     UNKNOWN
+                     UNKNOWN, CUSTOM
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -145,6 +148,12 @@ class PassbandTest(unittest.TestCase):
             self.assertEqual(passband.system, HALPHA)
             self.assertEqual(passband.letter, wavelength)
 
+    def test_custom_filters(self):
+        for name, description in passband.CUSTOM_FILTERS.iteritems():
+            pfilter = Passband(name)
+            self.assertEqual(pfilter.system, CUSTOM)
+            self.assertEqual(pfilter.letter, description)
+
     def test_unknown_filters(self):
         data_file = self.get_data_path(UNKNOWN)
         for name, letter in self.read_filter_data_file(data_file):
@@ -168,7 +177,12 @@ class PassbandTest(unittest.TestCase):
             for letter in letters:
                 name = "%s %s" % (system, letter)
                 pfilter = Passband(name)
-                self.assertTrue(pfilter in pfilters)
+                self.assertIn(pfilter, pfilters)
+
+        # No user-defined filter must be missing either
+        for name in passband.CUSTOM_FILTERS.iterkeys():
+            pfilter = Passband(name)
+            self.assertIn(pfilter, pfilters)
 
     def test_repr(self):
         for _ in xrange(NITERS):
@@ -202,15 +216,25 @@ class PassbandTest(unittest.TestCase):
             for index in xrange(0, len(pfilters) - 1):
                 first  = pfilters[index]
                 second = pfilters[index + 1]
+                ncustoms = sum(1 for p in [first, second] if p.system == CUSTOM)
                 nhalphas = sum(1 for p in [first, second] if p.system == HALPHA)
 
-                if not nhalphas:
+                if not nhalphas and not ncustoms:
                     first_index  = letter_index(first.letter)
                     second_index = letter_index(second.letter)
                     self.assertTrue(first_index <= second_index)
                     # If letters are equal, sort lexicographically by the system
                     if first.letter == second.letter:
                         self.assertTrue(first.system <= second.system)
+
+                # Custom filters are smaller than others system
+                elif ncustoms == 1:
+                    first.system  == CUSTOM
+                    second.system != CUSTOM
+
+                elif ncustoms == 2:
+                    # Two custom filters are compared lexicographically
+                    self.assertTrue(first.letter <= second.letter)
 
                 # H-alpha filters are greater than other systems
                 elif nhalphas == 1:
@@ -232,11 +256,54 @@ class PassbandTest(unittest.TestCase):
         for _ in xrange(NITERS):
             pfilter = Passband.random()
             self.assertTrue(pfilter.system in Passband.ALL_SYSTEMS)
-            if pfilter.system != HALPHA: # H-alpha filters have no letter
+            # Neither custom nor H-alpha filters have letter
+            if pfilter.system not in [CUSTOM, HALPHA]:
                 self.assertTrue(pfilter.letter in Passband.SYSTEM_LETTERS[pfilter.system])
 
     def test_different(self):
         for _ in xrange(NITERS):
             pfilter = Passband.random()
             self.assertNotEqual(pfilter, pfilter.different())
+
+    def test_load_custom_filters(self):
+
+        section_header = "[%s]" % passband.CUSTOM_SECTION
+
+        # Name and description of user-defined filters
+        custom1 = "R-EROS", "R (EROS-2 survey)"
+        custom2 = "NO", "Blank Filter"
+        custom_filters = [custom1, custom2]
+
+        data = '\n'.join([section_header] +
+                         ["%s = %s" % x for x in custom_filters])
+
+        with methods.tempinput(data) as path:
+            loaded = list(passband.load_custom_filters(path))
+            self.assertEqual(len(custom_filters), len(loaded))
+            for input, output in zip(custom_filters, loaded):
+                # For example, ('R-EROS', 'R (EROS-2 survey)')
+                self.assertEqual(input[0], output[0])
+                self.assertEqual(input[1], output[1])
+
+        def assert_returns_nothing(path):
+            """ Assert that Passband.load_custom_filters() does not return
+            anything when the 'path' configuration file is parsed"""
+            self.assertEqual([], list(passband.load_custom_filters(path)))
+
+        # Does not return anything if:
+        # (1) The configuration file file does not exist
+        with methods.tempinput('') as path:
+            pass
+        self.assertFalse(os.path.exists(path))
+        assert_returns_nothing(path)
+
+        # (2) Does not have the CUSTOM_SECTION section
+        data = ""
+        with methods.tempinput(data) as path:
+            assert_returns_nothing(path)
+
+        # (3) The CUSTOM_SECTION section is empty
+        data = section_header
+        with methods.tempinput(data) as path:
+            assert_returns_nothing(path)
 

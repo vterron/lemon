@@ -33,7 +33,9 @@ other way around (as V has a shorter wavelength than I).
 
 """
 
+import ConfigParser
 import itertools
+import os.path
 import random
 import re
 import string
@@ -46,6 +48,33 @@ TWOMASS = '2MASS'
 STROMGREN = 'Strömgren'
 HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
+CUSTOM = 'Custom'
+
+CONFIG_FILENAME = '.lemonrc'
+CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
+CUSTOM_SECTION = 'custom_filters'
+
+def load_custom_filters(path = CONFIG_PATH):
+    """ Load the name and description of the user custom photometric filters.
+
+    Parse a ConfigParser configuration file, CONFIG_PATH by default, and return
+    a generator that yields two-element tuples, (option, value), for each of
+    the options in the section CUSTOM_SECTION. Each option is expected to be
+    the name of a custom photometric filter (e.g., 'NO'), and the associated
+    value the description that str(Passband) must show (e.g., 'Blank filter').
+    The case of the options is preserved. In case the file does not exist or
+    CUSTOM_SECTION is not present or empty, nothing is returned.
+
+    """
+
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    if os.path.exists(path):
+        parser.read([path])
+    # (name, description) pairs for each filter
+    if parser.has_section(CUSTOM_SECTION):
+        for item in parser.items(CUSTOM_SECTION):
+            yield item
 
 # The case-insensitive regular expression that the name of a filter must match
 # in order to consider that it belongs to each photometric system. For example,
@@ -60,13 +89,18 @@ REGEXPS = {JOHNSON : 'Johnson|John',
            STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
            HALPHA : 'H(a(lpha)?)?\d{4}'}
 
+# Map each custom filter to its description. For example:
+# {'REROS': 'R (EROS-2 survey)', 'NO': 'Blank Filter'}
+CUSTOM_FILTERS = dict(load_custom_filters())
 
 class NonRecognizedPassband(ValueError):
     """ Raised when the photometric filter cannot be identified """
 
-    ERROR_NOTE = "If this is a legitimate filter name, and you think LEMON " \
-                 "should be able to recognize it, please let us know at " \
-                 "http://github.com/vterron/lemon/issues"
+    ERROR_NOTE = ("If this is a legitimate filter name, and you think LEMON "
+                  "should be able to recognize it, please let us know at "
+                  "[http://github.com/vterron/lemon/issues]. In the meantime, "
+                  "you can define your own filters in the %s file, as options "
+                  "of the [%s] section" % (CONFIG_PATH, CUSTOM_SECTION))
 
     def __init__(self, name, path = None, keyword = None):
         """ Instantiation method for the NonRecognizedPassband class.
@@ -145,6 +179,23 @@ class Passband(object):
     as 'V' — we do not know whether it belongs to the Johnson, Strömgren or
     Gunn system, but we can still work with it.
 
+    In addition to the above, user-defined (custom) photometric filters are
+    supported via the CONFIG_FILENAME configuration file. They may be defined
+    as options in the CUSTOM_SECTION. For example:
+
+    [custom_filters]
+    BEROS = B (EROS-2 survey)
+    REROS = R (EROS-2 survey)
+    NO = Blank Filter
+
+    This defines three custom filters: 'BEROS', 'REROS' and 'NO' (the filter
+    names that can be found in the headers of your FITS files). The associated
+    values are their descriptions, used by both repr() and str() to return a
+    user-friendly string representation. A filter name is custom if it compares
+    equal (case-insensitively) to one of these definitions. Regular expressions
+    are not allowed. In fact, all non-alphanumerics are backslashed, so regexp
+    metacharacters in it are ignored
+
     """
 
     SYSTEM_LETTERS = {JOHNSON : tuple('UBVRIJHKLMN'),
@@ -154,7 +205,7 @@ class Passband(object):
                       TWOMASS : ('J', 'H', 'KS'),
                       STROMGREN : ('U', 'V', 'B', 'Y', 'NARROW', 'N', 'WIDE', 'W')}
 
-    ALL_SYSTEMS = set(SYSTEM_LETTERS.keys() + [HALPHA])
+    ALL_SYSTEMS = set(SYSTEM_LETTERS.keys() + [HALPHA, CUSTOM])
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
 
     # The order of the photometric letters, regardless of the system
@@ -201,11 +252,11 @@ class Passband(object):
         """ Extract the letter from the name of a photometric filter.
 
         Parse the name of a Johnson, Cousins, Gunn, SDSS, 2MASS or Strömgren
-        filter (that is, all the photometric systems except for H-alpha) and
-        extract the letter. Whitespaces and any other separators, such as
-        dashes and underscores, *must* have been removed from the name of the
-        filter, as the regular expressions that match the photometric systems
-        do not take them into account.
+        filter (that is, all the photometric systems except for H-alpha and
+        user-defined filters) and extract the letter. Whitespaces and any other
+        separators, such as dashes and underscores, *must* have been removed
+        from the name of the filter, as the regular expressions that match the
+        photometric systems do not take them into account.
 
         The system of the filter must be specified in the 'system' argument,
         and match one of the module-level variables that define the different
@@ -271,6 +322,48 @@ class Passband(object):
         else:
             return letter
 
+    def __init__custom(self, filter_name):
+        """ Instantiate a custom photometric filter.
+
+        This method is called at the beginning of __init__() in order to check
+        whether 'filter_name' corresponds to a custom photometric filter, those
+        defined in the CONFIG_FILENAME ConfigParser configuration file, section
+        CUSTOM_SECTION. If that is the case, this method sets the value of the
+        'letter' and 'system' attributes and returns True (which indicates to
+        __init__() that the object was been successfully initialized and there
+        is nothing else that must be done). Otherwise, False is returned.
+
+        Note that, while 'system' is (not surprisingly) set to CUSTOM, 'letter'
+        is assigned the value of the description of the filter. This is, well,
+        undeniably confusing, but there is reason to our madness: it allows us
+        to consistently use the same attributes for all the Passband objects,
+        regardless of what type of photometric filter they are.
+
+        A photometric filter is considered custom if 'filter_name' matches the
+        name *or* the description of one of the custom filters defined in the
+        configuration file. Regular expressions are not allowed (in fact, all
+        non-alphanumerics are backslashed, so regexp metacharacters in it are
+        ignored). The two strings must be equal, although the comparison is
+        case-insensitive.
+
+        The reason why filter names are allowed to match the description is so
+        that eval(repr(Passband)) works. For example, if the configuration file
+        defines 'NO' as a custom filter, with the associated description 'Blank
+        Filter', repr(Passband('No')) returns 'Passband('Blank Filter') and
+        str() 'Blank Filter'. Since we may want to create a Passband object
+        from that string representation, with eval(), we need to match it too.
+
+        """
+
+        for name, description in CUSTOM_FILTERS.iteritems():
+            regexp = '|'.join(re.escape(x) for x in [name, description])
+            if re.match(regexp, filter_name, re.IGNORECASE):
+                self.letter = description
+                self.system = CUSTOM
+                return True
+        else:
+            return False
+
     def __init__(self, filter_name):
         """ Instantiation method for the Passband class.
 
@@ -280,12 +373,27 @@ class Passband(object):
         most, if not all, of the ways in which the name of a filter may be
         written, assuming sane astronomers, under normal circumstances.
 
+        If that is not your case, you may define your own photometric filters
+        in the CONFIG_FILENAME configuration file, listing them as options of
+        the CUSTOM_SECTION. For example, a line such as 'NO = Blank Filter'
+        defines the 'NO' (case-insentitive) filter, with 'Blank Filter' as it
+        associated description. The former should be the filter name that you
+        expect to come across in your FITS images, while the description is
+        what both repr() and str() use to return a string representation.
+
         The NonRecognizedPassband exception is raised if the photometric letter
         cannot be determined, and InvalidPassbandLetter if, although correctly
         extracted, the letter does not belong to the photometric system (e.g.,
         Johnson Z does not exist).
 
         """
+
+        # User-defined (custom) photometric filters are a particular case and
+        # have their own initializer, __init__custom(). It returns True if the
+        # filter name was identified as belonging to a custom filter and the
+        # object therefore initialized, so we can exit from __init__().
+        if self.__init__custom(filter_name):
+            return
 
         # E.g., from "_Johnson_(V)_" to "JohnsonV"
         name = re.sub('[\s\-_\(\)]', '', filter_name)
@@ -316,8 +424,9 @@ class Passband(object):
         the corresponding letters contained in Passband.SYSTEM_LETTERS. That
         is, for each supported photometric system (Johnson, Cousins, Gunn,
         etc), a Passband object is created for each of the letters defined by
-        it (e.g., in the case of Johnson, UBVRIJHKLMN). H-alpha filters are
-        *not* included as they do not choose a letter from among a discrete
+        it (e.g., in the case of Johnson, UBVRIJHKLMN). Although user-defined
+        filters do not have letters, they are also included. H-alpha filters
+        are not, however, as they do not choose a letter from among a discrete
         set, but instead use their wavelength.
 
         """
@@ -331,6 +440,11 @@ class Passband(object):
                     continue
                 name = "%s %s" % (system, letter)
                 pfilters.append(name)
+
+        # User-defined photometric filters
+        for name in CUSTOM_FILTERS.iterkeys():
+            pfilters.append(name)
+
         return [Passband(x) for x in pfilters]
 
     def __str__(self):
@@ -338,7 +452,8 @@ class Passband(object):
 
         Return a nice string representation of the photometric filter, such as
         'Johnson V', 'Cousins R', 'Gunn r', 'SDSS g'', '2MASS Ks', 'Stromgren
-        y', 'H-alpha 6317' and, if the system is not known, simply 'V'. Note
+        y', 'H-alpha 6317' and, if the system is not known, simply 'V'. For
+        user-defined photometric filters, their description is returned. Note
         that the letter of the Gunn, Strömgren and SDSS filters is written in
         lowercase, and that an apostrophe is affixed to the latter. Strömgren
         is written as 'Stromgren', removing the umlaut, so that the returned
@@ -352,8 +467,13 @@ class Passband(object):
         if letter == 'KS':
              letter = 'Ks'
 
-        if system == UNKNOWN:
-          return letter
+        # User-defined filters have their description stored in the 'letter'
+        # attribute, which is undeniably confusing. The reason for this is that
+        # it allows us to consistently use the same attributes ('system' and
+        # 'letter') for all the Passband objects, regardless of what type of
+        # photometric filter they are.
+        if system in [CUSTOM, UNKNOWN]:
+            return letter
 
         if system in (GUNN, SDSS):
             letter = letter.lower()
@@ -384,23 +504,39 @@ class Passband(object):
         and lexicographically by the name of the system in case the letters
         are the same (e.g., Cousins I < Johnson I < SDSS i').
 
-        An exception to this rule are H-alpha filters: they are compared by
-        their wavelength, and are always greater than the filters of other
-        photometric systems (for example, 2MASS Ks < Johnson N < H-alpha
-        6563 < H-alpha 6607).
+        There are two exceptions to this rule: first, user-defined (custom)
+        filters are always smaller than the rest of photometric filters, and
+        compared between them lexicographically, by their description. Second,
+        H-alpha filters: they are compared by their wavelength, and are always
+        greater than the filters of other photometric systems (for example,
+        2MASS Ks < Johnson N < H-alpha 6563 < H-alpha 6607).
 
         """
+
+        # If both filters are custom, sort them lexicographically, by their
+        # description (stored in the 'letter' attribute). Custom filters are
+        # smaller than all the other filters.
+
+        self_custom  =  self.system == CUSTOM
+        other_custom = other.system == CUSTOM
+
+        if self_custom or other_custom:
+            if self_custom and other_custom:
+                return cmp(self.letter, other.letter)
+            else:
+                # Note: int(True) == 1; int(False) == 0
+                return int(other_custom) - int(self_custom)
+
+        # If both filters are H-alpha, sort by their wavelength.
+        # H-alpha filters are greater than all the other filters
 
         self_alpha =   self.system == HALPHA
         other_alpha = other.system == HALPHA
 
-        # If both filters are H-alpha, sort by their wavelength.
-        # H-alpha filters are greater than all the other filters
         if self_alpha or other_alpha:
             if self_alpha and other_alpha:
                 return int(self.letter) - int(other.letter)
             else:
-                # Note: int(True) == 1; int(False) == 0
                 return int(self_alpha) - int(other_alpha)
 
         # If the photometric systems are different, sort by letter.
@@ -426,12 +562,18 @@ class Passband(object):
         this, a random integer in the range [6000, 7000] is used.
 
         """
-
         MIN_WAVELENGTH = 6000
         MAX_WAVELENGTH = 7000
 
-        system = random.choice(cls.SYSTEM_LETTERS.keys() + [HALPHA])
-        if system == HALPHA:
+        keys = cls.SYSTEM_LETTERS.keys() + [HALPHA]
+        if CUSTOM_FILTERS:
+            keys += [CUSTOM]
+
+        system = random.choice(keys)
+        if system == CUSTOM:
+            name = random.choice(CUSTOM_FILTERS.keys())
+            return cls(name)
+        elif system == HALPHA:
             wavelength = random.randrange(MIN_WAVELENGTH, MAX_WAVELENGTH)
             return cls("%s %04d" % (system, wavelength))
         else:
