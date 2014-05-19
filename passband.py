@@ -233,11 +233,11 @@ class Passband(object):
         """ Extract the letter from the name of a photometric filter.
 
         Parse the name of a Johnson, Cousins, Gunn, SDSS, 2MASS or Strömgren
-        filter (that is, all the photometric systems except for H-alpha) and
-        extract the letter. Whitespaces and any other separators, such as
-        dashes and underscores, *must* have been removed from the name of the
-        filter, as the regular expressions that match the photometric systems
-        do not take them into account.
+        filter (that is, all the photometric systems except for H-alpha and
+        user-defined filters) and extract the letter. Whitespaces and any other
+        separators, such as dashes and underscores, *must* have been removed
+        from the name of the filter, as the regular expressions that match the
+        photometric systems do not take them into account.
 
         The system of the filter must be specified in the 'system' argument,
         and match one of the module-level variables that define the different
