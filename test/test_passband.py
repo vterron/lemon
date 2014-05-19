@@ -177,7 +177,12 @@ class PassbandTest(unittest.TestCase):
             for letter in letters:
                 name = "%s %s" % (system, letter)
                 pfilter = Passband(name)
-                self.assertTrue(pfilter in pfilters)
+                self.assertIn(pfilter, pfilters)
+
+        # No user-defined filter must be missing either
+        for name in passband.CUSTOM_FILTERS.iterkeys():
+            pfilter = Passband(name)
+            self.assertIn(pfilter, pfilters)
 
     def test_repr(self):
         for _ in xrange(NITERS):
