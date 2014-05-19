@@ -420,6 +420,11 @@ class Passband(object):
                     continue
                 name = "%s %s" % (system, letter)
                 pfilters.append(name)
+
+        # User-defined photometric filters
+        for name in CUSTOM_FILTERS.iterkeys():
+            pfilters.append(name)
+
         return [Passband(x) for x in pfilters]
 
     def __str__(self):
