@@ -48,6 +48,7 @@ class LoadCoordinatesTest(unittest.TestCase):
                 COORDINATES[object_] = Coordinates(*coords)
 
     NCOORDS = (1, len(COORDINATES))  # number of objects in each file
+    NEMPTY = (1, 50) # number of empty lines in each coordinates file
     SEPS = [' ', '\t'] # separators randomly added to the coords file
     MAX_SEPS = 5       # maximum number of consecutive separators
 
@@ -93,6 +94,31 @@ class LoadCoordinatesTest(unittest.TestCase):
             n = random.randint(*self.NCOORDS)
             objects = random.sample(self.COORDINATES.values(), n)
             data = self.get_coords_data(objects)
+            with methods.tempinput(data) as path:
+                coordinates = methods.load_coordinates(path)
+                for index, (ra, dec) in enumerate(coordinates):
+                    self.assertAlmostEqual(ra,  objects[index].ra)
+                    self.assertAlmostEqual(dec, objects[index].dec)
+
+    def test_load_coordinates_empty_lines(self):
+
+        # The same as test_load_coordinates(), but randomly inserting a
+        # few empty lines. These must be ignored by load_coordinates()
+
+        for _ in xrange(NITERS):
+            n = random.randint(*self.NCOORDS)
+            objects = random.sample(self.COORDINATES.values(), n)
+            data = self.get_coords_data(objects)
+
+            # Randomly insert empty lines
+            for _ in range(*self.NEMPTY):
+                lines = data.split('\n')
+                index = random.randint(0, len(lines))
+                empty = self.get_seps(random.randint(0, self.MAX_SEPS))
+                lines.insert(index, empty)
+
+            data = '\n'.join(lines)
+            # Empty lines must be ignored
             with methods.tempinput(data) as path:
                 coordinates = methods.load_coordinates(path)
                 for index, (ra, dec) in enumerate(coordinates):
