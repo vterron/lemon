@@ -45,9 +45,33 @@ class LoadCoordinatesTest(unittest.TestCase):
                 COORDINATES[object_] = Coordinates(*coords)
 
     SEPS = [' ', '\t'] # separators randomly added to the coords file
+    MAX_SEPS = 5       # maximum number of consecutive separators
 
     @classmethod
     def get_seps(cls, n):
         """ Return a string containing 'n' random separators """
         return ''.join(random.choice(cls.SEPS) for _ in range(n))
+
+    @classmethod
+    def get_coords_data(cls, coords):
+        """ Format 'coords' as the contents of a coordinates file.
+
+        Return a string that contains a line for each astronomical object in
+        'coords', an iterable argument, listing their right ascensions and
+        declinations in two columns and decimal degrees. These columns are
+        surrounded by a random number (up to the value of the MAX_SEPS class
+        attribute) or random separators (SEPS class attribute). The returned
+        string should, after written to disk, is expected to be successfully
+        parsed by methods.load_coordinates().
+
+        """
+
+        lines = []
+        for ra, dec in coords:
+            sep1 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+            sep2 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
+            sep3 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+            line = "%s%.8f%s%.8f%s" % (sep1, ra, sep2, dec, sep3)
+            lines.append(line)
+        return '\n'.join(lines)
 
