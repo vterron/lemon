@@ -20,6 +20,8 @@
 
 from __future__ import division
 
+import random
+
 # LEMON modules
 from test import unittest
 from astromatic import Coordinates
@@ -41,4 +43,11 @@ class LoadCoordinatesTest(unittest.TestCase):
             if line and not line.startswith("#"):
                 object_, coords = eval(line)
                 COORDINATES[object_] = Coordinates(*coords)
+
+    SEPS = [' ', '\t'] # separators randomly added to the coords file
+
+    @classmethod
+    def get_seps(cls, n):
+        """ Return a string containing 'n' random separators """
+        return ''.join(random.choice(cls.SEPS) for _ in range(n))
 
