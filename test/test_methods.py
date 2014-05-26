@@ -25,6 +25,9 @@ import random
 # LEMON modules
 from test import unittest
 from astromatic import Coordinates
+import methods
+
+NITERS = 100  # How many times each test case is run with random data
 
 class LoadCoordinatesTest(unittest.TestCase):
 
@@ -44,6 +47,7 @@ class LoadCoordinatesTest(unittest.TestCase):
                 object_, coords = eval(line)
                 COORDINATES[object_] = Coordinates(*coords)
 
+    NCOORDS = (1, len(COORDINATES))  # number of objects in each file
     SEPS = [' ', '\t'] # separators randomly added to the coords file
     MAX_SEPS = 5       # maximum number of consecutive separators
 
@@ -74,4 +78,24 @@ class LoadCoordinatesTest(unittest.TestCase):
             line = "%s%.8f%s%.8f%s" % (sep1, ra, sep2, dec, sep3)
             lines.append(line)
         return '\n'.join(lines)
+
+    def test_load_coordinates(self):
+
+        for _ in xrange(NITERS):
+
+            # Randomly choose some of the SIMBAD astronomical objects and write
+            # them to a temporary file, formatting their right ascensions and
+            # coordinates in two columns and inserting a random number of
+            # separators before, between and after the columns. Make sure that
+            # methods.load_coordinates() returns the same astronomical objects,
+            # in the same order and with the same coordinates that we wrote.
+
+            n = random.randint(*self.NCOORDS)
+            objects = random.sample(self.COORDINATES.values(), n)
+            data = self.get_coords_data(objects)
+            with methods.tempinput(data) as path:
+                coordinates = methods.load_coordinates(path)
+                for index, (ra, dec) in enumerate(coordinates):
+                    self.assertAlmostEqual(ra,  objects[index].ra)
+                    self.assertAlmostEqual(dec, objects[index].dec)
 
