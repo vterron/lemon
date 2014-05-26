@@ -125,3 +125,8 @@ class LoadCoordinatesTest(unittest.TestCase):
                     self.assertAlmostEqual(ra,  objects[index].ra)
                     self.assertAlmostEqual(dec, objects[index].dec)
 
+    def test_load_coordinates_empty_file(self):
+        # If the file is empty, nothing is returned
+        with methods.tempinput('') as path:
+            self.assertEqual([], list(methods.load_coordinates(path)))
+
