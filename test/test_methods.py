@@ -130,3 +130,40 @@ class LoadCoordinatesTest(unittest.TestCase):
         with methods.tempinput('') as path:
             self.assertEqual([], list(methods.load_coordinates(path)))
 
+    def test_load_coordinates_invalid_data(self):
+
+        def check_raise(data, exception, regexp):
+            """ Make sure that methods.load_coordinates() raises 'exception'
+            when a file containing 'data' is parsed. 'regexp' is the regular
+            expression that must be matched by the string representation of
+            the raised exception"""
+
+            with methods.tempinput(data) as path:
+                with self.assertRaisesRegexp(exception, regexp):
+                    list(methods.load_coordinates(path))
+
+        # Lines with other than two floating-point numbers
+        data1 = '\n'.join(["NGC 4494", "11 Com b", "TrES-1"])
+        regexp = "Unable to parse line"
+        check_raise(data1, ValueError, regexp)
+        ra, dec = random.choice(self.COORDINATES.values())
+        data2 = "foo %.8f" % dec
+        check_raise(data1, ValueError, regexp)
+
+        # An object with right ascension out of range
+        ra, dec = random.choice(self.COORDINATES.values())
+        regexp = "Right ascension .* not in range"
+        data1 = "%.8f %.8f" % (-24.19933, dec) # RA < 0
+        check_raise(data1, ValueError, regexp)
+        data2 = "%.8f %.8f" % (360, dec)     # RA >= 360
+        check_raise(data2, ValueError, regexp)
+        data3 = "%.8f %.8f" % (417.993, dec) # RA >= 360
+        check_raise(data3, ValueError, regexp)
+
+        # An object with declination out of range
+        ra, dec = random.choice(self.COORDINATES.values())
+        regexp = "Declination .* not in range"
+        data1 = "%.8f %.8f" % (ra,  -90.21) # DEC < -90
+        check_raise(data1, ValueError, regexp)
+        data2 = "%.8f %.8f" % (ra,  113.93) # DEC > +90
+        check_raise(data2, ValueError, regexp)
