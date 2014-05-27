@@ -276,12 +276,9 @@ parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
 
 parser.add_option('--filter', action = 'store', type = 'passband',
                   dest = 'filter', default = None,
-                  help = "do not do photometry on all the FITS files given as "
-                  "input, but only on those taken in this photometric filter. "
-                  "The supported systems are Johnson, Cousins, Gunn, SDSS, "
-                  "2MASS, Stromgren and H-alpha, but letters, designating a "
-                  "particular section of the electromagnetic spectrum, may "
-                  "also be used without a system (e.g., 'V')")
+                  help = "do not do photometry on all the FITS files given "
+                  "as input, but only on those taken in this photometric "
+                  "filter. " + defaults.desc['filter'])
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,

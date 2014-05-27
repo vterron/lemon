@@ -63,3 +63,8 @@ desc['mean'] = \
 "in order to compute the FWHM / elongation of a FITS image, take the " \
 "arithmetic mean of the astronomical objects (detected by SExtractor) " \
 "instead of the median. So you say you prefer a non-robust statistic?"
+
+desc['filter'] = \
+"The supported systems are Johnson, Cousins, Gunn, SDSS, 2MASS, Stromgren " \
+"and H-alpha, but letters, designating a particular section of the " \
+"electromagnetic spectrum, may also be used without a system (e.g., 'V')"
