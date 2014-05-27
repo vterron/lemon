@@ -156,16 +156,22 @@ def main(arguments = None):
             print style.error_exit_message
             return 1
 
+    if options.filter:
+        # Map each filter to a list of FITSImage objects
+        files = fitsimage.InputFITSFiles()
+
     msg = "%sMaking sure the %d input paths are FITS images..."
     print msg % (style.prefix, len(input_paths))
 
     methods.show_progress(0.0)
     for index, path in enumerate(input_paths):
         # fitsimage.FITSImage.__init__() raises fitsimage.NonStandardFITS if
-        # one of the paths is not a standard-conforming FITS file. We do not
-        # need the FITSImage object that is created.
+        # one of the paths is not a standard-conforming FITS file.
         try:
-            fitsimage.FITSImage(path)
+            img = fitsimage.FITSImage(path)
+            if options.filter:
+                pfilter = img.pfilter(options.filterk)
+                files[pfilter].append(path)
         except fitsimage.NonStandardFITS:
             print
             msg = "'%s' is not a standard FITS file"
