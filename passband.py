@@ -31,6 +31,11 @@ if the names of the filters were simply sorted lexicographically, 'Johnson I',
 for example, would go before 'Johnson V', even although the right order is the
 other way around (as V has a shorter wavelength than I).
 
+In addition to the built-in photometric systems, user-defined (custom) filters
+are supported via the CONFIG_PATH configuration file, defined as options in the
+CUSTOM_SECTION section. Please refer to the documentation of the Passband class
+for further information.
+
 """
 
 import ConfigParser
