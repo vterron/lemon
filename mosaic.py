@@ -61,6 +61,7 @@ import tempfile
 
 # LEMON modules
 import customparser
+import defaults
 import fitsimage
 import methods
 import style
@@ -77,6 +78,12 @@ parser.add_option('--background-match', action = 'store_true',
                   "any discrepancies in brightness or background. Note that, "
                   "although an amazing feature of Montage, this makes the "
                   "assembling of the images take remarkably longer.")
+
+parser.add_option('--filter', action = 'store', type = 'passband',
+                  dest = 'filter', default = None,
+                  help = "do not combine all the FITS files given as input, "
+                  "but only those taken in this photometric filter. " + \
+                  defaults.desc['filter'])
 
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = multiprocessing.cpu_count(),
