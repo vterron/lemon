@@ -181,6 +181,41 @@ def main(arguments = None):
         methods.show_progress(percentage)
     print # progress bar doesn't include newline
 
+    # The --filter option allows the user to specify which FITS files, among
+    # all those received as input, must be combined: only those images taken
+    # in the options.filter photometric filter.
+    if options.filter:
+
+        msg = "%s%d different photometric filters were detected:"
+        print msg % (style.prefix, len(files.keys()))
+
+        for pfilter, images in files.iteritems():
+            msg = "%s %s: %d files (%.2f %%)"
+            percentage = len(images) / len(files) * 100
+            print msg % (style.prefix, pfilter, len(images), percentage)
+
+        msg = "%sIgnoring images not taken in the '%s' photometric filter..."
+        print msg % (style.prefix, options.filter) ,
+        sys.stdout.flush()
+
+        discarded = 0
+        for pfilter, images in files.items():
+            if pfilter != options.filter:
+                discarded += len(images)
+                del files[pfilter]
+
+        if not files:
+            print
+            msg = "%sError. No image was taken in the '%s' filter."
+            print msg % (style.prefix, options.filter)
+            print style.error_exit_message
+            return 1
+
+        else:
+            print 'done.'
+            msg = "%s%d images taken in the '%s' filter, %d were discarded."
+            print msg % (style.prefix, len(files), options.filter, discarded)
+
     # montage.mosaic() requires as first argument the directory containing the
     # input FITS images but, in order to maintain the same syntax across all
     # LEMON commands, we receive them as command-line arguments. Thus, create a
