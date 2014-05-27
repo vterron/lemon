@@ -100,6 +100,15 @@ parser.add_option('--cores', action = 'store', type = 'int',
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
 
+key_group.add_option('--filterk', action = 'store', type = 'str',
+                     dest = 'filterk', default = keywords.filterk,
+                     help = "keyword for the name of the filter of the "
+                     "observation. This keyword is not necessary (and, "
+                     "therefore, its value irrelevant) if the --filter "
+                     "option is not used, since it is only in that "
+                     "scenario that we have to read the filter from "
+                     "the header of each FITS image [default: %default]")
+
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
