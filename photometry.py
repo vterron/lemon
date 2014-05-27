@@ -653,7 +653,7 @@ def main(arguments = None):
     msg = "%s%d different photometric filters were detected:"
     print msg % (style.prefix, len(files.keys()))
 
-    for pfilter, images in files.iteritems():
+    for pfilter, images in sorted(files.iteritems()):
         msg = "%s %s: %d files (%.2f %%)"
         percentage = len(images) / len(files) * 100
         print msg % (style.prefix, pfilter, len(images), percentage)
@@ -1038,7 +1038,7 @@ def main(arguments = None):
     output_db.simage = simage
     output_db.commit()
 
-    for pfilter, images in files.iteritems():
+    for pfilter, images in sorted(files.iteritems()):
         print style.prefix
         msg = "%sLet's do photometry on the %d images taken in the %s filter."
         args = (style.prefix, len(images), pfilter)

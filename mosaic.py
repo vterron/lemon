@@ -189,7 +189,7 @@ def main(arguments = None):
         msg = "%s%d different photometric filters were detected:"
         print msg % (style.prefix, len(files.keys()))
 
-        for pfilter, images in files.iteritems():
+        for pfilter, images in sorted(files.iteritems()):
             msg = "%s %s: %d files (%.2f %%)"
             percentage = len(images) / len(files) * 100
             print msg % (style.prefix, pfilter, len(images), percentage)
