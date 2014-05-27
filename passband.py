@@ -55,8 +55,8 @@ HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
 CUSTOM = 'Custom'
 
-CONFIG_FILENAME = '.lemonrc'
-CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
+CONFIG_FILENAME = '~/.lemonrc'
+CONFIG_PATH = os.path.expanduser(CONFIG_FILENAME)
 CUSTOM_SECTION = 'custom_filters'
 
 def load_custom_filters(path = CONFIG_PATH):
@@ -185,8 +185,8 @@ class Passband(object):
     Gunn system, but we can still work with it.
 
     In addition to the above, user-defined (custom) photometric filters are
-    supported via the CONFIG_FILENAME configuration file. They may be defined
-    as options in the CUSTOM_SECTION. For example:
+    supported via the CONFIG_PATH configuration file. They may be defined as
+    options in the CUSTOM_SECTION section. For example:
 
     [custom_filters]
     BEROS = B (EROS-2 survey)
@@ -332,7 +332,7 @@ class Passband(object):
 
         This method is called at the beginning of __init__() in order to check
         whether 'filter_name' corresponds to a custom photometric filter, those
-        defined in the CONFIG_FILENAME ConfigParser configuration file, section
+        defined in the CONFIG_PATH ConfigParser configuration file, section
         CUSTOM_SECTION. If that is the case, this method sets the value of the
         'letter' and 'system' attributes and returns True (which indicates to
         __init__() that the object was been successfully initialized and there
@@ -379,8 +379,8 @@ class Passband(object):
         written, assuming sane astronomers, under normal circumstances.
 
         If that is not your case, you may define your own photometric filters
-        in the CONFIG_FILENAME configuration file, listing them as options of
-        the CUSTOM_SECTION. For example, a line such as 'NO = Blank Filter'
+        in the CONFIG_PATH configuration file, listing them as options of the
+        CUSTOM_SECTION section. For example, a line such as 'NO = Blank Filter'
         defines the 'NO' (case-insentitive) filter, with 'Blank Filter' as it
         associated description. The former should be the filter name that you
         expect to come across in your FITS images, while the description is
