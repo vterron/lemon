@@ -22,6 +22,9 @@
 
 import multiprocessing
 
+# LEMON module
+import passband
+
 desc = {} # option descriptions (for optparse)
 
 ncores = multiprocessing.cpu_count()
@@ -67,4 +70,6 @@ desc['mean'] = \
 desc['filter'] = \
 "The supported systems are Johnson, Cousins, Gunn, SDSS, 2MASS, Stromgren " \
 "and H-alpha, but letters, designating a particular section of the " \
-"electromagnetic spectrum, may also be used without a system (e.g., 'V')"
+"electromagnetic spectrum, may also be used without a system (e.g., 'V'). " \
+"In addition to the built-in photometric systems, custom filters are " \
+"supported via the %s configuration file." % passband.CONFIG_FILENAME
