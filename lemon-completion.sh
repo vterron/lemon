@@ -54,7 +54,7 @@ _lemon_seeing()
 _lemon_mosaic()
 {
     local opts
-    opts="--overwrite --background-match --cores"
+    opts="--overwrite --background-match --filter --cores --filterk"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"

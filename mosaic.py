@@ -53,6 +53,7 @@ software, whose commands (such as mAdd or mProject) must be present in PATH.
 import atexit
 import montage_wrapper as montage
 import multiprocessing
+import optparse
 import os
 import os.path
 import shutil
@@ -61,7 +62,9 @@ import tempfile
 
 # LEMON modules
 import customparser
+import defaults
 import fitsimage
+import keywords
 import methods
 import style
 
@@ -78,6 +81,12 @@ parser.add_option('--background-match', action = 'store_true',
                   "although an amazing feature of Montage, this makes the "
                   "assembling of the images take remarkably longer.")
 
+parser.add_option('--filter', action = 'store', type = 'passband',
+                  dest = 'filter', default = None,
+                  help = "do not combine all the FITS files given as input, "
+                  "but only those taken in this photometric filter. " + \
+                  defaults.desc['filter'])
+
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = multiprocessing.cpu_count(),
                   help = "the number of MPI (Message Passing Interface) "
@@ -88,6 +97,19 @@ parser.add_option('--cores', action = 'store', type = 'int',
                   "number of CPUs in the system, which are automatically "
                   "detected [default: %default]")
 
+key_group = optparse.OptionGroup(parser, "FITS Keywords",
+                                 keywords.group_description)
+
+key_group.add_option('--filterk', action = 'store', type = 'str',
+                     dest = 'filterk', default = keywords.filterk,
+                     help = "keyword for the name of the filter of the "
+                     "observation. This keyword is not necessary (and, "
+                     "therefore, its value irrelevant) if the --filter "
+                     "option is not used, since it is only in that "
+                     "scenario that we have to read the filter from "
+                     "the header of each FITS image [default: %default]")
+
+parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
@@ -134,16 +156,22 @@ def main(arguments = None):
             print style.error_exit_message
             return 1
 
+    if options.filter:
+        # Map each filter to a list of FITSImage objects
+        files = fitsimage.InputFITSFiles()
+
     msg = "%sMaking sure the %d input paths are FITS images..."
     print msg % (style.prefix, len(input_paths))
 
     methods.show_progress(0.0)
     for index, path in enumerate(input_paths):
         # fitsimage.FITSImage.__init__() raises fitsimage.NonStandardFITS if
-        # one of the paths is not a standard-conforming FITS file. We do not
-        # need the FITSImage object that is created.
+        # one of the paths is not a standard-conforming FITS file.
         try:
-            fitsimage.FITSImage(path)
+            img = fitsimage.FITSImage(path)
+            if options.filter:
+                pfilter = img.pfilter(options.filterk)
+                files[pfilter].append(path)
         except fitsimage.NonStandardFITS:
             print
             msg = "'%s' is not a standard FITS file"
@@ -152,6 +180,41 @@ def main(arguments = None):
         percentage = (index + 1) / len(input_paths) * 100
         methods.show_progress(percentage)
     print # progress bar doesn't include newline
+
+    # The --filter option allows the user to specify which FITS files, among
+    # all those received as input, must be combined: only those images taken
+    # in the options.filter photometric filter.
+    if options.filter:
+
+        msg = "%s%d different photometric filters were detected:"
+        print msg % (style.prefix, len(files.keys()))
+
+        for pfilter, images in sorted(files.iteritems()):
+            msg = "%s %s: %d files (%.2f %%)"
+            percentage = len(images) / len(files) * 100
+            print msg % (style.prefix, pfilter, len(images), percentage)
+
+        msg = "%sIgnoring images not taken in the '%s' photometric filter..."
+        print msg % (style.prefix, options.filter) ,
+        sys.stdout.flush()
+
+        discarded = 0
+        for pfilter, images in files.items():
+            if pfilter != options.filter:
+                discarded += len(images)
+                del files[pfilter]
+
+        if not files:
+            print
+            msg = "%sError. No image was taken in the '%s' filter."
+            print msg % (style.prefix, options.filter)
+            print style.error_exit_message
+            return 1
+
+        else:
+            print 'done.'
+            msg = "%s%d images taken in the '%s' filter, %d were discarded."
+            print msg % (style.prefix, len(files), options.filter, discarded)
 
     # montage.mosaic() requires as first argument the directory containing the
     # input FITS images but, in order to maintain the same syntax across all

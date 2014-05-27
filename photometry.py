@@ -81,52 +81,6 @@ DANNULUS_TOO_THIN_MSG = \
 # See http://stackoverflow.com/a/3217427/184363
 queue = methods.Queue()
 
-class InputFITSFiles(collections.defaultdict):
-    """ Map each photometric filter to a list of FITS files.
-
-    A convenience class to simplify how we work with the images on which
-    photometry has to be done: it is a defaultdict, mapping each photometric
-    filter to a list of the corresponding FITS files, but that iterates over
-    the values (the FITS files, independently of their filter). This way, it
-    may be viewed as a sequence of FITS files that also allows access by the
-    photometric filter.
-
-    """
-
-    def __init__(self):
-        super(InputFITSFiles, self).__init__(list)
-
-    def __iter__(self):
-        """ Iterate over the FITS files, regardless or their filter """
-        for pfilter in self.itervalues():
-            for img in pfilter:
-                yield img
-
-    def __len__(self):
-        """ Return the number of FITS files, in any filter """
-        return sum(len(pfilter) for pfilter in self.itervalues())
-
-    def remove(self, img):
-        """ Remove all occurrences of the FITS file, in any filter.
-
-        Loop over the different photometric filters and remove, from each
-        associated list of FITS files, all occurrences of 'img'. Returns the
-        number of elements that were deleted. Emits a warning for each file
-        that is removed, stating that is has been 'excluded'.
-
-        """
-
-        discarded = 0
-        for pfilter_imgs in self.itervalues():
-            # Iterate backwards, modify original list in situ
-            for index in reversed(xrange(len(pfilter_imgs))):
-                if pfilter_imgs[index] == img:
-                    del pfilter_imgs[index]
-                    discarded += 1
-                    msg = "%s %s excluded."
-                    warnings.warn(msg % (style.prefix, img))
-        return discarded
-
 def get_fwhm(img, options):
     """ Return the FWHM of the FITS image.
 
@@ -276,12 +230,9 @@ parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
 
 parser.add_option('--filter', action = 'store', type = 'passband',
                   dest = 'filter', default = None,
-                  help = "do not do photometry on all the FITS files given as "
-                  "input, but only on those taken in this photometric filter. "
-                  "The supported systems are Johnson, Cousins, Gunn, SDSS, "
-                  "2MASS, Stromgren and H-alpha, but letters, designating a "
-                  "particular section of the electromagnetic spectrum, may "
-                  "also be used without a system (e.g., 'V')")
+                  help = "do not do photometry on all the FITS files given "
+                  "as input, but only on those taken in this photometric "
+                  "filter. " + defaults.desc['filter'])
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
@@ -682,7 +633,7 @@ def main(arguments = None):
                         time_keyword = options.timek,
                         exp_keyword = options.exptimek)
 
-    files = InputFITSFiles()
+    files = fitsimage.InputFITSFiles()
     img_dates = {}
 
     methods.show_progress(0.0)
@@ -702,7 +653,7 @@ def main(arguments = None):
     msg = "%s%d different photometric filters were detected:"
     print msg % (style.prefix, len(files.keys()))
 
-    for pfilter, images in files.iteritems():
+    for pfilter, images in sorted(files.iteritems()):
         msg = "%s %s: %d files (%.2f %%)"
         percentage = len(images) / len(files) * 100
         print msg % (style.prefix, pfilter, len(images), percentage)
@@ -1087,7 +1038,7 @@ def main(arguments = None):
     output_db.simage = simage
     output_db.commit()
 
-    for pfilter, images in files.iteritems():
+    for pfilter, images in sorted(files.iteritems()):
         print style.prefix
         msg = "%sLet's do photometry on the %d images taken in the %s filter."
         args = (style.prefix, len(images), pfilter)
