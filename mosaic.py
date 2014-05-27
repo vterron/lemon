@@ -53,6 +53,7 @@ software, whose commands (such as mAdd or mProject) must be present in PATH.
 import atexit
 import montage_wrapper as montage
 import multiprocessing
+import optparse
 import os
 import os.path
 import shutil
@@ -63,6 +64,7 @@ import tempfile
 import customparser
 import defaults
 import fitsimage
+import keywords
 import methods
 import style
 
@@ -95,6 +97,10 @@ parser.add_option('--cores', action = 'store', type = 'int',
                   "number of CPUs in the system, which are automatically "
                   "detected [default: %default]")
 
+key_group = optparse.OptionGroup(parser, "FITS Keywords",
+                                 keywords.group_description)
+
+parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
 def main(arguments = None):
