@@ -30,6 +30,7 @@ from __future__ import division
 import astropy.io
 import astropy.wcs
 import calendar
+import collections
 import datetime
 import fnmatch
 import hashlib
@@ -1475,6 +1476,54 @@ class FITSet(list):
 
         imgs = sorted(dates_cache.iterkeys(), key = lambda x: dates_cache[x])
         return FITSet(imgs)
+
+
+class InputFITSFiles(collections.defaultdict):
+    """ Map each photometric filter to a list of FITS files.
+
+    A convenience class to simplify how we work with the images on which
+    photometry has to be done: it is a defaultdict, mapping each photometric
+    filter to a list of the corresponding FITS files, but that iterates over
+    the values (the FITS files, independently of their filter). This way, it
+    may be viewed as a sequence of FITS files that also allows access by the
+    photometric filter.
+
+    """
+
+    def __init__(self):
+        super(InputFITSFiles, self).__init__(list)
+
+    def __iter__(self):
+        """ Iterate over the FITS files, regardless or their filter """
+        for pfilter in self.itervalues():
+            for img in pfilter:
+                yield img
+
+    def __len__(self):
+        """ Return the number of FITS files, in any filter """
+        return sum(len(pfilter) for pfilter in self.itervalues())
+
+    def remove(self, img):
+        """ Remove all occurrences of the FITS file, in any filter.
+
+        Loop over the different photometric filters and remove, from each
+        associated list of FITS files, all occurrences of 'img'. Returns the
+        number of elements that were deleted. Emits a warning for each file
+        that is removed, stating that is has been 'excluded'.
+
+        """
+
+        discarded = 0
+        for pfilter_imgs in self.itervalues():
+            # Iterate backwards, modify original list in situ
+            for index in reversed(xrange(len(pfilter_imgs))):
+                if pfilter_imgs[index] == img:
+                    del pfilter_imgs[index]
+                    discarded += 1
+                    msg = "%s %s excluded."
+                    warnings.warn(msg % (style.prefix, img))
+        return discarded
+
 
 def find_files(paths, followlinks = True, pattern = None):
     """ Find all the regular files that can be found in the given paths.
