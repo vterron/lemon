@@ -243,6 +243,20 @@ class QPhot(list):
         output coordinate system options are 'logical', 'tv', and 'physical':
         http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?qphot
 
+        The x- and y-coordinates of the centers of the astronomical objects may
+        be reported as -1 if their celestial coordinates fall considerably off
+        those of the FITS image on which photometry is done. This is caused by
+        a bug in IRAF, which, as of v.2.16.1, outputs invalid floating-point
+        numbers (such as '-299866.375-58') when the astronomical object is
+        approximately >= 100 degrees off the image boundaries. In those cases,
+        the fallback value of -1 does not give us any other information than
+        that the object falls off the image. This must probably be one of the
+        least important bugs ever, considering how wrong the input celestial
+        coordinates must be.
+
+        Bug report that we have submitted to the IRAF development team:
+        [URL] http://iraf.net/forum/viewtopic.php?showtopic=1468373
+
         Arguments:
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
@@ -307,8 +321,38 @@ class QPhot(list):
                 for line in txdump_fd:
 
                     fields = line.split()
-                    xcenter = float(fields[0])
-                    ycenter = float(fields[1])
+
+                    # As of IRAF v.2.16.1, the qphot task may output an invalid
+                    # floating-point number (such as "-299866.375-58") when the
+                    # coordinates of the object to be measured fall considerably
+                    # off (>= ~100 degrees) the image. That raises ValueError
+                    # ("invalid literal for float()") when we attempt to convert
+                    # the output xcenter or ycenter to float. In those cases, we
+                    # use -1 as the fallback value.
+
+                    try:
+                        xcenter_str = fields[0]
+                        xcenter     = float(xcenter_str)
+                        msg = "%s: xcenter = %.8f" % (self.path, xcenter)
+                        logging.debug(msg)
+                    except ValueError, e:
+                        msg = "%s: can't convert xcenter = '%s' to float (%s)"
+                        logging.debug(msg % (self.path, xcenter_str, str(e)))
+                        msg = "%s: xcenter set to -1 (fallback value)"
+                        logging.debug(msg % self.path)
+                        xcenter = -1
+
+                    try:
+                        ycenter_str = fields[1]
+                        ycenter     = float(ycenter_str)
+                        msg = "%s: ycenter = %.8f" % (self.path, ycenter)
+                        logging.debug(msg)
+                    except ValueError, e:
+                        msg = "%s: can't convert ycenter = '%s' to float (%s)"
+                        logging.debug(msg % (self.path, ycenter_str, str(e)))
+                        msg = "%s: ycenter set to -1 (fallback value)"
+                        logging.debug(msg % self.path)
+                        ycenter = -1
 
                     try:
                         mag_str = fields[2]
