@@ -805,6 +805,18 @@ class LEMONdB(object):
         'sources' images in the same table and without having to rewrite a
         considerable chunk of the LEMONdB class.
 
+        All the fields, except for the name of the observed object (i.e., the
+        'object' attribute of the Image class) are required in order to store
+        an image in the database: sqlite3.IntegrityError is raised in case any
+        of them is None, which is the data type that SQLite interprets as NULL.
+        As an exception to the previous statement, the photometric filter, time
+        of observation, airmass and gain may be None for the sources image (if
+        '_is_sources_img' evaluates to True). The reason for this is that,
+        while photometry is done on individual images, sources may be detected
+        on an image resulting from assembling several ones into a custom mosaic
+        (e.g., using the IPAC's Montage toolkit), scenario in which we cannot
+        properly speak about a filter, observation date, gain or airmass.
+
         """
 
         # Use a SAVEPOINT to, if the insertion of the Image fails, be able
