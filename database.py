@@ -738,22 +738,22 @@ class LEMONdB(object):
         Receives an Image object with information about the FITS file that was
         used to detect sources and stores it in the LEMONdB. The file to which
         Image.path refers must exist and be readable, as it is also stored in
-        the database and accessible through the LEMON.mosaic attribute.
+        the database and accessible through the LEMON.mosaic attribute. If an
+        image with the same Unix time and photometric filter already exists in
+        the LEMONdB, DuplicateImageError is raised.
 
         """
 
-        try:
-            self.add_image(image)
-        except DuplicateImageError:
-            pass
+        self.add_image(image, _is_sources_img = True)
 
         with open(image.path, 'rb') as fd:
             blob = fd.read()
 
-        # The sources image is the only one with  SOURCES == 1
-        id_ = self._get_image_id(image.unix_time, image.pfilter)
-        self._execute("UPDATE images SET sources = 0")
-        self._execute("UPDATE images SET sources = 1 WHERE id = ?", (id_,))
+        # Get the ID of the sources image and store it as a blob
+        self._execute("SELECT id FROM images WHERE sources = 1")
+        rows = list(self._rows)
+        assert len(rows) == 1
+        id_ = rows[0][0]
         t = (id_, buffer(blob))
         self._execute("INSERT OR REPLACE INTO raw_images VALUES (?, ?)", t)
 
