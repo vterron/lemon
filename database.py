@@ -801,7 +801,7 @@ class LEMONdB(object):
                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
-        except sqlite3.IntegrityError:
+        except Exception:
             self._rollback_to(mark)
             unix_time = image.unix_time
             pfilter = image.pfilter
