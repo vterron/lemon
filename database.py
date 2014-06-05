@@ -801,22 +801,31 @@ class LEMONdB(object):
                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
-        except Exception:
+        except Exception as e:
             self._rollback_to(mark)
+
             unix_time = image.unix_time
             pfilter = image.pfilter
 
-            if __debug__:
-                self._execute("SELECT unix_time FROM images")
-                assert (unix_time,) in self._rows
+            # Raise DuplicateImageError if there is already an image with this
+            # Unix time and photometric filter, instead of the more generic and
+            # less descriptive sqlite3.IntegrityError ("columns filter_id,
+            # unix_time are not unique")
+
+            self._execute("SELECT unix_time FROM images")
+            if (unix_time,) in self._rows:
                 self._execute("SELECT 1 "
                               "FROM photometric_filters "
                               "WHERE id = ?", (hash(pfilter),))
-                assert [(1,)] == list(self._rows)
+                if [(1,)] == list(self._rows):
+                    msg = ("Image with Unix time %.4f (%s) and filter %s "
+                           "already in database")
+                    args = (unix_time, methods.utctime(unix_time), pfilter)
+                    raise DuplicateImageError(msg % args)
 
-            msg = "Image with Unix time %.4f (%s) and filter %s already in database"
-            args = (unix_time, methods.utctime(unix_time), pfilter)
-            raise DuplicateImageError(msg % args)
+            # This point is only reached if DuplicateImageError was not raised
+            # above, so re-raise the original exception, whatever it is.
+            raise e
 
     def _get_image_id(self, unix_time, pfilter):
         """ Return the ID of the Image with this Unix time and filter.
