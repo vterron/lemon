@@ -757,7 +757,7 @@ class LEMONdB(object):
         t = (id_, buffer(blob))
         self._execute("INSERT OR REPLACE INTO raw_images VALUES (?, ?)", t)
 
-    def add_image(self, image):
+    def add_image(self, image, _is_sources_img = False):
         """ Store information about a FITS image in the database.
 
         Raises DuplicateImageError if the Image has the same Unix time and
@@ -774,8 +774,17 @@ class LEMONdB(object):
         self._add_pfilter(image.pfilter)
 
         t = (None, image.path, hash(image.pfilter), image.unix_time,
-             image.object, image.airmass, image.gain, image.ra, image.dec, 0)
+             image.object, image.airmass, image.gain, image.ra, image.dec,
+             1 if _is_sources_img else 0)
+
         try:
+            # If this is the sources image (i.e., _is_sources_img == True), it
+            # will become the only one for which SOURCES == 1. Set the SOURCES
+            # column of the previous sources image, if any, to zero, making it
+            # a 'normal' image.
+            if _is_sources_img:
+                self._execute("UPDATE images SET sources = 0 WHERE sources = 1")
+
             self._execute("INSERT INTO images "
                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
