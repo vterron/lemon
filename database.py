@@ -765,6 +765,18 @@ class LEMONdB(object):
         database (as these two values must be unique; i.e., we cannot have
         two or more images with the same Unix time and photometric filter).
 
+        If '_is_sources_img' evaluates to True, this image is stored in the
+        database as the FITS file on which sources were detected, overriding
+        the previous sources image, if any. You are, however, expected to use
+        LEMONdB.simage() to achieve this. In fact, the default value of this
+        keyword argument should never be modified under normal circumstances
+        when the method is called. You are encouraged to ignore it unless you
+        really know what you are doing. This please-stay-away-of-it keyword
+        argument is undeniably inelegant, but it exists because it makes much
+        simpler the rest of our code, allowing us to store both 'normal' and
+        'sources' images in the same table and without having to rewrite a
+        considerable chunk of the LEMONdB class.
+
         """
 
         # Use a SAVEPOINT to, if the insertion of the Image fails, be able
