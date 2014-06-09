@@ -507,6 +507,18 @@ class LEMONdB(object):
         self._execute("CREATE INDEX IF NOT EXISTS img_by_filter_time "
                       "ON images(filter_id, unix_time)")
 
+        # Enforce a maximum of one sources image (SOURCES == 1)
+        for index, when in enumerate(("INSERT", "UPDATE OF sources")):
+            stmt = """CREATE TRIGGER IF NOT EXISTS single_sources_%d
+                      AFTER %s ON images
+                      BEGIN
+                          SELECT RAISE(ABORT, 'only one SOURCES column may be = 1')
+                          WHERE (SELECT COUNT(*)
+                                 FROM images
+                                 WHERE sources = 1) > 1;
+                      END; """ % (index, when)
+            self._execute(stmt)
+
         # Store as a blob entire FITS files.
         self._execute('''
         CREATE TABLE IF NOT EXISTS raw_images (
