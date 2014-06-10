@@ -813,7 +813,18 @@ class LEMONdB(object):
         mark = self._savepoint()
         self._add_pfilter(image.pfilter)
 
-        t = (None, image.path, hash(image.pfilter), image.unix_time,
+        # One of the database triggers raises sqlite3.IntegrityError if the
+        # photometric filter is NULL. However, we do not store the Passband
+        # object directly in the database, but instead use their hash value.
+        # Thus, the FILTER_ID column can never be NULL, since hash() always
+        # returns an integer. We need to raise the error ourselves.
+        if image.pfilter is None and not _is_sources_img:
+            msg = "image.pfilter may not be NULL unless SOURCES = 1"
+            raise sqlite3.IntegrityError(msg)
+
+        t = (None, image.path,
+             hash(image.pfilter) if image.pfilter else None,
+             image.unix_time,
              image.object, image.airmass, image.gain, image.ra, image.dec,
              1 if _is_sources_img else 0)
 
