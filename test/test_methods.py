@@ -20,6 +20,7 @@
 
 from __future__ import division
 
+import operator
 import random
 
 # LEMON modules
@@ -167,3 +168,21 @@ class LoadCoordinatesTest(unittest.TestCase):
         check_raise(data1, ValueError, regexp)
         data2 = "%.8f %.8f" % (ra,  113.93) # DEC > +90
         check_raise(data2, ValueError, regexp)
+
+class MethodsFunctionsTests(unittest.TestCase):
+
+    def test_func_catchall(self):
+
+        # Returns func(*args, **kwargs) ...
+        self.assertEqual(3,  methods.func_catchall(operator.div, 9, 3))
+        self.assertEqual(4,  methods.func_catchall(int, '4'))
+        self.assertEqual(-5, methods.func_catchall(max, -1, -5, 4, key=abs))
+
+        # ... unless the function raises an exception. In that case, it is
+        # catched and None is returned instead.
+
+        def foo_except():
+            raise ValuError
+
+        self.assertEqual(None, methods.func_catchall(foo_except))
+        self.assertEqual(None, methods.func_catchall(operator.div, 1, 0))
