@@ -27,6 +27,7 @@ import numpy
 import operator
 import os
 import random
+import re
 import sqlite3
 import string
 import tempfile
@@ -1119,6 +1120,60 @@ class LEMONdBTest(unittest.TestCase):
         after_tables = self.images_filters_tables_status(db)
         self.assertEqual(before_tables, after_tables)
 
+    def test_add_and_get_image_None_fields(self):
+
+        def img_None_attr(attr):
+            """ Return a random Image where only this attribute is None """
+            kwargs = {attr : None}
+            return ImageTest.random()._replace(**kwargs)
+
+        def assert_None_raises(db, attr, is_sources_img):
+            """ Test that, when an Image whose 'attr' attribute is None is
+            added to the LEMONdB with add_image(), sqlite3.IntegrityError is
+            raised. Make also sure that none of the involved tables of the
+            database are modified (i.e., that the transacion is rolled back)"""
+
+            before_tables = self.images_filters_tables_status(db)
+            regexp = re.compile("%s may not be NULL" % attr, re.IGNORECASE)
+            img = img_None_attr(attr)
+            with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
+                db.add_image(img, _is_sources_img = is_sources_img)
+            after_tables = self.images_filters_tables_status(db)
+            self.assertEqual(before_tables, after_tables)
+
+        # Except for 'object', LEMONdB.add_image() does not allow any of the
+        # attributes of the Image object to be None (and therefore NULL in the
+        # IMAGES table). Raises sqlite3.IntegrityError if that is the case (for
+        # example: "images.ra may not be NULL")
+
+        db = LEMONdB(':memory:')
+        attributes = set(Image._fields)
+        for attr in attributes.difference(set(['object'])):
+            img = img_None_attr(attr)
+            assert_None_raises(db, attr, False)
+
+        # The object name can be None
+        input_img = img_None_attr('object')
+        db.add_image(input_img)
+        output_img = db.get_image(input_img.unix_time, input_img.pfilter)
+        self.assertEqual(input_img, output_img)
+
+        # Things are different for the sources image (_is_sources_img = True):
+        # in those cases, only the path to the image, its right ascension and
+        # declination are mandatory. The other fields (filter, date, airmass
+        # and gain) may be meaningless if we assemble several images into a
+        # custom mosaic and use the resulting image to detect the sources.
+
+        mandatory_fields = set(['path', 'ra', 'dec'])
+        for attr in mandatory_fields:
+            img = img_None_attr(attr)
+            assert_None_raises(db, attr, True)
+
+        for attr in attributes.difference(mandatory_fields):
+            img = img_None_attr(attr)
+            db.add_image(img, _is_sources_img = True)
+            # We do not test LEMONdB.get_image() here: the sources image should
+            # be extracted from the database using the LEMONdB.simage property.
 
     @classmethod
     def random_stars_info(cls, size):
