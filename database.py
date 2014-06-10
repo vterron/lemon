@@ -303,7 +303,7 @@ class LightCurve(object):
         return curve
 
 
-class DuplicateImageError(KeyError):
+class DuplicateImageError(sqlite3.IntegrityError):
     """ Raised if two Images with the same Unix time are added to a LEMONdB """
     pass
 
