@@ -307,7 +307,7 @@ class DuplicateImageError(sqlite3.IntegrityError):
     """ Raised if two Images with the same Unix time are added to a LEMONdB """
     pass
 
-class DuplicateStarError(KeyError):
+class DuplicateStarError(sqlite3.IntegrityError):
     """ Raised if tho stars with the same ID are added to a LEMONdB """
     pass
 
