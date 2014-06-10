@@ -27,6 +27,7 @@ import numpy
 import operator
 import os
 import random
+import re
 import sqlite3
 import string
 import tempfile
@@ -994,6 +995,19 @@ class LEMONdBTest(unittest.TestCase):
                 retrieved = db.get_candidate_pparams(pfilter)
                 self.assertEqual(retrieved, expected)
 
+    @staticmethod
+    def images_filters_tables_status(db):
+        """ Return two sorted tuples with all the information stored in the
+        IMAGES and PHOTOMETRIC_FILTERS tables of the 'db' LEMONdB"""
+
+        query_images  = "SELECT * FROM images ORDER BY unix_time"
+        query_filters = "SELECT * FROM photometric_filters ORDER BY id"
+        db._execute(query_images)
+        images = tuple(db._rows)
+        db._execute(query_filters)
+        filters = tuple(db._rows)
+        return images, filters
+
     def test_simage_and_mosaic(self):
         db = LEMONdB(':memory:')
 
@@ -1013,6 +1027,20 @@ class LEMONdBTest(unittest.TestCase):
                 self.assertEqual(db.simage, img)
                 with test.test_fitsimage.FITSImage(db.mosaic) as output:
                     self.assertEqual(input.sha1sum, output.sha1sum)
+
+        # LEMONdB.simage replaces the existing source image, if any, but it
+        # raises DuplicateImageError if an image with the same Unix time and
+        # photometric filter is already stored in the database. To test this,
+        # add a new image with the same filter and observation date than the
+        # last Image added in the above loop.
+
+        kwargs = dict(pfilter = img.pfilter, unix_time = img.unix_time)
+        duplicate_img = ImageTest.random()._replace(**kwargs)
+        before_tables = self.images_filters_tables_status(db)
+        with self.assertRaises(DuplicateImageError):
+            db.simage = duplicate_img
+        after_tables = self.images_filters_tables_status(db)
+        self.assertEqual(before_tables, after_tables)
 
     def test_add_and_get_image(self):
         db = LEMONdB(':memory:')
@@ -1079,18 +1107,6 @@ class LEMONdBTest(unittest.TestCase):
         img1 = ImageTest.random()
         db.add_image(img1)
 
-        def tables_status(db):
-            """ Return two sorted tuples with all the information stored in
-            the IMAGES and PHOTOMETRIC_FILTERS tables of the 'db' LEMONdB"""
-
-            query_images  = "SELECT * FROM images ORDER BY unix_time"
-            query_filters = "SELECT * FROM photometric_filters ORDER BY id"
-            db._execute(query_images)
-            images = tuple(db._rows)
-            db._execute(query_filters)
-            filters = tuple(db._rows)
-            return images, filters
-
         # Another random Image with the same Unix time filter.
         img2 = ImageTest.random(pfilter = img1.pfilter)
         img2 = img2._replace(unix_time = img1.unix_time)
@@ -1098,10 +1114,66 @@ class LEMONdBTest(unittest.TestCase):
         assert img1.unix_time == img2.unix_time
         assert img1.pfilter == img2.pfilter
 
-        before_tables = tables_status(db)
+        before_tables = self.images_filters_tables_status(db)
         with self.assertRaises(DuplicateImageError):
             db.add_image(img2)
-        self.assertEqual(tables_status(db), before_tables)
+        after_tables = self.images_filters_tables_status(db)
+        self.assertEqual(before_tables, after_tables)
+
+    def test_add_and_get_image_None_fields(self):
+
+        def img_None_attr(attr):
+            """ Return a random Image where only this attribute is None """
+            kwargs = {attr : None}
+            return ImageTest.random()._replace(**kwargs)
+
+        def assert_None_raises(db, attr, is_sources_img):
+            """ Test that, when an Image whose 'attr' attribute is None is
+            added to the LEMONdB with add_image(), sqlite3.IntegrityError is
+            raised. Make also sure that none of the involved tables of the
+            database are modified (i.e., that the transacion is rolled back)"""
+
+            before_tables = self.images_filters_tables_status(db)
+            regexp = re.compile("%s may not be NULL" % attr, re.IGNORECASE)
+            img = img_None_attr(attr)
+            with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
+                db.add_image(img, _is_sources_img = is_sources_img)
+            after_tables = self.images_filters_tables_status(db)
+            self.assertEqual(before_tables, after_tables)
+
+        # Except for 'object', LEMONdB.add_image() does not allow any of the
+        # attributes of the Image object to be None (and therefore NULL in the
+        # IMAGES table). Raises sqlite3.IntegrityError if that is the case (for
+        # example: "images.ra may not be NULL")
+
+        db = LEMONdB(':memory:')
+        attributes = set(Image._fields)
+        for attr in attributes.difference(set(['object'])):
+            img = img_None_attr(attr)
+            assert_None_raises(db, attr, False)
+
+        # The object name can be None
+        input_img = img_None_attr('object')
+        db.add_image(input_img)
+        output_img = db.get_image(input_img.unix_time, input_img.pfilter)
+        self.assertEqual(input_img, output_img)
+
+        # Things are different for the sources image (_is_sources_img = True):
+        # in those cases, only the path to the image, its right ascension and
+        # declination are mandatory. The other fields (filter, date, airmass
+        # and gain) may be meaningless if we assemble several images into a
+        # custom mosaic and use the resulting image to detect the sources.
+
+        mandatory_fields = set(['path', 'ra', 'dec'])
+        for attr in mandatory_fields:
+            img = img_None_attr(attr)
+            assert_None_raises(db, attr, True)
+
+        for attr in attributes.difference(mandatory_fields):
+            img = img_None_attr(attr)
+            db.add_image(img, _is_sources_img = True)
+            # We do not test LEMONdB.get_image() here: the sources image should
+            # be extracted from the database using the LEMONdB.simage property.
 
     @classmethod
     def random_stars_info(cls, size):
