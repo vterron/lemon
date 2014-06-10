@@ -840,7 +840,7 @@ class LEMONdB(object):
              hash(image.pfilter) if image.pfilter else None,
              image.unix_time,
              image.object, image.airmass, image.gain, image.ra, image.dec,
-             1 if _is_sources_img else 0)
+             int(_is_sources_img))
 
         try:
             # If this is the sources image (i.e., _is_sources_img == True), it
