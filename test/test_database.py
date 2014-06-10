@@ -994,6 +994,19 @@ class LEMONdBTest(unittest.TestCase):
                 retrieved = db.get_candidate_pparams(pfilter)
                 self.assertEqual(retrieved, expected)
 
+    @staticmethod
+    def images_filters_tables_status(db):
+        """ Return two sorted tuples with all the information stored in the
+        IMAGES and PHOTOMETRIC_FILTERS tables of the 'db' LEMONdB"""
+
+        query_images  = "SELECT * FROM images ORDER BY unix_time"
+        query_filters = "SELECT * FROM photometric_filters ORDER BY id"
+        db._execute(query_images)
+        images = tuple(db._rows)
+        db._execute(query_filters)
+        filters = tuple(db._rows)
+        return images, filters
+
     def test_simage_and_mosaic(self):
         db = LEMONdB(':memory:')
 
@@ -1079,18 +1092,6 @@ class LEMONdBTest(unittest.TestCase):
         img1 = ImageTest.random()
         db.add_image(img1)
 
-        def tables_status(db):
-            """ Return two sorted tuples with all the information stored in
-            the IMAGES and PHOTOMETRIC_FILTERS tables of the 'db' LEMONdB"""
-
-            query_images  = "SELECT * FROM images ORDER BY unix_time"
-            query_filters = "SELECT * FROM photometric_filters ORDER BY id"
-            db._execute(query_images)
-            images = tuple(db._rows)
-            db._execute(query_filters)
-            filters = tuple(db._rows)
-            return images, filters
-
         # Another random Image with the same Unix time filter.
         img2 = ImageTest.random(pfilter = img1.pfilter)
         img2 = img2._replace(unix_time = img1.unix_time)
@@ -1098,10 +1099,12 @@ class LEMONdBTest(unittest.TestCase):
         assert img1.unix_time == img2.unix_time
         assert img1.pfilter == img2.pfilter
 
-        before_tables = tables_status(db)
+        before_tables = self.images_filters_tables_status(db)
         with self.assertRaises(DuplicateImageError):
             db.add_image(img2)
-        self.assertEqual(tables_status(db), before_tables)
+        after_tables = self.images_filters_tables_status(db)
+        self.assertEqual(before_tables, after_tables)
+
 
     @classmethod
     def random_stars_info(cls, size):
