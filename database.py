@@ -616,6 +616,13 @@ class LEMONdB(object):
         """ Store a photometric filter in the database. The primary
         key of the Passband objects in the table is their hash value """
 
+        # Duck typing is not the way to go here. The photometric filter *must*
+        # be a Passband object: hash() always returns an integer, so dangerous
+        # (or plain wrong) things like hash(None) would go unnoticed.
+        if not isinstance(pfilter, passband.Passband):
+            msg = "'pfilter' must be a Passband object"
+            raise ValueError(msg)
+
         t = (hash(pfilter), str(pfilter))
         self._execute("INSERT OR IGNORE INTO photometric_filters VALUES (?, ?)", t)
 
