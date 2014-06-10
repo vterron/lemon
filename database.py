@@ -811,7 +811,6 @@ class LEMONdB(object):
         # to roll back the insertion of the photometric filter.
 
         mark = self._savepoint()
-        self._add_pfilter(image.pfilter)
 
         # One of the database triggers raises sqlite3.IntegrityError if the
         # photometric filter is NULL. However, we do not store the Passband
@@ -821,6 +820,9 @@ class LEMONdB(object):
         if image.pfilter is None and not _is_sources_img:
             msg = "image.pfilter may not be NULL unless SOURCES = 1"
             raise sqlite3.IntegrityError(msg)
+
+        if image.pfilter:
+            self._add_pfilter(image.pfilter)
 
         t = (None, image.path,
              hash(image.pfilter) if image.pfilter else None,
