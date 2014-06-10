@@ -1018,19 +1018,30 @@ def main(arguments = None):
     # Do this by creating a database.Image object, which encapsulates a FITS
     # file, and assign it to the LEMONdB.simage attribute. The image is also
     # stored as a blob and is available through the LEMONdB.mosaic attribute.
+    #
+    # In the case of the sources image, unlike for the images on which we do
+    # photometry, there are several fields that are allowed to be None. This
+    # is because we may detect sources on an image resulting from assembling
+    # several ones into a custom mosaic: the resulting image does not have a
+    # proper (a) photometric filter, (b) observation date, (c) airmass or (d)
+    # gain. Therefore, we use None, which SQLite interprets as NULL.
 
     path = sources_img.path
-    pfilter = sources_img.pfilter(options.filterk)
+    pfilter = methods.func_catchall(sources_img.pfilter, options.filterk)
 
     kwargs = dict(date_keyword = options.datek,
                   time_keyword = options.timek,
                   exp_keyword = options.exptimek)
-    unix_time = sources_img.date(**kwargs)
+    unix_time = methods.func_catchall(sources_img.date, **kwargs)
 
-    object_ = sources_img.read_keyword(options.objectk)
-    airmass = sources_img.read_keyword(options.airmassk)
+    object_ = methods.func_catchall(sources_img.read_keyword, options.objectk)
+    airmass = methods.func_catchall(sources_img.read_keyword, options.airmassk)
     # If not given with --gaink, read it from the FITS header
-    gain = options.gain or sources_img.read_keyword(options.gaink)
+    if options.gain:
+        gain = options.gain
+    else:
+        gain = methods.func_catchall(sources_img.read_keyword, options.gaink)
+
     ra, dec = sources_img_ra, sources_img_dec
 
     args = (path, pfilter, unix_time, object_, airmass, gain, ra, dec)
