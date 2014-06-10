@@ -1027,6 +1027,20 @@ class LEMONdBTest(unittest.TestCase):
                 with test.test_fitsimage.FITSImage(db.mosaic) as output:
                     self.assertEqual(input.sha1sum, output.sha1sum)
 
+        # LEMONdB.simage replaces the existing source image, if any, but it
+        # raises DuplicateImageError if an image with the same Unix time and
+        # photometric filter is already stored in the database. To test this,
+        # add a new image with the same filter and observation date than the
+        # last Image added in the above loop.
+
+        kwargs = dict(pfilter = img.pfilter, unix_time = img.unix_time)
+        duplicate_img = ImageTest.random()._replace(**kwargs)
+        before_tables = self.images_filters_tables_status(db)
+        with self.assertRaises(DuplicateImageError):
+            db.simage = duplicate_img
+        after_tables = self.images_filters_tables_status(db)
+        self.assertEqual(before_tables, after_tables)
+
     def test_add_and_get_image(self):
         db = LEMONdB(':memory:')
         size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
