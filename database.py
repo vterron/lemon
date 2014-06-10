@@ -519,6 +519,22 @@ class LEMONdB(object):
                       END; """ % (index, when)
             self._execute(stmt)
 
+        # Although FILTER_ID, UNIX_TIME, AIRMASS and GAIN may be NULL, we only
+        # allow this for the sources image (that for which SOURCES == 1). The
+        # four columns are mandatory for 'normal' (so to speak) images.
+
+        for field in ('FILTER_ID', 'UNIX_TIME', 'AIRMASS', 'GAIN'):
+            for index, where in enumerate(("INSERT", "UPDATE OF " + field)):
+                stmt =  """CREATE TRIGGER IF NOT EXISTS {0}_not_null_{1}
+                           AFTER {2} ON images
+                           FOR EACH ROW
+                           WHEN NEW.{0} is NULL AND NEW.sources != 1
+                           BEGIN
+                               SELECT RAISE(ABORT, '{0} may not be NULL unless SOURCES = 1');
+                           END; """.format(field, index, where)
+                self._execute(stmt)
+
+
         # Store as a blob entire FITS files.
         self._execute('''
         CREATE TABLE IF NOT EXISTS raw_images (
