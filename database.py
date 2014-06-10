@@ -303,11 +303,11 @@ class LightCurve(object):
         return curve
 
 
-class DuplicateImageError(KeyError):
+class DuplicateImageError(sqlite3.IntegrityError):
     """ Raised if two Images with the same Unix time are added to a LEMONdB """
     pass
 
-class DuplicateStarError(KeyError):
+class DuplicateStarError(sqlite3.IntegrityError):
     """ Raised if tho stars with the same ID are added to a LEMONdB """
     pass
 
@@ -491,11 +491,11 @@ class LEMONdB(object):
         CREATE TABLE IF NOT EXISTS images (
             id         INTEGER PRIMARY KEY,
             path       TEXT NOT NULL,
-            filter_id  INTEGER NOT NULL,
-            unix_time  REAL NOT NULL,
+            filter_id  INTEGER,
+            unix_time  REAL,
             object     TEXT,
-            airmass    REAL NOT NULL,
-            gain       REAL NOT NULL,
+            airmass    REAL,
+            gain       REAL,
             ra         REAL NOT NULL,
             dec        REAL NOT NULL,
             sources    INTEGER NOT NULL,
@@ -506,6 +506,34 @@ class LEMONdB(object):
 
         self._execute("CREATE INDEX IF NOT EXISTS img_by_filter_time "
                       "ON images(filter_id, unix_time)")
+
+        # Enforce a maximum of one sources image (SOURCES == 1)
+        for index, when in enumerate(("INSERT", "UPDATE OF sources")):
+            stmt = """CREATE TRIGGER IF NOT EXISTS single_sources_%d
+                      AFTER %s ON images
+                      BEGIN
+                          SELECT RAISE(ABORT, 'only one SOURCES column may be = 1')
+                          WHERE (SELECT COUNT(*)
+                                 FROM images
+                                 WHERE sources = 1) > 1;
+                      END; """ % (index, when)
+            self._execute(stmt)
+
+        # Although FILTER_ID, UNIX_TIME, AIRMASS and GAIN may be NULL, we only
+        # allow this for the sources image (that for which SOURCES == 1). The
+        # four columns are mandatory for 'normal' (so to speak) images.
+
+        for field in ('FILTER_ID', 'UNIX_TIME', 'AIRMASS', 'GAIN'):
+            for index, where in enumerate(("INSERT", "UPDATE OF " + field)):
+                stmt =  """CREATE TRIGGER IF NOT EXISTS {0}_not_null_{1}
+                           AFTER {2} ON images
+                           FOR EACH ROW
+                           WHEN NEW.{0} is NULL AND NEW.sources != 1
+                           BEGIN
+                               SELECT RAISE(ABORT, '{0} may not be NULL unless SOURCES = 1');
+                           END; """.format(field, index, where)
+                self._execute(stmt)
+
 
         # Store as a blob entire FITS files.
         self._execute('''
@@ -587,6 +615,13 @@ class LEMONdB(object):
     def _add_pfilter(self, pfilter):
         """ Store a photometric filter in the database. The primary
         key of the Passband objects in the table is their hash value """
+
+        # Duck typing is not the way to go here. The photometric filter *must*
+        # be a Passband object: hash() always returns an integer, so dangerous
+        # (or plain wrong) things like hash(None) would go unnoticed.
+        if not isinstance(pfilter, passband.Passband):
+            msg = "'pfilter' must be a Passband object"
+            raise ValueError(msg)
 
         t = (hash(pfilter), str(pfilter))
         self._execute("INSERT OR IGNORE INTO photometric_filters VALUES (?, ?)", t)
@@ -738,26 +773,26 @@ class LEMONdB(object):
         Receives an Image object with information about the FITS file that was
         used to detect sources and stores it in the LEMONdB. The file to which
         Image.path refers must exist and be readable, as it is also stored in
-        the database and accessible through the LEMON.mosaic attribute.
+        the database and accessible through the LEMON.mosaic attribute. If an
+        image with the same Unix time and photometric filter already exists in
+        the LEMONdB, DuplicateImageError is raised.
 
         """
 
-        try:
-            self.add_image(image)
-        except DuplicateImageError:
-            pass
+        self.add_image(image, _is_sources_img = True)
 
         with open(image.path, 'rb') as fd:
             blob = fd.read()
 
-        # The sources image is the only one with  SOURCES == 1
-        id_ = self._get_image_id(image.unix_time, image.pfilter)
-        self._execute("UPDATE images SET sources = 0")
-        self._execute("UPDATE images SET sources = 1 WHERE id = ?", (id_,))
+        # Get the ID of the sources image and store it as a blob
+        self._execute("SELECT id FROM images WHERE sources = 1")
+        rows = list(self._rows)
+        assert len(rows) == 1
+        id_ = rows[0][0]
         t = (id_, buffer(blob))
         self._execute("INSERT OR REPLACE INTO raw_images VALUES (?, ?)", t)
 
-    def add_image(self, image):
+    def add_image(self, image, _is_sources_img = False):
         """ Store information about a FITS image in the database.
 
         Raises DuplicateImageError if the Image has the same Unix time and
@@ -765,37 +800,92 @@ class LEMONdB(object):
         database (as these two values must be unique; i.e., we cannot have
         two or more images with the same Unix time and photometric filter).
 
+        If '_is_sources_img' evaluates to True, this image is stored in the
+        database as the FITS file on which sources were detected, overriding
+        the previous sources image, if any. You are, however, expected to use
+        LEMONdB.simage() to achieve this. In fact, the default value of this
+        keyword argument should never be modified under normal circumstances
+        when the method is called. You are encouraged to ignore it unless you
+        really know what you are doing. This please-stay-away-of-it keyword
+        argument is undeniably inelegant, but it exists because it makes much
+        simpler the rest of our code, allowing us to store both 'normal' and
+        'sources' images in the same table and without having to rewrite a
+        considerable chunk of the LEMONdB class.
+
+        All the fields, except for the name of the observed object (i.e., the
+        'object' attribute of the Image class) are required in order to store
+        an image in the database: sqlite3.IntegrityError is raised in case any
+        of them is None, which is the data type that SQLite interprets as NULL.
+        As an exception to the previous statement, the photometric filter, time
+        of observation, airmass and gain may be None for the sources image (if
+        '_is_sources_img' evaluates to True). The reason for this is that,
+        while photometry is done on individual images, sources may be detected
+        on an image resulting from assembling several ones into a custom mosaic
+        (e.g., using the IPAC's Montage toolkit), scenario in which we cannot
+        properly speak about a filter, observation date, gain or airmass.
+
         """
 
         # Use a SAVEPOINT to, if the insertion of the Image fails, be able
         # to roll back the insertion of the photometric filter.
 
         mark = self._savepoint()
-        self._add_pfilter(image.pfilter)
 
-        t = (None, image.path, hash(image.pfilter), image.unix_time,
-             image.object, image.airmass, image.gain, image.ra, image.dec, 0)
+        # One of the database triggers raises sqlite3.IntegrityError if the
+        # photometric filter is NULL. However, we do not store the Passband
+        # object directly in the database, but instead use their hash value.
+        # Thus, the FILTER_ID column can never be NULL, since hash() always
+        # returns an integer. We need to raise the error ourselves.
+        if image.pfilter is None and not _is_sources_img:
+            msg = "image.pfilter may not be NULL unless SOURCES = 1"
+            raise sqlite3.IntegrityError(msg)
+
+        if image.pfilter:
+            self._add_pfilter(image.pfilter)
+
+        t = (None, image.path,
+             hash(image.pfilter) if image.pfilter else None,
+             image.unix_time,
+             image.object, image.airmass, image.gain, image.ra, image.dec,
+             int(_is_sources_img))
+
         try:
+            # If this is the sources image (i.e., _is_sources_img == True), it
+            # will become the only one for which SOURCES == 1. Set the SOURCES
+            # column of the previous sources image, if any, to zero, making it
+            # a 'normal' image.
+            if _is_sources_img:
+                self._execute("UPDATE images SET sources = 0 WHERE sources = 1")
+
             self._execute("INSERT INTO images "
                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
-        except sqlite3.IntegrityError:
+        except Exception as e:
             self._rollback_to(mark)
+
             unix_time = image.unix_time
             pfilter = image.pfilter
 
-            if __debug__:
-                self._execute("SELECT unix_time FROM images")
-                assert (unix_time,) in self._rows
+            # Raise DuplicateImageError if there is already an image with this
+            # Unix time and photometric filter, instead of the more generic and
+            # less descriptive sqlite3.IntegrityError ("columns filter_id,
+            # unix_time are not unique")
+
+            self._execute("SELECT unix_time FROM images")
+            if (unix_time,) in self._rows:
                 self._execute("SELECT 1 "
                               "FROM photometric_filters "
                               "WHERE id = ?", (hash(pfilter),))
-                assert [(1,)] == list(self._rows)
+                if [(1,)] == list(self._rows):
+                    msg = ("Image with Unix time %.4f (%s) and filter %s "
+                           "already in database")
+                    args = (unix_time, methods.utctime(unix_time), pfilter)
+                    raise DuplicateImageError(msg % args)
 
-            msg = "Image with Unix time %.4f (%s) and filter %s already in database"
-            args = (unix_time, methods.utctime(unix_time), pfilter)
-            raise DuplicateImageError(msg % args)
+            # This point is only reached if DuplicateImageError was not raised
+            # above, so re-raise the original exception, whatever it is.
+            raise e
 
     def _get_image_id(self, unix_time, pfilter):
         """ Return the ID of the Image with this Unix time and filter.

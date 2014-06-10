@@ -666,3 +666,24 @@ def tempinput(data):
     os.close(fd)
     yield path
     os.unlink(path)
+
+def func_catchall(func, *args, **kwargs):
+    """ Return func(*args, **kwargs), or None if an exception is raised.
+
+    Return whatever func() returns when called with the positional arguments
+    'args' and keyword arguments 'keywords'. If any exception is raised by
+    func(), catch it, log it and return None. This is a convenience function
+    useful when we need to call a function that may raise an exception,
+    scenario in which we want to use None instead of what would have been
+    normally returned.
+
+    """
+
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        exc_type = sys.exc_info()[0]
+        args = (func.__name__, exc_type.__name__, str(e))
+        msg = "%s() raised %s (%s), None returned instead" % args
+        logging.debug(msg)
+        return None
