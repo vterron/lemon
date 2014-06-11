@@ -1215,6 +1215,14 @@ def main(arguments = None):
                 img = fitsimage.FITSImage(path)
                 yield (img, qphot_params(img), options)
 
+        # Unlike the sources image, the options.exptimek FITS keyword is *not*
+        # optional for the images on which we do photometry: qphot() needs it
+        # to normalize the computed magnitudes to an exposure time of one time
+        # unit. However, this point cannot be reached if one of the images does
+        # not contain this keyword, as it was needed in order to make sure that
+        # there are no duplicate observation dates. There is no need to turn
+        # the MissingFITSKeyword warning into an exception.
+
         result = pool.map_async(parallel_photometry, map_async_args())
         methods.show_progress(0.0)
         while not result.ready():
