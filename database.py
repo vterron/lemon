@@ -40,6 +40,7 @@ import sqlite3
 import tempfile
 
 # LEMON modules
+import astromatic
 import methods
 import passband
 import xmlparse
@@ -1610,26 +1611,28 @@ class LEMONdB(object):
         os.close(fd)
         return path
 
-    def star_closest_to_image_coords(self, x, y):
-        """ Find the star closest to the image x- and y-coordinates.
+    def star_closest_to_world_coords(self, ra, dec):
+        """ Find the star closest to a right ascension and declination.
 
-        Compute the Euclidean distance from the x- and y-coordinates of each
-        star in the LEMONdB to the coordinates (x, y). Returns a two-element
-        tuple containing the ID of the closest star to these coordinates and
-        its Euclidean distance, respectively. Raises ValueError if there are
-        no stars in the LEMONdB when this method is called.
+        Compute the angular distance from the right ascension and declination
+        of each star in the LEMONdB to the specified coordinates (ra, dec).
+        Returns a two-element tuple containing the ID of the closest star to
+        these coordinates and its angular distance, in degrees, respectively.
+        Raises ValueError if there are no stars in the LEMONdB.
 
         """
 
         if not len(self):
             raise ValueError("database is empty")
 
-        self._execute("SELECT id, x, y FROM stars")
+        self._execute("SELECT id, ra, dec FROM stars")
 
         closest_id = None
         closest_distance = float('inf')
-        for star_id, star_x, star_y in self._rows:
-            star_distance = math.sqrt((star_x - x) ** 2 + (star_y - y) ** 2)
+        coordinates = astromatic.Coordinates(ra, dec)
+        for star_id, star_ra, star_dec in self._rows:
+            star_coords = astromatic.Coordinates(star_ra, star_dec)
+            star_distance = coordinates.distance(star_coords)
             if star_distance < closest_distance:
                 closest_id = star_id
                 closest_distance = star_distance
