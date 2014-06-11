@@ -37,6 +37,7 @@ import logging
 import math
 import os
 import os.path
+import sys
 import tempfile
 import warnings
 
@@ -283,6 +284,20 @@ class QPhot(list):
             os.close(output_fd)
             os.unlink(qphot_output)
 
+            # In case the FITS image does not contain the keyword for the
+            # exposure time, qphot() shows a message such as: "Warning: Image
+            # NGC2264-mosaic.fits Keyword:  EXPTIME not found". This, however,
+            # is not a warning, but a simple message written to standard error.
+            # Filter this stream so that, if this message is written, it is
+            # captured and issued as a MissingFITSkeyword warning instead.
+
+            # Note the two whitespaces before 'Keyword'
+            regexp = ("Warning: Image (?P<msg>{0}  Keyword: {1} "
+                      "not found)".format(self.path, exptimek))
+
+            args = sys.stderr, regexp, MissingFITSKeyword
+            stderr = methods.StreamToWarningFilter(*args)
+
             # Run qphot on the image and save the output to our temporary
             # file. Note that cbox *must* be set to zero, as otherwise qphot
             # will compute accurate centers for each object using the centroid
@@ -293,7 +308,8 @@ class QPhot(list):
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
                           aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
-                          wcsin = 'world', interactive = 'no')
+                          wcsin = 'world', interactive = 'no',
+                          Stderr = stderr)
 
             apphot.qphot(self.path, **kwargs)
 
