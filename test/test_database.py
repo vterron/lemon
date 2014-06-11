@@ -2255,7 +2255,7 @@ class LEMONdBTest(unittest.TestCase):
         point_1 = (73.68192, 12.35219)
         star_id, distance = db.star_closest_to_world_coords(*point_1)
         self.assertEqual(star_id, 4)
-        self.assertEqual(distance, 49.274795088346579)
+        self.assertAlmostEqual(distance, 49.274795088346579)
 
         # Second point: ra = 346.869646, dec = 21.134251 (HR 8799 d)
         # Angular distances from (346.869646, 21.134251) to:
@@ -2267,7 +2267,7 @@ class LEMONdBTest(unittest.TestCase):
         point_2 = (346.869646, 21.134251)
         star_id, distance = db.star_closest_to_world_coords(*point_2)
         self.assertEqual(star_id, 2)
-        self.assertEqual(distance, 19.591535371385636)
+        self.assertAlmostEqual(distance, 19.591535371385636)
 
         # Third point: ra = 227.21558, dec = 2.34333 (WASP-24 b)
         # Angular distances from (227.21558, 2.34333) to:
@@ -2278,6 +2278,6 @@ class LEMONdBTest(unittest.TestCase):
 
         point_3 = (227.21558, 2.34333)
         star_id, distance = db.star_closest_to_world_coords(*point_3)
-        self.assertEqual(star_id, 1)
+        self.assertAlmostEqual(star_id, 1)
         self.assertEqual(distance, 47.939281840122732)
 
