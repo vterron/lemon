@@ -182,7 +182,7 @@ class MethodsFunctionsTests(unittest.TestCase):
         # catched and None is returned instead.
 
         def foo_except():
-            raise ValuError
+            raise ValueError
 
         self.assertEqual(None, methods.func_catchall(foo_except))
         self.assertEqual(None, methods.func_catchall(operator.div, 1, 0))
