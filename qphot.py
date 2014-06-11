@@ -265,9 +265,13 @@ class QPhot(list):
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
         aperture - the aperture radius, in pixels.
-        exptimek - the image header keyword containing the exposure time. Needed
-                   by qphot in order to normalize the computed magnitudes to an
-                   exposure time of one time unit.
+        exptimek - the image header keyword containing the exposure time, in
+                   seconds. Needed by qphot in order to normalize the computed
+                   magnitudes to an exposure time of one time unit. In case it
+                   cannot be read from the FITS header, the MissingFITSKeyword
+                   warning is issued and the default value of '' used instead.
+                   Although non-fatal, this means that magnitudes will not be
+                   normalized, which probably is not what you want.
 
         """
 
