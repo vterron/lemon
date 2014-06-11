@@ -83,6 +83,9 @@ pyraf.iraf.prcacheOff()
 func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
 pyraf.subproc.Subprocess.__del__ = func
 
+class MissingFITSKeyword(RuntimeWarning):
+    """ Warning about keywords that cannot be read from a header (non-fatal) """
+    pass
 
 typename = 'QPhotResult'
 field_names = "x, y, mag, sum, flux, stdev"
