@@ -687,3 +687,45 @@ def func_catchall(func, *args, **kwargs):
         msg = "%s() raised %s (%s), None returned instead" % args
         logging.debug(msg)
         return None
+
+class StreamToWarningFilter(object):
+    """ A file-like class that matches strings and issues them as warnings.
+
+    This class creates a file-like object that normally writes a string to
+    'fd', a file type object. However, those lines that match 'regexp' are
+    issued as warnings of the 'category' class and logged at INFO level. The
+    message used for the warning is that matched by the 'msg' named group that
+    must be present in the regular expression; otherwise, IndexError is raised.
+    This class may be used (and, in fact, was coded with this purpose in mind),
+    for example, to capture a message written by a third-party library to the
+    standard error and issue it as a warning instead.
+
+    For example, consider the scenario where the following object is created:
+    fd = StreamToWarningFilter(sys.stdout, 'v(?P<msg>(\d\.?)+)', UserWarning)
+    After this, fd.write('v2.19.5') will raise UserWarning (with the message
+    '2.19.5'), while fd.write('Nobody expects the Spanish inquisition') will
+    not match the regexp and therefore print the string to sys.stdout.
+
+    """
+
+    def __init__(self, fd, regexp, category):
+        self.fd = fd
+        self.regexp = regexp
+        self.category = category
+
+    def write(self, str_):
+        """ Write str_ to the file; issue as a warning if regexp is matched"""
+
+        match = re.match(self.regexp, str_)
+        if match:
+            msg = match.group('msg')
+            logging.info(msg)
+            warnings.warn(msg, self.category)
+        else:
+            self.fd.write(str_)
+
+    def flush(self):
+        self.fd.flush()
+
+    def close(self):
+        self.fd.close()

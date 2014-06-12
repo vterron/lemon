@@ -37,6 +37,7 @@ import logging
 import math
 import os
 import os.path
+import sys
 import tempfile
 import warnings
 
@@ -83,6 +84,9 @@ pyraf.iraf.prcacheOff()
 func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
 pyraf.subproc.Subprocess.__del__ = func
 
+class MissingFITSKeyword(RuntimeWarning):
+    """ Warning about keywords that cannot be read from a header (non-fatal) """
+    pass
 
 typename = 'QPhotResult'
 field_names = "x, y, mag, sum, flux, stdev"
@@ -261,9 +265,13 @@ class QPhot(list):
         annulus - the inner radius of the sky annulus, in pixels.
         dannulus - the width of the sky annulus, in pixels.
         aperture - the aperture radius, in pixels.
-        exptimek - the image header keyword containing the exposure time. Needed
-                   by qphot in order to normalize the computed magnitudes to an
-                   exposure time of one time unit.
+        exptimek - the image header keyword containing the exposure time, in
+                   seconds. Needed by qphot in order to normalize the computed
+                   magnitudes to an exposure time of one time unit. In case it
+                   cannot be read from the FITS header, the MissingFITSKeyword
+                   warning is issued and the default value of '' used instead.
+                   Although non-fatal, this means that magnitudes will not be
+                   normalized, which probably is not what you want.
 
         """
 
@@ -280,6 +288,20 @@ class QPhot(list):
             os.close(output_fd)
             os.unlink(qphot_output)
 
+            # In case the FITS image does not contain the keyword for the
+            # exposure time, qphot() shows a message such as: "Warning: Image
+            # NGC2264-mosaic.fits Keyword:  EXPTIME not found". This, however,
+            # is not a warning, but a simple message written to standard error.
+            # Filter this stream so that, if this message is written, it is
+            # captured and issued as a MissingFITSkeyword warning instead.
+
+            # Note the two whitespaces before 'Keyword'
+            regexp = ("Warning: Image (?P<msg>{0}  Keyword: {1} "
+                      "not found)".format(self.path, exptimek))
+
+            args = sys.stderr, regexp, MissingFITSKeyword
+            stderr = methods.StreamToWarningFilter(*args)
+
             # Run qphot on the image and save the output to our temporary
             # file. Note that cbox *must* be set to zero, as otherwise qphot
             # will compute accurate centers for each object using the centroid
@@ -290,7 +312,8 @@ class QPhot(list):
             kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
                           aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
-                          wcsin = 'world', interactive = 'no')
+                          wcsin = 'world', interactive = 'no',
+                          Stderr = stderr)
 
             apphot.qphot(self.path, **kwargs)
 

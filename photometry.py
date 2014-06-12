@@ -906,7 +906,21 @@ def main(arguments = None):
     qphot_args = [sources_img, options.coordinates,
                   sources_aperture, sources_annulus, sources_dannulus,
                   sys.maxint, options.exptimek, None]
-    sources_phot = qphot.run(*qphot_args)
+
+    # The options.exptimek FITS keyword is allowed to be missing from the
+    # header of the sources image (for example, a legitimate scenario: we
+    # detect sources on a mosaic created with IPAC's Montage, combining several
+    # images). In those cases, qphot() uses the default value, an empty string.
+    # We can ignore the MissingFITSKeyword warning for (and only for) the
+    # sources image: it is not critical if magnitudes cannot be normalized to
+    # an exposure time of one time unit, as these values are only expected to
+    # serve as an estimate of how bright each astronomical object is.
+
+    with warnings.catch_warnings():
+        kwargs = dict(category = qphot.MissingFITSKeyword)
+        warnings.filterwarnings('ignore', **kwargs)
+        sources_phot = qphot.run(*qphot_args)
+
     print 'done.'
 
     # Remove those astronomical objects so faint that they are INDEF in the
@@ -982,7 +996,12 @@ def main(arguments = None):
 
         # Do photometry again, use the non-INDEF coordinates file
         qphot_args[1] = options.coordinates
-        non_INDEF_phot = qphot.run(*qphot_args)
+
+        with warnings.catch_warnings():
+            kwargs = dict(category = qphot.MissingFITSKeyword)
+            warnings.filterwarnings('ignore', **kwargs)
+            non_INDEF_phot = qphot.run(*qphot_args)
+
         assert sources_phot == non_INDEF_phot
         print 'done.'
 
@@ -1195,6 +1214,14 @@ def main(arguments = None):
             for path in images:
                 img = fitsimage.FITSImage(path)
                 yield (img, qphot_params(img), options)
+
+        # Unlike the sources image, the options.exptimek FITS keyword is *not*
+        # optional for the images on which we do photometry: qphot() needs it
+        # to normalize the computed magnitudes to an exposure time of one time
+        # unit. However, this point cannot be reached if one of the images does
+        # not contain this keyword, as it was needed in order to make sure that
+        # there are no duplicate observation dates. There is no need to turn
+        # the MissingFITSKeyword warning into an exception.
 
         result = pool.map_async(parallel_photometry, map_async_args())
         methods.show_progress(0.0)
