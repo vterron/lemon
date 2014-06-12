@@ -81,6 +81,10 @@ parser.add_option('--background-match', action = 'store_true',
                   "although an amazing feature of Montage, this makes the "
                   "assembling of the images take remarkably longer.")
 
+parser.add_option('--no-reprojection', action = 'store_false',
+                  dest = 'reproject', default = True,
+                  help = "do not reproject the mosaic so that North is up.")
+
 parser.add_option('--filter', action = 'store', type = 'passband',
                   dest = 'filter', default = None,
                   help = "do not combine all the FITS files given as input, "
