@@ -2220,63 +2220,64 @@ class LEMONdBTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             db.hostname = None
 
-    def test_star_closest_to_image_coords(self):
+    def test_star_closest_to_world_coords(self):
 
         db = LEMONdB(':memory:')
 
-        point = (100, 100) # or any other value
+        # LEMONdB is empty, raises ValueError
+        point = (24.19933, 41.40547) # or any other value
         with self.assertRaises(ValueError):
-            db.star_closest_to_image_coords(*point)
+            db.star_closest_to_world_coords(*point)
 
         star_1 = list(self.random_star_info(id_ = 1))
-        star_1[1:3] = (156.32, 569.31) # x and y-coordinates
+        star_1[3:5] = (186.612871, 31.223544) # NGC 4414
         db.add_star(*star_1)
 
         star_2 = list(self.random_star_info(id_ = 2))
-        star_2[1:3] = (727.93, 98.234)
+        star_2[3:5] = (5.166987, 31.989942) # WASP-1 b
         db.add_star(*star_2)
 
         star_3 = list(self.random_star_info(id_ = 3))
-        star_3[1:3] = (564.018, 213.216)
+        star_3[3:5] = (278.064554, 6.945753) # HD 171028 b
         db.add_star(*star_3)
 
         star_4 = list(self.random_star_info(id_ = 4))
-        star_4[1:3] = (592.11, 782.441)
+        star_4[3:5] = (97.69629, 58.16264) # 6 Lyn b
         db.add_star(*star_4)
 
-        # First point: x = 230, y = 450
-        # Euclidean distances from (230, 450) to:
-        # Star 1 (156.32, 569.31)   = 140.2270248561239 <- (shortest)
-        # Star 2 (727.93, 98.234)   = 609.65039461645551
-        # Star 3 (564.018, 213.216) = 409.43215186401761
-        # Star 4 (592.11, 782.441)  = 491.56959891860691
+        # First point: ra = 73.68192, dec = 12.35219 (HD 31253 b)
+        # Angular distances from (73.68192, 12.35219) to:
+        # Star 1 (186.612871, 31.223544) = 102.39093634720719
+        # Star 2 (  5.166987, 31.989942) =  65.368742708468304
+        # Star 3 (278.064554,  6.945753) = 149.01762956453169
+        # Star 4 ( 97.69629,  58.16264)  =  49.274795088346579 <- (shortest)
 
-        point_1 = (230, 450)
-        star_id, distance = db.star_closest_to_image_coords(*point_1)
-        self.assertEqual(star_id, 1)
-        self.assertEqual(distance, 140.2270248561239)
-
-        # Second point: x = 551.43, y = 455.43
-        # Euclidean distances from (551.43, 455.43) to:
-        # Star 1 (156.32, 569.31)   = 411.1940740088553
-        # Star 2 (727.93, 98.234)   = 398.42343356785631
-        # Star 3 (564.018, 213.216) = 242.54088220339267 <- (shortest)
-        # Star 4 (592.11, 782.441)  = 329.53157135697944
-
-        point_2 = (551.43, 455.43)
-        star_id, distance = db.star_closest_to_image_coords(*point_2)
-        self.assertEqual(star_id, 3)
-        self.assertEqual(distance, 242.54088220339267)
-
-        # Third point: x = 913.5, y = 490.65509920608827
-        # Euclidean distances from (913.5, 490.65509920608827) to:
-        # Star 1 (156.32, 569.31)   = 761.25432400670149
-        # Star 2 (727.93, 98.234)   = 434.08587169143692
-        # Star 3 (564.018, 213.216) = 446.21757259467682
-        # Star 4 (592.11, 782.441)) = 434.08587169143675 <- (shortest)
-
-        point_3 = (913.5, 490.65509920608827)
-        star_id, distance = db.star_closest_to_image_coords(*point_3)
+        point_1 = (73.68192, 12.35219)
+        star_id, distance = db.star_closest_to_world_coords(*point_1)
         self.assertEqual(star_id, 4)
-        self.assertEqual(distance, 434.08587169143675)
+        self.assertAlmostEqual(distance, 49.274795088346579)
+
+        # Second point: ra = 346.869646, dec = 21.134251 (HR 8799 d)
+        # Angular distances from (346.869646, 21.134251) to:
+        # Star 1 (186.612871, 31.223544) = 124.32181703665258
+        # Star 2 (  5.166987, 31.989942) =  19.591535371385636 <- (shortest)
+        # Star 3 (278.064554,  6.945753) =  67.768448323818134
+        # Star 4 ( 97.69629,  58.16264)  =  82.451118082774897
+
+        point_2 = (346.869646, 21.134251)
+        star_id, distance = db.star_closest_to_world_coords(*point_2)
+        self.assertEqual(star_id, 2)
+        self.assertAlmostEqual(distance, 19.591535371385636)
+
+        # Third point: ra = 227.21558, dec = 2.34333 (WASP-24 b)
+        # Angular distances from (227.21558, 2.34333) to:
+        # Star 1 (186.612871, 31.223544) =  47.939281840122732 <- (shortest)
+        # Star 2 (  5.166987, 31.989942) = 127.41779312476839
+        # Star 3 (278.064554,  6.945753) =  50.864720140121634
+        # Star 4 ( 97.69629,  58.16264)  = 107.49712742084881
+
+        point_3 = (227.21558, 2.34333)
+        star_id, distance = db.star_closest_to_world_coords(*point_3)
+        self.assertAlmostEqual(star_id, 1)
+        self.assertEqual(distance, 47.939281840122732)
 
