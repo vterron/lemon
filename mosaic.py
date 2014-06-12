@@ -81,6 +81,10 @@ parser.add_option('--background-match', action = 'store_true',
                   "although an amazing feature of Montage, this makes the "
                   "assembling of the images take remarkably longer.")
 
+parser.add_option('--no-reprojection', action = 'store_false',
+                  dest = 'reproject', default = True,
+                  help = "do not reproject the mosaic so that North is up.")
+
 parser.add_option('--filter', action = 'store', type = 'passband',
                   dest = 'filter', default = None,
                   help = "do not combine all the FITS files given as input, "
@@ -253,12 +257,20 @@ def main(arguments = None):
     montage.mosaic(input_dir, output_dir, **kwargs)
 
     # montage.mosaic() writes several files to the output directory, but we are
-    # only interested in one of them: 'mosaic.fits', the mosaic FITS image. We
-    # need to move it to the output path specified by the user.
+    # only interested in one of them: 'mosaic.fits', the mosaic FITS image.
 
     MOSAIC_OUTPUT = 'mosaic.fits'
     src = os.path.join(output_dir, MOSAIC_OUTPUT)
-    shutil.move(src, output_path)
+
+    if options.reproject:
+        print "%sReproject mosaic to point North..." % style.prefix ,
+        sys.stdout.flush()
+        kwargs = dict(north_aligned = True, silent_cleanup = True)
+        montage.reproject(src, output_path, **kwargs)
+        print 'done.'
+    else:
+        # No reprojection, move mosaic to the output path
+        shutil.move(src, output_path)
 
     print "%sYou're done ^_^" % style.prefix
     return 0
