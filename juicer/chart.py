@@ -203,6 +203,10 @@ class PreferencesDialog(object):
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
         self.dialog.show()
 
+    def destroy(self):
+        """ Destroy the gtk.Dialog """
+        self.dialog.destroy()
+
 
 class FindingChartDialog(object):
     """ GTK.Dialog that displays the reference frame """
