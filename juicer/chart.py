@@ -194,6 +194,10 @@ class PreferencesDialog(object):
         self.vmin_button.connect('value-changed', vmin_changed_callback)
         self.vmax_button.connect('value-changed', vmax_changed_callback)
 
+    def hide(self):
+        """ Hide the gtk.Dialog """
+        self.dialog.hide()
+
 
 class FindingChartDialog(object):
     """ GTK.Dialog that displays the reference frame """
