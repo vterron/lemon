@@ -1380,10 +1380,8 @@ class LEMONJuicerGUI(object):
                 # 97%) would only unnecessarily slow down the execution.
                 fraction = round(star_index / nstars, 2)
                 if fraction != progressbar.get_fraction():
-                    progressbar.set_fraction(fraction)
-                    # Ensure rendering is done immediately
-                    while gtk.events_pending():
-                        gtk.main_iteration()
+                    with util.gtk_sync():
+                        progressbar.set_fraction(fraction)
 
             if not self._aborted:
 
