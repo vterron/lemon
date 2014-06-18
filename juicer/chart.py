@@ -24,7 +24,9 @@ import astropy.wcs
 import atexit
 import aplpy
 import gtk
+import logging
 import methods
+import numpy
 import os
 import pyfits
 
@@ -50,7 +52,147 @@ class PreferencesDialog(object):
 
     """
 
-    pass
+    def __init__(self, parent):
+        """ Initialize a new PreferencesDialog object.
+
+        The gtk.Dialog has two spin buttons, so that the user can select the
+        value for both Vmin and Vmax. The lower and upper range values of these
+        parameters is determined by the minimum and maximum values of the image
+        pixels. There is also the restriction that Vmin <= Vmax. Additionally,
+        two non-sensitive (disabled) gtk.Entry fields let the user know what
+        the absolute minimum and maximum allowed values are.
+
+        The dialog has three buttons: (a) 'Close', (b) 'Apply' and (c) 'Save'.
+        Clicking 'Apply' immediately updates the finding chart image
+        (parent.aplpy_plot), using the logarithmic normalization algorithm
+        (stretch = 'log') and the Vmin and Vmax values of the spin buttons.
+        'Save', on the other hand, stores Vmin and Vmax in the LEMONdB, so
+        that they can be reused in the future.
+
+        The initial value of the two spin buttons is read from the LEMONdB (via
+        the 'vmin' and 'vmax' properties). If these values have not been stored
+        in the database (and, therefore, None is returned), the normalization
+        parameters (stretch algorithm, Vmin and Vmax) that we use are those
+        stored in the APLpyNormalize object (parent.aplpy_plot.image.norm)
+        created by FITSFigure.show_grayscale(), method that must have been
+        previously called in FindingChartDialog.__init__(). By default,
+        FITSFigure.show_grayscale() normalizes the image linearly: once
+        we click 'Apply' we switch to a logarithmic stretch function.
+
+        """
+
+        assert isinstance(parent, FindingChartDialog)
+
+        self.parent = parent
+        self.db = self.parent.db
+
+        builder = self.parent.builder
+        builder.add_from_file(glade.CHART_PREFERENCES_DIALOG)
+
+        self.dialog = builder.get_object('chart-preferences-dialog')
+        self.dialog.set_transient_for(self.parent.dialog)
+        self.dialog.set_title("Finding Chart: Preferences")
+        self.dialog.set_resizable(False)
+
+        # Note: gtk.RESPONSE_SAVE doesn't exist; we use gtk.RESPONSE_OK
+        self.close_button = self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
+        self.apply_button = self.dialog.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+        self.save_button  = self.dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+        self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
+
+        text = "Update chart with these parameters"
+        self.apply_button.set_tooltip_text(text)
+
+        text = "Store these parameters in the LEMONdB"
+        self.save_button.set_tooltip_text(text)
+
+        # Spin buttons to select the value of Vmin / Vmax
+        self.vmin_button = builder.get_object('vmin-spinbutton')
+        self.vmax_button = builder.get_object('vmax-spinbutton')
+
+        # If the values of both Vmin and Vmax are stored in the LEMONdB, assume
+        # a logarithmic scale. Otherwise, use the normalization algorithm and
+        # Vmin / Vmax values defined by the APLpyNormalize object of the
+        # finding chart (parent.aplpy_plot.image.norm). Note that, by default,
+        # FITSFigure.show_grayscale() uses a linear stretch.
+
+        if None not in (self.db.vmin, self.db.vmax):
+            self.stretch = 'log'
+            vmin = self.db.vmin
+            vmax = self.db.vmax
+
+            msg1 = "Normalization parameters (vmin and vmax) read from LEMONdB"
+            msg2 = "Assuming logarithmic normalization (stretch = 'log')"
+            for message in msg1, msg2:
+                logging.debug(message)
+
+        else:
+            normalize = self.parent.aplpy_plot.image.norm
+            self.stretch = normalize.stretch
+            vmin    = normalize.vmin
+            vmax    = normalize.vmax
+
+            msg1 = "Normalization parameters not stored in the LEMONdB"
+            msg2 = "Algorithm and values read from APLpyNormalize object"
+            for message in msg1, msg2:
+                logging.debug(message)
+
+        # The absolute minimum and maximum values that the two spin buttons can
+        # take are those of the minimum and maximum pixels of the finding chart
+        # image. These are read from the 'data_min' and 'data_max' attributes
+        # of the parent FindingChartDialog object.
+
+        data_min = int(numpy.ceil (self.parent.data_min))
+        data_max = int(numpy.floor(self.parent.data_max))
+        assert data_min <= vmin
+        assert data_max >= vmax
+        assert hasattr(self, 'stretch')
+
+        kwargs = dict(lower = data_min, upper = data_max, step_incr = 1)
+        vmin_adjust = gtk.Adjustment(value = vmin, **kwargs)
+        vmax_adjust = gtk.Adjustment(value = vmax, **kwargs)
+        self.vmin_button.set_adjustment(vmin_adjust)
+        self.vmax_button.set_adjustment(vmax_adjust)
+
+        def ndigits(n):
+            """ Return the number of digits of an integer """
+            return len(str(abs(n)))
+
+        # The desired width of the button, in characters
+        self.vmin_button.set_width_chars(ndigits(data_min))
+        self.vmax_button.set_width_chars(ndigits(data_max))
+
+        # Show the absolute minimum and maximum allowed values
+        data_min_entry = builder.get_object('data-min-entry')
+        data_min_entry.set_width_chars(ndigits(data_min))
+        data_min_entry.set_text(str(data_min))
+        data_min_entry.set_sensitive(False)
+
+        data_max_entry = builder.get_object('data-max-entry')
+        data_max_entry.set_width_chars(ndigits(data_max))
+        data_max_entry.set_text(str(data_max))
+        data_max_entry.set_sensitive(False)
+
+        # Both spin buttons must be in the range [data_min, data_max], but
+        # there is a second restriction: Vmin must be at all times <= Vmax.
+        # Use the 'value-changed' signal, emitted when any of the settings
+        # (i.e. value, digits) that change the display of the spinbutton are
+        # changed, to enforce this. Every time that Vmin is changed we make
+        # sure that it is <= Vmax; otherwise we set it to Vmax. The same is
+        # done with Vmax, ensuring that it is always >= Vmin.
+
+        def vmin_changed_callback(*args):
+            upper = self.vmax_button.get_value()
+            if self.vmin_button.get_value() > upper:
+                self.vmin_button.set_value(upper)
+
+        def vmax_changed_callback(*args):
+            lower = self.vmin_button.get_value()
+            if self.vmax_button.get_value() < lower:
+                self.vmax_button.set_value(lower)
+
+        self.vmin_button.connect('value-changed', vmin_changed_callback)
+        self.vmax_button.connect('value-changed', vmax_changed_callback)
 
 
 class FindingChartDialog(object):
