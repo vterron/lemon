@@ -335,7 +335,7 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
-    # Keys of the records stored in the METADATA tables
+    # Keys of the records stored in the METADATA table
     _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
     _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
     _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
