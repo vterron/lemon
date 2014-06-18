@@ -297,6 +297,9 @@ class FindingChartDialog(object):
         self.dialog = self.builder.get_object('finding-chart-dialog')
         self.dialog.set_resizable(True)
         self.dialog.set_title("Finding Chart: %s" % self.db.field_name)
+
+        # gtk.RESPONSE_PREFERENCES doesn't exist: use gtk.RESPONSE_OK
+        self.dialog.add_button(gtk.STOCK_PREFERENCES, gtk.RESPONSE_OK)
         self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
 
@@ -340,6 +343,9 @@ class FindingChartDialog(object):
         self.wcs = astropy.wcs.WCS(path)
         with pyfits.open(path) as hdu:
             data = hdu[0].data
+            # Ignore any NaN pixels
+            self.data_min = numpy.nanmin(data)
+            self.data_max = numpy.nanmax(data)
 
         self.aplpy_plot = aplpy.FITSFigure(path, figure = self.figure)
         self.figure.canvas.mpl_connect('button_press_event', self.mark_closest_star)
@@ -347,6 +353,23 @@ class FindingChartDialog(object):
 
         self.aplpy_plot.add_grid()
         self.aplpy_plot.grid.set_alpha(0.2)
+
+        # Create a PreferencesDialog object, whose __init__() method reads Vmin
+        # and Vmax from the LEMONdB or, in case these values are not stored in
+        # the database, uses the values computed by FITSFigure.show_grayscale()
+        # and stored in the APLpyNormalize object. After the PreferencesDialog
+        # is created we can call its normalize_plot() method for the first time
+        # in order to apply the normalization parameters to the finding chart.
+        #
+        # Note: we must create the PreferencesDialog *after* show_grayscale()
+        # has been called, because until then the underlying APLpyNormalize
+        # object (i.e., aplpy.FITSFigure.image.norm) does not exist, and the
+        # __init__() method of the PreferencesDialog class needs to access to
+        # it if the values of Vmin and Vmax cannot be read from the LEMONdB.
+
+        assert hasattr(self.aplpy_plot.image, 'norm')
+        self.preferences_dialog = PreferencesDialog(self)
+        self.preferences_dialog.normalize_plot()
 
         # The dialog has always the same width; the height is adjusted
         # proportionally depending on the dimensions of the FITS image.
