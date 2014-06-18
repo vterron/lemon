@@ -198,6 +198,11 @@ class PreferencesDialog(object):
         """ Hide the gtk.Dialog """
         self.dialog.hide()
 
+    def show(self):
+        """ Display the gtk.Dialog """
+        self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
+        self.dialog.show()
+
 
 class FindingChartDialog(object):
     """ GTK.Dialog that displays the reference frame """
