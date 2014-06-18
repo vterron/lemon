@@ -75,3 +75,23 @@ def gtk_sync():
     finally:
         sync()
 
+@contextlib.contextmanager
+def disable_while(widget):
+    """ A context manager to temporarily disable a GTK widget.
+
+    Use the gtk.Widget.set_sensitive() method to set the 'sensitive' property
+    of the widget to False (therefore disabling it, so that it appears 'grayed
+    out' and the user cannot interact with it) when the block is entered and to
+    True (enabling it again) after the block is exited. In this manner, we can
+    disable a GTK widget while in the 'with block'.
+
+    """
+
+    with gtk_sync():
+        widget.set_sensitive(False)
+
+    yield
+
+    with gtk_sync():
+        widget.set_sensitive(True)
+
