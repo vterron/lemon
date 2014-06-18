@@ -340,6 +340,7 @@ class LEMONdB(object):
     _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
     _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
     _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
+    _METADATA_VMIN_KEY = 'VMIN'     # values for the log scale (APLpy)
 
     def __init__(self, path, dtype = numpy.longdouble):
 
@@ -1581,6 +1582,17 @@ class LEMONdB(object):
         self._set_metadata(self._METADATA_ID_KEY, id_)
 
     id = property(_get_id, _set_id)
+
+    def _get_vmin(self):
+        """ Return the Vmin parameter for APLpy's logarithmic scale """
+        vmin = self._get_metadata(self._METADATA_VMIN_KEY)
+        return float(vmin) if vmin is not None else vmin
+
+    def _set_vmin(self, vmin):
+        """ Set (or replace) the Vmin parameter for APLpy's log scale """
+        self._set_metadata(self._METADATA_VMIN_KEY, vmin)
+
+    vmin = property(_get_vmin, _set_vmin)
 
     @property
     def mosaic(self):
