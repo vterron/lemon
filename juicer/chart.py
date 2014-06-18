@@ -207,6 +207,25 @@ class PreferencesDialog(object):
         """ Destroy the gtk.Dialog """
         self.dialog.destroy()
 
+    def normalize_plot(self):
+        """ Update the finding chart with the current normalization parameters.
+
+        Create an APLpyNormalize object (an APLpy class that allows different
+        stretching functions for astronomical images) and set it as the
+        normalization instance of the FITSFigure (self.parent.aplpy_plot).
+        This method immediately updates the finding chart with the current
+        normalization algorithm and the Vmin and Vmax values selected in the
+        spin buttons.
+
+        """
+
+        kwargs = dict(stretch = self.stretch,
+                      vmin = self.vmin_button.get_value(),
+                      vmax = self.vmax_button.get_value())
+        norm = aplpy.normalize.APLpyNormalize(**kwargs)
+        self.parent.aplpy_plot.image.set_norm(norm)
+        self.parent.aplpy_plot.refresh()
+
 
 class FindingChartDialog(object):
     """ GTK.Dialog that displays the reference frame """
