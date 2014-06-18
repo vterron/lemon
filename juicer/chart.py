@@ -38,6 +38,7 @@ from matplotlib.backends.backend_gtkagg \
 
 # LEMON modules
 import glade
+import util
 
 class PreferencesDialog(object):
     """ gtk.Dialog to configure the finding chart normalization parameters.
@@ -193,6 +194,7 @@ class PreferencesDialog(object):
 
         self.vmin_button.connect('value-changed', vmin_changed_callback)
         self.vmax_button.connect('value-changed', vmax_changed_callback)
+        self.dialog.connect('response', self.handle_response)
 
     def hide(self):
         """ Hide the gtk.Dialog """
@@ -225,6 +227,37 @@ class PreferencesDialog(object):
         norm = aplpy.normalize.APLpyNormalize(**kwargs)
         self.parent.aplpy_plot.image.set_norm(norm)
         self.parent.aplpy_plot.refresh()
+
+    def handle_response(self, widget, response):
+        """ Callback function for the 'response' signal.
+
+        This is the callback function that should be registered as the handler
+        for the 'response' signal emitted by the gtk.Dialog. If the user clicks
+        'Close' (gtk.RESPONSE_CLOSE) or closes the dialog, it is hidden (never
+        destroyed, so that the changes to the two spin buttons are not lost).
+        'Apply' (gtk.RESPONSE_APPLY) calls PreferencesDialog.normalize_plot(),
+        thus immediately updating the finding chart with the new normalization
+        parameters. Lastly, 'Save' (we are using gtk.RESPONSE_OK because there
+        is no such a thing as gtk.RESPONSE_SAVE) stores the values of Vmin and
+        Vmax in the LEMONdB.
+
+        """
+
+
+        # Don't destroy the gtk.Dialog if we click on the close button
+        if response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
+            self.hide()
+
+        elif response == gtk.RESPONSE_APPLY:
+            with util.disable_while(self.apply_button):
+                self.normalize_plot()
+        else:
+            # For lack of a better response ID
+            assert response == gtk.RESPONSE_OK
+            with util.disable_while(self.save_button):
+                self.db.vmin = self.vmin_button.get_value()
+                self.db.vmax = self.vmax_button.get_value()
+                self.db.commit()
 
 
 class FindingChartDialog(object):
