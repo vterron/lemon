@@ -278,6 +278,9 @@ class FindingChartDialog(object):
 
         if response == gtk.RESPONSE_APPLY:
             self.goto_star()
+        # For lack of a better response ID
+        elif response == gtk.RESPONSE_OK:
+            self.preferences_dialog.dialog.run()
         elif response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
             # Untoggle gtk.ToggleToolButton in toolbar (main window)
             self.toggle_toolbar_button(False)
