@@ -281,12 +281,11 @@ class FindingChartDialog(object):
         # For lack of a better response ID
         elif response == gtk.RESPONSE_OK:
             self.preferences_dialog.dialog.run()
-        elif response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
+        else:
             # Untoggle gtk.ToggleToolButton in toolbar (main window)
+            assert response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT)
             self.toggle_toolbar_button(False)
             self.hide()
-        else:
-            raise ValueError("unexpected dialog response")
 
     def __init__(self, parent):
 
