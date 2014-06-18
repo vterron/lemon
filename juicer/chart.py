@@ -37,6 +37,22 @@ from matplotlib.backends.backend_gtkagg \
 # LEMON modules
 import glade
 
+class PreferencesDialog(object):
+    """ gtk.Dialog to configure the finding chart normalization parameters.
+
+    This class encapsulates a GTK dialog window that allows the user the adjust
+    the value of the 'vmin' and 'vmax' parameters of APLpy's logarithmic
+    normalization algorithm (stretch = 'log'). This scale transforms the values
+    from the image to the range [0, 1], which then corresponds to the endpoints
+    of the grayscale:
+
+    http://aplpy.readthedocs.org/en/latest/normalize.html#log-scale
+
+    """
+
+    pass
+
+
 class FindingChartDialog(object):
     """ GTK.Dialog that displays the reference frame """
 
