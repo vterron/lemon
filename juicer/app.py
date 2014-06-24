@@ -503,6 +503,26 @@ class StarDetailsGUI(object):
             column.props.resizable = False
             column.set_sort_column_id(index)
             self.refstars_view.append_column(column)
+
+            # Instead of the six decimal places that gtk.TreeViewColumn uses by
+            # default, limit the instrumental magnitudes to three. This is the
+            # maximum precision that we can get using IRAF's qphot, and it does
+            # not look like more decimal places will be available any time
+            # soon, so there is no point in using additional zeros.
+            # http://iraf.net/forum/viewtopic.php?showtopic=1467248
+
+            if index == 2:
+
+                def render_imag(column, cell, model, iter):
+                    """ Render the cell with three decimal places """
+                    orig_str = cell.get_property('text')
+                    new_str = '%.3f' % float(orig_str)
+                    cell.set_property('text', new_str)
+
+                # http://faq.pygtk.org/index.py?req=show&file=faq13.024.htp
+                column.set_cell_data_func(render, render_imag)
+                assert title == 'Mag'
+
         self.refstars_view.set_model(self.refstars_store)
         self.refstars_view.pfilter = None # the filter being currently shown
         self.refstars_view.connect('row-activated', parent.handle_row_activated)
