@@ -944,6 +944,21 @@ class LEMONJuicerGUI(object):
     def run(self):
         gtk.main()
 
+    def close_database(self):
+        """ Forget about the LEMONdB to which we are currently connected """
+
+        self.db = None
+
+        # Close all the tabs of the notebook.
+        while self._notebook.get_n_pages():
+            self._notebook.remove_page(-1)
+
+        # Destroy and forget about the current FindingChartDialog; if we're
+        # going to open another LEMONdB we will need a new finding chart.
+        if self.finding_chart_dialog is not None:
+            self.finding_chart_dialog.destroy()
+            self.finding_chart_dialog = None
+
     def handle_close(self, obj):
         # If the notebook has no pages, -1 is returned
         index = self._notebook.get_current_page()
@@ -966,13 +981,7 @@ class LEMONJuicerGUI(object):
                 really_close = response == gtk.RESPONSE_OK
 
             if really_close:
-                self.db = None # forget about this LEMONdB
-                # Destroy the finding chart window, if open
-                if self.finding_chart_dialog:
-                    self.finding_chart_dialog.destroy()
-                    self.finding_chart_dialog = None
-                while self._notebook.get_n_pages():
-                    self._notebook.remove_page(-1)
+                self.close_database()
 
         elif index >= 1:
 
@@ -1193,14 +1202,7 @@ class LEMONJuicerGUI(object):
             # If the user presses OK, close all the tabs of the notebook.
             # Otherwise, the load is cancelled and nothing is modified.
             if response == gtk.RESPONSE_OK:
-                while self._notebook.get_n_pages():
-                    self._notebook.remove_page(-1)
-
-                # Destroy and forget about the current FindingChartDialog; we
-                # will need a new one for the LEMONdB that we are opening now.
-                if self.finding_chart_dialog is not None:
-                    self.finding_chart_dialog.destroy()
-                    self.finding_chart_dialog = None
+                self.close_database()
             else:
                 return
 
