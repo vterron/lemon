@@ -1195,6 +1195,12 @@ class LEMONJuicerGUI(object):
             if response == gtk.RESPONSE_OK:
                 while self._notebook.get_n_pages():
                     self._notebook.remove_page(-1)
+
+                # Destroy and forget about the current FindingChartDialog; we
+                # will need a new one for the LEMONdB that we are opening now.
+                if self.finding_chart_dialog is not None:
+                    self.finding_chart_dialog.destroy()
+                    self.finding_chart_dialog = None
             else:
                 return
 
