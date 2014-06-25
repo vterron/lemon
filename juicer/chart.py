@@ -91,7 +91,7 @@ class PreferencesDialog(object):
         builder.add_from_file(glade.CHART_PREFERENCES_DIALOG)
 
         self.dialog = builder.get_object('chart-preferences-dialog')
-        self.dialog.set_transient_for(self.parent.parent_window)
+        self.dialog.set_transient_for(self.parent.dialog)
         self.dialog.set_title("Finding Chart: Preferences")
         self.dialog.set_resizable(False)
 
@@ -291,7 +291,7 @@ class FindingChartDialog(object):
     def __init__(self, parent):
 
         self.db = parent.db
-        self.parent_window = parent._main_window
+        parent_window = parent._main_window
         self.view_star = parent.view_star # LEMONJuicerGUI.view_star()
         self.toggle_toolbar_button = parent.set_finding_chart_button_active
 
@@ -333,7 +333,7 @@ class FindingChartDialog(object):
         # for an explanation on why we are monkey-patching this method.
         canvas.get_window_title = lambda: self.db.field_name
 
-        self.dialog.set_transient_for(self.parent_window)
+        self.dialog.set_transient_for(parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
         ax1 = self.figure.add_subplot(111)
