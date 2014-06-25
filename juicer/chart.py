@@ -100,6 +100,7 @@ class PreferencesDialog(object):
         self.apply_button = self.dialog.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
         self.save_button  = self.dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_OK)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
+        self.dialog.set_focus(self.close_button)
 
         text = "Update chart with these parameters"
         self.apply_button.set_tooltip_text(text)

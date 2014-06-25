@@ -34,8 +34,8 @@
           <object class="GtkLinkButton" id="linkbutton1">
             <property name="label" translatable="yes">http://aplpy.readthedocs.org/en/latest/normalize.html#log-scale</property>
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
+            <property name="can_focus">False</property>
+            <property name="receives_default">False</property>
             <property name="has_tooltip">True</property>
             <property name="relief">none</property>
             <property name="uri">http://aplpy.readthedocs.org/en/latest/normalize.html#log-scale</property>
