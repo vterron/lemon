@@ -519,5 +519,6 @@ class FindingChartDialog(object):
 
     def destroy(self):
         """ Destroy the gtk.Dialog """
+        self.preferences_dialog.destroy()
         self.dialog.destroy()
 
