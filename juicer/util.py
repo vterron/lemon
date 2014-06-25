@@ -46,3 +46,52 @@ def show_message_dialog(parent_window, title, msg,
 
 show_error_dialog = functools.partial(show_message_dialog,
                                       msg_type = gtk.MESSAGE_ERROR)
+
+@contextlib.contextmanager
+def gtk_sync():
+    """ A context manager to force an update to the GTK application window.
+
+    By design, all GTK events (including window refreshing and updates) are
+    handled in the main loop, which cannot handle window update events while
+    the application or callback code is running [1]. This means that nothing
+    will happen in the application windows unless we explicitly tell GTK to
+    process any events that have been left pending. This is what this context
+    manager does, running any pending iteration of the main loop immediately
+    before and after the 'with' block.
+
+    [1] PyGTK: FAQ Entry 3.7
+    http://faq.pygtk.org/index.py?req=show&file=faq03.007.htp
+
+    """
+
+    def sync():
+        # Ensure rendering is done immediately
+        while gtk.events_pending():
+            gtk.main_iteration()
+
+    sync()
+    try:
+        yield
+    finally:
+        sync()
+
+@contextlib.contextmanager
+def disable_while(widget):
+    """ A context manager to temporarily disable a GTK widget.
+
+    Use the gtk.Widget.set_sensitive() method to set the 'sensitive' property
+    of the widget to False (therefore disabling it, so that it appears 'grayed
+    out' and the user cannot interact with it) when the block is entered and to
+    True (enabling it again) after the block is exited. In this manner, we can
+    disable a GTK widget while in the 'with block'.
+
+    """
+
+    with gtk_sync():
+        widget.set_sensitive(False)
+
+    yield
+
+    with gtk_sync():
+        widget.set_sensitive(True)
+

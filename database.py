@@ -335,11 +335,13 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
-    # Keys of the records stored in the METADATA tables
+    # Keys of the records stored in the METADATA table
     _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
     _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
     _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
     _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
+    _METADATA_VMIN_KEY = 'VMIN'     # values for the log scale (APLpy)
+    _METADATA_VMAX_KEY = 'VMAX'
 
     def __init__(self, path, dtype = numpy.longdouble):
 
@@ -1581,6 +1583,28 @@ class LEMONdB(object):
         self._set_metadata(self._METADATA_ID_KEY, id_)
 
     id = property(_get_id, _set_id)
+
+    def _get_vmin(self):
+        """ Return the Vmin parameter for APLpy's logarithmic scale """
+        vmin = self._get_metadata(self._METADATA_VMIN_KEY)
+        return float(vmin) if vmin is not None else vmin
+
+    def _set_vmin(self, vmin):
+        """ Set (or replace) the Vmin parameter for APLpy's log scale """
+        self._set_metadata(self._METADATA_VMIN_KEY, vmin)
+
+    vmin = property(_get_vmin, _set_vmin)
+
+    def _get_vmax(self):
+        """ Return the Vmax parameter for APLpy's logarithmic scale """
+        vmax = self._get_metadata(self._METADATA_VMAX_KEY)
+        return float(vmax) if vmax is not None else vmax
+
+    def _set_vmax(self, vmax):
+        """ Set (or replace) Vmax parameter for APLpy's logarithmic scale """
+        self._set_metadata(self._METADATA_VMAX_KEY, vmax)
+
+    vmax = property(_get_vmax, _set_vmax)
 
     @property
     def mosaic(self):

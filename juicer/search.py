@@ -452,10 +452,8 @@ class AmplitudesSearchMessageWindow(object):
         """
 
         if fraction != self.progressbar.get_fraction():
-            self.progressbar.set_fraction(fraction)
-            # Ensure rendering is done immediately
-            while gtk.events_pending():
-                gtk.main_iteration()
+            with util.gtk_sync():
+                self.progressbar.set_fraction(fraction)
 
     @property
     def description(self):
