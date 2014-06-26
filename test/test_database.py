@@ -1175,6 +1175,65 @@ class LEMONdBTest(unittest.TestCase):
             # We do not test LEMONdB.get_image() here: the sources image should
             # be extracted from the database using the LEMONdB.simage property.
 
+    def test_add_image_ra_dec_out_of_range(self):
+
+        def test_img_addition(ra = None, dec = None):
+            """ Insert a random Image object, returned by ImageTest.random(),
+            in a fresh LEMONdB. In case the 'ra' or 'dec' (or both) keyword
+            arguments are specified, these attributes of the random Image
+            object are replaced with their values before the insertion.
+
+            """
+            db = LEMONdB(':memory:')
+            img = ImageTest.random()
+
+            kwargs = {}
+            if ra:
+                kwargs['ra'] = ra
+            if dec:
+                kwargs['dec'] = dec
+            if kwargs:
+                img = img._replace(**kwargs)
+            db.add_image(img)
+
+        def test_img_addition_raises(regexp, ra = None, dec = None):
+            """ Make sure that, when test_img_addition(ra = ra, dec = dec)
+            is called, the sqlite3.IntegrityError exception is raised and
+            its string representation matches 'regexp'
+
+            """
+            with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
+                test_img_addition(ra = ra, dec = dec)
+
+        # RA [0, 360]: boundary cases
+        regexp = "RA out of range \[0, 360\["
+        test_img_addition_raises(regexp, ra = -5)
+        test_img_addition_raises(regexp, ra = -0.001)
+        test_img_addition(ra = 0) # boundary (inclusive)
+        test_img_addition(ra = 0.0025)
+
+        test_img_addition(ra = 120)
+        test_img_addition(ra = 240)
+
+        test_img_addition(ra = 359.9999999)
+        test_img_addition_raises(regexp, ra = 360) # boundary (exclusive)
+        test_img_addition_raises(regexp, ra = 360.13)
+        test_img_addition_raises(regexp, ra = 400)
+
+        # DEC [-90, 90]: boundary cases
+        regexp = "DEC out of range \[-90, 90\]"
+        test_img_addition_raises(regexp, dec = -120)
+        test_img_addition_raises(regexp, dec = -90.001)
+        test_img_addition(dec = -90) # boundary (inclusive)
+        test_img_addition(dec = -45.25)
+
+        test_img_addition(dec = 0)
+
+        test_img_addition(dec = 75.81)
+        test_img_addition(dec = 90) # boundary (inclusive)
+        test_img_addition_raises(regexp, dec = 90.0001)
+        test_img_addition_raises(regexp, dec = 91)
+
     @classmethod
     def random_stars_info(cls, size):
         """ Return a generator which steps through 'size' random six-element
