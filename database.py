@@ -548,6 +548,17 @@ class LEMONdB(object):
                        END; """ % (index, when)
             self._execute(stmt)
 
+        # Require DEC to be in range [-90, 90]
+        for index, when in enumerate(["INSERT", "UPDATE OF dec"]):
+            stmt =  """CREATE TRIGGER IF NOT EXISTS dec_within_range_%d
+                       AFTER %s ON images
+                       FOR EACH ROW
+                       WHEN NEW.dec NOT BETWEEN -90 AND 90
+                       BEGIN
+                           SELECT RAISE(ABORT, 'DEC out of range [-90, 90]');
+                       END; """ % (index, when)
+            self._execute(stmt)
+
         # Store as a blob entire FITS files.
         self._execute('''
         CREATE TABLE IF NOT EXISTS raw_images (
