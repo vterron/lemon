@@ -537,6 +537,16 @@ class LEMONdB(object):
                            END; """.format(field, index, where)
                 self._execute(stmt)
 
+        # Require RA to be in range [0, 360[
+        for index, when in enumerate(["INSERT", "UPDATE OF ra"]):
+            stmt =  """CREATE TRIGGER IF NOT EXISTS ra_within_range_%d
+                       AFTER %s ON images
+                       FOR EACH ROW
+                       WHEN (NEW.ra NOT BETWEEN 0 AND 360) OR (NEW.ra = 360)
+                       BEGIN
+                           SELECT RAISE(ABORT, 'RA out of range [0, 360[');
+                       END; """ % (index, when)
+            self._execute(stmt)
 
         # Store as a blob entire FITS files.
         self._execute('''
