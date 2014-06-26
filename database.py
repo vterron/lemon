@@ -867,24 +867,25 @@ class LEMONdB(object):
         except Exception as e:
             self._rollback_to(mark)
 
-            unix_time = image.unix_time
-            pfilter = image.pfilter
-
             # Raise DuplicateImageError if there is already an image with this
             # Unix time and photometric filter, instead of the more generic and
             # less descriptive sqlite3.IntegrityError ("columns filter_id,
             # unix_time are not unique")
 
-            self._execute("SELECT unix_time FROM images")
-            if (unix_time,) in self._rows:
-                self._execute("SELECT 1 "
-                              "FROM photometric_filters "
-                              "WHERE id = ?", (hash(pfilter),))
-                if [(1,)] == list(self._rows):
-                    msg = ("Image with Unix time %.4f (%s) and filter %s "
-                           "already in database")
-                    args = (unix_time, methods.utctime(unix_time), pfilter)
-                    raise DuplicateImageError(msg % args)
+            unix_time = image.unix_time
+            pfilter = image.pfilter
+
+            t = (unix_time, hash(pfilter))
+            self._execute("""SELECT *
+                             FROM images
+                             WHERE unix_time = ?
+                               AND filter_id = ? """, t)
+
+            if list(self._rows):
+                msg = ("Image with Unix time %.4f (%s) and filter %s already "
+                       "in database")
+                args = (unix_time, methods.utctime(unix_time), pfilter)
+                raise DuplicateImageError(msg % args)
 
             # This point is only reached if DuplicateImageError was not raised
             # above, so re-raise the original exception, whatever it is.
