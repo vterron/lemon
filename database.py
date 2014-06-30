@@ -1538,9 +1538,11 @@ class LEMONdB(object):
     def _set_metadata(self, key, value):
         """ Set (or replace) the value of a record in the METADATA table.
 
-        Both the key and the value are cast to string and cannot be NULL, and
-        therefore the ValueError exception will be raised if None is used. Note
-        that empty strings are allowed, however (but why would you do that?)"""
+        Since it is stored in the METADATA table as a TEXT type, 'key' must be
+        a string object. A BLOB type, on the other hand, is used for 'value',
+        so it may be a string, number or None. ValueError is raised otherwise.
+
+        """
 
         if not isinstance(key, basestring):
             raise ValueError("key must be a string")
