@@ -1549,7 +1549,7 @@ class LEMONdB(object):
                 (isinstance(value, (basestring, numbers.Real)))):
             raise ValueError("value must be a string, number or None")
 
-        t = (str(key), str(value))
+        t = (str(key), value)
         self._execute("INSERT OR REPLACE INTO metadata VALUES (?, ?)", t)
 
     def _get_metadata(self, key):
