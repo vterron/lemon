@@ -32,6 +32,7 @@ import collections
 import copy
 import math
 import numpy
+import numbers
 import operator
 import os
 import random
@@ -1543,8 +1544,10 @@ class LEMONdB(object):
 
         if not isinstance(key, basestring):
             raise ValueError("key must be a string")
-        if value is None:
-            raise ValueError("value cannot be None")
+
+        if not ((value is None) or
+                (isinstance(value, (basestring, numbers.Real)))):
+            raise ValueError("value must be a string, number or None")
 
         t = (str(key), str(value))
         self._execute("INSERT OR REPLACE INTO metadata VALUES (?, ?)", t)
