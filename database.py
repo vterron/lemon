@@ -1541,8 +1541,8 @@ class LEMONdB(object):
         therefore the ValueError exception will be raised if None is used. Note
         that empty strings are allowed, however (but why would you do that?)"""
 
-        if key is None:
-            raise ValueError("key cannot be None")
+        if not isinstance(key, basestring):
+            raise ValueError("key must be a string")
         if value is None:
             raise ValueError("value cannot be None")
 
