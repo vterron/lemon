@@ -2216,28 +2216,38 @@ class LEMONdBTest(unittest.TestCase):
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
-        # Both keys and values are casted to a string
+        # Numbers and None are also allowed as values
         key, value = 'ATTEMPTS', 17
         db._set_metadata(key, value)
-        self.assertEqual(db._get_metadata(key), str(value))
+        self.assertEqual(db._get_metadata(key), value)
 
-        key, value = 'DATE', time.time()
+        key, value = 'Pi', numpy.pi
         db._set_metadata(key, value)
-        self.assertEqual(db._get_metadata(key), str(value))
+        self.assertEqual(db._get_metadata(key), value)
 
-        key, value = 3.1415926535897931, 'Pi'
+        key, value = 'OBSERVER', None
         db._set_metadata(key, value)
-        self.assertEqual(db._get_metadata(str(key)), value)
+        self.assertEqual(db._get_metadata(key), value)
 
-        # Neither the key nor the value can be None...
-        with self.assertRaises(ValueError):
-            db._set_metadata(None, value)
-        with self.assertRaises(ValueError):
-            db._set_metadata(key, None)
+        def test_raises(regexp, key, value):
+            """ Make sure that, when db._set_metadata(key, value) is called,
+            the ValueErrror exception is raised and its string representation
+            matches 'regexp'.
+            """
+            with self.assertRaisesRegexp(ValueError, regexp):
+                db._set_metadata(key, value)
 
-        # ... but empty strings are allowed
-        db._set_metadata('P.I.', '')     # useless
-        db._set_metadata('', 'IAA-CSIC') # even worse
+        regexp = "key must be a string"
+        test_raises(regexp, None, value)
+        test_raises(regexp, True, value)
+        test_raises(regexp, 0, value)
+        test_raises(regexp, numpy.pi, value)
+
+        regexp = "value must be a string, number or None"
+        test_raises(regexp, key, [])
+        test_raises(regexp, key, ())
+        test_raises(regexp, key, {})
+        test_raises(regexp, key, dict(one = 1, two = 2))
 
     def test_date(self):
 
