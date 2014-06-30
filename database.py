@@ -1610,8 +1610,7 @@ class LEMONdB(object):
 
     def _get_vmin(self):
         """ Return the Vmin parameter for APLpy's logarithmic scale """
-        vmin = self._get_metadata(self._METADATA_VMIN_KEY)
-        return float(vmin) if vmin is not None else vmin
+        return self._get_metadata(self._METADATA_VMIN_KEY)
 
     def _set_vmin(self, vmin):
         """ Set (or replace) the Vmin parameter for APLpy's log scale """
