@@ -1620,8 +1620,7 @@ class LEMONdB(object):
 
     def _get_vmax(self):
         """ Return the Vmax parameter for APLpy's logarithmic scale """
-        vmax = self._get_metadata(self._METADATA_VMAX_KEY)
-        return float(vmax) if vmax is not None else vmax
+        return self._get_metadata(self._METADATA_VMAX_KEY)
 
     def _set_vmax(self, vmax):
         """ Set (or replace) Vmax parameter for APLpy's logarithmic scale """
