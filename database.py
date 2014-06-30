@@ -431,7 +431,7 @@ class LEMONdB(object):
         self._execute('''
         CREATE TABLE IF NOT EXISTS metadata (
             key   TEXT NOT NULL,
-            value BLOB NOT NULL,
+            value BLOB,
             UNIQUE (key))
         ''')
 
