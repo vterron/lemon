@@ -427,11 +427,11 @@ class LEMONdB(object):
 
         # This table will contain non-relational information about the LEMONdB
         # itself: we need to store records (key-value pairs, such as ('AUTHOR',
-        # 'John Doe'), and there cannot be more than one row for each key.
+        # 'John Doe') or ('DATE', 1401993454.89).
         self._execute('''
         CREATE TABLE IF NOT EXISTS metadata (
             key   TEXT NOT NULL,
-            value TEXT NOT NULL,
+            value BLOB NOT NULL,
             UNIQUE (key))
         ''')
 
