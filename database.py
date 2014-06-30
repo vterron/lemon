@@ -1570,10 +1570,7 @@ class LEMONdB(object):
 
     def _get_date(self):
         """ Return the date of creation of the LEMONdB, cast to float"""
-        value = self._get_metadata(self._METADATA_DATE_KEY)
-        if value is not None:
-            value = float(value)
-        return value
+        return self._get_metadata(self._METADATA_DATE_KEY)
 
     def _set_date(self, unix_time):
         """ Set (or replace) the date of creation of the LEMONdB """
