@@ -2264,24 +2264,6 @@ class LEMONdBTest(unittest.TestCase):
         test_raises(regexp, key, {})
         test_raises(regexp, key, dict(one = 1, two = 2))
 
-    def test_vmin_and_vmax(self):
-
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.vmin, None)
-        self.assertEqual(db.vmax, None)
-        db.vmin = vmin = 11345.641
-        db.vmax = vmax = 13932.544
-        self.assertAlmostEqual(db.vmin, vmin)
-        self.assertAlmostEqual(db.vmax, vmax)
-        db.vmin = new_vmin = 9738273.32 # now update them
-        db.vmax = new_vmax = 1298820.91
-        self.assertAlmostEqual(db.vmin, new_vmin)
-        self.assertAlmostEqual(db.vmax, new_vmax)
-        with self.assertRaises(ValueError):
-            db.vmin = None
-        with self.assertRaises(ValueError):
-            db.vmax = None
-
     def test_star_closest_to_world_coords(self):
 
         db = LEMONdB(':memory:')
