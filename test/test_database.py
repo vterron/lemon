@@ -2264,6 +2264,68 @@ class LEMONdBTest(unittest.TestCase):
         test_raises(regexp, key, {})
         test_raises(regexp, key, dict(one = 1, two = 2))
 
+    def test_metadata_properties(self):
+
+        # Make sure that the METADATA properties are effectively stored in,
+        # well, the METADATA table. In order to do that, create a temporary
+        # LEMONdB that resides on disk (instead of in memory, as we usually do
+        # in the unit tests with ":memory:") and set the value of a property.
+        # Then, open the database using a second LEMONdB object and test that
+        # the value that it returns is the same that was previously assigned.
+
+        def make_db(name, value):
+            """ Return the path to a LEMON database with the 'name' property
+            set to 'value'. We are responsible for deleting the database file
+            when done with it.
+            """
+            fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+            os.close(fd)
+            db = LEMONdB(path)
+            setattr(db, name, value)
+            db.commit()
+            return path
+
+        # The different values that each property will take
+        metaproperties = \
+          dict(date = [time.time(), time.time() + 100],
+               author = ["Jane Doe", "John Doe"],
+               hostname = ['example.com', 'github.com'],
+               vmin = [11345.641, None],
+               vmax = [20000, 1298820.91])
+
+        for name, values in metaproperties.iteritems():
+
+            # None returned if property not set
+            db1 = LEMONdB(":memory:")
+            self.assertIs(getattr(db1, name), None)
+
+            assert len(values) == 2
+            first_value, second_value = values
+            path = make_db(name, first_value)
+
+            db2 = LEMONdB(path)
+            self.assertEqual(getattr(db2, name), first_value)
+            setattr(db2, name, second_value)
+            self.assertEqual(getattr(db2, name), second_value)
+            db2.commit() # otherwise changes are lost
+            del db2
+
+            db3 = LEMONdB(path)
+            self.assertEqual(getattr(db3, name), second_value)
+            del db3
+
+            os.unlink(path)
+
+        # Attempting to access properties that we have not explicitly declared
+        # in LEMONdB raises AttributeError, as it should. We include this test
+        # in case LEMONdB is refactored using __getattr__() / __setattr__(),
+        # which may have dire consequences if not done with care.
+
+        regexp = "'LEMONdB' object has no attribute 'foo'"
+        with self.assertRaisesRegexp(AttributeError, regexp):
+            db = LEMONdB(':memory:')
+            db.foo
+
     def test_star_closest_to_world_coords(self):
 
         db = LEMONdB(':memory:')
