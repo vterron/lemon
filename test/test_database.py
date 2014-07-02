@@ -2264,17 +2264,6 @@ class LEMONdBTest(unittest.TestCase):
         test_raises(regexp, key, {})
         test_raises(regexp, key, dict(one = 1, two = 2))
 
-    def test_hostname(self):
-
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.hostname, None)
-        db.author = host = 'example.com'
-        self.assertEqual(db.author, host)
-        db.author = new_host = 'github.com' # now update it
-        self.assertEqual(db.author, new_host)
-        with self.assertRaises(ValueError):
-            db.hostname = None
-
     def test_vmin_and_vmax(self):
 
         db = LEMONdB(':memory:')
