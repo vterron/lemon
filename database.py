@@ -32,6 +32,7 @@ import collections
 import copy
 import math
 import numpy
+import numbers
 import operator
 import os
 import random
@@ -335,14 +336,6 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
-    # Keys of the records stored in the METADATA table
-    _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
-    _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
-    _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
-    _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
-    _METADATA_VMIN_KEY = 'VMIN'     # values for the log scale (APLpy)
-    _METADATA_VMAX_KEY = 'VMAX'
-
     def __init__(self, path, dtype = numpy.longdouble):
 
         self.path = path
@@ -427,11 +420,11 @@ class LEMONdB(object):
 
         # This table will contain non-relational information about the LEMONdB
         # itself: we need to store records (key-value pairs, such as ('AUTHOR',
-        # 'John Doe'), and there cannot be more than one row for each key.
+        # 'John Doe') or ('DATE', 1401993454.89).
         self._execute('''
         CREATE TABLE IF NOT EXISTS metadata (
             key   TEXT NOT NULL,
-            value TEXT NOT NULL,
+            value BLOB,
             UNIQUE (key))
         ''')
 
@@ -1537,16 +1530,20 @@ class LEMONdB(object):
     def _set_metadata(self, key, value):
         """ Set (or replace) the value of a record in the METADATA table.
 
-        Both the key and the value are cast to string and cannot be NULL, and
-        therefore the ValueError exception will be raised if None is used. Note
-        that empty strings are allowed, however (but why would you do that?)"""
+        Since it is stored in the METADATA table as a TEXT type, 'key' must be
+        a string object. A BLOB type, on the other hand, is used for 'value',
+        so it may be a string, number or None. ValueError is raised otherwise.
 
-        if key is None:
-            raise ValueError("key cannot be None")
-        if value is None:
-            raise ValueError("value cannot be None")
+        """
 
-        t = (str(key), str(value))
+        if not isinstance(key, basestring):
+            raise ValueError("key must be a string")
+
+        if not ((value is None) or
+                (isinstance(value, (basestring, numbers.Real)))):
+            raise ValueError("value must be a string, number or None")
+
+        t = (str(key), value)
         self._execute("INSERT OR REPLACE INTO metadata VALUES (?, ?)", t)
 
     def _get_metadata(self, key):
@@ -1562,71 +1559,6 @@ class LEMONdB(object):
             assert len(rows) == 1
             assert len(rows[0]) == 1
             return rows[0][0]
-
-    def _get_date(self):
-        """ Return the date of creation of the LEMONdB, cast to float"""
-        value = self._get_metadata(self._METADATA_DATE_KEY)
-        if value is not None:
-            value = float(value)
-        return value
-
-    def _set_date(self, unix_time):
-        """ Set (or replace) the date of creation of the LEMONdB """
-        self._set_metadata(self._METADATA_DATE_KEY, unix_time)
-
-    date = property(_get_date, _set_date)
-
-    def _get_author(self):
-        """ Return the name of the user who created the LEMONdB """
-        return self._get_metadata(self._METADATA_AUTHOR_KEY)
-
-    def _set_author(self, author):
-        """ Set (or replace) the name of the user who created the LEMONdB """
-        self._set_metadata(self._METADATA_AUTHOR_KEY, author)
-
-    author = property(_get_author, _set_author)
-
-    def _get_hostname(self):
-        """ Return the hostname of the machine where the LEMONdB was created"""
-        return self._get_metadata(self._METADATA_HOSTNAME_KEY)
-
-    def _set_hostname(self, host):
-        """ Set / replace the hostname of the machine the LEMONdB was created"""
-        self._set_metadata(self._METADATA_HOSTNAME_KEY, host)
-
-    hostname = property(_get_hostname, _set_hostname)
-
-    def _get_id(self):
-        """ Return the unique identifier of the LEMONdB """
-        return self._get_metadata(self._METADATA_ID_KEY)
-
-    def _set_id(self, id_):
-        """ Set (or replace) the unique identifier of the LEMONdB """
-        self._set_metadata(self._METADATA_ID_KEY, id_)
-
-    id = property(_get_id, _set_id)
-
-    def _get_vmin(self):
-        """ Return the Vmin parameter for APLpy's logarithmic scale """
-        vmin = self._get_metadata(self._METADATA_VMIN_KEY)
-        return float(vmin) if vmin is not None else vmin
-
-    def _set_vmin(self, vmin):
-        """ Set (or replace) the Vmin parameter for APLpy's log scale """
-        self._set_metadata(self._METADATA_VMIN_KEY, vmin)
-
-    vmin = property(_get_vmin, _set_vmin)
-
-    def _get_vmax(self):
-        """ Return the Vmax parameter for APLpy's logarithmic scale """
-        vmax = self._get_metadata(self._METADATA_VMAX_KEY)
-        return float(vmax) if vmax is not None else vmax
-
-    def _set_vmax(self, vmax):
-        """ Set (or replace) Vmax parameter for APLpy's logarithmic scale """
-        self._set_metadata(self._METADATA_VMAX_KEY, vmax)
-
-    vmax = property(_get_vmax, _set_vmax)
 
     @property
     def mosaic(self):
@@ -1685,3 +1617,26 @@ class LEMONdB(object):
 
         return closest_id, closest_distance
 
+def _add_metadata_property(name):
+    """ Dynamically add a property to the LEMONdB class.
+
+    Add to the LEMONdB class the property 'name', whose getter and setter
+    functions are the LEMONdB._get_metadata() and LEMONdB._set_metadata()
+    methods, respectively. In this manner, this property serves as a shortcut
+    to store and read data from the METADATA table. For example, if 'name' is
+    'author', LEMONdB.author = 'Jane Doe' will insert or replace ('author',
+    'Jane Doe') in METADATA. The name of the property is always converted to
+    lowercase, although the original case is preserved in the METADATA table.
+
+    """
+
+    getter = lambda self: self._get_metadata(name)
+    setter = lambda self, value: self._set_metadata(name, value)
+    setattr(LEMONdB, name.lower(), property(getter, setter))
+
+_add_metadata_property('DATE')     # date of creation of the LEMONdB
+_add_metadata_property('AUTHOR')   # who ran LEMON to create the LEMONdB
+_add_metadata_property('HOSTNAME') # where the LEMONdB was created
+_add_metadata_property('ID')       # unique identifier of the LEMONdB
+_add_metadata_property('VMIN')     # values for the log scale (APLpy)
+_add_metadata_property('VMAX')

@@ -2216,86 +2216,115 @@ class LEMONdBTest(unittest.TestCase):
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
-        # Both keys and values are casted to a string
+        # Numbers and None are also allowed as values
         key, value = 'ATTEMPTS', 17
         db._set_metadata(key, value)
-        self.assertEqual(db._get_metadata(key), str(value))
+        self.assertEqual(db._get_metadata(key), value)
 
-        key, value = 'DATE', time.time()
+        key, value = 'Pi', numpy.pi
         db._set_metadata(key, value)
-        self.assertEqual(db._get_metadata(key), str(value))
+        self.assertEqual(db._get_metadata(key), value)
 
-        key, value = 3.1415926535897931, 'Pi'
+        key, value = 'OBSERVER', None
         db._set_metadata(key, value)
-        self.assertEqual(db._get_metadata(str(key)), value)
+        self.assertEqual(db._get_metadata(key), value)
 
-        # Neither the key nor the value can be None...
-        with self.assertRaises(ValueError):
-            db._set_metadata(None, value)
-        with self.assertRaises(ValueError):
-            db._set_metadata(key, None)
+        # These keys and values must not only be kept in memory in the LEMONdB
+        # object: they are stored in the METADATA table of the LEMON database.
+        # Therefore, a second LEMONdB object must be able to access them.
 
-        # ... but empty strings are allowed
-        db._set_metadata('P.I.', '')     # useless
-        db._set_metadata('', 'IAA-CSIC') # even worse
+        key, value = 'VMIN', 12143.281
+        fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+        os.close(fd)
+        db1 = LEMONdB(path)
+        db1._set_metadata(key, value)
+        db1.commit() # otherwise changes are lost
+        del db1
+        db2 = LEMONdB(path)
+        self.assertEqual(db2._get_metadata(key), value)
+        os.unlink(path)
 
-    def test_date(self):
+        def test_raises(regexp, key, value):
+            """ Make sure that, when db._set_metadata(key, value) is called,
+            the ValueErrror exception is raised and its string representation
+            matches 'regexp'.
+            """
+            with self.assertRaisesRegexp(ValueError, regexp):
+                db._set_metadata(key, value)
 
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.date, None)
+        regexp = "key must be a string"
+        test_raises(regexp, None, value)
+        test_raises(regexp, True, value)
+        test_raises(regexp, 0, value)
+        test_raises(regexp, numpy.pi, value)
 
-        # The 'places' parameter is necessary because the Unix time is stored
-        # as text in the database, and then converted back to float when
-        # retrieved, which inevitably causes the loss of some precision.
-        kwargs = dict(places = 2)
-        db.date = hour_ago = time.time() - 3600
-        self.assertAlmostEqual(db.date, hour_ago, **kwargs)
-        db.date = now = time.time() # now update it
-        self.assertAlmostEqual(db.date, now, **kwargs)
+        regexp = "value must be a string, number or None"
+        test_raises(regexp, key, [])
+        test_raises(regexp, key, ())
+        test_raises(regexp, key, {})
+        test_raises(regexp, key, dict(one = 1, two = 2))
 
-        # Any value is valid, except None (which raises ValueError)
-        with self.assertRaises(ValueError):
-            db.date = None
+    def test_metadata_properties(self):
 
-    def test_author(self):
+        # Make sure that the METADATA properties are effectively stored in,
+        # well, the METADATA table. In order to do that, create a temporary
+        # LEMONdB that resides on disk (instead of in memory, as we usually do
+        # in the unit tests with ":memory:") and set the value of a property.
+        # Then, open the database using a second LEMONdB object and test that
+        # the value that it returns is the same that was previously assigned.
 
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.author, None)
-        db.author = name = 'Jane Doe'
-        self.assertEqual(db.author, name)
-        db.author = new_name = 'Baby Doe' # now update it
-        self.assertEqual(db.author, new_name)
-        with self.assertRaises(ValueError):
-            db.author = None
+        def make_db(name, value):
+            """ Return the path to a LEMON database with the 'name' property
+            set to 'value'. We are responsible for deleting the database file
+            when done with it.
+            """
+            fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+            os.close(fd)
+            db = LEMONdB(path)
+            setattr(db, name, value)
+            db.commit()
+            return path
 
-    def test_hostname(self):
+        # The different values that each property will take
+        metaproperties = \
+          dict(date = [time.time(), time.time() + 100],
+               author = ["Jane Doe", "John Doe"],
+               hostname = ['example.com', 'github.com'],
+               vmin = [11345.641, None],
+               vmax = [20000, 1298820.91])
 
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.hostname, None)
-        db.author = host = 'example.com'
-        self.assertEqual(db.author, host)
-        db.author = new_host = 'github.com' # now update it
-        self.assertEqual(db.author, new_host)
-        with self.assertRaises(ValueError):
-            db.hostname = None
+        for name, values in metaproperties.iteritems():
 
-    def test_vmin_and_vmax(self):
+            # None returned if property not set
+            db1 = LEMONdB(":memory:")
+            self.assertIs(getattr(db1, name), None)
 
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.vmin, None)
-        self.assertEqual(db.vmax, None)
-        db.vmin = vmin = 11345.641
-        db.vmax = vmax = 13932.544
-        self.assertAlmostEqual(db.vmin, vmin)
-        self.assertAlmostEqual(db.vmax, vmax)
-        db.vmin = new_vmin = 9738273.32 # now update them
-        db.vmax = new_vmax = 1298820.91
-        self.assertAlmostEqual(db.vmin, new_vmin)
-        self.assertAlmostEqual(db.vmax, new_vmax)
-        with self.assertRaises(ValueError):
-            db.vmin = None
-        with self.assertRaises(ValueError):
-            db.vmax = None
+            assert len(values) == 2
+            first_value, second_value = values
+            path = make_db(name, first_value)
+
+            db2 = LEMONdB(path)
+            self.assertEqual(getattr(db2, name), first_value)
+            setattr(db2, name, second_value)
+            self.assertEqual(getattr(db2, name), second_value)
+            db2.commit() # otherwise changes are lost
+            del db2
+
+            db3 = LEMONdB(path)
+            self.assertEqual(getattr(db3, name), second_value)
+            del db3
+
+            os.unlink(path)
+
+        # Attempting to access properties that we have not explicitly declared
+        # in LEMONdB raises AttributeError, as it should. We include this test
+        # in case LEMONdB is refactored using __getattr__() / __setattr__(),
+        # which may have dire consequences if not done with care.
+
+        regexp = "'LEMONdB' object has no attribute 'foo'"
+        with self.assertRaisesRegexp(AttributeError, regexp):
+            db = LEMONdB(':memory:')
+            db.foo
 
     def test_star_closest_to_world_coords(self):
 
