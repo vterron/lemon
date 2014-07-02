@@ -2264,17 +2264,6 @@ class LEMONdBTest(unittest.TestCase):
         test_raises(regexp, key, {})
         test_raises(regexp, key, dict(one = 1, two = 2))
 
-    def test_author(self):
-
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.author, None)
-        db.author = name = 'Jane Doe'
-        self.assertEqual(db.author, name)
-        db.author = new_name = 'Baby Doe' # now update it
-        self.assertEqual(db.author, new_name)
-        with self.assertRaises(ValueError):
-            db.author = None
-
     def test_hostname(self):
 
         db = LEMONdB(':memory:')
