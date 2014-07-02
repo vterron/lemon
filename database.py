@@ -337,7 +337,6 @@ class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
     # Keys of the records stored in the METADATA table
-    _METADATA_DATE_KEY = 'DATE'     # date of creation of the LEMONdB
     _METADATA_AUTHOR_KEY = 'AUTHOR' # who ran LEMON to create the LEMONdB
     _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
     _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
@@ -1568,16 +1567,6 @@ class LEMONdB(object):
             assert len(rows[0]) == 1
             return rows[0][0]
 
-    def _get_date(self):
-        """ Return the date of creation of the LEMONdB, cast to float"""
-        return self._get_metadata(self._METADATA_DATE_KEY)
-
-    def _set_date(self, unix_time):
-        """ Set (or replace) the date of creation of the LEMONdB """
-        self._set_metadata(self._METADATA_DATE_KEY, unix_time)
-
-    date = property(_get_date, _set_date)
-
     def _get_author(self):
         """ Return the name of the user who created the LEMONdB """
         return self._get_metadata(self._METADATA_AUTHOR_KEY)
@@ -1701,3 +1690,5 @@ def _add_metadata_property(name):
     getter = lambda self: self._get_metadata(name)
     setter = lambda self, value: self._set_metadata(name, value)
     setattr(LEMONdB, name.lower(), property(getter, setter))
+
+_add_metadata_property('DATE')     # date of creation of the LEMONdB
