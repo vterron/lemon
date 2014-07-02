@@ -2264,24 +2264,6 @@ class LEMONdBTest(unittest.TestCase):
         test_raises(regexp, key, {})
         test_raises(regexp, key, dict(one = 1, two = 2))
 
-    def test_date(self):
-
-        db = LEMONdB(':memory:')
-        self.assertEqual(db.date, None)
-
-        # The 'places' parameter is necessary because the Unix time is stored
-        # as text in the database, and then converted back to float when
-        # retrieved, which inevitably causes the loss of some precision.
-        kwargs = dict(places = 2)
-        db.date = hour_ago = time.time() - 3600
-        self.assertAlmostEqual(db.date, hour_ago, **kwargs)
-        db.date = now = time.time() # now update it
-        self.assertAlmostEqual(db.date, now, **kwargs)
-
-        # Any value is valid, except None (which raises ValueError)
-        with self.assertRaises(ValueError):
-            db.date = None
-
     def test_author(self):
 
         db = LEMONdB(':memory:')
