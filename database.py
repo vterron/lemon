@@ -1685,3 +1685,19 @@ class LEMONdB(object):
 
         return closest_id, closest_distance
 
+def _add_metadata_property(name):
+    """ Dynamically add a property to the LEMONdB class.
+
+    Add to the LEMONdB class the property 'name', whose getter and setter
+    functions are the LEMONdB._get_metadata() and LEMONdB._set_metadata()
+    methods, respectively. In this manner, this property serves as a shortcut
+    to store and read data from the METADATA table. For example, if 'name' is
+    'author', LEMONdB.author = 'Jane Doe' will insert or replace ('author',
+    'Jane Doe') in METADATA. The name of the property is always converted to
+    lowercase, although the original case is preserved in the METADATA table.
+
+    """
+
+    getter = lambda self: self._get_metadata(name)
+    setter = lambda self, value: self._set_metadata(name, value)
+    setattr(LEMONdB, name.lower(), property(getter, setter))
