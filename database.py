@@ -336,9 +336,6 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
-    # Keys of the records stored in the METADATA table
-    _METADATA_VMAX_KEY = 'VMAX'
-
     def __init__(self, path, dtype = numpy.longdouble):
 
         self.path = path
@@ -1563,16 +1560,6 @@ class LEMONdB(object):
             assert len(rows[0]) == 1
             return rows[0][0]
 
-    def _get_vmax(self):
-        """ Return the Vmax parameter for APLpy's logarithmic scale """
-        return self._get_metadata(self._METADATA_VMAX_KEY)
-
-    def _set_vmax(self, vmax):
-        """ Set (or replace) Vmax parameter for APLpy's logarithmic scale """
-        self._set_metadata(self._METADATA_VMAX_KEY, vmax)
-
-    vmax = property(_get_vmax, _set_vmax)
-
     @property
     def mosaic(self):
         """ Save to disk the FITS file on which sources were detected.
@@ -1652,3 +1639,4 @@ _add_metadata_property('AUTHOR')   # who ran LEMON to create the LEMONdB
 _add_metadata_property('HOSTNAME') # where the LEMONdB was created
 _add_metadata_property('ID')       # unique identifier of the LEMONdB
 _add_metadata_property('VMIN')     # values for the log scale (APLpy)
+_add_metadata_property('VMAX')
