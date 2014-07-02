@@ -337,7 +337,6 @@ class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
     # Keys of the records stored in the METADATA table
-    _METADATA_HOSTNAME_KEY = 'HOST' # where the LEMONdB was created
     _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
     _METADATA_VMIN_KEY = 'VMIN'     # values for the log scale (APLpy)
     _METADATA_VMAX_KEY = 'VMAX'
@@ -1566,16 +1565,6 @@ class LEMONdB(object):
             assert len(rows[0]) == 1
             return rows[0][0]
 
-    def _get_hostname(self):
-        """ Return the hostname of the machine where the LEMONdB was created"""
-        return self._get_metadata(self._METADATA_HOSTNAME_KEY)
-
-    def _set_hostname(self, host):
-        """ Set / replace the hostname of the machine the LEMONdB was created"""
-        self._set_metadata(self._METADATA_HOSTNAME_KEY, host)
-
-    hostname = property(_get_hostname, _set_hostname)
-
     def _get_id(self):
         """ Return the unique identifier of the LEMONdB """
         return self._get_metadata(self._METADATA_ID_KEY)
@@ -1682,3 +1671,4 @@ def _add_metadata_property(name):
 
 _add_metadata_property('DATE')     # date of creation of the LEMONdB
 _add_metadata_property('AUTHOR')   # who ran LEMON to create the LEMONdB
+_add_metadata_property('HOSTNAME') # where the LEMONdB was created
