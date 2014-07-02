@@ -337,7 +337,6 @@ class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
     # Keys of the records stored in the METADATA table
-    _METADATA_ID_KEY = 'ID'         # unique identifier of the LEMONdB
     _METADATA_VMIN_KEY = 'VMIN'     # values for the log scale (APLpy)
     _METADATA_VMAX_KEY = 'VMAX'
 
@@ -1565,16 +1564,6 @@ class LEMONdB(object):
             assert len(rows[0]) == 1
             return rows[0][0]
 
-    def _get_id(self):
-        """ Return the unique identifier of the LEMONdB """
-        return self._get_metadata(self._METADATA_ID_KEY)
-
-    def _set_id(self, id_):
-        """ Set (or replace) the unique identifier of the LEMONdB """
-        self._set_metadata(self._METADATA_ID_KEY, id_)
-
-    id = property(_get_id, _set_id)
-
     def _get_vmin(self):
         """ Return the Vmin parameter for APLpy's logarithmic scale """
         return self._get_metadata(self._METADATA_VMIN_KEY)
@@ -1672,3 +1661,4 @@ def _add_metadata_property(name):
 _add_metadata_property('DATE')     # date of creation of the LEMONdB
 _add_metadata_property('AUTHOR')   # who ran LEMON to create the LEMONdB
 _add_metadata_property('HOSTNAME') # where the LEMONdB was created
+_add_metadata_property('ID')       # unique identifier of the LEMONdB
