@@ -2229,6 +2229,21 @@ class LEMONdBTest(unittest.TestCase):
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
+        # These keys and values must not only be kept in memory in the LEMONdB
+        # object: they are stored in the METADATA table of the LEMON database.
+        # Therefore, a second LEMONdB object must be able to access them.
+
+        key, value = 'VMIN', 12143.281
+        fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+        os.close(fd)
+        db1 = LEMONdB(path)
+        db1._set_metadata(key, value)
+        db1.commit() # otherwise changes are lost
+        del db1
+        db2 = LEMONdB(path)
+        self.assertEqual(db2._get_metadata(key), value)
+        os.unlink(path)
+
         def test_raises(regexp, key, value):
             """ Make sure that, when db._set_metadata(key, value) is called,
             the ValueErrror exception is raised and its string representation
