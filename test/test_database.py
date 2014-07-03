@@ -2201,7 +2201,7 @@ class LEMONdBTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             db.field_name
 
-    def test_set_and_get_metadata(self):
+    def test_set_get_and_del_metadata(self):
 
         db = LEMONdB(':memory:')
 
@@ -2218,6 +2218,12 @@ class LEMONdBTest(unittest.TestCase):
         value = 'Jane Doe'
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
+
+        # After deleting the record from the METADATA table, attempting to
+        # read it again must raise AttributeError, as it no longer exists.
+        db._del_metadata(key)
+        with self.assertRaisesRegexp(AttributeError, regexp):
+            db._get_metadata(key)
 
         # Numbers and None are also allowed as values
         key, value = 'ATTEMPTS', 17
