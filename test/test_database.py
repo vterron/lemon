@@ -2323,9 +2323,20 @@ class LEMONdBTest(unittest.TestCase):
             db2.commit() # otherwise changes are lost
             del db2
 
+            # Test not only that the new value of the METADATA property has
+            # been successfully updated in the database, but also that, when
+            # we delete it, it is indeed removed from the table.
+
             db3 = LEMONdB(path)
             self.assertEqual(getattr(db3, name), second_value)
+            delattr(db3, name)
+            db3.commit()
             del db3
+
+            db4 = LEMONdB(path)
+            with self.assertRaisesRegexp(AttributeError, regexp % name):
+                getattr(db4, name)
+            del db4
 
             os.unlink(path)
 
