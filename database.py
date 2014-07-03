@@ -1631,7 +1631,14 @@ def _add_metadata_property(name):
 
     """
 
-    getter = lambda self: self._get_metadata(name)
+    def getter(self):
+        try:
+            return self._get_metadata(name)
+        except AttributeError:
+            # The same error message normally used by AttributeError
+            msg = "'LEMONdB' object has no attribute '%s'" % name.lower()
+            raise AttributeError(msg)
+
     setter = lambda self, value: self._set_metadata(name, value)
     setattr(LEMONdB, name.lower(), property(getter, setter))
 
