@@ -1561,6 +1561,19 @@ class LEMONdB(object):
             assert len(rows[0]) == 1
             return rows[0][0]
 
+    def _del_metadata(self, key):
+        """ Delete a record in the METADATA table.
+
+        Raise AttributeError if the key does not exist in the table.
+
+        """
+
+        # Not interested in the return value, just want LEMONdB._get_metadata()
+        # to raise AttributeError in case the key does not exist in the table.
+        self._get_metadata(key)
+        t = (key, )
+        self._execute("DELETE FROM metadata WHERE key = ?", t)
+
     @property
     def mosaic(self):
         """ Save to disk the FITS file on which sources were detected.
