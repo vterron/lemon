@@ -1653,7 +1653,8 @@ def _add_metadata_property(name):
             raise AttributeError(msg)
 
     setter = lambda self, value: self._set_metadata(name, value)
-    setattr(LEMONdB, name.lower(), property(getter, setter))
+    deleter = lambda self: self._del_metadata(name)
+    setattr(LEMONdB, name.lower(), property(getter, setter, deleter))
 
 _add_metadata_property('DATE')     # date of creation of the LEMONdB
 _add_metadata_property('AUTHOR')   # who ran LEMON to create the LEMONdB
