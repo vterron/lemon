@@ -1547,14 +1547,15 @@ class LEMONdB(object):
         self._execute("INSERT OR REPLACE INTO metadata VALUES (?, ?)", t)
 
     def _get_metadata(self, key):
-        """ Return the value of a record in the METADATA table. None is
-        returned if 'key' does not match that of any key-value pair. """
+        """ Return the value of a record in the METADATA table. Raise
+        AttributeError if 'key' does not match that of any key-value pair."""
 
         t = (key, )
         self._execute("SELECT value FROM metadata WHERE key = ?", t)
         rows = tuple(self._rows)
         if not rows:
-            return None
+            msg = "METADATA table has no record '%s'" % key
+            raise AttributeError(msg)
         else:
             assert len(rows) == 1
             assert len(rows[0]) == 1
@@ -1630,7 +1631,14 @@ def _add_metadata_property(name):
 
     """
 
-    getter = lambda self: self._get_metadata(name)
+    def getter(self):
+        try:
+            return self._get_metadata(name)
+        except AttributeError:
+            # The same error message normally used by AttributeError
+            msg = "'LEMONdB' object has no attribute '%s'" % name.lower()
+            raise AttributeError(msg)
+
     setter = lambda self, value: self._set_metadata(name, value)
     setattr(LEMONdB, name.lower(), property(getter, setter))
 

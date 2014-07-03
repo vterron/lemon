@@ -2206,8 +2206,11 @@ class LEMONdBTest(unittest.TestCase):
         db = LEMONdB(':memory:')
 
         key, value = 'AUTHOR', 'John Doe'
-        # None is returned if the key is not in the table
-        self.assertEqual(db._get_metadata(key), None)
+        # AttributeError is raised if the key is not in the table
+        regexp = "METADATA table has no record '%s'" % key
+        with self.assertRaisesRegexp(AttributeError, regexp):
+            db._get_metadata(key)
+
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
@@ -2266,6 +2269,9 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_metadata_properties(self):
 
+        # Expected error message of AttributeError
+        regexp = "'LEMONdB' object has no attribute '%s'"
+
         # Make sure that the METADATA properties are effectively stored in,
         # well, the METADATA table. In order to do that, create a temporary
         # LEMONdB that resides on disk (instead of in memory, as we usually do
@@ -2295,9 +2301,10 @@ class LEMONdBTest(unittest.TestCase):
 
         for name, values in metaproperties.iteritems():
 
-            # None returned if property not set
+            # AttributeError is raised if the property is not set
             db1 = LEMONdB(":memory:")
-            self.assertIs(getattr(db1, name), None)
+            with self.assertRaisesRegexp(AttributeError, regexp % name):
+                getattr(db1, name)
 
             assert len(values) == 2
             first_value, second_value = values

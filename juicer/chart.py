@@ -118,7 +118,7 @@ class PreferencesDialog(object):
         # finding chart (parent.aplpy_plot.image.norm). Note that, by default,
         # FITSFigure.show_grayscale() uses a linear stretch.
 
-        if None not in (self.db.vmin, self.db.vmax):
+        try:
             self.stretch = 'log'
             vmin = self.db.vmin
             vmax = self.db.vmax
@@ -128,7 +128,7 @@ class PreferencesDialog(object):
             for message in msg1, msg2:
                 logging.debug(message)
 
-        else:
+        except AttributeError:
             normalize = self.parent.aplpy_plot.image.norm
             self.stretch = normalize.stretch
             vmin    = normalize.vmin
