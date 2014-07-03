@@ -2206,8 +2206,11 @@ class LEMONdBTest(unittest.TestCase):
         db = LEMONdB(':memory:')
 
         key, value = 'AUTHOR', 'John Doe'
-        # None is returned if the key is not in the table
-        self.assertEqual(db._get_metadata(key), None)
+        # AttributeError is raised if the key is not in the table
+        regexp = "METADATA table has no record '%s'" % key
+        with self.assertRaisesRegexp(AttributeError, regexp):
+            db._get_metadata(key)
+
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
