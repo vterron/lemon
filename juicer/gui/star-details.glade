@@ -63,8 +63,6 @@
                     <child>
                       <object class="GtkLabel" id="error-messages-label">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">No points have a signal-to-noise ratio above the current threshold
-(to modify it, go to View &#x2192; Plots &#x2192; SNR threshold) </property>
                         <property name="justify">center</property>
                       </object>
                       <packing>

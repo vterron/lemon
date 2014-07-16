@@ -249,6 +249,14 @@ class ExportCurveDialog(object):
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
+    SNR_THRESHOLD_ERROR_MSG = \
+    "No points have a signal-to-noise ratio above the current threshold\n " \
+    "(to modify it, go to View → Plots → SNR threshold)"
+
+    NO_CURVE_IN_ANY_FILTER_ERROR_MSG = \
+    "The light curve of the astronomical object has not been generated\n" \
+    "in any photometric filter, so there is nothing to be displayed here."
+
     def set_canvas(self, visible):
         """ Make rows in the 'matplotlib-container' VBox visible/invisible.
 
@@ -263,6 +271,10 @@ class StarDetailsGUI(object):
         self.image_box.set_visible(visible)
         self.navigation_box.set_visible(visible)
         self.error_msg.set_visible(not visible)
+
+    def set_error_msg(self, msg):
+        """ Set the text of the error message label """
+        self.error_msg.set_label(msg)
 
     def update_curve(self, curve, show_airmasses):
 
@@ -279,6 +291,7 @@ class StarDetailsGUI(object):
             # the SNR threshold. Note that 'curve' can only be None for this
             # reason: filters for which there is no light curve are disabled
             # at __init__, so the user cannot plot anything in these filters.
+            self.set_error_msg(self.SNR_THRESHOLD_ERROR_MSG)
             self.set_canvas(False)
 
         else:
@@ -648,20 +661,32 @@ class StarDetailsGUI(object):
         args = 'toggled', self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
 
+        # The button to export the light curve to a text file
+        self.export_button = self._builder.get_object('save-curve-points-button')
+        args = 'clicked', self.save_light_curve_points
+        self.export_button.connect(*args)
+
         # Activate the button of the first filter for which there is data
         # (those in the self.buttons dictionary), unless indicated otherwise
-        if not init_pfilter:
-            init_pfilter = min(self.buttons.keys())
 
-        self.buttons[init_pfilter].set_active(True)
-        event = gtk.gdk.Event(gtk.gdk.NOTHING)
-        self.buttons[init_pfilter].emit('button-press-event', event)
-        self.shown = init_pfilter
+        if self.buttons.keys():
 
-        # The button to export the light curve to a text file
-        export_button = self._builder.get_object('save-curve-points-button')
-        args = 'clicked', self.save_light_curve_points
-        export_button.connect(*args)
+            if not init_pfilter:
+                init_pfilter = min(self.buttons.keys())
+
+            self.buttons[init_pfilter].set_active(True)
+            event = gtk.gdk.Event(gtk.gdk.NOTHING)
+            self.buttons[init_pfilter].emit('button-press-event', event)
+            self.shown = init_pfilter
+
+        else:
+            # If the light curve of the astronomical object has not been
+            # computed in any photometric filter, show the error message
+            # explaining that there is nothing that we can display here.
+            self.set_error_msg(self.NO_CURVE_IN_ANY_FILTER_ERROR_MSG)
+            self.set_canvas(False)
+            # There are no light curves whose data we can save to disk
+            self.export_button.set_sensitive(False)
 
         # Button to look up the star in the SIMBAD astronomical database.
         # Render a stock button, STOCK_INFO, but use a different label.
