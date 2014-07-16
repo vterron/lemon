@@ -249,6 +249,10 @@ class ExportCurveDialog(object):
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
+    SNR_THRESHOLD_ERROR_MSG = \
+    "No points have a signal-to-noise ratio above the current threshold\n " \
+    "(to modify it, go to View → Plots → SNR threshold)"
+
     def set_canvas(self, visible):
         """ Make rows in the 'matplotlib-container' VBox visible/invisible.
 
