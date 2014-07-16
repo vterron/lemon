@@ -272,6 +272,10 @@ class StarDetailsGUI(object):
         self.navigation_box.set_visible(visible)
         self.error_msg.set_visible(not visible)
 
+    def set_error_msg(self, msg):
+        """ Set the text of the error message label """
+        self.error_msg.set_label(msg)
+
     def update_curve(self, curve, show_airmasses):
 
         if show_airmasses:
