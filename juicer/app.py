@@ -661,6 +661,11 @@ class StarDetailsGUI(object):
         args = 'toggled', self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
 
+        # The button to export the light curve to a text file
+        self.export_button = self._builder.get_object('save-curve-points-button')
+        args = 'clicked', self.save_light_curve_points
+        self.export_button.connect(*args)
+
         # Activate the button of the first filter for which there is data
         # (those in the self.buttons dictionary), unless indicated otherwise
 
@@ -680,11 +685,8 @@ class StarDetailsGUI(object):
             # explaining that there is nothing that we can display here.
             self.set_error_msg(self.NO_CURVE_IN_ANY_FILTER_ERROR_MSG)
             self.set_canvas(False)
-
-        # The button to export the light curve to a text file
-        export_button = self._builder.get_object('save-curve-points-button')
-        args = 'clicked', self.save_light_curve_points
-        export_button.connect(*args)
+            # There are no light curves whose data we can save to disk
+            self.export_button.set_sensitive(False)
 
         # Button to look up the star in the SIMBAD astronomical database.
         # Render a stock button, STOCK_INFO, but use a different label.
