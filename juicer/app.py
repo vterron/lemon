@@ -663,13 +663,23 @@ class StarDetailsGUI(object):
 
         # Activate the button of the first filter for which there is data
         # (those in the self.buttons dictionary), unless indicated otherwise
-        if not init_pfilter:
-            init_pfilter = min(self.buttons.keys())
 
-        self.buttons[init_pfilter].set_active(True)
-        event = gtk.gdk.Event(gtk.gdk.NOTHING)
-        self.buttons[init_pfilter].emit('button-press-event', event)
-        self.shown = init_pfilter
+        if self.buttons.keys():
+
+            if not init_pfilter:
+                init_pfilter = min(self.buttons.keys())
+
+            self.buttons[init_pfilter].set_active(True)
+            event = gtk.gdk.Event(gtk.gdk.NOTHING)
+            self.buttons[init_pfilter].emit('button-press-event', event)
+            self.shown = init_pfilter
+
+        else:
+            # If the light curve of the astronomical object has not been
+            # computed in any photometric filter, show the error message
+            # explaining that there is nothing that we can display here.
+            self.set_error_msg(self.NO_CURVE_IN_ANY_FILTER_ERROR_MSG)
+            self.set_canvas(False)
 
         # The button to export the light curve to a text file
         export_button = self._builder.get_object('save-curve-points-button')
