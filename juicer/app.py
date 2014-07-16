@@ -253,6 +253,10 @@ class StarDetailsGUI(object):
     "No points have a signal-to-noise ratio above the current threshold\n " \
     "(to modify it, go to View → Plots → SNR threshold)"
 
+    NO_CURVE_IN_ANY_FILTER_ERROR_MSG = \
+    "The light curve of the astronomical object has not been generated\n" \
+    "in any photometric filter, so there is nothing to be displayed here."
+
     def set_canvas(self, visible):
         """ Make rows in the 'matplotlib-container' VBox visible/invisible.
 
