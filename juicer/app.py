@@ -291,6 +291,7 @@ class StarDetailsGUI(object):
             # the SNR threshold. Note that 'curve' can only be None for this
             # reason: filters for which there is no light curve are disabled
             # at __init__, so the user cannot plot anything in these filters.
+            self.set_error_msg(self.SNR_THRESHOLD_ERROR_MSG)
             self.set_canvas(False)
 
         else:
