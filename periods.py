@@ -332,8 +332,8 @@ def main(arguments = None):
         output_db_path = args[-1]
 
     if not os.path.exists(input_db_path):
-        print "%sError. Database '%s' does not exist." % \
-              (style.prefix, input_db_path)
+        msg = "%sError. Input database '%s' does not exist."
+        print msg % (style.prefix, input_db_path)
         print style.error_exit_message
         return 1
 
