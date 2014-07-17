@@ -144,8 +144,8 @@ _lemon_periods()
 {
 
     local opts
-    opts="--output --overwrite --initial-step --exhaustive-step
-    --cores --verbose"
+    opts="--overwrite --initial-step --exhaustive-step --cores
+    --verbose"
 
     if [[ ${prev} == --output ]]; then
 	_filedir @($LEMONDB_EXTS)
