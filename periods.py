@@ -337,30 +337,20 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    if not options.output_db:
-        if not os.access(input_db_path, os.W_OK):
-            print "%sError. Input database '%s' cannot be updated (no write " \
-                  "access)" % (style.prefix, input_db_path)
+    if os.path.exists(output_db_path):
+        if not options.overwrite:
+            msg = "%sError. The output database '%s' already exists."
+            print msg % (style.prefix, output_db_path)
             print style.error_exit_message
             return 1
         else:
-            output_db_path = input_db_path
-    else:
-        output_db_path = options.output_db
-        if os.path.exists(output_db_path):
-            if not options.overwrite:
-                print "%sError. The output database '%s' already exists." % \
-                      (style.prefix, output_db_path)
-                print style.error_exit_message
-                return 1
-            else:
-                os.unlink(output_db_path)
+            os.unlink(output_db_path)
 
-        print "%sMaking a copy of the input database..." % style.prefix ,
-        sys.stdout.flush()
-        shutil.copy2(input_db_path, output_db_path)
-        methods.owner_writable(output_db_path, True) # chmod u+w
-        print 'done.'
+    print "%sMaking a copy of the input database..." % style.prefix ,
+    sys.stdout.flush()
+    shutil.copy2(input_db_path, output_db_path)
+    methods.owner_writable(output_db_path, True) # chmod u+w
+    print 'done.'
 
     db = database.LEMONdB(output_db_path);
     nstars = len(db)
@@ -440,7 +430,7 @@ def main(arguments = None):
     db.hostname = socket.gethostname()
     db.commit()
 
-    methods.owner_writable(options.output_db, False) # chmod u-w
+    methods.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 
