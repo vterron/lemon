@@ -225,7 +225,7 @@ class StringLengthFinder(object):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... INPUT_DB"
+parser.usage = "%prog [OPTION]... INPUT_DB OUTPUT_DB"
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
