@@ -323,12 +323,13 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    if len(args) != 2:
         parser.print_help()
         return 2 # used for command line syntax errors
     else:
-        assert len(args) == 1
-        input_db_path = args[0]
+        assert len(args) == 2
+        input_db_path = args[-2]
+        output_db_path = args[-1]
 
     if not os.path.exists(input_db_path):
         print "%sError. Database '%s' does not exist." % \
