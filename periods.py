@@ -227,11 +227,6 @@ class StringLengthFinder(object):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DB"
 
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'output_db', default = None,
-                  help = "path to the output LEMON database "
-                  "[default: %default]")
-
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
