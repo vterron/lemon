@@ -225,12 +225,7 @@ class StringLengthFinder(object):
 
 
 parser = customparser.get_parser(description)
-parser.usage = "%prog [OPTION]... INPUT_DB"
-
-parser.add_option('--output', action = 'store', type = 'str',
-                  dest = 'output_db', default = None,
-                  help = "path to the output LEMON database "
-                  "[default: %default]")
+parser.usage = "%prog [OPTION]... INPUT_DB OUTPUT_DB"
 
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
@@ -328,43 +323,34 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    if len(args) != 2:
         parser.print_help()
         return 2 # used for command line syntax errors
     else:
-        assert len(args) == 1
-        input_db_path = args[0]
+        assert len(args) == 2
+        input_db_path = args[-2]
+        output_db_path = args[-1]
 
     if not os.path.exists(input_db_path):
-        print "%sError. Database '%s' does not exist." % \
-              (style.prefix, input_db_path)
+        msg = "%sError. Input database '%s' does not exist."
+        print msg % (style.prefix, input_db_path)
         print style.error_exit_message
         return 1
 
-    if not options.output_db:
-        if not os.access(input_db_path, os.W_OK):
-            print "%sError. Input database '%s' cannot be updated (no write " \
-                  "access)" % (style.prefix, input_db_path)
+    if os.path.exists(output_db_path):
+        if not options.overwrite:
+            msg = "%sError. The output database '%s' already exists."
+            print msg % (style.prefix, output_db_path)
             print style.error_exit_message
             return 1
         else:
-            output_db_path = input_db_path
-    else:
-        output_db_path = options.output_db
-        if os.path.exists(output_db_path):
-            if not options.overwrite:
-                print "%sError. The output database '%s' already exists." % \
-                      (style.prefix, output_db_path)
-                print style.error_exit_message
-                return 1
-            else:
-                os.unlink(output_db_path)
+            os.unlink(output_db_path)
 
-        print "%sMaking a copy of the input database..." % style.prefix ,
-        sys.stdout.flush()
-        shutil.copy2(input_db_path, output_db_path)
-        methods.owner_writable(output_db_path, True) # chmod u+w
-        print 'done.'
+    print "%sMaking a copy of the input database..." % style.prefix ,
+    sys.stdout.flush()
+    shutil.copy2(input_db_path, output_db_path)
+    methods.owner_writable(output_db_path, True) # chmod u+w
+    print 'done.'
 
     db = database.LEMONdB(output_db_path);
     nstars = len(db)
@@ -444,7 +430,7 @@ def main(arguments = None):
     db.hostname = socket.gethostname()
     db.commit()
 
-    methods.owner_writable(options.output_db, False) # chmod u-w
+    methods.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 
