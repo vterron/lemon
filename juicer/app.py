@@ -58,6 +58,17 @@ import simbad
 import util
 from version import __version__
 
+# Workaround for GTK+ bug 632538. Until GTK+ 2.24.19 (the PyGTK version does
+# not matter, this is all in the C library), some GtkSettings properties are
+# registered by other classes. This leads to the "interesting" issue that
+# setting GtkSettings:gtk-button-images requires that the GtkButton class
+# is referenced first - or that a GtkButton is created.
+# [URL] https://bugzilla.gnome.org/show_bug.cgi?id=632538
+
+if gtk.gtk_version < (2, 24, 19):
+    with util.destroying(gtk.Button()):
+        pass
+
 # Make sure that stock icons are shown in buttons, as with the default options
 # this is not always the case. I have not been able to find out whether this is
 # caused by GTK+ or GNOME (see http://stackoverflow.com/questions/2188659/ and
