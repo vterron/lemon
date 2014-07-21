@@ -119,7 +119,8 @@ def get__version__(module):
     """ Return module.__version__, as a tuple of integers """
 
     version = module.__version__
-    regexp = "(\d\.?)+" # extract "2.1.1" from "2.1.1-r1785"
+    # Extract '2.1.1' from '2.1.1-r1785' / '3.2' from '3.2.dev'
+    regexp = "\d+(\.\d+)+"
     match = re.match(regexp, version)
     if match is None:
         msg = "cannot extract version from '%s' (%s)" % (version, module)
