@@ -32,7 +32,7 @@ apt-get install python-dev python-pip python-numpy python-scipy libjpeg62  \
 pip install "astropy>=0.2.4"
 pip install "d2to1>=0.2.10"
 pip install "APLpy>=0.9.9"
-pip install "pyfits>=3.1.2"
+pip install "pyfits==3.2"
 pip install "pyraf>=2.1.1"
 pip install "uncertainties>=2.4.1"
 
