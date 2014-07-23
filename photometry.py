@@ -660,10 +660,10 @@ def main(arguments = None):
 
     # Light curves, which are our ultimate goal, can only have one magnitude
     # for each point in time. Therefore, we cannot do photometry on two or more
-    # images with the same observation date. This may seem (and is) unlikely to
-    # happen, but astronomical instruments also have software errors -- we have
-    # already come across this while reducing images taken with Omega 2000, a
-    # camera for the 3.5m CAHA.
+    # images with the same observation date and photometric filter. This may
+    # seem (and, indeed, is) unlikely to happen, but astronomical instruments
+    # also have software errors - we have already come across this while
+    # reducing images taken with Omega 2000, a camera for the 3.5m CAHA.
     #
     # We might be tempted to keep one of them, such as, for example, that with
     # the highest number of sources, or the best FWHM. However, the safest bet
@@ -671,42 +671,59 @@ def main(arguments = None):
     # observation date. The only certain thing is that an error occurred. Thus,
     # we better forget about these images.
 
-    msg = "%sMaking sure there are no images with the same observation date..."
+    msg = "%sMaking sure there are no images with the same date and filter..."
     print msg % style.prefix ,
     sys.stdout.flush()
 
-    # Map each date of observation (UTC), in Unix time, to a list of the
-    # corresponding FITS files. If there are no duplicate dates, all the values
-    # of the dictionary will have a length of one. We do not use the Counter
-    # class, from the collections module, for Python 2.6 compatibility.
+    # Two-level dictionary: map each date of observation (UTC), in Unix time,
+    # to a photometric filter to a list of the corresponding FITS files. If
+    # there are no two or more images with the same date and filter, all the
+    # second-level values of the dictionary will have a length of one. We do
+    # not use the Counter class, from the collections module, for Python 2.6
+    # compatibility.
 
-    dates_counter = collections.defaultdict(list)
-    for img_path, date in img_dates.iteritems():
-        dates_counter[date].append(img_path)
+    get_dict = lambda: collections.defaultdict(list)
+    dates_counter = collections.defaultdict(get_dict)
 
-    if max(len(imgs) for imgs in dates_counter.itervalues()) == 1:
+    # 'files' maps each filter to a list of images, while 'img_dates' maps each
+    # image to its Unix date. There is no need, therefore, to read the date or
+    # photometric filter of the images from their FITS headers again.
+
+    for pfilter, images in files.iteritems():
+        for img_path in images:
+            date = img_dates[img_path]
+            dates_counter[date][pfilter].append(img_path)
+
+    # Find the dates and filters for which there is more than one FITS file.
+    # Then, remove from the InputFITSFiles object each of these images with
+    # a duplicate Unix time and photometric filter.
+
+    discarded = 0
+    for date, date_images in dates_counter.items():
+        for pfilter, images in date_images.items():
+
+            if len(images) > 1:
+
+                # "Making sure..." message above does not include newline.
+                # We need to print it, but only for the first issued warning.
+                if not discarded:
+                    print
+
+                msg = "%sWarning! Multiple images have date %s and filter %s"
+                args = style.prefix, methods.utctime(date), pfilter
+                warnings.warn(msg % args)
+                del dates_counter[date][pfilter]
+                for img in images:
+                    discarded += files.remove(img)
+
+    if not discarded:
         print 'done.'
 
     else:
 
-        # "Making sure..." message printed above does not include newline.
-        print
-
-        # Find the dates for which there is more than one FITS file. Then,
-        # remove from the InputFITSFiles object each of these files with a
-        # duplicate date.
-        discarded = 0
-        for date, images in dates_counter.iteritems():
-            nimgs = len(images)
-            if nimgs > 1:
-                msg = "%sWarning! Multiple images have date %s"
-                warnings.warn(msg % (style.prefix, methods.utctime(date)))
-                for img in images:
-                    discarded += files.remove(img)
-
-        # There should be no duplicate observation dates anymore, and at least
-        # two FITS files should have been discarded. Otherwise, how did we get
-        # to the 'else' clause in the first place?
+        # There should be no FITS files with the same observation date and
+        # filter anymore, and at least two of them should have been discarded.
+        # Otherwise, how did we get to the 'else' clause in the first place?
         if __debug__:
             dates = []
             for image in files:
