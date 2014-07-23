@@ -1070,6 +1070,54 @@ def main(arguments = None):
                   exp_keyword = options.exptimek)
     unix_time = methods.func_catchall(sources_img.date, **kwargs)
 
+    # In theory, sources should be detected on the result on mosaicking several
+    # FITS images, in order to improve the signal-to-noise ratio and allow for
+    # a more accurate detection of faint astronomical objects. However, and as
+    # Javier Blasco pointed out in issue #19, not all users need to do this: it
+    # may be enough for them to use to detect sources one of the FITS images on
+    # which they also want to do photometry.
+    #
+    # Allow to do photometry on the sources FITS image
+    # [URL] https://github.com/vterron/lemon/issues/19
+    #
+    # In order to make this possible, ignore the Unix time and photometric
+    # filter of the sources image (using None instead, regardless of what we
+    # read from the FITS header) if there is an image with the same date and
+    # filter among those on which we are going to do photometry. This prevents
+    # the database.DuplicateImageError exception, with a message such as "Image
+    # with Unix time 1325631812.2045 (Tue Jan 3 23:03:32 2012 UTC) and filter J
+    # already in database"), from being raised. The idea is to store in the
+    # output database as much information as possible about the sources image,
+    # but if needed we can get by without these two values. After all, the data
+    # about the sources image is mostly stored for book-keeping purposes, in
+    # order to simplify future analysis and debugging.
+
+    # Nested defaultdict, always returns a list
+    if dates_counter[unix_time][pfilter]:
+
+        # There can only be one FITS file with the same observation date and
+        # photometric filter, as duplicate images were previously discarded.
+        assert len(dates_counter[unix_time][pfilter]) == 1
+        img = fitsimage.FITSImage(dates_counter[unix_time][pfilter][0])
+        if pfilter == img.pfilter(options.filterk):
+
+            msg1 = ("%s has the same date (%.4f, %s) and filter (%s) as the "
+                    "sources image (%s)")
+            date_str = methods.utctime(unix_time)
+            args = (img.path, unix_time, date_str, pfilter, path)
+            logging.debug(msg1 % args)
+
+            msg2 = ("This must mean you are doing photometry on the FITS image "
+                    "that you are also using to detect astronomical sources")
+            logging.debug(msg2)
+
+            msg3 = ("Avoid collision: ignore date and filter of the sources "
+                    "image (store in the LEMONdB a None instead)")
+            logging.debug(msg3)
+
+            unix_time = None
+            pfilter   = None
+
     object_ = methods.func_catchall(sources_img.read_keyword, options.objectk)
     airmass = methods.func_catchall(sources_img.read_keyword, options.airmassk)
     # If not given with --gaink, read it from the FITS header
