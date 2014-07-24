@@ -30,6 +30,7 @@ import os.path
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import traceback
@@ -729,3 +730,26 @@ class StreamToWarningFilter(object):
 
     def close(self):
         self.fd.close()
+
+def get_git_revision():
+    """ Return a human-readable revision number of the LEMON Git repository.
+
+    Return the output of git-describe, the command that returns an identifier
+    which tells us how far (number of commits) off a tag we are and the hash of
+    the current HEAD. This allows us to precisely pinpoint where we are in the
+    Git repository.
+
+    """
+
+    # --long: always output the long format even when it matches a tag
+    # --dirty: describe the working tree; append '-dirty' if necessary
+    # --tags: use any tag found in refs/tags namespace
+
+    # check_output() is new in 2.7; we need 2.6 compatibility
+    args = ['git', 'describe', '--long', '--dirty', '--tags']
+    path = os.path.dirname(os.path.abspath(__file__))
+    with tmp_chdir(path):
+        with tempfile.TemporaryFile() as fd:
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            return fd.readline().strip()
