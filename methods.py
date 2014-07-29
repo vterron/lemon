@@ -753,3 +753,43 @@ def get_git_revision():
             subprocess.check_call(args, stdout = fd)
             fd.seek(0)
             return fd.readline().strip()
+
+class LoggerWriter(object):
+    """ Wrap a logger with a file-like API.
+
+    Sometimes, we need to interface to a third-party API which expects a
+    file-like object to write to, but we want to direct the API's output to a
+    logger. This can be done using this class, based on that written by Vinay
+    Sajip [https://stackoverflow.com/a/9422332/184363].
+
+    """
+
+
+    def __init__(self, level):
+        """ Initialize the LoggerWritter object.
+
+        The argument 'level' must be a valid logging level: 'debug', 'info',
+        'warning', 'error' or 'critical', and will correspond to the function
+        of the logging module that will be used every time the method write()
+        is called. For example, LoggerWriter('info').write(msg) is equivalent
+        to logging.info(msg).
+
+        """
+
+        self.log_func = getattr(logging, level)
+
+    def write(self, msg):
+        self.log_func(msg)
+
+    def flush(self):
+        """ Do nothing -- required by PyRAF.
+
+        This method does nothing, but it is required in order to be able to
+        redirect the output of the PyRAF tasks to the logger. Otherwise, the
+        AttributeError ('LoggerWriter' object has no attribute 'flush')
+        exception is raised.
+
+        """
+
+        pass
+
