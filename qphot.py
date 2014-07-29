@@ -399,18 +399,18 @@ class QPhot(list):
 
         finally:
 
-            # Remove temporary files. The try-except is necessary because the
-            # deletion may fail (OSError), or something could go wrong and an
-            # exception be raised before the variables are defined (NameError).
+            # Remove temporary files. The try-except is necessary because an
+            # exception may be raised before 'qphot_output' and 'txdump_output'
+            # have been defined.
 
             try:
-                os.unlink(qphot_output)
-            except (NameError, OSError):
+                methods.clean_tmp_files(qphot_output)
+            except NameError:
                 pass
 
             try:
-                os.unlink(txdump_output)
-            except (NameError, OSError):
+                methods.clean_tmp_files(txdump_output)
+            except NameError:
                 pass
 
         return len(self)
@@ -514,13 +514,12 @@ def run(img, coords_path,
                 object_phot = object_phot._replace(mag = float('infinity'))
     finally:
 
-        # Remove saturation mask. The try-except is necessary because the
-        # deletion may fail (OSError), or something could go wrong and an
-        # exception be raised before the variable is defined (NameError).
+        # Remove saturation mask. The try-except is necessary because an
+        # exception may be raised before 'satur_mask_path' is defined.
 
         try:
-            os.unlink(satur_mask_path)
-        except (NameError, OSError):
+            methods.clean_tmp_files(satur_mask_path)
+        except NameError:
             pass
 
     return img_qphot
