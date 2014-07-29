@@ -509,8 +509,17 @@ def run(img, coords_path,
         expr = "a>%d ? 1 : 0" % maximum
         logging.debug("%s: imexpr = '%s'" % (img.path, expr))
         logging.debug("%s: a = %s" % (img.path, orig_img_path))
+        logging.info("%s: Running IRAF's imexpr..." % img.path)
         pyraf.iraf.images.imexpr(expr, a = orig_img_path,
-                                 output = satur_mask_path, verbose = 'no')
+                                 output = satur_mask_path, verbose = 'yes',
+                                 Stdout = methods.LoggerWriter('debug'))
+
+        assert os.path.exists(satur_mask_path)
+
+        msg = "%s: IRAF's imexpr OK" % img.path
+        logging.info(msg)
+        msg = "%s: IRAF's imexpr output = %s"
+        logging.debug(msg % (img.path, satur_mask_path))
 
         # Now we just do photometry again, on the same pixels, but this time on
         # the saturation mask. Those objects for which we get a non-zero flux
