@@ -380,18 +380,31 @@ class QPhot(list):
                     try:
                         mag_str = fields[2]
                         mag     = float(mag_str)
+                        msg = "%s: mag = %.5f" % (self.path, mag)
+                        logging.debug(msg)
                     except ValueError:  # float("INDEF")
                         assert mag_str == 'INDEF'
+                        msg = "%s: mag = None ('INDEF')" % self.path
+                        logging.debug(msg)
                         mag = None
 
                     sum_ = float(fields[3])
+                    msg = "%s: sum = %.5f" % (self.path, sum_)
+                    logging.debug(msg)
+
                     flux = float(fields[4])
+                    msg = "%s: flux = %.5f" % (self.path, flux)
+                    logging.debug(msg)
 
                     try:
                         stdev_str = fields[5]
                         stdev = float(stdev_str)
+                        msg = "%s: stdev = %.5f" % (self.path, stdev)
+                        logging.debug(msg)
                     except ValueError:  # float("INDEF")
                         assert stdev_str == 'INDEF'
+                        msg = "%s: stdev = None ('INDEF')" % self.path
+                        logging.debug(msg)
                         stdev = None
 
                     args = xcenter, ycenter, mag, sum_, flux, stdev
