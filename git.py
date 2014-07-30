@@ -48,3 +48,10 @@ def get_git_revision():
             subprocess.check_call(args, stdout = fd)
             fd.seek(0)
             return fd.readline().strip()
+
+def git_update():
+    """ Merge upstream changes into the local repository with `git pull` """
+
+    args = ['git', 'pull']
+    with methods.tmp_chdir(LEMON_DIR):
+        return subprocess.call(args)
