@@ -37,7 +37,7 @@ LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
 
-    print "usage: %s [--help] COMMAND [ARGS]" % name
+    print "usage: %s [--help] [--version] [--update] COMMAND [ARGS]" % name
     print
     print "The available commands are:"
     print "   import       Group the images of an observing campaign"
