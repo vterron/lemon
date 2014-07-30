@@ -22,6 +22,7 @@ import os.path
 import requests
 import subprocess
 import tempfile
+import warnings
 
 # LEMON module
 import methods
@@ -86,3 +87,22 @@ def get_last_github_commit():
             fd.seek(0)
             short_hash = fd.readline().strip()
             return short_hash, date_
+
+def check_up_to_date():
+    """ Issue a warning if there are unmerged changes on GitHub.
+
+    Compare the SHA1 hash of the last commit in the local LEMON Git repository
+    with that pushed to GitHub. If they differ, issue a warning to let the user
+    know that there is a newer version available and that `lemon --update` can
+    be used to update the installation. Do nothing if we are up to date.
+
+    """
+
+    current_revision  = get_git_revision()
+    short_hash, date_ = get_last_github_commit()
+    if short_hash not in current_revision:
+        msg = ("Your current revision is '%s', but there is a more recent "
+               "version (%s, %s) available on GitHub. You may use `lemon "
+               "--update` to retrieve these changes.")
+        args = (current_revision, short_hash, date_)
+        warnings.warn(msg % args)
