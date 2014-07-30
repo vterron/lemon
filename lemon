@@ -64,6 +64,10 @@ if __name__ == "__main__":
         print revision
         sys.exit(0)
 
+    elif '--update' in sys.argv:
+        retcode = git.git_update()
+        sys.exit(retcode)
+
     else:
 
         # Register logging.info() to be executed at termination, so that the
