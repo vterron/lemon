@@ -70,6 +70,11 @@ if __name__ == "__main__":
 
     else:
 
+        # Issue a warning if there is a newer version available on GitHub,
+        # letting the user know that the local installation can be updated
+        # by running the `lemon --update` command.
+        git.check_up_to_date()
+
         # Register logging.info() to be executed at termination, so that the
         # Git revision number is logged at INFO level before our program
         # exits. The reason why we do it on exit, instead of now, is because
