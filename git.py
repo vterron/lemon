@@ -25,6 +25,8 @@ import tempfile
 # LEMON module
 import methods
 
+LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def get_git_revision():
     """ Return a human-readable revision number of the LEMON Git repository.
 
@@ -41,8 +43,7 @@ def get_git_revision():
 
     # check_output() is new in 2.7; we need 2.6 compatibility
     args = ['git', 'describe', '--long', '--dirty', '--tags']
-    path = os.path.dirname(os.path.abspath(__file__))
-    with methods.tmp_chdir(path):
+    with methods.tmp_chdir(LEMON_DIR):
         with tempfile.TemporaryFile() as fd:
             subprocess.check_call(args, stdout = fd)
             fd.seek(0)
