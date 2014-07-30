@@ -19,6 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
+import requests
 import subprocess
 import tempfile
 
@@ -26,6 +27,7 @@ import tempfile
 import methods
 
 LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
+COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
 
 def get_git_revision():
     """ Return a human-readable revision number of the LEMON Git repository.
@@ -55,3 +57,32 @@ def git_update():
     args = ['git', 'pull']
     with methods.tmp_chdir(LEMON_DIR):
         return subprocess.call(args)
+
+def get_last_github_commit():
+    """ Return the short SHA1 of the last commit pushed to GitHub.
+
+    Use the GitHub API to get the SHA1 hash of the last commit pushed to the
+    LEMON repository, and then obtain its short version with `git rev-parse`.
+    Returns a two-element tuple with (a) the short SHA1 and (b) date of the
+    last commit.
+
+    """
+
+    # All API requests MUST include a valid User-Agent header [..] We request
+    # that you use your GitHub username, or the name of your application, for
+    # the User-Agent header value. This allows us to contact you if there are
+    # problems. [https://developer.github.com/v3/#user-agent-required]
+
+    headers = {'User-Agent': 'vterron'}
+    r = requests.get(COMMITS_URL, headers = headers)
+    last_commit = r.json()[0]
+    hash_ = last_commit['sha']
+    date_ = last_commit['commit']['committer']['date']
+
+    args = ['git', 'rev-parse', '--short', hash_]
+    with methods.tmp_chdir(LEMON_DIR):
+        with tempfile.TemporaryFile() as fd:
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            short_hash = fd.readline().strip()
+            return short_hash, date_
