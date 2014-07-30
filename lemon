@@ -29,7 +29,7 @@ import os.path
 import sys
 
 # LEMON module
-import methods
+import git
 
 LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
                   'annuli', 'photometry', 'diffphot', 'periods', 'juicer']
@@ -55,7 +55,7 @@ def show_help(name):
 if __name__ == "__main__":
 
     name = os.path.basename(sys.argv[0])
-    revision = methods.get_git_revision()
+    revision = git.get_git_revision()
 
     if len(sys.argv) == 1 or '--help' in sys.argv:
         show_help(name)
