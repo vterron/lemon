@@ -31,6 +31,7 @@ import sys
 # LEMON module
 import git
 
+API_QUERY_TIMEOUT = 2 # seconds
 LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
                   'annuli', 'photometry', 'diffphot', 'periods', 'juicer']
 
