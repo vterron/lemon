@@ -18,10 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import os.path
 import requests
 import subprocess
 import tempfile
+import time
 import warnings
 
 # LEMON module
@@ -58,6 +60,49 @@ def git_update():
     args = ['git', 'pull']
     with methods.tmp_chdir(LEMON_DIR):
         return subprocess.call(args)
+
+class FileCache(object):
+    """ Interface to cache data to disk.
+
+    This class allows to easily write and read data from a JSON file, via
+    its set() and get() methods. The file is opened and closed every time an
+    operation is made, so we do not need to worry about closing it when done
+    with the FileCache object.
+
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def up_to_date(self, max_hours = 1):
+        """ Determine whether the cache file has expired.
+
+        Return True if the cache file was last modified less than 'max_hours'
+        ago; and False otherwise. If the file does not exist, returns False
+        too. In this manner, any time that False is returned we know that we
+        cannot use the cached value.
+
+        """
+
+        try:
+            max_seconds = max_hours * 3600
+            cache_mtime = os.path.getmtime(self.path)
+            return (time.time() - cache_mtime) <= (max_seconds)
+        except OSError:
+            return False
+
+    def get(self):
+        """ Return the contents of the JSON cache file """
+
+        with open(self.path, 'rt') as fd:
+            return json.load(fd)
+
+    def set(self, *args):
+        """ Write the received arguments to the JSON cache file """
+
+        with open(self.path, 'wt') as fd:
+            json.dump(args, fd)
+
 
 def get_last_github_commit():
     """ Return the short SHA1 of the last commit pushed to GitHub.
