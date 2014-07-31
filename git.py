@@ -31,6 +31,7 @@ import methods
 
 LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
 COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
+GITHUB_CACHE_FILE = os.path.join(LEMON_DIR, '.last-github-commit-cache.json')
 
 def get_git_revision():
     """ Return a human-readable revision number of the LEMON Git repository.
