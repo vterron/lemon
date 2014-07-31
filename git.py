@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import functools
 import json
 import os.path
 import requests
@@ -104,6 +105,30 @@ class FileCache(object):
         with open(self.path, 'wt') as fd:
             json.dump(args, fd)
 
+def github_cache(func):
+    """ Decorator to avoid unnecessarily querying the GitHub API too much.
+
+    This decorator uses the GITHUB_CACHE_FILE file to cache the values returned
+    by the decorated function. If the cache file was last modified less than
+    an hour ago, the function call is skipped and the contents of the file
+    returned. Otherwise, the function is called and the result file-cached
+    before being returned.
+
+    This function is expected to be used to decorate get_last_github_commit()
+    since it would be impolite (and also inefficient) to make too many queries
+    to the GitHub API. Anyway, if we did not care about that, the rate limit
+    for unauthenticated requests would only allow us to make up to sixty
+    requests per hour.
+
+    """
+
+    cache = FileCache(GITHUB_CACHE_FILE)
+    @functools.wraps(func)
+    def cachedf(*args, **kwargs):
+        if not cache.up_to_date(max_hours = 1):
+            cache.set(*func(*args, **kwargs))
+        return cache.get()
+    return cachedf
 
 def get_last_github_commit():
     """ Return the short SHA1 of the last commit pushed to GitHub.
