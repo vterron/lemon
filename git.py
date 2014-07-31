@@ -166,7 +166,7 @@ def get_last_github_commit(timeout = None):
             short_hash = fd.readline().strip()
             return short_hash, date_
 
-def check_up_to_date():
+def check_up_to_date(timeout = None):
     """ Issue a warning if there are unmerged changes on GitHub.
 
     Compare the SHA1 hash of the last commit in the local LEMON Git repository
@@ -174,10 +174,12 @@ def check_up_to_date():
     know that there is a newer version available and that `lemon --update` can
     be used to update the installation. Do nothing if we are up to date.
 
+    The 'timeout' parameter is passed to get_last_github_commit().
+
     """
 
     current_revision  = get_git_revision()
-    short_hash, date_ = get_last_github_commit()
+    short_hash, date_ = get_last_github_commit(timeout = timeout)
     if short_hash not in current_revision:
         msg = ("Your current revision is '%s', but there is a more recent "
                "version (%s, %s) available on GitHub. You may use `lemon "
