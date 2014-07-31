@@ -59,6 +59,16 @@ def get_git_revision():
 def git_update():
     """ Merge upstream changes into the local repository with `git pull` """
 
+    # Delete the cache file, forcing a request to the GitHub API the next time
+    # get_last_github_commit() is called. Otherwise, although up-to-date after
+    # running `git pull`, we would be comparing the SHA1 hash of HEAD with the
+    # cached one.
+
+    try:
+        os.unlink(GITHUB_CACHE_FILE)
+    except OSError:
+        pass
+
     args = ['git', 'pull']
     with methods.tmp_chdir(LEMON_DIR):
         return subprocess.call(args)
