@@ -131,13 +131,18 @@ def github_cache(func):
     return cachedf
 
 @github_cache
-def get_last_github_commit():
+def get_last_github_commit(timeout = None):
     """ Return the short SHA1 of the last commit pushed to GitHub.
 
     Use the GitHub API to get the SHA1 hash of the last commit pushed to the
     LEMON repository, and then obtain its short version with `git rev-parse`.
     Returns a two-element tuple with (a) the short SHA1 and (b) date of the
     last commit.
+
+    The 'timeout' keyword argument defines the number of seconds after which
+    the requests.exceptions.Timeout exception is raised if the server has not
+    issued a response. Note that this is not the same as a time limit on the
+    entire response download.
 
     """
 
@@ -147,7 +152,8 @@ def get_last_github_commit():
     # problems. [https://developer.github.com/v3/#user-agent-required]
 
     headers = {'User-Agent': 'vterron'}
-    r = requests.get(COMMITS_URL, headers = headers)
+    kwargs = dict(headers = headers, timeout = timeout)
+    r = requests.get(COMMITS_URL, **kwargs)
     last_commit = r.json()[0]
     hash_ = last_commit['sha']
     date_ = last_commit['commit']['committer']['date']
