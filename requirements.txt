@@ -16,3 +16,4 @@ pyraf>=2.1.1
 uncertainties>=2.4.1
 unittest2>=0.5.1
 montage-wrapper>=0.9.7
+requests>=2.0.1

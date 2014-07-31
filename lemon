@@ -26,11 +26,13 @@ import atexit
 import difflib
 import logging
 import os.path
+import requests
 import sys
 
 # LEMON module
 import git
 
+API_QUERY_TIMEOUT = 2 # seconds
 LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
                   'annuli', 'photometry', 'diffphot', 'periods', 'juicer']
 
@@ -69,6 +71,17 @@ if __name__ == "__main__":
         sys.exit(retcode)
 
     else:
+
+        # Issue a warning if there is a newer version available on GitHub,
+        # letting the user know that the local installation can be updated by
+        # running the `lemon --update` command. Do nothing if the connection
+        # to the GitHub API times out after two seconds: better not to report
+        # on an outdated version than stopping us from getting things done.
+
+        try:
+            git.check_up_to_date(timeout = API_QUERY_TIMEOUT)
+        except requests.exceptions.Timeout:
+            pass
 
         # Register logging.info() to be executed at termination, so that the
         # Git revision number is logged at INFO level before our program
