@@ -130,6 +130,7 @@ def github_cache(func):
         return cache.get()
     return cachedf
 
+@github_cache
 def get_last_github_commit():
     """ Return the short SHA1 of the last commit pushed to GitHub.
 
