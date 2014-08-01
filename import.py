@@ -410,21 +410,24 @@ def main(arguments = None):
         # Add some information to the FITS header...
         if not options.exact:
 
-            # Store the absolute path to the image of which we made a copy.
-            # This allows other LEMON commands, if necessary, to access the
-            # original FITS files in case the imported images are modified
-            # (e.g., bias subtraction or flat-fielding) before these other
-            # commands are executed.
-
-            comment = "before any calibration task"
-            dest_img.update_keyword(options.uncimgk,
-                                    os.path.abspath(dest_img.path),
-                                    comment = comment)
-
             msg1 = "File imported by LEMON on %s" % methods.utctime()
-            msg2 = "[Import] Original image: %s" % os.path.abspath(fits_file.path)
             dest_img.add_history(msg1)
-            dest_img.add_history(msg2)
+
+            # If the --uik option is given, store in this keyword the absolute
+            # path to the image of which we made a copy. This allows other
+            # LEMON commands, if necessary, to access the original FITS files
+            # in case the imported images are modified (e.g., bias subtraction
+            # or flat-fielding) before these other commands are executed.
+
+            if options.uncimgk:
+
+                comment = "before any calibration task"
+                dest_img.update_keyword(options.uncimgk,
+                                        os.path.abspath(dest_img.path),
+                                        comment = comment)
+
+                msg2 = "[Import] Original image: %s"
+                dest_img.add_history(msg2 % os.path.abspath(fits_file.path))
 
         # ... unless we want an exact copy of the images. If that is the case,
         # verify that the SHA-1 checksum of the original and the copy matches
