@@ -66,7 +66,7 @@ airmassk = 'AIRMASS'
 desc['airmassk'] = \
 "keyword for the airmass [default: %default]"
 
-gaink = 'CCDSENS'
+gaink = 'GAIN'
 desc['gaink'] = \
 "keyword for the gain of the CCD, in e-/ADU. Needed in order to " \
 "accurately calculate the SNR of each measurement [default: %default]"
