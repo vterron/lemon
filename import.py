@@ -133,7 +133,14 @@ key_group.add_option('--objectk', action = 'store', type = 'str',
 
 key_group.add_option('--uik', action = 'store', type = 'str',
                      dest = 'uncimgk', default = keywords.uncimgk,
-                     help = keywords.desc['uncimgk'])
+                     help = "keyword to which the path of each imported image "
+                     "is written to its own FITS header. In this manner, when "
+                     "later on we do photometry we can use the original FITS "
+                     "image, before any possible calibration was performed, "
+                     "to check for saturation -- as the overscan, bias and "
+                     "(particularly) flat-fielding steps may take a saturated "
+                     "pixel below the saturation threshold.")
+
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
