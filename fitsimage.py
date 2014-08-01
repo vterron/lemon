@@ -150,7 +150,8 @@ class FITSImage(object):
             elif "Permission denied" in str(e):
                 raise
             else:
-                raise NonStandardFITS(e)
+                msg = "%s (%s)" % (self.path, str(e))
+                raise NonStandardFITS(msg)
 
     def unlink(self):
         """ Remove the FITS image.
