@@ -71,7 +71,7 @@ desc['gaink'] = \
 "keyword for the gain of the CCD, in e-/ADU. Needed in order to " \
 "accurately calculate the SNR of each measurement [default: %default]"
 
-uncimgk = 'UNCIMG'
+uncimgk = None
 desc['uncimgk'] = \
 "keyword for the path to the uncalibrated image. This will be one " \
 "used to check whether pixels are saturated -- as the overscan, bias and " \
