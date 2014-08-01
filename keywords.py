@@ -28,7 +28,7 @@ group_description = \
 
 
 desc = {} # option descriptions (for optparse)
-filterk = 'INSFLNAM'
+filterk = 'FILTER'
 desc['filterk'] = \
 "keyword for the name of the filter of the observation [default: %default]"
 
