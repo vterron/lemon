@@ -73,13 +73,11 @@ desc['gaink'] = \
 
 uncimgk = None
 desc['uncimgk'] = \
-"keyword for the path to the uncalibrated image. This will be one " \
-"used to check whether pixels are saturated -- as the overscan, bias and " \
-"(particularly) flat-fielding steps may make a pixel be below the " \
-"saturation threshold, when in actuality, before the calibration was " \
-"performed, they were above. This value may be set to an empty string " \
-"('') if saturation is to be checked for on the same image in which " \
-"photometry is done [default: %default]"
+"keyword that stores the path to the uncalibrated image used to check for " \
+"saturation -- as the overscan, bias and (particularly) flat-fielding steps " \
+"may take a saturated pixel below the saturation threshold. If (as by " \
+"default) this option is not set, saturation is checked for on the same " \
+"image on which we do photometry."
 
 fwhmk = 'LEMON FWHM'
 desc['fwhmk'] = \
