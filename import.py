@@ -133,7 +133,14 @@ key_group.add_option('--objectk', action = 'store', type = 'str',
 
 key_group.add_option('--uik', action = 'store', type = 'str',
                      dest = 'uncimgk', default = keywords.uncimgk,
-                     help = keywords.desc['uncimgk'])
+                     help = "keyword to which the path of each imported image "
+                     "is written to its own FITS header. In this manner, when "
+                     "later on we do photometry we can use the original FITS "
+                     "image, before any possible calibration was performed, "
+                     "to check for saturation -- as the overscan, bias and "
+                     "(particularly) flat-fielding steps may take a saturated "
+                     "pixel below the saturation threshold.")
+
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
@@ -410,21 +417,24 @@ def main(arguments = None):
         # Add some information to the FITS header...
         if not options.exact:
 
-            # Store the absolute path to the image of which we made a copy.
-            # This allows other LEMON commands, if necessary, to access the
-            # original FITS files in case the imported images are modified
-            # (e.g., bias subtraction or flat-fielding) before these other
-            # commands are executed.
-
-            comment = "before any calibration task"
-            dest_img.update_keyword(options.uncimgk,
-                                    os.path.abspath(dest_img.path),
-                                    comment = comment)
-
             msg1 = "File imported by LEMON on %s" % methods.utctime()
-            msg2 = "[Import] Original image: %s" % os.path.abspath(fits_file.path)
             dest_img.add_history(msg1)
-            dest_img.add_history(msg2)
+
+            # If the --uik option is given, store in this keyword the absolute
+            # path to the image of which we made a copy. This allows other
+            # LEMON commands, if necessary, to access the original FITS files
+            # in case the imported images are modified (e.g., bias subtraction
+            # or flat-fielding) before these other commands are executed.
+
+            if options.uncimgk:
+
+                comment = "before any calibration task"
+                dest_img.update_keyword(options.uncimgk,
+                                        os.path.abspath(dest_img.path),
+                                        comment = comment)
+
+                msg2 = "[Import] Original image: %s"
+                dest_img.add_history(msg2 % os.path.abspath(fits_file.path))
 
         # ... unless we want an exact copy of the images. If that is the case,
         # verify that the SHA-1 checksum of the original and the copy matches
