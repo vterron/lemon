@@ -313,7 +313,7 @@ def main(arguments = None):
     msg = "%sExamining the headers of the %s FITS files given as input..."
     print msg % (style.prefix, len(input_paths))
 
-    files = photometry.InputFITSFiles()
+    files = fitsimage.InputFITSFiles()
     for index, img_path in enumerate(input_paths):
         img = fitsimage.FITSImage(img_path)
         pfilter = img.pfilter(options.filterk)
