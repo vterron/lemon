@@ -26,8 +26,8 @@ fi
 # The binary packages allow us to avoid this, resulting in an enormous speed-up.
 
 apt-get install python-dev python-pip python-numpy python-scipy libjpeg62  \
-                python-matplotlib python-lxml python-mock libfreetype6-dev \
-                libpng12-dev csh libx11-dev libplplot11 alien realpath
+                python-matplotlib python-mock libfreetype6-dev libpng12-dev \
+                csh libx11-dev libplplot11 alien realpath
 
 pip install "astropy>=0.2.4"
 pip install "d2to1>=0.2.10"

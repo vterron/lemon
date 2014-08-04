@@ -129,24 +129,6 @@ def get__version__(module):
         version = match.group(0)
         return str_to_version(version)
 
-def get_lxml_version(*args):
-    """ Return the version of lxml, as a tuple of integers.
-
-    This function returns the version of the lxml package, which is defined in
-    lxml.etree.LXML_VERSION. A variable number of arguments is accepted because
-    RequireModuleVersionHook.load_module() will pass to it the module object,
-    although we do not need it in this case. Although Python does not support
-    unloading modules, we remove lxml.etree in order to clean up the evidence,
-    so to speak.
-
-    """
-
-    from lxml import etree
-    try:
-        return etree.LXML_VERSION
-    finally:
-        del etree
-
 # For each module whose minimum version has been defined in requirements.txt,
 # create an import hook and add it to sys.meta_path, which is searched before
 # any implicit default finders or sys.path.
@@ -163,9 +145,6 @@ for module, version in [
       hook = RequireModuleVersionHook(module, version, get__version__)
       sys.meta_path.append(hook)
 
-lxml_hook = RequireModuleVersionHook('lxml', (3, 2, 3), get_lxml_version)
-sys.meta_path.append(lxml_hook)
-
 # If the minimum version is not met, raise SExtractorUpgradeRequired as
 # soon as possible, instead of waiting until we attempt to run SExtractor.
 sextractor_version = astromatic.sextractor_version()
@@ -175,4 +154,3 @@ if not sextractor_version >= sextractor_minimum:
     args = (version_to_str(sextractor_minimum),
             version_to_str(sextractor_version))
     raise astromatic.SExtractorUpgradeRequired(msg % args)
-
