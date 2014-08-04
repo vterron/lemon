@@ -34,7 +34,6 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
     How do we determine how good a set of parameters for aperture photometry
     is? In order to compare them, we need to identify the most constant stars
     (or, by extension, any other astronomical object) in the field and compute
-
     their light curves. The better the aperture, annulus and dannulus that we
     use are, the lower the standard deviation of the resulting curves.
 
