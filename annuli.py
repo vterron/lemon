@@ -361,15 +361,19 @@ def main(arguments = None):
                  '--coaddk', options.coaddk,
                  '--gaink', options.gaink,
                  '--fwhmk', options.fwhmk,
-                 '--airmk', options.airmassk,
-                 '--uik', options.uncimgk]
+                 '--airmk', options.airmassk]
 
-    # The --gain option defaults to None, so we add it to the list of arguments
-    # only if it was given by the user. Otherwise, it would be given a value of
-    # 'None', a string, which would result in an error when attempted to be
-    # converted to float by optparse.
+    # The --gain and --uik options default to None, so add them to the list of
+    # arguments only if they were given. Otherwise, (a) --gaink would be given
+    # a value of 'None', a string, that would result in an error when optparse
+    # attempted to convert it to float, and (b) --uik would understood 'None'
+    # as the name of the keyword storing the path to the uncalibrated image.
+
     if options.gain:
         phot_args += ['--gain', options.gain]
+
+    if options.uncimgk:
+        phot_args += ['--uncimgk', options.uncimgk]
 
     # Pass as many '-v' options as we have received here
     [phot_args.append('-v') for x in xrange(options.verbose)]
