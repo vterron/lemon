@@ -92,6 +92,14 @@ class CoordinatesTest(unittest.TestCase):
     RIGHT_ASCENSION_RANGE = (0, 360)
     DECLINATION_RANGE = (-90, 90)
 
+    @staticmethod
+    def get_random_pm(pm_range):
+        """ Return a positive or negative random number in 'pm_range' """
+
+        value = random.uniform(*pm_range)
+        sign = random.choice([-1, 1])
+        return sign * value
+
     @classmethod
     def random(cls):
         """ Return a random Coordinates object """
