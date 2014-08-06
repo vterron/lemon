@@ -61,7 +61,7 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
         y_axis = pow(self.y - another.y, 2)
         return math.sqrt(x_axis + y_axis)
 
-class Coordinates(collections.namedtuple('Coordinates', "ra dec")):
+class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
     """ The immutable celestial coordinates of an astronomical object. """
 
     def distance(self, another):
