@@ -64,6 +64,12 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
 class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
     """ The immutable celestial coordinates of an astronomical object. """
 
+    def __new__(cls, ra, dec, pm_ra = 0, pm_dec = 0):
+        """ Make 'pm_ra' and 'pm_dec' optional keyword arguments. """
+
+        # Seen here: https://stackoverflow.com/a/16721002/184363
+        return super(Coordinates, cls).__new__(cls, ra, dec, pm_ra, pm_dec)
+
     def distance(self, another):
         """ The angular distance, in degrees, between two Coordinates. """
 
