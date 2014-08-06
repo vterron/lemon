@@ -62,7 +62,13 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
         return math.sqrt(x_axis + y_axis)
 
 class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
-    """ The immutable celestial coordinates of an astronomical object. """
+    """ The immutable celestial coordinates of an astronomical object.
+
+    The first two positional arguments, 'ra' and 'dec', are the right ascension
+    and declination of the astronomical object, in decimal degrees. 'pm_ra' and
+    'pm_dec' are the proper motion, in seconds of arc per year (arcsec/yr).
+
+    """
 
     def __new__(cls, ra, dec, pm_ra = 0, pm_dec = 0):
         """ Make 'pm_ra' and 'pm_dec' optional keyword arguments. """
