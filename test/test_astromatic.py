@@ -91,6 +91,8 @@ class CoordinatesTest(unittest.TestCase):
 
     RIGHT_ASCENSION_RANGE = (0, 360)
     DECLINATION_RANGE = (-90, 90)
+    PM_RA_RANGE =  (0, 0.79858)
+    PM_DEC_RANGE = (0, 10.32812)
 
     @staticmethod
     def get_random_pm(pm_range):
@@ -103,9 +105,20 @@ class CoordinatesTest(unittest.TestCase):
     @classmethod
     def random(cls):
         """ Return a random Coordinates object """
+
         ra = random.uniform(*cls.RIGHT_ASCENSION_RANGE)
         dec = random.uniform(*cls.DECLINATION_RANGE)
-        return Coordinates(ra, dec)
+
+        # Use None for both 'pm_ra' and 'pm_dec' or none of them. If does not
+        # make much sense to know the proper motion in declination but not in
+        # right ascension, or vice versa.
+        if random.choice([True, False]):
+            pm_ra  = cls.get_random_pm(cls.PM_RA_RANGE)
+            pm_dec = cls.get_random_pm(cls.PM_DEC_RANGE)
+        else:
+            pm_ra = pm_dec = None
+
+        return Coordinates(ra, dec, pm_ra, pm_dec)
 
     def test_immutability(self):
         """ Make sure that the Coordinates class is immutable """
