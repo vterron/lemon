@@ -61,8 +61,20 @@ class Pixel(collections.namedtuple('Pixel', "x y")):
         y_axis = pow(self.y - another.y, 2)
         return math.sqrt(x_axis + y_axis)
 
-class Coordinates(collections.namedtuple('Coordinates', "ra dec")):
-    """ The immutable celestial coordinates of an astronomical object. """
+class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
+    """ The immutable celestial coordinates of an astronomical object.
+
+    The first two positional arguments, 'ra' and 'dec', are the right ascension
+    and declination of the astronomical object, in decimal degrees. 'pm_ra' and
+    'pm_dec' are the proper motion, in seconds of arc per year (arcsec/yr).
+
+    """
+
+    def __new__(cls, ra, dec, pm_ra = 0, pm_dec = 0):
+        """ Make 'pm_ra' and 'pm_dec' optional keyword arguments. """
+
+        # Seen here: https://stackoverflow.com/a/16721002/184363
+        return super(Coordinates, cls).__new__(cls, ra, dec, pm_ra, pm_dec)
 
     def distance(self, another):
         """ The angular distance, in degrees, between two Coordinates. """
@@ -77,6 +89,32 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec")):
         return math.degrees(math.acos(math.sin(dec1) * math.sin(dec2) +
                                       math.cos(dec1) * math.cos(dec2) *
                                       math.cos(ra1-ra2)))
+
+    def get_exact_coordinates(self, year, epoch = 2000):
+        """ Determine exact positions by applying proper motion correction.
+
+        Take into account the proper motion of the astronomical object to
+        calculate its exact coordinates in a given date: the difference in
+        years between the specified date and the epoch of the coordinates is
+        calculated, and the resulting number multiplied by the proper motion
+        (in arcsec/yr) in order to determine how much the object has moved
+        since the epoch. The method returns a Coordinates object with the
+        'updated' right ascension and declination, and where 'pm_ra' and
+        'pm_dec' are set to None.
+
+        Note that the epoch can be a decimal year, such as 2014.25 for April 1,
+        2014 (since, in common years, April 1 is the 91st day of the year, and
+        91 / 365 = 0.24931507 = ~0.25). For example, if the declination (J2000)
+        of Barnard's Star is 4.693391 and the proper motion is 10.32812, its
+        exact coordinates eighteen months later (2001.5): are 4.693391 +
+        (2001.5 - 2000) * 10.32812 / 3600 = 4.697694383.
+
+        """
+
+        elapsed = year - epoch;
+        ra  = self.ra  + (self.pm_ra  * elapsed) / 3600
+        dec = self.dec + (self.pm_dec * elapsed) / 3600
+        return self.__class__(ra, dec, None, None)
 
 
 class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
