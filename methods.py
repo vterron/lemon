@@ -330,6 +330,9 @@ def load_coordinates(path):
     with open(path, 'rt') as fd:
         for line in fd:
 
+            # Ignore comments
+            line = line.split('#')[0]
+
             # Ignore empty lines
             regexp = "^\s*$"
             if re.match(regexp, line):
