@@ -339,7 +339,18 @@ def load_coordinates(path):
                 continue
 
             kwargs = dict(float = "([+-]?\d+(\.\d+)*)")
-            regexp = "^\s*(?P<ra>{float})\s+(?P<dec>{float})\s*$"
+            regexp = ("^\s*"
+                      "(?P<ra>{float})"
+                      "\s+"
+                      "(?P<dec>{float})"
+                      "("
+                        "\s+"
+                        "\[\s*(?P<pm_ra>{float})\s*\]"
+                        "\s+"
+                        "\[\s*(?P<pm_dec>{float})\s*\]"
+                      ")?"
+                      "\s*$")
+
             match = re.match(regexp.format(**kwargs), line)
 
             if not match:
