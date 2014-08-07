@@ -372,7 +372,15 @@ def load_coordinates(path):
                 msg = "Declination '%s' not in range [-90, 90] degrees"
                 raise ValueError(msg % dec)
 
-            yield ra, dec
+            pm_ra = match.group('pm_ra')
+            if pm_ra is not None:
+                pm_ra = float(pm_ra)
+
+            pm_dec = match.group('pm_dec')
+            if pm_dec is not None:
+                pm_dec = float(pm_dec)
+
+            yield ra, dec, pm_ra, pm_dec
 
 def which(*names):
     """ Search PATH for executable files with the given names.
