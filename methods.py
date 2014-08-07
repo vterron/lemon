@@ -319,11 +319,27 @@ def load_coordinates(path):
     """ Load a list of celestial coordinates from a text file.
 
     Parse a text file containing the celestial coordinates of a series of
-    astronomical objects, one per line, and return a generator that yields
-    (alpha, delta) tuples. The file must have exactly two columns, for each
-    right ascension and declination, in this order. ValueError is raised if
-    there are more than two values on any line, of if any right ascension or
-    declination is out of range. Empty lines are ignored.
+    astronomical objects, one per line, and return a generator that yields (ra,
+    dec, pm_ra, pm_dec) tuples. The file must have two columns, with the right
+    ascension and declination (in decimal degrees) and, optionally, two other
+    columns with the proper motion in right ascension and declination (in
+    seconds of arc per year) surrounded by brackets. For example:
+
+      269.456271 4.665281
+      269.452075 4.693391 [-0.79858] [10.32812] # Barnard's Star
+      269.466450 4.705625 [0.0036] [-.0064]     # TYC 425-262-1
+
+    The four-element tuples contain the right ascension, declination, proper
+    motion in right ascension and proper motion in declination, respectively.
+    Nones are used in case the proper motion of an astronomical object is not
+    specified. Empty lines, as well as comments (which start with the hash
+    character, #, and extend to the end of the physical line) are ignored.
+
+    ValueError is raised (a) if in any line there is a number of coordinates
+    other than two (right ascension and declination) or the proper motions are
+    not surrounded by brackets, (b) if any right ascension or declination is
+    out of range or (c) if the proper motion in right ascension is specified
+    but not that in declination, or vice versa.
 
     """
 
