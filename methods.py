@@ -355,8 +355,11 @@ def load_coordinates(path):
 
             if not match:
                 msg = ("Unable to parse line %r. Astronomical objects must be "
-                       "listed one line with coordinate values in columns one "
-                       "(right ascension) and two (declination)" % line)
+                       "listed one per line with coordinate values in columns one "
+                       "(right ascension) and two (declination). Proper motions "
+                       "may be optionally specified in columns three (ra) and "
+                       "four (dec), surrounded by brackets -- but, in that case, "
+                       "both of them are required." % line)
                 raise ValueError(msg)
 
             ra = float(match.group('ra'))
