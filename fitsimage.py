@@ -505,6 +505,37 @@ class FITSImage(object):
         start_date = calendar.timegm(start_struct_time) + seconds_fraction
         return start_date + half_exp_time
 
+    def year(self, **kwargs):
+        """ Return the date of observation (UTC) as a fractional year.
+
+        Run FITSImage.date() and convert the returned timestamp to a fractional
+        year. The start of the year is at time t0, while the end of the year is
+        at time t1: if we take any time between those two, we have a fraction.
+        This method is probably accurate to within the second and it also works
+        correctly during leap years. The function signature is the same as that
+        of FITSImage.date()
+
+        Taken from ninjagecko's answer on Stack Overflow:
+        [URL] https://stackoverflow.com/a/6451892/184363
+
+        """
+
+        def since_epoch(date):
+            """ From datetime to seconds since epoch """
+            return calendar.timegm(date.timetuple())
+
+        timestamp = self.date(**kwargs)
+        date = datetime.datetime.utcfromtimestamp(timestamp)
+
+        year = date.year
+        t0 = datetime.datetime(year = year,     month = 1, day = 1)
+        t1 = datetime.datetime(year = year + 1, month = 1, day = 1)
+
+        year_elapsed  = since_epoch(date) - since_epoch(t0)
+        year_duration = since_epoch(t1)   - since_epoch(t0)
+        fraction = year_elapsed / year_duration
+        return year + fraction
+
     def pfilter(self, keyword):
         """ Return the photometric filter of the image as a Passband instance.
 
