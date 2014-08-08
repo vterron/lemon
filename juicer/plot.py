@@ -129,9 +129,9 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         periods = methods.split_by_diff(unix_times, delta = delta)
         for period_unix_times in periods:
             func = datetime.datetime.utcfromtimestamp
-            period_datetimes = [func(x) for x in period_unix_times]
+            period_dates = [func(x) for x in period_unix_times]
             period_airmasses = [airmasses[x] for x in period_unix_times]
-            ax2.plot(period_datetimes, period_airmasses,
+            ax2.plot(period_dates, period_airmasses,
                      color = color, linestyle = '--')
 
         # Let the airmasses have a little margin too. We cannot find the
