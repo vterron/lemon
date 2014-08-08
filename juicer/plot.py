@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import astropy.time
 import datetime
 import matplotlib
 import matplotlib.dates
@@ -27,7 +28,7 @@ import methods
 import snr
 
 def curve_plot(figure, curve, marker = 'o', color = '',
-               airmasses = None, delta = 3600 * 3):
+               airmasses = None, delta = 3600 * 3, julian = False):
     """ Plot the light curve as a subplot of the matplotlib Figure.
 
     The method removes from 'figure' all the existing axes and adds a new one,
@@ -64,8 +65,12 @@ def curve_plot(figure, curve, marker = 'o', color = '',
 
     unix_times, magnitudes, snrs = zip(*curve)
 
-    # Plot Python datetime instances, instead of Unix seconds
-    dates = [datetime.datetime.utcfromtimestamp(x) for x in unix_times]
+    # By default, convert the Unix timestamps to datetime objects, but use
+    # Julian days in case the 'julian' keyword argument evaluates to True.
+    if julian:
+        dates = astropy.time.Time(unix_times, format = 'unix').jd
+    else:
+        dates = [datetime.datetime.utcfromtimestamp(x) for x in unix_times]
 
     # For each signal-to-noise ratio we want the equivalent error in mags;
     # that is, both the maximum and minimum values induced by the noise.
@@ -95,7 +100,13 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     # observations should not touch the border of the plot either.
     elapsed_seconds = (unix_times[-1] - unix_times[0])
     margin_seconds = elapsed_seconds * 0.05
-    margin_delta = datetime.timedelta(seconds = margin_seconds)
+
+    if julian:
+        kwargs = dict(format = 'sec')
+        margin_delta = astropy.time.TimeDelta(margin_seconds, **kwargs).jd
+    else:
+        margin_delta = datetime.timedelta(seconds = margin_seconds)
+
     ax1.set_xlim(dates[0] - margin_delta, dates[-1] + margin_delta)
 
     # In interactive navigation, show the full date of the x-locations instead
@@ -108,8 +119,10 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     # setting the maximum number of ticks desired (AutoDateLocator, 'maxticks'
     # keyword argument, which by default is None; seven seems to work fine with
     # our minimum width of 768 pixels). This keyword was not available until
-    # matplotlib version 1.0.0.
-    if matplotlib.__version__ >= '1.0.0':
+    # matplotlib version 1.0.0. This only applies, of course, when we use
+    # datetime objects.
+
+    if not julian and matplotlib.__version__ >= '1.0.0':
         xticks_locator = matplotlib.dates.AutoDateLocator(maxticks = 8)
         xticks_formatter = matplotlib.dates.AutoDateFormatter(xticks_locator)
         ax1.xaxis.set_major_locator(xticks_locator)
@@ -121,15 +134,22 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         ax2 = ax1.twinx()
         ax2.fmt_xdata = xdata_formatter
 
-        if matplotlib.__version__ >= '1.0.0':
+        if not julian and matplotlib.__version__ >= '1.0.0':
             ax2.xaxis.set_major_locator(xticks_locator)
             ax2.xaxis.set_major_formatter(xticks_formatter)
 
         ax2.set_ylabel('Airmass', rotation = 270)
         periods = methods.split_by_diff(unix_times, delta = delta)
         for period_unix_times in periods:
-            func = datetime.datetime.utcfromtimestamp
-            period_dates = [func(x) for x in period_unix_times]
+
+            if julian:
+                utimes = period_unix_times
+                kwargs = dict(format = 'unix')
+                period_dates = astropy.time.Time(utimes, **kwargs).jd
+            else:
+                func = datetime.datetime.utcfromtimestamp
+                period_dates = [func(x) for x in period_unix_times]
+
             period_airmasses = [airmasses[x] for x in period_unix_times]
             ax2.plot(period_dates, period_airmasses,
                      color = color, linestyle = '--')
