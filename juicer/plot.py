@@ -63,8 +63,9 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         figure.delaxes(axes)
 
     unix_times, magnitudes, snrs = zip(*curve)
+
     # Plot Python datetime instances, instead of Unix seconds
-    datetimes = [datetime.datetime.utcfromtimestamp(x) for x in unix_times]
+    dates = [datetime.datetime.utcfromtimestamp(x) for x in unix_times]
 
     # For each signal-to-noise ratio we want the equivalent error in mags;
     # that is, both the maximum and minimum values induced by the noise.
@@ -76,7 +77,7 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         positive_errors.append(max_error)
 
     ax1 = figure.add_subplot(111)
-    ax1.errorbar(datetimes, magnitudes, color = color, marker = marker,
+    ax1.errorbar(dates, magnitudes, color = color, marker = marker,
                  fmt = 's', yerr = (negative_errors, positive_errors))
     ax1.set_ylabel("Magnitude (diff)")
     ax1.grid(True)
@@ -95,7 +96,7 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     elapsed_seconds = (unix_times[-1] - unix_times[0])
     margin_seconds = elapsed_seconds * 0.05
     margin_delta = datetime.timedelta(seconds = margin_seconds)
-    ax1.set_xlim(datetimes[0] - margin_delta, datetimes[-1] + margin_delta)
+    ax1.set_xlim(dates[0] - margin_delta, dates[-1] + margin_delta)
 
     # In interactive navigation, show the full date of the x-locations instead
     # of formatting them the same way the tick labels are (e.g., "Jan 04 2012")
@@ -145,5 +146,5 @@ def curve_plot(figure, curve, marker = 'o', color = '',
 
         # Margins on the x-axis must be set again after plotting the right
         # y-axis; otherwise, the margins we set for ax1 will be ignored.
-        ax2.set_xlim(datetimes[0] - margin_delta, datetimes[-1] + margin_delta)
+        ax2.set_xlim(dates[0] - margin_delta, dates[-1] + margin_delta)
 
