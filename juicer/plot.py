@@ -55,6 +55,11 @@ def curve_plot(figure, curve, marker = 'o', color = '',
             dashed lines. This argument prevents the airmasses from different
             nights to be connected by the same line, which does not add any
             information and only clutters the plot unnecessarily.
+    julian - plot the points of the light curve using Julian dates (JD) (such
+             as 2456877.9660300924) instead of strings representing the date
+             and time. For the latter, matplotlib automatically figures out
+             the best format to use (for example, 'Jan 02 2012' or '08:15:31')
+             depending of the date range of the light curve.
 
     """
 
