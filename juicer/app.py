@@ -734,6 +734,18 @@ class StarDetailsGUI(object):
         args = 'clicked', self.handle_look_up_in_simbad
         self.look_up_in_simbad_button.connect(*args)
 
+        # The column with the Julian Dates is only visible when the View ->
+        # Plot -> 'Julian dates' checkbox is toggled. This code is here, not
+        # where gtk.TreeView self.curve_view is created, because at that point
+        # julian_dates_visible() would raise AttributeError ("'StarDetailsGUI'
+        # object has no attribute 'julian_dates_checkbox'"), since the object
+        # does not yet exist.
+
+        julian_column = self.curve_view.get_column(2)
+        assert julian_column.get_title() == 'JD'
+        visible = self.julian_dates_visible()
+        julian_column.set_visible(visible)
+
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
 
