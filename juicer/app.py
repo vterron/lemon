@@ -1686,6 +1686,17 @@ class LEMONJuicerGUI(object):
             for details in self.open_stars.itervalues():
                 details.redraw_light_curve(None)
 
+    def change_JDs_visibility(self, widget):
+        """ Set the visibility of the column with Julian dates in all the
+        StarDetailsGUI objects, depending on the state (active or not) of
+        the View -> Plots -> 'Julian dates' checkbox. """
+
+        for details in self.open_stars.itervalues():
+            julian_column = details.curve_view.get_column(2)
+            assert julian_column.get_title() == 'JD'
+            visible = widget.get_active()
+            julian_column.set_visible(visible)
+
     def open_amplitudes_json(self, path):
         """ Parse a JSON file and deserialize an AmplitudesSearchPage object.
 
