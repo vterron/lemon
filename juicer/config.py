@@ -37,6 +37,7 @@ DEFAULT_VIEW_SEXAGESIMAL = True
 DEFAULT_VIEW_DECIMAL = False
 DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
 DEFAULT_PLOT_AIRMASSES = True
+DEFAULT_PLOT_JULIAN = False
 DEFAULT_PLOT_MIN_SNR = 100
 
 # The color codes can use any of the following formats supported by matplotlib:
