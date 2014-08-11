@@ -163,6 +163,7 @@ class ExportCurveDialog(object):
 
         f = save_widget_update
         self.date_str_checkbox.connect('toggled', f('dump_date_text'))
+        self.date_julian_checkbox.connect('toggled', f('dump_date_julian'))
         self.date_secs_checkbox.connect('toggled', f('dump_date_seconds'))
         self.mags_checkbox.connect('toggled', f('dump_magnitude'))
         self.snr_checkbox.connect('toggled', f('dump_snr'))
