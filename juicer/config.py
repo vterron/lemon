@@ -75,6 +75,7 @@ DEFAULT_AMPLSEARCH_OPTS = dict(
 CURVEDUMP_SECTION = 'curve-export'
 DEFAULT_CURVEDUMP_OPTS = dict(
   dump_date_text = 1,
+  dump_date_julian = 1,
   dump_date_seconds = 1,
   dump_magnitude = 1,
   dump_snr = 1,
