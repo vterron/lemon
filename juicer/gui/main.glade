@@ -167,6 +167,7 @@
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Julian dates</property>
                                 <property name="use_underline">True</property>
+                                <signal name="toggled" handler="save_plot_julian_dates_checkbox"/>
                               </object>
                             </child>
                             <child>
