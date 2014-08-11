@@ -26,6 +26,7 @@ import pygtk
 pygtk.require ('2.0')
 import gtk
 
+import astropy.time
 import ConfigParser
 import datetime
 import functools
@@ -106,12 +107,12 @@ class ExportCurveDialog(object):
         field, used to suggest a filename in a 'Save As...' dialog.
 
         Lastly, 'curve_store' must be a gtk.ListStore with the data that will
-        be dumped to a file, and should contain six columns: (1) a textual
-        representation of the date of observation, (2) the date of observation
-        in seconds after the Unix epoch, (3) the differential magnitude, (4)
-        the signal-to-noise ratio, (5 and 6) the maximum and minimum errors
-        induced by the noise, respectively. The columns must be in this exact
-        order and of type float, except for the first one, which is a str.
+        be dumped to a file, and should contain seven columns: (1) the date of
+        observation in Unix time, (2) a textual representation of the date, (3)
+        the Julian date, (4) the differential magnitude, (5) the SNR, (6 and 7)
+        the maximum and minimum errors induced by the noise, respectively. The
+        columns must be in this exact order and of type float, except for the
+        second one, which is a str.
 
         """
 
@@ -140,6 +141,7 @@ class ExportCurveDialog(object):
         self.get('dialog-description').set_label(text)
 
         self.date_str_checkbox = self.get('date-str-checkbox')
+        self.date_julian_checkbox = self.get('date-julian-checkbox')
         self.date_secs_checkbox = self.get('date-secs-checkbox')
         self.mags_checkbox = self.get('mags-checkbox')
         self.snr_checkbox = self.get('snr-checkbox')
@@ -161,6 +163,7 @@ class ExportCurveDialog(object):
 
         f = save_widget_update
         self.date_str_checkbox.connect('toggled', f('dump_date_text'))
+        self.date_julian_checkbox.connect('toggled', f('dump_date_julian'))
         self.date_secs_checkbox.connect('toggled', f('dump_date_seconds'))
         self.mags_checkbox.connect('toggled', f('dump_magnitude'))
         self.snr_checkbox.connect('toggled', f('dump_snr'))
@@ -173,6 +176,7 @@ class ExportCurveDialog(object):
 
         config = self.config
         self.date_str_checkbox.set_active(config.dumpint('dump_date_text'))
+        self.date_julian_checkbox.set_active(config.dumpint('dump_date_julian'))
         self.date_secs_checkbox.set_active(config.dumpint('dump_date_seconds'))
         self.mags_checkbox.set_active(config.dumpint('dump_magnitude'))
         self.snr_checkbox.set_active(config.dumpint('dump_snr'))
@@ -185,13 +189,14 @@ class ExportCurveDialog(object):
 
         Iterate over the gtk.ListStore (which is expected, although this is not
         enforced, to be sorted chronologically; that is, sorted by the value of
-        the second column, which contains the date of observation in Unix time)
+        the first column, which contains the date of observation in Unix time)
         and save a textual representation of its rows to 'path', truncating the
         file if it already exists. Not all the rows of the gtk.ListStore (i.e.,
         the attributes of the light curve, such as the signal-to-noise ratio or
         the maximum and minimum error induced by the noise) are saved to the
         file, but only those for which the corresponding checkbox is active
-        (checked).
+        (checked). Magnitudes, signal-to-noise ratios and errors are written
+        with the number of decimal places set in the spin button.
 
         """
 
@@ -205,18 +210,21 @@ class ExportCurveDialog(object):
             for row in self.store:
 
                 values = []
-                if self.date_str_checkbox.get_active():
-                    values.append(row[0])
+                assert len(row) == 7
                 if self.date_secs_checkbox.get_active():
-                    values.append(parse_float(row[1]))
+                    values.append(str(row[0]))
+                if self.date_str_checkbox.get_active():
+                    values.append(row[1])
+                if self.date_julian_checkbox.get_active():
+                    values.append(str(row[2]))
                 if self.mags_checkbox.get_active():
-                    values.append(parse_float(row[2]))
-                if self.snr_checkbox.get_active():
                     values.append(parse_float(row[3]))
-                if self.merr_pos_checkbox.get_active():
+                if self.snr_checkbox.get_active():
                     values.append(parse_float(row[4]))
-                if self.merr_neg_checkbox.get_active():
+                if self.merr_pos_checkbox.get_active():
                     values.append(parse_float(row[5]))
+                if self.merr_neg_checkbox.get_active():
+                    values.append(parse_float(row[6]))
 
                 fd.write('%s\n' % separator.join(values))
 
@@ -287,7 +295,7 @@ class StarDetailsGUI(object):
         """ Set the text of the error message label """
         self.error_msg.set_label(msg)
 
-    def update_curve(self, curve, show_airmasses):
+    def update_curve(self, curve, show_airmasses, show_julian_dates):
 
         if show_airmasses:
             airmasses = self.db.airmasses(curve.pfilter)
@@ -307,7 +315,9 @@ class StarDetailsGUI(object):
 
         else:
             self.set_canvas(True)
-            kwargs = dict(airmasses = airmasses, delta = 3 * 3600,
+            kwargs = dict(airmasses = airmasses,
+                          julian = show_julian_dates,
+                          delta = 3 * 3600,
                           color = self.config.color(curve.pfilter.letter))
 
             plot.curve_plot(self.figure, curve, **kwargs)
@@ -319,8 +329,9 @@ class StarDetailsGUI(object):
         self.curve_store.clear()
         for unix_time, magnitude, noise in curve:
             row = []
-            row.append(methods.utctime(unix_time, suffix = False))
             row.append(unix_time)
+            row.append(methods.utctime(unix_time, suffix = False))
+            row.append(astropy.time.Time(unix_time, format = 'unix').jd)
             row.append(magnitude)
             row.append(noise)
             # Returns two errors in mags, positive and negative
@@ -353,7 +364,8 @@ class StarDetailsGUI(object):
         """ Replot the light curve """
 
         curve = self.db.get_light_curve(self.id, self.shown)
-        self.update_curve(curve, self.airmasses_visible())
+        args = self.airmasses_visible(), self.julian_dates_visible()
+        self.update_curve(curve, *args)
 
     def update_file_selector_name(self):
         """ Update the name suggested by the 'Save' button FileChooserDialog.
@@ -388,7 +400,8 @@ class StarDetailsGUI(object):
 
         self.shown = pfilter
         curve = self.db.get_light_curve(self.id, pfilter)
-        self.update_curve(curve, self.airmasses_visible())
+        args = self.airmasses_visible(), self.julian_dates_visible()
+        self.update_curve(curve, *args)
         self.update_light_curve_points(curve)
         self.update_reference_stars(curve)
         # Keep track of the filter in the TreeView object, so that
@@ -436,6 +449,10 @@ class StarDetailsGUI(object):
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
+
+    def julian_dates_visible(self):
+        """ Return the state (active or not) of the Julian dates checkbox """
+        return self.julian_dates_checkbox.get_active()
 
     def __init__(self, parent, star_id, init_pfilter = None):
         """ Instantiate a notebook page with all the star data.
@@ -498,20 +515,24 @@ class StarDetailsGUI(object):
         self.view_in_chart_button.connect(*args)
 
         # GTKTreeView used to display the list of points of the curve; dates
-        # are plotted twice: hh:mm:ss and also in Unix time, the latter of
-        # which is used to sort the columns by their date.
-        attrs = ('Date', 'Date', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
-        self.curve_store = gtk.ListStore(str, float, float, float, float, float)
+        # are plotted three times: as (a) Unix times, (b) 24-character strings
+        # with the format 'Www Mmm dd hh:mm:ss yyyy' and (b) Julian dates. The
+        # date strings are not a floating-point numbers and thus cannot be
+        # sorted by themselves, so we use the Unix time (the first column).
+
+        attrs = ('Date', 'Date', 'JD', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
+        column_types = float, str, float, float, float, float, float
+        self.curve_store = gtk.ListStore(*column_types)
         self.curve_view = self._builder.get_object('curve-points-view')
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
             column.props.resizable = False
-            # The first column (index = 0) is sorted by the second
-            column.set_sort_column_id(1 if not index else index)
+            # Date strings are sorted by the Unix time
+            column.set_sort_column_id(0 if index == 1 else index)
 
             # The column with dates in Unix time is not shown
-            if index == 1:
+            if not index:
                 column.set_visible(False)
 
             self.curve_view.append_column(column)
@@ -672,6 +693,14 @@ class StarDetailsGUI(object):
         args = 'toggled', self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
 
+        # The checkbox to alternate between strings representing the date and
+        # time (for example, 'Jan 02 2012' or '08:15:31', depending on the date
+        # range) and Julian dates (JD) such as 2456877.9660300924.
+        object_name = 'plot-julian-dates-checkbox'
+        self.julian_dates_checkbox = self._builder.get_object(object_name)
+        args = 'toggled', self.redraw_light_curve
+        self.julian_dates_checkbox.connect(*args)
+
         # The button to export the light curve to a text file
         self.export_button = self._builder.get_object('save-curve-points-button')
         args = 'clicked', self.save_light_curve_points
@@ -711,6 +740,18 @@ class StarDetailsGUI(object):
 
         args = 'clicked', self.handle_look_up_in_simbad
         self.look_up_in_simbad_button.connect(*args)
+
+        # The column with the Julian Dates is only visible when the View ->
+        # Plot -> 'Julian dates' checkbox is toggled. This code is here, not
+        # where gtk.TreeView self.curve_view is created, because at that point
+        # julian_dates_visible() would raise AttributeError ("'StarDetailsGUI'
+        # object has no attribute 'julian_dates_checkbox'"), since the object
+        # does not yet exist.
+
+        julian_column = self.curve_view.get_column(2)
+        assert julian_column.get_title() == 'JD'
+        visible = self.julian_dates_visible()
+        julian_column.set_visible(visible)
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
@@ -925,6 +966,9 @@ class LEMONJuicerGUI(object):
         checkbox = builder.get_object('plot-airmasses-checkbox')
         checkbox.set_active(get_view_booloption(config.PLOT_AIRMASSES))
 
+        checkbox = builder.get_object('plot-julian-dates-checkbox')
+        checkbox.set_active(get_view_booloption(config.PLOT_JULIAN))
+
         # Activate one of the radio buttons (periods expressed in days,
         # hh:mm:ss or seconds) depending on the integer value of the option
         args = config.VIEW_SECTION, config.PERIODS_UNIT
@@ -986,16 +1030,25 @@ class LEMONJuicerGUI(object):
         name = 'look_up_in_simbad_button'
         self._activate_StarDetailsGUI_button(name)
 
-    def save_plot_airmasses_checkbox(self, widget):
-        """ Airmasses are not plotted here (that is done StarDetailsGUI), but
-        we need to update the configuration file with the new value of the
-        option every time this checkbox is toggled """
+    def save_widget_state(self, widget, section, option):
+        """ Update the specified section and option of the configuration file
+        with the state of the gtk.Widget: 1 if its active and 0 otherwise """
 
-        checkbox = self._builder.get_object('plot-airmasses-checkbox')
-        active = checkbox.get_active()
+        active = widget.get_active()
         value = '1' if active else '0'
-        args = config.VIEW_SECTION, config.PLOT_AIRMASSES, value
-        self.config.set(*args)
+        self.config.set(section, option, value)
+
+    # Airmasses and Julian dates (JDs) are not plotted here (that is done in
+    # StarDetailsGUI), but we need to update the configuration file with the
+    # new values of the options every time their checkboxes are toggled.
+
+    def save_plot_airmasses_checkbox(self, widget):
+        args = widget, config.VIEW_SECTION, config.PLOT_AIRMASSES
+        self.save_widget_state(*args)
+
+    def save_plot_julian_dates_checkbox(self, widget):
+        args = widget, config.VIEW_SECTION, config.PLOT_JULIAN
+        self.save_widget_state(*args)
 
     def run(self):
         gtk.main()
@@ -1639,6 +1692,17 @@ class LEMONJuicerGUI(object):
         if threshold is not None:
             for details in self.open_stars.itervalues():
                 details.redraw_light_curve(None)
+
+    def change_JDs_visibility(self, widget):
+        """ Set the visibility of the column with Julian dates in all the
+        StarDetailsGUI objects, depending on the state (active or not) of
+        the View -> Plots -> 'Julian dates' checkbox. """
+
+        for details in self.open_stars.itervalues():
+            julian_column = details.curve_view.get_column(2)
+            assert julian_column.get_title() == 'JD'
+            visible = widget.get_active()
+            julian_column.set_visible(visible)
 
     def open_amplitudes_json(self, path):
         """ Parse a JSON file and deserialize an AmplitudesSearchPage object.

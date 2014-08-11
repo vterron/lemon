@@ -30,12 +30,14 @@ VIEW_DECIMAL = 'decimal'
 PERIODS_UNIT = 'periods'
 PERIODS_DAYS, PERIODS_HHMMSS, PERIODS_SECONDS = range(3)
 PLOT_AIRMASSES = 'airmasses'
+PLOT_JULIAN = 'julian_dates'
 PLOT_MIN_SNR = 'snr_threshold'
 
 DEFAULT_VIEW_SEXAGESIMAL = True
 DEFAULT_VIEW_DECIMAL = False
 DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
 DEFAULT_PLOT_AIRMASSES = True
+DEFAULT_PLOT_JULIAN = False
 DEFAULT_PLOT_MIN_SNR = 100
 
 # The color codes can use any of the following formats supported by matplotlib:
@@ -73,6 +75,7 @@ DEFAULT_AMPLSEARCH_OPTS = dict(
 CURVEDUMP_SECTION = 'curve-export'
 DEFAULT_CURVEDUMP_OPTS = dict(
   dump_date_text = 1,
+  dump_date_julian = 1,
   dump_date_seconds = 1,
   dump_magnitude = 1,
   dump_snr = 1,
@@ -86,10 +89,11 @@ class Configuration(ConfigParser.SafeConfigParser):
 
     DEFAULT_CONFIG = '\n'.join(
     ["[%s]" % VIEW_SECTION,
-     "%s = %d" % (VIEW_SEXAGESIMAL, (1 if DEFAULT_VIEW_SEXAGESIMAL else 0)),
+     "%s = %d" % (VIEW_SEXAGESIMAL, DEFAULT_VIEW_SEXAGESIMAL),
      "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
-     "%s = %d" % (VIEW_DECIMAL, (1 if DEFAULT_VIEW_DECIMAL else 0)),
-     "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0)),
+     "%s = %d" % (VIEW_DECIMAL, DEFAULT_VIEW_DECIMAL),
+     "%s = %d" % (PLOT_AIRMASSES, DEFAULT_PLOT_AIRMASSES),
+     "%s = %d" % (PLOT_JULIAN, DEFAULT_PLOT_JULIAN),
      "%s = %d" % (PLOT_MIN_SNR, DEFAULT_PLOT_MIN_SNR),
      '',
      "[%s]" % COLOR_SECTION] +
