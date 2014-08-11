@@ -88,11 +88,11 @@ class Configuration(ConfigParser.SafeConfigParser):
 
     DEFAULT_CONFIG = '\n'.join(
     ["[%s]" % VIEW_SECTION,
-     "%s = %d" % (VIEW_SEXAGESIMAL, (1 if DEFAULT_VIEW_SEXAGESIMAL else 0)),
+     "%s = %d" % (VIEW_SEXAGESIMAL, DEFAULT_VIEW_SEXAGESIMAL),
      "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
-     "%s = %d" % (VIEW_DECIMAL, (1 if DEFAULT_VIEW_DECIMAL else 0)),
-     "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0)),
-     "%s = %d" % (PLOT_JULIAN, (1 if DEFAULT_PLOT_JULIAN else 0)),
+     "%s = %d" % (VIEW_DECIMAL, DEFAULT_VIEW_DECIMAL),
+     "%s = %d" % (PLOT_AIRMASSES, DEFAULT_PLOT_AIRMASSES),
+     "%s = %d" % (PLOT_JULIAN, DEFAULT_PLOT_JULIAN),
      "%s = %d" % (PLOT_MIN_SNR, DEFAULT_PLOT_MIN_SNR),
      '',
      "[%s]" % COLOR_SECTION] +
