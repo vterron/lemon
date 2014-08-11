@@ -1002,23 +1002,25 @@ class LEMONJuicerGUI(object):
         name = 'look_up_in_simbad_button'
         self._activate_StarDetailsGUI_button(name)
 
-    def save_plot_airmasses_checkbox(self, widget):
-        """ Airmasses are not plotted here (that is done StarDetailsGUI), but
-        we need to update the configuration file with the new value of the
-        option every time this checkbox is toggled """
+    def save_widget_state(self, widget, section, option):
+        """ Update the specified section and option of the configuration file
+        with the state of the gtk.Widget: 1 if its active and 0 otherwise """
 
-        checkbox = self._builder.get_object('plot-airmasses-checkbox')
-        active = checkbox.get_active()
+        active = widget.get_active()
         value = '1' if active else '0'
-        args = config.VIEW_SECTION, config.PLOT_AIRMASSES, value
-        self.config.set(*args)
+        self.config.set(section, option, value)
+
+    # Airmasses and Julian dates (JDs) are not plotted here (that is done in
+    # StarDetailsGUI), but we need to update the configuration file with the
+    # new values of the options every time their checkboxes are toggled.
+
+    def save_plot_airmasses_checkbox(self, widget):
+        args = widget, config.VIEW_SECTION, config.PLOT_AIRMASSES
+        self.save_widget_state(*args)
 
     def save_plot_julian_dates_checkbox(self, widget):
-        checkbox = self._builder.get_object('plot-julian-dates-checkbox')
-        active = checkbox.get_active()
-        value = '1' if active else '0'
-        args = config.VIEW_SECTION, config.PLOT_JULIAN, value
-        self.config.set(*args)
+        args = widget, config.VIEW_SECTION, config.PLOT_JULIAN
+        self.save_widget_state(*args)
 
     def run(self):
         gtk.main()
