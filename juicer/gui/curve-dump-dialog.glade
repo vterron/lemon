@@ -54,6 +54,19 @@
                   </packing>
                 </child>
                 <child>
+                  <object class="GtkCheckButton" id="date-julian-checkbox">
+                    <property name="label" translatable="yes">Date (Julian date)</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="active">True</property>
+                    <property name="draw_indicator">True</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkCheckButton" id="date-secs-checkbox">
                     <property name="label" translatable="yes">Date (seconds since the Epoch)</property>
                     <property name="visible">True</property>
@@ -63,7 +76,7 @@
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child>
@@ -76,7 +89,7 @@
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
                 <child>
@@ -89,7 +102,7 @@
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
-                    <property name="position">3</property>
+                    <property name="position">4</property>
                   </packing>
                 </child>
                 <child>
@@ -102,7 +115,7 @@
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
-                    <property name="position">4</property>
+                    <property name="position">5</property>
                   </packing>
                 </child>
                 <child>
@@ -115,7 +128,7 @@
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
-                    <property name="position">5</property>
+                    <property name="position">6</property>
                   </packing>
                 </child>
               </object>
