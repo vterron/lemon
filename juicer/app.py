@@ -26,6 +26,7 @@ import pygtk
 pygtk.require ('2.0')
 import gtk
 
+import astropy.time
 import ConfigParser
 import datetime
 import functools
@@ -321,8 +322,9 @@ class StarDetailsGUI(object):
         self.curve_store.clear()
         for unix_time, magnitude, noise in curve:
             row = []
-            row.append(methods.utctime(unix_time, suffix = False))
             row.append(unix_time)
+            row.append(methods.utctime(unix_time, suffix = False))
+            row.append(astropy.time.Time(unix_time, format = 'unix').jd)
             row.append(magnitude)
             row.append(noise)
             # Returns two errors in mags, positive and negative
@@ -506,20 +508,24 @@ class StarDetailsGUI(object):
         self.view_in_chart_button.connect(*args)
 
         # GTKTreeView used to display the list of points of the curve; dates
-        # are plotted twice: hh:mm:ss and also in Unix time, the latter of
-        # which is used to sort the columns by their date.
-        attrs = ('Date', 'Date', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
-        self.curve_store = gtk.ListStore(str, float, float, float, float, float)
+        # are plotted three times: as (a) Unix times, (b) 24-character strings
+        # with the format 'Www Mmm dd hh:mm:ss yyyy' and (b) Julian dates. The
+        # date strings are not a floating-point numbers and thus cannot be
+        # sorted by themselves, so we use the Unix time (the first column).
+
+        attrs = ('Date', 'Date', 'JD', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
+        column_types = float, str, float, float, float, float, float
+        self.curve_store = gtk.ListStore(*column_types)
         self.curve_view = self._builder.get_object('curve-points-view')
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
             column.props.resizable = False
-            # The first column (index = 0) is sorted by the second
-            column.set_sort_column_id(1 if not index else index)
+            # Date strings are sorted by the Unix time
+            column.set_sort_column_id(0 if index == 1 else index)
 
             # The column with dates in Unix time is not shown
-            if index == 1:
+            if not index:
                 column.set_visible(False)
 
             self.curve_view.append_column(column)
@@ -727,6 +733,18 @@ class StarDetailsGUI(object):
 
         args = 'clicked', self.handle_look_up_in_simbad
         self.look_up_in_simbad_button.connect(*args)
+
+        # The column with the Julian Dates is only visible when the View ->
+        # Plot -> 'Julian dates' checkbox is toggled. This code is here, not
+        # where gtk.TreeView self.curve_view is created, because at that point
+        # julian_dates_visible() would raise AttributeError ("'StarDetailsGUI'
+        # object has no attribute 'julian_dates_checkbox'"), since the object
+        # does not yet exist.
+
+        julian_column = self.curve_view.get_column(2)
+        assert julian_column.get_title() == 'JD'
+        visible = self.julian_dates_visible()
+        julian_column.set_visible(visible)
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
@@ -1667,6 +1685,17 @@ class LEMONJuicerGUI(object):
         if threshold is not None:
             for details in self.open_stars.itervalues():
                 details.redraw_light_curve(None)
+
+    def change_JDs_visibility(self, widget):
+        """ Set the visibility of the column with Julian dates in all the
+        StarDetailsGUI objects, depending on the state (active or not) of
+        the View -> Plots -> 'Julian dates' checkbox. """
+
+        for details in self.open_stars.itervalues():
+            julian_column = details.curve_view.get_column(2)
+            assert julian_column.get_title() == 'JD'
+            visible = widget.get_active()
+            julian_column.set_visible(visible)
 
     def open_amplitudes_json(self, path):
         """ Parse a JSON file and deserialize an AmplitudesSearchPage object.
