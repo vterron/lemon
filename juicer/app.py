@@ -107,12 +107,12 @@ class ExportCurveDialog(object):
         field, used to suggest a filename in a 'Save As...' dialog.
 
         Lastly, 'curve_store' must be a gtk.ListStore with the data that will
-        be dumped to a file, and should contain six columns: (1) a textual
-        representation of the date of observation, (2) the date of observation
-        in seconds after the Unix epoch, (3) the differential magnitude, (4)
-        the signal-to-noise ratio, (5 and 6) the maximum and minimum errors
-        induced by the noise, respectively. The columns must be in this exact
-        order and of type float, except for the first one, which is a str.
+        be dumped to a file, and should contain seven columns: (1) the date of
+        observation in Unix time, (2) a textual representation of the date, (3)
+        the Julian date, (4) the differential magnitude, (5) the SNR, (6 and 7)
+        the maximum and minimum errors induced by the noise, respectively. The
+        columns must be in this exact order and of type float, except for the
+        second one, which is a str.
 
         """
 
