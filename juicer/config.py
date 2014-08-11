@@ -92,6 +92,7 @@ class Configuration(ConfigParser.SafeConfigParser):
      "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
      "%s = %d" % (VIEW_DECIMAL, (1 if DEFAULT_VIEW_DECIMAL else 0)),
      "%s = %d" % (PLOT_AIRMASSES, (1 if DEFAULT_PLOT_AIRMASSES else 0)),
+     "%s = %d" % (PLOT_JULIAN, (1 if DEFAULT_PLOT_JULIAN else 0)),
      "%s = %d" % (PLOT_MIN_SNR, DEFAULT_PLOT_MIN_SNR),
      '',
      "[%s]" % COLOR_SECTION] +
