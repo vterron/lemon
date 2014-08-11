@@ -141,6 +141,7 @@ class ExportCurveDialog(object):
         self.get('dialog-description').set_label(text)
 
         self.date_str_checkbox = self.get('date-str-checkbox')
+        self.date_julian_checkbox = self.get('date-julian-checkbox')
         self.date_secs_checkbox = self.get('date-secs-checkbox')
         self.mags_checkbox = self.get('mags-checkbox')
         self.snr_checkbox = self.get('snr-checkbox')
@@ -174,6 +175,7 @@ class ExportCurveDialog(object):
 
         config = self.config
         self.date_str_checkbox.set_active(config.dumpint('dump_date_text'))
+        self.date_julian_checkbox.set_active(config.dumpint('dump_date_julian'))
         self.date_secs_checkbox.set_active(config.dumpint('dump_date_seconds'))
         self.mags_checkbox.set_active(config.dumpint('dump_magnitude'))
         self.snr_checkbox.set_active(config.dumpint('dump_snr'))
