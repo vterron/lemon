@@ -1013,6 +1013,13 @@ class LEMONJuicerGUI(object):
         args = config.VIEW_SECTION, config.PLOT_AIRMASSES, value
         self.config.set(*args)
 
+    def save_plot_julian_dates_checkbox(self, widget):
+        checkbox = self._builder.get_object('plot-julian-dates-checkbox')
+        active = checkbox.get_active()
+        value = '1' if active else '0'
+        args = config.VIEW_SECTION, config.PLOT_JULIAN, value
+        self.config.set(*args)
+
     def run(self):
         gtk.main()
 
