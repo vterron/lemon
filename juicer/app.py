@@ -287,7 +287,7 @@ class StarDetailsGUI(object):
         """ Set the text of the error message label """
         self.error_msg.set_label(msg)
 
-    def update_curve(self, curve, show_airmasses):
+    def update_curve(self, curve, show_airmasses, show_julian_dates):
 
         if show_airmasses:
             airmasses = self.db.airmasses(curve.pfilter)
@@ -307,7 +307,9 @@ class StarDetailsGUI(object):
 
         else:
             self.set_canvas(True)
-            kwargs = dict(airmasses = airmasses, delta = 3 * 3600,
+            kwargs = dict(airmasses = airmasses,
+                          julian = show_julian_dates,
+                          delta = 3 * 3600,
                           color = self.config.color(curve.pfilter.letter))
 
             plot.curve_plot(self.figure, curve, **kwargs)
@@ -353,7 +355,8 @@ class StarDetailsGUI(object):
         """ Replot the light curve """
 
         curve = self.db.get_light_curve(self.id, self.shown)
-        self.update_curve(curve, self.airmasses_visible())
+        args = self.airmasses_visible(), self.julian_dates_visible()
+        self.update_curve(curve, *args)
 
     def update_file_selector_name(self):
         """ Update the name suggested by the 'Save' button FileChooserDialog.
@@ -388,7 +391,8 @@ class StarDetailsGUI(object):
 
         self.shown = pfilter
         curve = self.db.get_light_curve(self.id, pfilter)
-        self.update_curve(curve, self.airmasses_visible())
+        args = self.airmasses_visible(), self.julian_dates_visible()
+        self.update_curve(curve, *args)
         self.update_light_curve_points(curve)
         self.update_reference_stars(curve)
         # Keep track of the filter in the TreeView object, so that
@@ -436,6 +440,10 @@ class StarDetailsGUI(object):
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
+
+    def julian_dates_visible(self):
+        """ Return the state (active or not) of the Julian dates checkbox """
+        return self.julian_dates_checkbox.get_active()
 
     def __init__(self, parent, star_id, init_pfilter = None):
         """ Instantiate a notebook page with all the star data.
@@ -671,6 +679,14 @@ class StarDetailsGUI(object):
         self.airmasses_checkbox = self._builder.get_object('plot-airmasses-checkbox')
         args = 'toggled', self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
+
+        # The checkbox to alternate between strings representing the date and
+        # time (for example, 'Jan 02 2012' or '08:15:31', depending on the date
+        # range) and Julian dates (JD) such as 2456877.9660300924.
+        object_name = 'plot-julian-dates-checkbox'
+        self.julian_dates_checkbox = self._builder.get_object(object_name)
+        args = 'toggled', self.redraw_light_curve
+        self.julian_dates_checkbox.connect(*args)
 
         # The button to export the light curve to a text file
         self.export_button = self._builder.get_object('save-curve-points-button')
