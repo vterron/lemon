@@ -672,6 +672,14 @@ class StarDetailsGUI(object):
         args = 'toggled', self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
 
+        # The checkbox to alternate between strings representing the date and
+        # time (for example, 'Jan 02 2012' or '08:15:31', depending on the date
+        # range) and Julian dates (JD) such as 2456877.9660300924.
+        object_name = 'plot-julian-dates-checkbox'
+        self.julian_dates_checkbox = self._builder.get_object(object_name)
+        args = 'toggled', self.redraw_light_curve
+        self.julian_dates_checkbox.connect(*args)
+
         # The button to export the light curve to a text file
         self.export_button = self._builder.get_object('save-curve-points-button')
         args = 'clicked', self.save_light_curve_points
