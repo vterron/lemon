@@ -941,6 +941,9 @@ class LEMONJuicerGUI(object):
         checkbox = builder.get_object('plot-airmasses-checkbox')
         checkbox.set_active(get_view_booloption(config.PLOT_AIRMASSES))
 
+        checkbox = builder.get_object('plot-julian-dates-checkbox')
+        checkbox.set_active(get_view_booloption(config.PLOT_JULIAN))
+
         # Activate one of the radio buttons (periods expressed in days,
         # hh:mm:ss or seconds) depending on the integer value of the option
         args = config.VIEW_SECTION, config.PERIODS_UNIT
