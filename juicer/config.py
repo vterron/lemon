@@ -30,6 +30,7 @@ VIEW_DECIMAL = 'decimal'
 PERIODS_UNIT = 'periods'
 PERIODS_DAYS, PERIODS_HHMMSS, PERIODS_SECONDS = range(3)
 PLOT_AIRMASSES = 'airmasses'
+PLOT_JULIAN = 'julian_dates'
 PLOT_MIN_SNR = 'snr_threshold'
 
 DEFAULT_VIEW_SEXAGESIMAL = True
