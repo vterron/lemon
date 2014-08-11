@@ -321,8 +321,8 @@ class StarDetailsGUI(object):
         self.curve_store.clear()
         for unix_time, magnitude, noise in curve:
             row = []
-            row.append(methods.utctime(unix_time, suffix = False))
             row.append(unix_time)
+            row.append(methods.utctime(unix_time, suffix = False))
             row.append(magnitude)
             row.append(noise)
             # Returns two errors in mags, positive and negative
@@ -509,17 +509,17 @@ class StarDetailsGUI(object):
         # are plotted twice: hh:mm:ss and also in Unix time, the latter of
         # which is used to sort the columns by their date.
         attrs = ('Date', 'Date', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
-        self.curve_store = gtk.ListStore(str, float, float, float, float, float)
+        self.curve_store = gtk.ListStore(float, str, float, float, float, float)
         self.curve_view = self._builder.get_object('curve-points-view')
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
             column = gtk.TreeViewColumn(title, render, text = index)
             column.props.resizable = False
-            # The first column (index = 0) is sorted by the second
-            column.set_sort_column_id(1 if not index else index)
+            # Date strings are sorted by the Unix time
+            column.set_sort_column_id(0 if index == 1 else index)
 
             # The column with dates in Unix time is not shown
-            if index == 1:
+            if not index:
                 column.set_visible(False)
 
             self.curve_view.append_column(column)
