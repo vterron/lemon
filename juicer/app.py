@@ -287,7 +287,7 @@ class StarDetailsGUI(object):
         """ Set the text of the error message label """
         self.error_msg.set_label(msg)
 
-    def update_curve(self, curve, show_airmasses):
+    def update_curve(self, curve, show_airmasses, show_julian_dates):
 
         if show_airmasses:
             airmasses = self.db.airmasses(curve.pfilter)
@@ -307,7 +307,9 @@ class StarDetailsGUI(object):
 
         else:
             self.set_canvas(True)
-            kwargs = dict(airmasses = airmasses, delta = 3 * 3600,
+            kwargs = dict(airmasses = airmasses,
+                          julian = show_julian_dates,
+                          delta = 3 * 3600,
                           color = self.config.color(curve.pfilter.letter))
 
             plot.curve_plot(self.figure, curve, **kwargs)
@@ -353,7 +355,8 @@ class StarDetailsGUI(object):
         """ Replot the light curve """
 
         curve = self.db.get_light_curve(self.id, self.shown)
-        self.update_curve(curve, self.airmasses_visible())
+        args = self.airmasses_visible(), self.julian_dates_visible()
+        self.update_curve(curve, *args)
 
     def update_file_selector_name(self):
         """ Update the name suggested by the 'Save' button FileChooserDialog.
@@ -388,7 +391,8 @@ class StarDetailsGUI(object):
 
         self.shown = pfilter
         curve = self.db.get_light_curve(self.id, pfilter)
-        self.update_curve(curve, self.airmasses_visible())
+        args = self.airmasses_visible(), self.julian_dates_visible()
+        self.update_curve(curve, *args)
         self.update_light_curve_points(curve)
         self.update_reference_stars(curve)
         # Keep track of the filter in the TreeView object, so that
