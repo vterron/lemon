@@ -26,6 +26,7 @@ import pygtk
 pygtk.require ('2.0')
 import gtk
 
+import astropy.time
 import ConfigParser
 import datetime
 import functools
@@ -323,6 +324,7 @@ class StarDetailsGUI(object):
             row = []
             row.append(unix_time)
             row.append(methods.utctime(unix_time, suffix = False))
+            row.append(astropy.time.Time(unix_time, format = 'unix').jd)
             row.append(magnitude)
             row.append(noise)
             # Returns two errors in mags, positive and negative
@@ -506,10 +508,14 @@ class StarDetailsGUI(object):
         self.view_in_chart_button.connect(*args)
 
         # GTKTreeView used to display the list of points of the curve; dates
-        # are plotted twice: hh:mm:ss and also in Unix time, the latter of
-        # which is used to sort the columns by their date.
-        attrs = ('Date', 'Date', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
-        self.curve_store = gtk.ListStore(float, str, float, float, float, float)
+        # are plotted three times: as (a) Unix times, (b) 24-character strings
+        # with the format 'Www Mmm dd hh:mm:ss yyyy' and (b) Julian dates. The
+        # date strings are not a floating-point numbers and thus cannot be
+        # sorted by themselves, so we use the Unix time (the first column).
+
+        attrs = ('Date', 'Date', 'JD', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
+        column_types = float, str, float, float, float, float, float
+        self.curve_store = gtk.ListStore(*column_types)
         self.curve_view = self._builder.get_object('curve-points-view')
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
