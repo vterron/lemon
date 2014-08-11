@@ -437,6 +437,10 @@ class StarDetailsGUI(object):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
 
+    def julian_dates_visible(self):
+        """ Return the state (active or not) of the Julian dates checkbox """
+        return self.julian_dates_checkbox.get_active()
+
     def __init__(self, parent, star_id, init_pfilter = None):
         """ Instantiate a notebook page with all the star data.
 
