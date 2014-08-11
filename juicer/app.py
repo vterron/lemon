@@ -107,12 +107,12 @@ class ExportCurveDialog(object):
         field, used to suggest a filename in a 'Save As...' dialog.
 
         Lastly, 'curve_store' must be a gtk.ListStore with the data that will
-        be dumped to a file, and should contain six columns: (1) a textual
-        representation of the date of observation, (2) the date of observation
-        in seconds after the Unix epoch, (3) the differential magnitude, (4)
-        the signal-to-noise ratio, (5 and 6) the maximum and minimum errors
-        induced by the noise, respectively. The columns must be in this exact
-        order and of type float, except for the first one, which is a str.
+        be dumped to a file, and should contain seven columns: (1) the date of
+        observation in Unix time, (2) a textual representation of the date, (3)
+        the Julian date, (4) the differential magnitude, (5) the SNR, (6 and 7)
+        the maximum and minimum errors induced by the noise, respectively. The
+        columns must be in this exact order and of type float, except for the
+        second one, which is a str.
 
         """
 
@@ -141,6 +141,7 @@ class ExportCurveDialog(object):
         self.get('dialog-description').set_label(text)
 
         self.date_str_checkbox = self.get('date-str-checkbox')
+        self.date_julian_checkbox = self.get('date-julian-checkbox')
         self.date_secs_checkbox = self.get('date-secs-checkbox')
         self.mags_checkbox = self.get('mags-checkbox')
         self.snr_checkbox = self.get('snr-checkbox')
@@ -162,6 +163,7 @@ class ExportCurveDialog(object):
 
         f = save_widget_update
         self.date_str_checkbox.connect('toggled', f('dump_date_text'))
+        self.date_julian_checkbox.connect('toggled', f('dump_date_julian'))
         self.date_secs_checkbox.connect('toggled', f('dump_date_seconds'))
         self.mags_checkbox.connect('toggled', f('dump_magnitude'))
         self.snr_checkbox.connect('toggled', f('dump_snr'))
@@ -174,6 +176,7 @@ class ExportCurveDialog(object):
 
         config = self.config
         self.date_str_checkbox.set_active(config.dumpint('dump_date_text'))
+        self.date_julian_checkbox.set_active(config.dumpint('dump_date_julian'))
         self.date_secs_checkbox.set_active(config.dumpint('dump_date_seconds'))
         self.mags_checkbox.set_active(config.dumpint('dump_magnitude'))
         self.snr_checkbox.set_active(config.dumpint('dump_snr'))
@@ -186,13 +189,14 @@ class ExportCurveDialog(object):
 
         Iterate over the gtk.ListStore (which is expected, although this is not
         enforced, to be sorted chronologically; that is, sorted by the value of
-        the second column, which contains the date of observation in Unix time)
+        the first column, which contains the date of observation in Unix time)
         and save a textual representation of its rows to 'path', truncating the
         file if it already exists. Not all the rows of the gtk.ListStore (i.e.,
         the attributes of the light curve, such as the signal-to-noise ratio or
         the maximum and minimum error induced by the noise) are saved to the
         file, but only those for which the corresponding checkbox is active
-        (checked).
+        (checked). Magnitudes, signal-to-noise ratios and errors are written
+        with the number of decimal places set in the spin button.
 
         """
 
@@ -206,18 +210,21 @@ class ExportCurveDialog(object):
             for row in self.store:
 
                 values = []
-                if self.date_str_checkbox.get_active():
-                    values.append(row[0])
+                assert len(row) == 7
                 if self.date_secs_checkbox.get_active():
-                    values.append(parse_float(row[1]))
+                    values.append(str(row[0]))
+                if self.date_str_checkbox.get_active():
+                    values.append(row[1])
+                if self.date_julian_checkbox.get_active():
+                    values.append(str(row[2]))
                 if self.mags_checkbox.get_active():
-                    values.append(parse_float(row[2]))
-                if self.snr_checkbox.get_active():
                     values.append(parse_float(row[3]))
-                if self.merr_pos_checkbox.get_active():
+                if self.snr_checkbox.get_active():
                     values.append(parse_float(row[4]))
-                if self.merr_neg_checkbox.get_active():
+                if self.merr_pos_checkbox.get_active():
                     values.append(parse_float(row[5]))
+                if self.merr_neg_checkbox.get_active():
+                    values.append(parse_float(row[6]))
 
                 fd.write('%s\n' % separator.join(values))
 
