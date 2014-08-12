@@ -57,6 +57,18 @@ def get_git_revision():
             fd.seek(0)
             return fd.readline().strip()
 
+def get_last_commit_date():
+    """ Return the author date of the last commit, as a Unix timestamp. """
+
+    # -<n>: number of commits to show
+    # %at: author date, UNIX timestamp
+    args = ['git', 'log', '-1', '--format=%at']
+    with methods.tmp_chdir(LEMON_DIR):
+        with tempfile.TemporaryFile() as fd:
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            return float(fd.readline().strip())
+
 def git_update():
     """ Merge upstream changes into the local repository with `git pull` """
 
