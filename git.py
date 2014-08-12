@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import calendar
 import functools
 import json
 import os.path
@@ -147,7 +148,7 @@ def get_last_github_commit(timeout = None):
     Use the GitHub API to get the SHA1 hash of the last commit pushed to the
     LEMON repository, and then obtain its short version with `git rev-parse`.
     Returns a two-element tuple with (a) the short SHA1 and (b) date of the
-    last commit.
+    last commit as a Unix timestamp.
 
     The 'timeout' keyword argument defines the number of seconds after which
     the requests.exceptions.Timeout exception is raised if the server has not
@@ -166,7 +167,15 @@ def get_last_github_commit(timeout = None):
     r = requests.get(COMMITS_URL, **kwargs)
     last_commit = r.json()[0]
     hash_ = last_commit['sha']
-    date_ = last_commit['commit']['committer']['date']
+    date_str = last_commit['commit']['committer']['date']
+
+    # Timestamps are returned in ISO 8601 format: "YYYY-MM-DDTHH:MM:SSZ", where
+    # Z is the zone designator for the zero UTC offset (that is, the time is in
+    # UTC). Parse the string and convert it to a Unix timestamp value.
+
+    fmt = "%Y-%m-%dT%H:%M:%SZ"
+    date_struct = time.strptime(date_str, fmt)
+    date_ = calendar.timegm(date_struct)
 
     args = ['git', 'rev-parse', '--short', hash_]
     with methods.tmp_chdir(LEMON_DIR):
