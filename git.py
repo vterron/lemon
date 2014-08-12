@@ -204,19 +204,23 @@ def check_up_to_date(timeout = None):
     """ Issue a warning if there are unmerged changes on GitHub.
 
     Compare the SHA1 hash of the last commit in the local LEMON Git repository
-    with that pushed to GitHub. If they differ, issue a warning to let the user
-    know that there is a newer version available and that `lemon --update` can
-    be used to update the installation. Do nothing if we are up to date.
+    with that pushed to GitHub. If they differ *and* the GitHub commit is more
+    recent, issue a warning to let the user know that there is a newer version
+    available and `lemon --update` can be used to update the installation. Do
+    nothing if we are up to date.
 
     The 'timeout' parameter is passed to get_last_github_commit().
 
     """
 
     current_revision  = get_git_revision()
-    short_hash, date_ = get_last_github_commit(timeout = timeout)
-    if short_hash not in current_revision:
-        msg = ("Your current revision is '%s', but there is a more recent "
-               "version (%s, %s) available on GitHub. You may use `lemon "
-               "--update` to retrieve these changes.")
-        args = (current_revision, short_hash, date_)
-        warnings.warn(msg % args)
+    github_hash, last_github_date = get_last_github_commit(timeout = timeout)
+    if github_hash not in current_revision:
+        last_commit_date = get_last_commit_date()
+        if last_commit_date < last_github_date:
+            msg = ("Your current revision is '%s' (%s), but there is a more "
+                   "recent version (%s, %s) available on GitHub. You may use "
+                   "`lemon --update` to retrieve these changes.")
+            args = (current_revision, methods.utctime(last_commit_date),
+                    github_hash, methods.utctime(last_github_date))
+            warnings.warn(msg % args)
