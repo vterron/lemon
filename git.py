@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import calendar
 import functools
 import json
 import os.path
@@ -34,6 +35,23 @@ LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
 COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
 GITHUB_CACHE_FILE = os.path.join(LEMON_DIR, '.last-github-commit-cache.json')
 
+def lemon_check_output(args):
+    """ Run a command in the LEMON directory and return its output.
+
+    This convenience function chdirs to the LEMON directory, runs a command
+    with arguments and returns its output as a string with leading and trailing
+    characters removed. If the return code is non-zero, the CalledProcessError
+    exception is raised.
+
+    """
+
+    # subprocess.check_output() new in 2.7; we need 2.6 compatibility
+    with methods.tmp_chdir(LEMON_DIR):
+        with tempfile.TemporaryFile() as fd:
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            return fd.readline().strip()
+
 def get_git_revision():
     """ Return a human-readable revision number of the LEMON Git repository.
 
@@ -47,14 +65,16 @@ def get_git_revision():
     # --long: always output the long format even when it matches a tag
     # --dirty: describe the working tree; append '-dirty' if necessary
     # --tags: use any tag found in refs/tags namespace
-
-    # check_output() is new in 2.7; we need 2.6 compatibility
     args = ['git', 'describe', '--long', '--dirty', '--tags']
-    with methods.tmp_chdir(LEMON_DIR):
-        with tempfile.TemporaryFile() as fd:
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            return fd.readline().strip()
+    return lemon_check_output(args)
+
+def get_last_commit_date():
+    """ Return the author date of the last commit, as a Unix timestamp. """
+
+    # -<n>: number of commits to show
+    # %at: author date, UNIX timestamp
+    args = ['git', 'log', '-1', '--format=%at']
+    return float(lemon_check_output(args))
 
 def git_update():
     """ Merge upstream changes into the local repository with `git pull` """
@@ -147,7 +167,7 @@ def get_last_github_commit(timeout = None):
     Use the GitHub API to get the SHA1 hash of the last commit pushed to the
     LEMON repository, and then obtain its short version with `git rev-parse`.
     Returns a two-element tuple with (a) the short SHA1 and (b) date of the
-    last commit.
+    last commit as a Unix timestamp.
 
     The 'timeout' keyword argument defines the number of seconds after which
     the requests.exceptions.Timeout exception is raised if the server has not
@@ -166,33 +186,41 @@ def get_last_github_commit(timeout = None):
     r = requests.get(COMMITS_URL, **kwargs)
     last_commit = r.json()[0]
     hash_ = last_commit['sha']
-    date_ = last_commit['commit']['committer']['date']
+    date_str = last_commit['commit']['author']['date']
+
+    # Timestamps are returned in ISO 8601 format: "YYYY-MM-DDTHH:MM:SSZ", where
+    # Z is the zone designator for the zero UTC offset (that is, the time is in
+    # UTC). Parse the string and convert it to a Unix timestamp value.
+
+    fmt = "%Y-%m-%dT%H:%M:%SZ"
+    date_struct = time.strptime(date_str, fmt)
+    date_ = calendar.timegm(date_struct)
 
     args = ['git', 'rev-parse', '--short', hash_]
-    with methods.tmp_chdir(LEMON_DIR):
-        with tempfile.TemporaryFile() as fd:
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            short_hash = fd.readline().strip()
-            return short_hash, date_
+    short_hash = lemon_check_output(args)
+    return short_hash, date_
 
 def check_up_to_date(timeout = None):
     """ Issue a warning if there are unmerged changes on GitHub.
 
     Compare the SHA1 hash of the last commit in the local LEMON Git repository
-    with that pushed to GitHub. If they differ, issue a warning to let the user
-    know that there is a newer version available and that `lemon --update` can
-    be used to update the installation. Do nothing if we are up to date.
+    with that pushed to GitHub. If they differ *and* the GitHub commit is more
+    recent, issue a warning to let the user know that there is a newer version
+    available and `lemon --update` can be used to update the installation. Do
+    nothing if we are up to date.
 
     The 'timeout' parameter is passed to get_last_github_commit().
 
     """
 
     current_revision  = get_git_revision()
-    short_hash, date_ = get_last_github_commit(timeout = timeout)
-    if short_hash not in current_revision:
-        msg = ("Your current revision is '%s', but there is a more recent "
-               "version (%s, %s) available on GitHub. You may use `lemon "
-               "--update` to retrieve these changes.")
-        args = (current_revision, short_hash, date_)
-        warnings.warn(msg % args)
+    github_hash, last_github_date = get_last_github_commit(timeout = timeout)
+    if github_hash not in current_revision:
+        last_commit_date = get_last_commit_date()
+        if last_commit_date < last_github_date:
+            msg = ("Your current revision is '%s' (%s), but there is a more "
+                   "recent version (%s, %s) available on GitHub. You may use "
+                   "`lemon --update` to retrieve these changes.")
+            args = (current_revision, methods.utctime(last_commit_date),
+                    github_hash, methods.utctime(last_github_date))
+            warnings.warn(msg % args)
