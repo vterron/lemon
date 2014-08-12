@@ -179,7 +179,7 @@ def get_last_github_commit(timeout = None):
     r = requests.get(COMMITS_URL, **kwargs)
     last_commit = r.json()[0]
     hash_ = last_commit['sha']
-    date_str = last_commit['commit']['committer']['date']
+    date_str = last_commit['commit']['author']['date']
 
     # Timestamps are returned in ISO 8601 format: "YYYY-MM-DDTHH:MM:SSZ", where
     # Z is the zone designator for the zero UTC offset (that is, the time is in
