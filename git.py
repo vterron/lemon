@@ -35,6 +35,23 @@ LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
 COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
 GITHUB_CACHE_FILE = os.path.join(LEMON_DIR, '.last-github-commit-cache.json')
 
+def lemon_check_output(args):
+    """ Run a command in the LEMON directory and return its output.
+
+    This convenience function chdirs to the LEMON directory, runs a command
+    with arguments and returns its output as a string with leading and trailing
+    characters removed. If the return code is non-zero, the CalledProcessError
+    exception is raised.
+
+    """
+
+    # subprocess.check_output() new in 2.7; we need 2.6 compatibility
+    with methods.tmp_chdir(LEMON_DIR):
+        with tempfile.TemporaryFile() as fd:
+            subprocess.check_call(args, stdout = fd)
+            fd.seek(0)
+            return fd.readline().strip()
+
 def get_git_revision():
     """ Return a human-readable revision number of the LEMON Git repository.
 
@@ -48,14 +65,8 @@ def get_git_revision():
     # --long: always output the long format even when it matches a tag
     # --dirty: describe the working tree; append '-dirty' if necessary
     # --tags: use any tag found in refs/tags namespace
-
-    # check_output() is new in 2.7; we need 2.6 compatibility
     args = ['git', 'describe', '--long', '--dirty', '--tags']
-    with methods.tmp_chdir(LEMON_DIR):
-        with tempfile.TemporaryFile() as fd:
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            return fd.readline().strip()
+    return lemon_check_output(args)
 
 def get_last_commit_date():
     """ Return the author date of the last commit, as a Unix timestamp. """
@@ -63,11 +74,7 @@ def get_last_commit_date():
     # -<n>: number of commits to show
     # %at: author date, UNIX timestamp
     args = ['git', 'log', '-1', '--format=%at']
-    with methods.tmp_chdir(LEMON_DIR):
-        with tempfile.TemporaryFile() as fd:
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            return float(fd.readline().strip())
+    return float(lemon_check_output(args))
 
 def git_update():
     """ Merge upstream changes into the local repository with `git pull` """
@@ -190,12 +197,8 @@ def get_last_github_commit(timeout = None):
     date_ = calendar.timegm(date_struct)
 
     args = ['git', 'rev-parse', '--short', hash_]
-    with methods.tmp_chdir(LEMON_DIR):
-        with tempfile.TemporaryFile() as fd:
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            short_hash = fd.readline().strip()
-            return short_hash, date_
+    short_hash = lemon_check_output(args)
+    return short_hash, date_
 
 def check_up_to_date(timeout = None):
     """ Issue a warning if there are unmerged changes on GitHub.
