@@ -70,6 +70,16 @@ class LoadCoordinatesTest(unittest.TestCase):
         return ''.join(random.choice(cls.SEPS) for _ in range(n))
 
     @classmethod
+    def get_comment(cls):
+        """ Return a random string that starts with '#'. """
+
+        # Use the name of one of the SIMBAD objects
+        object_ = random.choice(cls.COORDINATES.keys())
+        sep1 = cls.get_seps(0)
+        sep2 = cls.get_seps(0)
+        return "#" + sep1 + object_ + sep2
+
+    @classmethod
     def get_coords_data(cls, coords):
         """ Format 'coords' as the contents of a coordinates file.
 
