@@ -155,9 +155,8 @@ class LoadCoordinatesTest(unittest.TestCase):
             # Empty lines must be ignored
             with methods.tempinput(data) as path:
                 coordinates = methods.load_coordinates(path)
-                for index, (ra, dec) in enumerate(coordinates):
-                    self.assertAlmostEqual(ra,  objects[index].ra)
-                    self.assertAlmostEqual(dec, objects[index].dec)
+                for coords, expected in zip(coordinates, objects):
+                    self.assertEqual(coords, expected)
 
     def test_load_coordinates_empty_file(self):
         # If the file is empty, nothing is returned
