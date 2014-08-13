@@ -145,8 +145,8 @@ class LoadCoordinatesTest(unittest.TestCase):
             data = self.get_coords_data(objects)
 
             # Randomly insert empty lines
+            lines = data.split('\n')
             for _ in range(*self.NEMPTY):
-                lines = data.split('\n')
                 index = random.randint(0, len(lines))
                 empty = self.get_seps(0)
                 lines.insert(index, empty)
