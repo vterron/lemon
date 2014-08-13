@@ -175,30 +175,58 @@ class LoadCoordinatesTest(unittest.TestCase):
                 with self.assertRaisesRegexp(exception, regexp):
                     list(methods.load_coordinates(path))
 
-        # Lines with other than two floating-point numbers
-        data1 = '\n'.join(["NGC 4494", "11 Com b", "TrES-1"])
-        regexp = "Unable to parse line"
-        check_raise(data1, ValueError, regexp)
-        ra, dec = random.choice(self.COORDINATES.values())
-        data2 = "foo %.8f" % dec
-        check_raise(data1, ValueError, regexp)
+        def get_coords():
+            """ Return an element from COORDINATES with known proper motions """
 
-        # An object with right ascension out of range
-        ra, dec = random.choice(self.COORDINATES.values())
+            coords = []
+            for c in self.COORDINATES.itervalues():
+                if None not in (c.pm_ra, c.pm_dec):
+                    coords.append(c)
+            return random.choice(coords)
+
+        # (1) Lines with other than (a) two floating-point numbers (right
+        # ascension and declination) or (b) four floating-point numbers (alpha,
+        # delta and proper motions, the last two surrounded by brackets).
+
+        c = get_coords()
+        unparseable_data = [
+
+            # The names of three objects, no coordinates
+            '\n'.join(["NGC 4494", "11 Com b", "TrES-1"]),
+            # String + float
+            "foo %.8f" % c.dec,
+            # Three floating-point numbers
+            ("%.8f " * 3) % c[:3],
+            # Proper motions not in brackets
+            ("%.8f " * 4) % c,
+            # Missing declination proper motion
+            (("%.8f " * 2) + "[%.6f]") % c[:-1],
+            # Three proper motions
+            (("%.8f " * 2) + ("[%.6f] " * 3)) % (c + (c.pm_dec,))]
+
+        regexp = "Unable to parse line"
+        for data in unparseable_data:
+            check_raise(data, ValueError, regexp)
+
+        # (2) An object with right ascension out of range
+        c = get_coords()
         regexp = "Right ascension .* not in range"
-        data1 = "%.8f %.8f" % (-24.19933, dec) # RA < 0
+        fmt = "%.8f %.8f [%.6f] [%.6f]"
+        c = c._replace(ra = -24.19933)
+        data1 = fmt % c  # RA < 0
         check_raise(data1, ValueError, regexp)
-        data2 = "%.8f %.8f" % (360, dec)     # RA >= 360
+        data2 = "%.8f %.8f" % (360, c.dec)     # RA >= 360
         check_raise(data2, ValueError, regexp)
-        data3 = "%.8f %.8f" % (417.993, dec) # RA >= 360
+        data3 = "%.8f %.8f" % (417.993, c.dec) # RA >= 360
         check_raise(data3, ValueError, regexp)
 
-        # An object with declination out of range
-        ra, dec = random.choice(self.COORDINATES.values())
+        # (3) An object with declination out of range
+        c = get_coords()
         regexp = "Declination .* not in range"
-        data1 = "%.8f %.8f" % (ra,  -90.21) # DEC < -90
+        c = c._replace(dec = -90.21)
+        data1 = fmt % c # DEC < -90
         check_raise(data1, ValueError, regexp)
-        data2 = "%.8f %.8f" % (ra,  113.93) # DEC > +90
+        data2 = "%.8f %.8f" % (c.ra,  113.93) # DEC > +90
         check_raise(data2, ValueError, regexp)
 
 class MethodsFunctionsTests(unittest.TestCase):
