@@ -57,8 +57,16 @@ class LoadCoordinatesTest(unittest.TestCase):
     MAX_SEPS = 5       # maximum number of consecutive separators
 
     @classmethod
-    def get_seps(cls, n):
-        """ Return a string containing 'n' random separators """
+    def get_seps(cls, minimum):
+        """ Return a string containing a random number of separators.
+
+        The separators are randomly chosen from cls.SEPS. The returned string
+        contains N of them, where N is a random integer such that: minimum <=
+        N <= cls.MAX_SEPS.
+
+        """
+
+        n = random.randint(minimum, cls.MAX_SEPS)
         return ''.join(random.choice(cls.SEPS) for _ in range(n))
 
     @classmethod
@@ -82,24 +90,24 @@ class LoadCoordinatesTest(unittest.TestCase):
         lines = []
         for ra, dec, pm_ra, pm_dec in coords:
 
-            sep0 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
-            sep1 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
-            sep2 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+            sep0 = cls.get_seps(0)
+            sep1 = cls.get_seps(1)
+            sep2 = cls.get_seps(0)
             line = "%s%.8f%s%.8f%s" % (sep0, ra, sep1, dec, sep2)
 
             if None not in (pm_ra, pm_dec):
 
-                sep3 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
-                sep4 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                sep3 = cls.get_seps(0)
+                sep4 = cls.get_seps(0)
                 pm_ra_column = "[%s%.6f%s]" % (sep3, pm_ra, sep4)
 
-                sep5 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
-                sep6 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                sep5 = cls.get_seps(0)
+                sep6 = cls.get_seps(0)
                 pm_dec_column = "[%s%.6f%s]" % (sep5, pm_dec, sep6)
 
-                sep7 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
-                sep8 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
-                sep9 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                sep7 = cls.get_seps(1)
+                sep8 = cls.get_seps(1)
+                sep9 = cls.get_seps(0)
                 line += sep7 + pm_ra_column + sep8 + pm_dec_column + sep9
 
             lines.append(line)
@@ -140,7 +148,7 @@ class LoadCoordinatesTest(unittest.TestCase):
             for _ in range(*self.NEMPTY):
                 lines = data.split('\n')
                 index = random.randint(0, len(lines))
-                empty = self.get_seps(random.randint(0, self.MAX_SEPS))
+                empty = self.get_seps(0)
                 lines.insert(index, empty)
 
             data = '\n'.join(lines)
