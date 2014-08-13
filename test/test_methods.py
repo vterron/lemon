@@ -36,9 +36,9 @@ NITERS = 100  # How many times each test case is run with random data
 class LoadCoordinatesTest(unittest.TestCase):
 
     # A series of two-element tuples, one per line. The first element is a
-    # string containing the name of an astronomical object. The second is
-    # another two-element tuple with its sky coordinates (right ascension
-    # and declination), in decimal degrees.
+    # string containing the name of an astronomical object. The second is a
+    # four-element tuple with the right ascension, declination and proper
+    # motions. Nones are used if the proper motions are not known.
     TEST_DATA_DIR = './test/test_data/SIMBAD_objects'
 
     # Parse the SIMBAD file and map each astronomical object (a string) to
