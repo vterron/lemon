@@ -67,21 +67,43 @@ class LoadCoordinatesTest(unittest.TestCase):
 
         Return a string that contains a line for each astronomical object in
         'coords', an iterable argument, listing their right ascensions and
-        declinations in two columns and decimal degrees. These columns are
-        surrounded by a random number (up to the value of the MAX_SEPS class
-        attribute) or random separators (SEPS class attribute). The returned
-        string should, after written to disk, is expected to be successfully
-        parsed by methods.load_coordinates().
+        declinations in two columns and, if available, their proper motions
+        in two additional columns, surrounded by brackets. For example:
+
+          269.466450 4.705625 [0.0036] [-.0064]
+
+        These columns and brackets are surrounded by a random number (up to the
+        value of the MAX_SEPS class attribute) or random separators (SEPS class
+        attribute). The returned string, after written to disk, is expected to
+        be successfully parsed by methods.load_coordinates().
 
         """
 
         lines = []
-        for ra, dec in coords:
-            sep1 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
-            sep2 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
-            sep3 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
-            line = "%s%.8f%s%.8f%s" % (sep1, ra, sep2, dec, sep3)
+        for ra, dec, pm_ra, pm_dec in coords:
+
+            sep0 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+            sep1 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
+            sep2 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+            line = "%s%.8f%s%.8f%s" % (sep0, ra, sep1, dec, sep2)
+
+            if None not in (pm_ra, pm_dec):
+
+                sep3 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                sep4 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                pm_ra_column = "[%s%.6f%s]" % (sep3, pm_ra, sep4)
+
+                sep5 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                sep6 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                pm_dec_column = "[%s%.6f%s]" % (sep5, pm_dec, sep6)
+
+                sep7 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
+                sep8 = cls.get_seps(random.randint(1, cls.MAX_SEPS))
+                sep9 = cls.get_seps(random.randint(0, cls.MAX_SEPS))
+                line += sep7 + pm_ra_column + sep8 + pm_dec_column + sep9
+
             lines.append(line)
+
         return '\n'.join(lines)
 
     def test_load_coordinates(self):
