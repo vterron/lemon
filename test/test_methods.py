@@ -52,7 +52,7 @@ class LoadCoordinatesTest(unittest.TestCase):
                 COORDINATES[object_] = Coordinates(*coords)
 
     NCOORDS = (1, len(COORDINATES))  # number of objects in each file
-    NEMPTY = (1, 50) # number of empty lines in each coordinates file
+    NEMPTY = (1, 50)    # minimum and maximum number of empty lines
     SEPS = [' ', '\t'] # separators randomly added to the coords file
     MAX_SEPS = 5       # maximum number of consecutive separators
 
@@ -156,7 +156,7 @@ class LoadCoordinatesTest(unittest.TestCase):
 
             # Randomly insert empty lines
             lines = data.split('\n')
-            for _ in range(*self.NEMPTY):
+            for _ in range(random.randint(*self.NEMPTY)):
                 index = random.randint(0, len(lines))
                 empty = self.get_seps(0)
                 lines.insert(index, empty)
