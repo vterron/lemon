@@ -53,6 +53,8 @@ class LoadCoordinatesTest(unittest.TestCase):
 
     NCOORDS = (1, len(COORDINATES))  # number of objects in each file
     NEMPTY = (1, 50)    # minimum and maximum number of empty lines
+    NCOMMENTS = (1, 50) # minimum and maximum number of comment lines
+    COMMENT_PROB = 0.35 # probability of inline comments
     SEPS = [' ', '\t'] # separators randomly added to the coords file
     MAX_SEPS = 5       # maximum number of consecutive separators
 
@@ -144,25 +146,41 @@ class LoadCoordinatesTest(unittest.TestCase):
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
-    def test_load_coordinates_empty_lines(self):
+    def test_load_coordinates_empty_lines_and_comments(self):
 
-        # The same as test_load_coordinates(), but randomly inserting a
-        # few empty lines. These must be ignored by load_coordinates()
+        # The same as test_load_coordinates(), but randomly inserting a few
+        # empty and comment lines, as well as inline comments, all of which
+        # must be ignored by load_coordinates().
 
         for _ in xrange(NITERS):
             n = random.randint(*self.NCOORDS)
             objects = random.sample(self.COORDINATES.values(), n)
             data = self.get_coords_data(objects)
 
-            # Randomly insert empty lines
             lines = data.split('\n')
+
+            # Randomly insert inline comments
+            for index in range(len(lines)):
+                if random.random() < self.COMMENT_PROB:
+                    sep = self.get_seps(0)
+                    comment = self.get_comment()
+                    lines[index] += sep + comment
+
+            # Randomly insert empty lines
             for _ in range(random.randint(*self.NEMPTY)):
                 index = random.randint(0, len(lines))
                 empty = self.get_seps(0)
                 lines.insert(index, empty)
 
+            # Randomly insert comment lines
+            for _ in range(random.randint(*self.NCOMMENTS)):
+                index = random.randint(0, len(lines))
+                sep = self.get_seps(0)
+                comment = self.get_comment()
+                lines.insert(index, sep + comment)
+
             data = '\n'.join(lines)
-            # Empty lines must be ignored
+
             with methods.tempinput(data) as path:
                 coordinates = methods.load_coordinates(path)
                 for coords, expected in zip(coordinates, objects):
