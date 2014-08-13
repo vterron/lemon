@@ -119,9 +119,10 @@ class LoadCoordinatesTest(unittest.TestCase):
         for _ in xrange(NITERS):
 
             # Randomly choose some of the SIMBAD astronomical objects and write
-            # them to a temporary file, formatting their right ascensions and
-            # coordinates in two columns and inserting a random number of
-            # separators before, between and after the columns. Make sure that
+            # them to a temporary file, formatting their coordinates and proper
+            # motions in four columns (or just two, if the proper motions are
+            # not known) and inserting a random number of separators before,
+            # between and after the columns and brackets. Then make sure that
             # methods.load_coordinates() returns the same astronomical objects,
             # in the same order and with the same coordinates that we wrote.
 
@@ -130,9 +131,8 @@ class LoadCoordinatesTest(unittest.TestCase):
             data = self.get_coords_data(objects)
             with methods.tempinput(data) as path:
                 coordinates = methods.load_coordinates(path)
-                for index, (ra, dec) in enumerate(coordinates):
-                    self.assertAlmostEqual(ra,  objects[index].ra)
-                    self.assertAlmostEqual(dec, objects[index].dec)
+                for coords, expected in zip(coordinates, objects):
+                    self.assertEqual(coords, expected)
 
     def test_load_coordinates_empty_lines(self):
 
