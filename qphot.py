@@ -429,6 +429,47 @@ class QPhot(list):
         return len(self)
 
 
+def get_coords_file(coordinates, year, epoch):
+    """ Return a coordinates file with the exact positions of the objects.
+
+    Loop over 'coordinates', an iterable of astromatic.Coordinates objects, and
+    apply proper motion correction, obtaining their exact positions for a given
+    date. These proper-motion corrected coordinates are written to a temporary
+    text file, listed one astronomical object per line and in two columns:
+    right ascension and declination. Returns the path to the temporary file.
+    The user of this function is responsible for deleting the file when done
+    with it.
+
+    Both 'year' and 'epoch' may be decimal numbers, such as 2014.25 for April
+    1, 2014 (since, in common years, April 1 is the 91st day of the year, and
+    91 / 365 = 0.24931507 = ~0.25). Please refer to the documentation of the
+    Coordinates.get_exact_coordinates() method for further information.
+
+    """
+
+    kwargs = dict(prefix = '%f_' % year,
+                  suffix = '_J%d.coords' % epoch,
+                  text = True)
+
+    fd, path = tempfile.mkstemp(**kwargs)
+    fmt = '\t'.join(['%.10f', '%.10f\n'])
+
+    for coord in coordinates:
+
+        # We cannot apply any correction if pm_ra and pm_dec are None (it means
+        # that the proper motion of the object is unknown). Either none or both
+        # must be None: we cannot know one proper motion but not the other!
+
+        if coord.pm_ra is None:
+            assert coord.pm_dec is None
+            continue
+
+        coord = coord.get_exact_coordinates(year, epoch = epoch)
+        os.write(fd, fmt % coord[:2])
+
+    os.close(fd)
+    return path
+
 def run(img, coords_path,
         aperture, annulus, dannulus,
         maximum, exptimek, uncimgk):
