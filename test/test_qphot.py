@@ -18,16 +18,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import operator
 import os.path
 import pyfits
+import random
 import tempfile
 
 # LEMON modules
 from test import unittest
+import astromatic
 import fitsimage
 import methods
 import qphot
 import test.test_fitsimage
+
+NITERS = 100  # How many times random-data tests cases are run
 
 def fix_DSS_image(path):
     """ Fix images downloaded from STScI DSS before we can do photometry.
@@ -61,6 +66,49 @@ def fix_DSS_image(path):
 
 
 class QPhotTest(unittest.TestCase):
+
+    def test_get_coords_file(self):
+
+        def c(*args):
+            """ Return an astromatic.Coordinates object """
+            return astromatic.Coordinates(*args)
+
+        coordinates = (
+            c(316.724802,  38.74944,   4.16831,   3.2692),    # 61 Cygni A
+            c(316.730266,  38.742056,  4.1069,    3.14468),   # 61 Cygni B
+            c(165.834142,  35.96988,  -0.58027,  -4.76585),   # Lalande 21185
+            c(152.11717,   12.3065,   -0.000114, -0.000126),  # Leo I
+            c(346.466817, -35.853069,  6.7682,    1.32752),   # HD 217987
+            c(348.992913,  31.462856),                        # WASP-10 b
+            c( 97.19046,   38.962963)                         # HD 45350 b
+            )
+
+        # There is no need to write code to test that proper-motion correction
+        # is correctly calculated: we do already have a unit test for exactly
+        # that: Coordinates.get_exact_coordinates(). Parse the output file of
+        # get_coords_file() and make sure that the coordinates written to it
+        # match those returned by get_exact_coordinates() for the same year
+        # and epoch.
+
+        for _ in xrange(NITERS):
+
+            year  = random.uniform(1900, 2050)
+            epoch = random.choice([1950, 2000])
+
+            # The proper-motion corrected astromatic.Coordinates objects
+            func = operator.methodcaller('get_exact_coordinates', year, epoch)
+            expected = (func(x) for x in coordinates)
+
+            output_path = qphot.get_coords_file(coordinates, year, epoch)
+            try:
+                # The coordinates written by get_coords_file(), returned as
+                # four-element tuples (ra, dec, pm_ra, pm_dec)
+                output = methods.load_coordinates(output_path)
+                for c1, c2 in zip(output, expected):
+                    self.assertAlmostEqual(c1[0], c2.ra)
+                    self.assertAlmostEqual(c1[1], c2.dec)
+            finally:
+                os.unlink(output_path)
 
     def test_qphot_run(self):
 
