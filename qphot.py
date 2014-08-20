@@ -470,7 +470,7 @@ def get_coords_file(coordinates, year, epoch):
     os.close(fd)
     return path
 
-def run(img, coords_path,
+def run(img, coordinates,
         aperture, annulus, dannulus, maximum,
         datek, timek, exptimek, uncimgk):
     """ Do photometry on a FITS image.
