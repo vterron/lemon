@@ -185,7 +185,7 @@ class QPhot(list):
         self.image = fitsimage.FITSImage(img_path)
         self.coords_path = coords_path
 
-        for ra, dec in methods.load_coordinates(self.coords_path):
+        for ra, dec, pm_ra, pm_dec in methods.load_coordinates(self.coords_path):
             if ra == 0 and dec == 0:
                 msg = (
                   "the right ascension and declination of one or more "
@@ -198,6 +198,14 @@ class QPhot(list):
                 # Emit warning only once
                 warnings.warn(msg)
                 break
+
+            if pm_ra is not None or pm_dec is not None:
+                msg = ("at least one object in the '%s' file lists its proper "
+                       "motions. This is not allowed. The coordinates must be "
+                       "written to the file already adjusted for their proper "
+                       "motions, as this class cannot apply any correction" %
+                       self.coords_path)
+                raise ValueError(msg)
 
     @property
     def path(self):
