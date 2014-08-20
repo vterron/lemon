@@ -475,21 +475,22 @@ def run(img, coordinates, epoch,
         datek, timek, exptimek, uncimgk):
     """ Do photometry on a FITS image.
 
-    This convenience function does photometry on a FITSImage object, measuring
-    the astronomical objects listed in the 'coords_path' text file. Note that
-    the FITS image *must* have been previously calibrated astrometrically, so
-    that the right ascensions and declinations listed in the text file are
-    meaningful. Returns a QPhot object, using None as the magnitude of those
-    astronomical objects that are INDEF (i.e., so faint that qphot could not
-    measure anything) and positive infinity if they are saturated (i.e., if
-    one or more pixels in the aperture are above the saturation level).
+    This convenience function does photometry on a FITSImage object, applying
+    proper-motion correction to a series of astronomical objects and measuring
+    them. The FITS image must have been previously calibrated astrometrically,
+    so that right ascensions and declinations are meaningful. Returns a QPhot
+    object, using None as the magnitude of those astronomical objects that are
+    INDEF (i.e., so faint that qphot could not measure anything) and positive
+    infinity if they are saturated (i.e., if one or more pixels in the aperture
+    are above the saturation level).
 
     Arguments:
     img - the fitsimage.FITSImage object on which to do photometry.
-    coords_path - the text file containing the celestial coordinates for the
-                  astronomical objects to be measured. These objects must be
-                  listed one per line, in two columns: right ascension and
-                  declination, in this order.
+    coordinates - an iterable of astromatic.Coordinates objects, one for each
+                  astronomical object to be measured.
+    epoch - the epoch of the coordinates of the astronomical objects, used to
+            compute the proper-motion correction. Must be an integer, such as
+            2000 for J2000.
     aperture - the aperture radius, in pixels.
     annulus - the inner radius of the sky annulus, in pixels.
     dannulus - the width of the sky annulus, in pixels.
@@ -498,6 +499,16 @@ def run(img, coordinates, epoch,
               astronomical object is set to positive infinity. For coadded
               observations, the effective saturation level is obtained by
               multiplying this value by the number of coadded images.
+    datek - the image header keyword containing the date of the observation, in
+            the format specified in the FITS Standard. The old date format was
+            'yy/mm/dd' and may be used only for dates from 1900 through 1999.
+            The new Y2K compliant date format is 'yyyy-mm-dd' or
+            'yyyy-mm-ddTHH:MM:SS[.sss]'.
+    timek - the image header keyword containing the time at which the
+            observation started, in the format HH:MM:SS[.sss]. This keyword is
+            not necessary (and, therefore, is ignored) if the time is included
+            directly as part of the 'datek' keyword value with the format
+            'yyyy-mm-ddTHH:MM:SS[.sss]'.
     exptimek - the image header keyword containing the exposure time. Needed
                by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
