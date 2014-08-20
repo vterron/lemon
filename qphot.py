@@ -471,8 +471,8 @@ def get_coords_file(coordinates, year, epoch):
     return path
 
 def run(img, coords_path,
-        aperture, annulus, dannulus,
-        maximum, exptimek, uncimgk):
+        aperture, annulus, dannulus, maximum,
+        datek, timek, exptimek, uncimgk):
     """ Do photometry on a FITS image.
 
     This convenience function does photometry on a FITSImage object, measuring
@@ -510,6 +510,11 @@ def run(img, coords_path,
               for on the same FITS image used for photometry, 'img'.
 
     """
+
+    kwargs = dict(date_keyword = datek,
+                  time_keyword = timek,
+                  exp_keyword = exptimek)
+    year = img.year(**kwargs)
 
     img_qphot = QPhot(img.path, coords_path)
     img_qphot.run(annulus, dannulus, aperture, exptimek)
