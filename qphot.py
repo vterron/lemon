@@ -176,8 +176,12 @@ class QPhot(list):
         img_path - path to the FITS image on which to do photometry.
         coords_path - path to the text file with the celestial coordinates
                       (right ascension and declination) of the astronomical
-                      objects to be measured. These objects must be listed
-                      one per line, in two columns.
+                      objects to be measured. These objects must be listed one
+                      per line, in two columns. Note that this class does *not*
+                      apply proper-motion correction, so the coordinates must
+                      be corrected before being written to the file. In case
+                      the proper motions of the objects are listed in the file,
+                      in columns third and fourth, ValueError is raised.
 
         """
 
