@@ -115,20 +115,22 @@ class QPhotTest(unittest.TestCase):
         # A simple test: do photometry on the DSS image of NGC 2264, measuring
         # ten astronomical objects whose celestial coordinates (right ascension
         # and declination) we know. Then, compare the photometric measurements,
-        # returned as qphot.QPhotResult objects, to the expected values.
+        # returned as qphot.QPhotResult objects, to the expected values. This
+        # is a simple case in which the objects do not have proper motions: we
+        # are mostly testing here that IRAF's qphot runs without any problems.
 
         ngc2264_path = './test/test_data/fits/NGC_2264.fits'
         ngc2264_input_coords = (
-            "100.1191901 9.8177770\n"
-            "100.1543316 9.7909363\n"
-            "100.1597762 9.7878795\n"
-            "100.1598790 9.9627296\n"
-            "100.2147546 9.8636567\n"
-            "100.2446191 9.8962391\n"
-            "100.2502955 9.8714701\n"
-            "100.2579343 9.8802548\n"
-            "100.2933265 9.8838196\n"
-            "100.3635468 9.8540181\n")
+            astromatic.Coordinates(100.1191901, 9.8177770),
+            astromatic.Coordinates(100.1543316, 9.7909363),
+            astromatic.Coordinates(100.1597762, 9.7878795),
+            astromatic.Coordinates(100.1598790, 9.9627296),
+            astromatic.Coordinates(100.2147546, 9.8636567),
+            astromatic.Coordinates(100.2446191, 9.8962391),
+            astromatic.Coordinates(100.2502955, 9.8714701),
+            astromatic.Coordinates(100.2579343, 9.8802548),
+            astromatic.Coordinates(100.2933265, 9.8838196),
+            astromatic.Coordinates(100.3635468, 9.8540181))
 
         ngc2264_expected_output = (
             #                 x        y        mag     sum      flux     stdev
@@ -143,17 +145,19 @@ class QPhotTest(unittest.TestCase):
             qphot.QPhotResult(266.116, 406.437, 18.12,  4804557, 2372792, 378.5256),
             qphot.QPhotResult(19.449,  299.555, 17.409, 7143799, 4567058, 540.6945))
 
-        kwargs = dict(aperture = 11,
+        kwargs = dict(epoch = 2000, # could be any year (no proper motions)
+                      aperture = 11,
                       annulus  = 13,
                       dannulus = 8,
                       maximum = 30000,
+                      datek = 'DATE-OBS',
+                      timek = None,
                       exptimek = 'EXPOSURE',
                       uncimgk = None)
 
         path = fix_DSS_image(ngc2264_path)
         with test.test_fitsimage.FITSImage(path) as img:
-            with methods.tempinput(ngc2264_input_coords) as coords_path:
-                result = qphot.run(img, coords_path, **kwargs)
-                for phot, expected_phot in zip(result, ngc2264_expected_output):
-                    self.assertEqual(phot, expected_phot)
+            result = qphot.run(img, ngc2264_input_coords, **kwargs)
+            for phot, expected_phot in zip(result, ngc2264_expected_output):
+                self.assertEqual(phot, expected_phot)
 
