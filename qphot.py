@@ -470,7 +470,7 @@ def get_coords_file(coordinates, year, epoch):
     os.close(fd)
     return path
 
-def run(img, coordinates,
+def run(img, coordinates, epoch,
         aperture, annulus, dannulus, maximum,
         datek, timek, exptimek, uncimgk):
     """ Do photometry on a FITS image.
@@ -515,6 +515,8 @@ def run(img, coordinates,
                   time_keyword = timek,
                   exp_keyword = exptimek)
     year = img.year(**kwargs)
+    # The proper-motion corrected objects coordinates
+    coords_path = get_coords_file(coordinates, year, epoch)
 
     img_qphot = QPhot(img.path, coords_path)
     img_qphot.run(annulus, dannulus, aperture, exptimek)
