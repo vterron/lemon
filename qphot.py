@@ -597,6 +597,7 @@ def run(img, coordinates, epoch,
         # will be known to be saturated and their magnitude set to infinity.
         mask_qphot = QPhot(satur_mask_path, coords_path)
         mask_qphot.run(annulus, dannulus, aperture, exptimek)
+        os.unlink(coords_path)
 
         assert len(img_qphot) == len(mask_qphot)
         for object_phot, object_mask in itertools.izip(img_qphot, mask_qphot):
