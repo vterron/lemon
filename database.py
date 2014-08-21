@@ -978,10 +978,12 @@ class LEMONdB(object):
     def get_star(self, star_id):
         """ Return the coordinates and magnitude of a star.
 
-        The method returns a five-element tuple with, in this order: the x- and
-        y- coordinates of the star in the image on which it was detected, the
-        right ascension and declination and its instrumental magnitude in the
-        sources image. Raises KeyError is no star in the database has this ID.
+        The method returns an eight-element tuple with, in this order: the x-
+        and y- coordinates of the star in the image where it was detected, its
+        right ascension and declination, astronomical epoch, proper motions in
+        right ascension and declination and, lastly, its instrumental magnitude
+        in the sources image. Raises KeyError is no star in the database has
+        this ID.
 
         """
 
