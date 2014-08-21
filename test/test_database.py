@@ -1968,16 +1968,18 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_most_similar_magnitude(self):
 
-        # The ID, x- and y-image coordinates, right ascension, declination and
+        # The ID, x- and y-image coordinates, right ascension, declination,
+        # epoch, proper motions (where None means that they are not known) and
         # instrumental magnitudes of the five stars that will be used in this
-        # test case. These values are all required by LEMONdB.add_star, but we
-        # are only interested in the first (star ID) and the last (magnitude).
+        # test case. These values are all required by LEMONdB.add_star(), but
+        # we are only interested in the first (star ID) and last (magnitude).
+
         stars_info = \
-        [[1, 115, 235, 145.3, 190.4, 11.5], # star 1
-         [2, 931, 833, 146.2, 191.3, 12.9], # star 2
-         [3, 342, 781, 144.1, 190.9, 10.1], # star 3
-         [4, 782, 101, 143.9, 189.2, 13.4], # star 4
-         [5, 689, 288, 144.2, 189.4, 10.3]] # star 5
+        [[1, 115, 235, 145.3, 190.4, 2000,   None,   None, 11.5], # star 1
+         [2, 931, 833, 146.2, 191.3, 2000,   None,   None, 12.9], # star 2
+         [3, 342, 781, 144.1, 190.9, 2000, -0.021, 0.0013, 10.1], # star 3
+         [4, 782, 101, 143.9, 189.2, 2000,   None,   None, 13.4], # star 4
+         [5, 689, 288, 144.2, 189.4, 2000,   None,   None, 10.3]] # star 5
 
         db = LEMONdB(':memory:')
         for info in stars_info:
