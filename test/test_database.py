@@ -52,6 +52,9 @@ from database import \
 from diffphot import Weights
 from json_parse import CandidateAnnuli
 import test.test_fitsimage
+# https://stackoverflow.com/q/12603541/184363
+from test.test_astromatic import CoordinatesTest
+get_random_coords = CoordinatesTest.random
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 25   # Minimum number of items for random collections of DBStars
@@ -1238,10 +1241,11 @@ class LEMONdBTest(unittest.TestCase):
 
     @classmethod
     def random_stars_info(cls, size):
-        """ Return a generator which steps through 'size' random six-element
-        tuples (the x- and y- coordinates of the star in the reference image,
-        the right ascension and declination and the instrumental magnitude,
-        in this very order), guaranteed to have different IDs.
+        """ Return a generator which steps through 'size' random nine-element
+        tuples (the ID, x- and y- coordinates of the star in the sources image,
+        the right ascension and declination, the astronomical epoch, the two
+        proper motions and the instrumental magnitude, in this very order),
+        guaranteed to have different IDs.
 
         """
 
@@ -1253,10 +1257,10 @@ class LEMONdBTest(unittest.TestCase):
         for star_id in random.sample(stars_ids, size):
             x = random.uniform(0, cls.XSIZE)
             y = random.uniform(0, cls.YSIZE)
-            alpha = random.uniform(0, 360)
-            delta = random.uniform(-90, 90)
+            ra, dec, pm_ra, pm_dec = get_random_coords()
+            epoch = random.choice([1950, 2000])
             imag = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
-            yield star_id, x, y, alpha, delta, imag
+            yield star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag
 
     @classmethod
     def random_star_info(cls, id_ = None):
