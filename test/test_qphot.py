@@ -68,6 +68,17 @@ def fix_DSS_image(path):
 
 class QPhotTest(unittest.TestCase):
 
+    QPHOT_KWARGS = dict(
+        epoch = 2000,
+        aperture = 11,
+        annulus  = 13,
+        dannulus = 8,
+        maximum = 30000,
+        datek = 'DATE-OBS',
+        timek = None,
+        exptimek = 'EXPOSURE',
+        uncimgk = None)
+
     def test_get_coords_file(self):
 
         def c(*args):
@@ -146,19 +157,9 @@ class QPhotTest(unittest.TestCase):
             qphot.QPhotResult(266.116, 406.437, 18.12,  4804557, 2372792, 378.5256),
             qphot.QPhotResult(19.449,  299.555, 17.409, 7143799, 4567058, 540.6945))
 
-        kwargs = dict(epoch = 2000, # could be any year (no proper motions)
-                      aperture = 11,
-                      annulus  = 13,
-                      dannulus = 8,
-                      maximum = 30000,
-                      datek = 'DATE-OBS',
-                      timek = None,
-                      exptimek = 'EXPOSURE',
-                      uncimgk = None)
-
         path = fix_DSS_image(ngc2264_path)
         with test.test_fitsimage.FITSImage(path) as img:
-            result = qphot.run(img, ngc2264_input_coords, **kwargs)
+            result = qphot.run(img, ngc2264_input_coords, **self.QPHOT_KWARGS)
             for phot, expected_phot in zip(result, ngc2264_expected_output):
                 self.assertEqual(phot, expected_phot)
 
@@ -175,16 +176,6 @@ class QPhotTest(unittest.TestCase):
         expected_output = (   #  x        y       mag     sum     flux      stdev
             qphot.QPhotResult(440.947, 382.595, 17.245, 8563646, 5311413, 1039.844))
 
-        kwargs = dict(epoch = 2000,
-                      aperture = 11,
-                      annulus  = 13,
-                      dannulus = 8,
-                      maximum = 30000,
-                      datek = 'DATE-OBS',
-                      timek = None,
-                      exptimek = 'EXPOSURE',
-                      uncimgk = None)
-
         path = fix_DSS_image(barnard_path)
         with test.test_fitsimage.FITSImage(path) as img:
 
@@ -198,7 +189,7 @@ class QPhotTest(unittest.TestCase):
             year = img.year(exp_keyword = 'EXPOSURE')
             expected_coordinates = barnard.get_exact_coordinates(year)
 
-            result = qphot.run(img, [barnard], **kwargs)[0]
+            result = qphot.run(img, [barnard], **self.QPHOT_KWARGS)[0]
             self.assertEqual(result, expected_output)
 
             # Transform the pixel coordinates that IRAF's qphot outputs for
