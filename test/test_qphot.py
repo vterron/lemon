@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import astropy.wcs
 import operator
 import os.path
 import pyfits
@@ -161,3 +162,52 @@ class QPhotTest(unittest.TestCase):
             for phot, expected_phot in zip(result, ngc2264_expected_output):
                 self.assertEqual(phot, expected_phot)
 
+    def test_qphot_run_proper_motions(self):
+
+        # Do photometry on Barnard's Star, the star with the largest-known
+        # proper motion relative to the Solar System. Its coordinates are
+        # J2000, but the DSS image dates back from 1993: qphot.run() must
+        # correct the right ascension and declination before doing photometry,
+        # adjusting for the change in its position over those seven years.
+
+        barnard_path = "./test/test_data/fits/Barnard's_Star.fits"
+        barnard = astromatic.Coordinates(269.452075, 4.693391, -0.79858, 10.32812)
+        expected_output = (   #  x        y       mag     sum     flux      stdev
+            qphot.QPhotResult(440.947, 382.595, 17.245, 8563646, 5311413, 1039.844))
+
+        kwargs = dict(epoch = 2000,
+                      aperture = 11,
+                      annulus  = 13,
+                      dannulus = 8,
+                      maximum = 30000,
+                      datek = 'DATE-OBS',
+                      timek = None,
+                      exptimek = 'EXPOSURE',
+                      uncimgk = None)
+
+        path = fix_DSS_image(barnard_path)
+        with test.test_fitsimage.FITSImage(path) as img:
+
+            # Fix incorrect date in FITS header: '1993-07-26T04:87:00'.
+            # Subtract sixty minutes and add one hour: 4h87m == 5h27m
+            keyword = 'DATE-OBS'
+            assert img.read_keyword(keyword) == '1993-07-26T04:87:00'
+            img.update_keyword(keyword, '1993-07-26T05:27:00')
+
+            # The proper-motion corrected coordinates
+            year = img.year(exp_keyword = 'EXPOSURE')
+            expected_coordinates = barnard.get_exact_coordinates(year)
+
+            result = qphot.run(img, [barnard], **kwargs)[0]
+            self.assertEqual(result, expected_output)
+
+            # Transform the pixel coordinates that IRAF's qphot outputs for
+            # each measured object to celestial coordinates. This allows us to
+            # make sure that photometry has been effectively done on the right,
+            # proper-motion corrected coordinates.
+
+            wcs = astropy.wcs.WCS(img._header)
+            ra, dec = wcs.all_pix2world(result.x, result.y, 1)
+            f = self.assertAlmostEqual
+            f(ra,  expected_coordinates.ra,  delta = 1e-4) # delta = 0.024 arcsec
+            f(dec, expected_coordinates.dec, delta = 1e-7) # delta = 0.00036 arsec
