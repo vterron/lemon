@@ -434,12 +434,15 @@ class LEMONdB(object):
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS stars (
-            id   INTEGER PRIMARY KEY,
-            x    REAL NOT NULL,
-            y    REAL NOT NULL,
-            ra   REAL NOT NULL,
-            dec  REAL NOT NULL,
-            imag REAL NOT NULL)
+            id     INTEGER PRIMARY KEY,
+            x      REAL NOT NULL,
+            y      REAL NOT NULL,
+            ra     REAL NOT NULL,
+            dec    REAL NOT NULL,
+            epoch  REAL NOT NULL,
+            pm_ra  REAL,
+            pm_dec REAL,
+            imag   REAL NOT NULL)
         ''')
 
         self._execute('''
