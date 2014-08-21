@@ -1264,11 +1264,12 @@ class LEMONdBTest(unittest.TestCase):
 
     @classmethod
     def random_star_info(cls, id_ = None):
-        """ Return a six-element tuple with the information of a random star.
+        """ Return a nine-element tuple with the information of a random star.
 
-        The method returns a the ID, x- and y-coordinates, right ascension,
-        declination and instrumental magnitude of a random star. The ID is
-        random unless a value for it is given in the 'id_' parameter.
+        The method returns a tuple with the ID, x- and y-coordinates, right
+        ascension, declination, epoch, both proper motions and instrumental
+        magnitude of a random star. The ID is random unless a value for it
+        is specified with the 'id_' keyword argument.
 
         """
 
