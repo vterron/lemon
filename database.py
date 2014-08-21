@@ -986,7 +986,7 @@ class LEMONdB(object):
         """
 
         t = (star_id, )
-        self._execute("SELECT x, y, ra, dec, imag "
+        self._execute("SELECT x, y, ra, dec, epoch, pm_ra, pm_dec, imag "
                       "FROM stars "
                       "WHERE id = ?", t)
         try:
