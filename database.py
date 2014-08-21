@@ -952,7 +952,7 @@ class LEMONdB(object):
             args[1] = passband.Passband(args[1])
             return Image(*args)
 
-    def add_star(self, star_id, x, y, ra, dec, imag):
+    def add_star(self, star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag):
         """ Add a star to the database.
 
         This method only stores the 'description' of the star, that is, its
@@ -964,9 +964,10 @@ class LEMONdB(object):
 
         """
 
-        t = (star_id, x, y, ra, dec, imag)
+        t = (star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag)
         try:
-            self._execute("INSERT INTO stars VALUES (?, ?, ?, ?, ?, ?)", t)
+            stmt = "INSERT INTO stars VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            self._execute(stmt, t)
         except sqlite3.IntegrityError:
             if __debug__:
                 self._execute("SELECT id FROM stars")
