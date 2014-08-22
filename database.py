@@ -1067,6 +1067,34 @@ class LEMONdB(object):
         stmt = "INSERT INTO pm_corrections VALUES (?, ?, ?, ?, ?)"
         self._execute(stmt, t)
 
+    def get_pm_correction(self, star_id, unix_time, pfilter):
+        """ Return the proper-motion correction of a star in an image.
+
+        Return the image coordinates of an astronomical object where photometry
+        was done after applying proper-motion correction. Returns a two-element
+        tuple with the x- and y-image coordinates. In case no proper-motion
+        correction is stored for the astronomical object, returns a tuple of
+        two None's. Raises KeyError if 'star_id' does not match the ID of any
+        of the stars in the database.
+
+        """
+
+        image_id = self._get_image_id(unix_time, pfilter)
+        t = (int(star_id), image_id)
+        self._execute("""SELECT x, y
+                         FROM pm_corrections
+                         WHERE  star_id = ?
+                           AND image_id = ?""", t)
+        try:
+            rows = tuple(self._rows)
+            return rows[0]
+        except IndexError:
+            if star_id not in self.star_ids:
+                msg = "star with ID = %d not in database" % star_id
+                raise KeyError(msg)
+            else:
+                return None, None
+
     def add_photometry(self, star_id, unix_time, pfilter, magnitude, snr):
         """ Store the photometric record of a star at a given time and filter.
 
