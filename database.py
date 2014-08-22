@@ -563,6 +563,23 @@ class LEMONdB(object):
             FOREIGN KEY (id) REFERENCES images(id))
         ''')
 
+        # For those astronomical objects with known proper motions, store the
+        # x- and y-coordinates where photometry was done in each image. Mostly
+        # useful for debugging purposes, this information allows us to verify
+        # that the proper-motion correction was correctly applied.
+
+        self._execute('''
+        CREATE TABLE IF NOT EXISTS pm_corrections (
+            id         INTEGER PRIMARY KEY,
+            star_id    INTEGER NOT NULL,
+            image_id   INTEGER NOT NULL,
+            x          REAL NOT NULL,
+            y          REAL NOT NULL,
+            FOREIGN KEY (star_id)  REFERENCES stars(id),
+            FOREIGN KEY (image_id) REFERENCES images(id),
+            UNIQUE (star_id, image_id))
+        ''')
+
         self._execute('''
         CREATE TABLE IF NOT EXISTS photometry (
             id         INTEGER PRIMARY KEY,
