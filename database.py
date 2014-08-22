@@ -1102,9 +1102,9 @@ class LEMONdB(object):
         the stars in the database, while UnknownImageError is raised if the
         Unix time and photometric filter do not match those of any of the
         images previously added. At most one photometric record can be stored
-        for each star, image and photometric filter; therefore, the addition of
-        a second record for the same star ID, Unix time and photometric filter
-        causes DuplicatePhotometryError to be raised.
+        for each star and image: the addition of a second record for the same
+        star ID, Unix time and photometric filter causes
+        DuplicatePhotometryError to be raised.
 
         """
 
