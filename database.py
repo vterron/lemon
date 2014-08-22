@@ -1024,6 +1024,49 @@ class LEMONdB(object):
         self._execute("SELECT id FROM stars ORDER BY id ASC")
         return list(x[0] for x in self._rows)
 
+    def add_pm_correction(self, star_id, unix_time, pfilter, pm_x, pm_y):
+        """ Store the proper-motion corrected pixel coordinates of a star.
+
+        Store the x- and y-coordinates where photometry of an astronomical
+        object was done in an image. When an object has a proper motion we do
+        not simply give its celestial coordinates as input to IRAF's qphot: we
+        need to correct the right ascension and declination to adjust for the
+        changes in the object's position over time. The image coordinates where
+        photometry was done are expected to be stored for debugging purposes,
+        allowing us to verify, if needed, that proper-motion correction was
+        properly calculated and photometry was done on the right place.
+
+        Raises ValueError if we attempt to add the proper-motion correction of
+        an object for which no proper motion was stored in the database with
+        the LEMONdB.add_star() method. UnknownStarError is raised if 'star_id'
+        does not match the ID of any of the stars in the database, while
+        UnknownImageError is raised if the Unix time and photometric filter do
+        not match those of any of the images previously added. At most one
+        proper-motion correction can be stored for each star and image: the
+        addition of a second correction for the same star ID, Unix time and
+        photometric filter raises sqlite3.IntegrityError.
+
+        """
+
+        try:
+            if None in self.get_star(star_id)[5:7]:
+                msg = ("astronomical object with ID = %d does not have proper "
+                       "motions, so we cannot store proper-motion corrections "
+                       "for it. Where do these values come from?" % star_id)
+                raise ValueError(msg)
+        except KeyError:
+            msg = "star with ID = %d not in database" % star_id
+            raise UnknownStarError(msg)
+
+        try:
+            image_id = self._get_image_id(unix_time, pfilter)
+        except KeyError, e:
+            raise UnknownImageError(str(e))
+
+        t = (None, star_id, image_id, float(pm_x), float(pm_y))
+        stmt = "INSERT INTO pm_corrections VALUES (?, ?, ?, ?, ?)"
+        self._execute(stmt, t)
+
     def add_photometry(self, star_id, unix_time, pfilter, magnitude, snr):
         """ Store the photometric record of a star at a given time and filter.
 
