@@ -468,15 +468,19 @@ def get_coords_file(coordinates, year, epoch):
 
     for coord in coordinates:
 
-        # We cannot apply any correction if pm_ra and pm_dec are None (it means
-        # that the proper motion of the object is unknown). Either none or both
-        # must be None: we cannot know one proper motion but not the other!
+        # Do not apply any correction if pm_ra and pm_dec are None (which means
+        # that the proper motion of the object is unknown) or zero (because in
+        # this case the coordinates are always the same). Make sure also that
+        # either none or both proper motions are None: we cannot know one but
+        # not the other!
 
-        if coord.pm_ra is None:
+        if None in (coord.pm_ra, coord.pm_dec):
+            assert coord.pm_ra  is None
             assert coord.pm_dec is None
-            continue
 
-        coord = coord.get_exact_coordinates(year, epoch = epoch)
+        if coord.pm_ra or coord.pm_dec:
+            coord = coord.get_exact_coordinates(year, epoch = epoch)
+
         os.write(fd, fmt % coord[:2])
 
     os.close(fd)

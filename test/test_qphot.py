@@ -19,6 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import astropy.wcs
+import itertools
 import operator
 import os.path
 import pyfits
@@ -91,7 +92,7 @@ class QPhotTest(unittest.TestCase):
             c(165.834142,  35.96988,  -0.58027,  -4.76585),   # Lalande 21185
             c(152.11717,   12.3065,   -0.000114, -0.000126),  # Leo I
             c(346.466817, -35.853069,  6.7682,    1.32752),   # HD 217987
-            c(348.992913,  31.462856),                        # WASP-10 b
+            c(348.992913,  31.462856,  None,      None),      # WASP-10 b
             c( 97.19046,   38.962963)                         # HD 45350 b
             )
 
@@ -107,11 +108,16 @@ class QPhotTest(unittest.TestCase):
             year  = random.uniform(1900, 2050)
             epoch = random.choice([1950, 2000])
 
-            # The proper-motion corrected astromatic.Coordinates objects
+            # The proper-motion corrected astromatic.Coordinates objects. We
+            # only correct those objects with proper motions (that is, those
+            # for which both 'pm_ra' and 'pm_dec' are not None neither zero).
+
             func = operator.methodcaller('get_exact_coordinates', year, epoch)
-            expected = (func(x) for x in coordinates)
+            has_pm = lambda c: c.pm_ra and c.pm_dec
+            expected = (func(x) if has_pm(x) else x for x in coordinates)
 
             output_path = qphot.get_coords_file(coordinates, year, epoch)
+
             try:
                 # The coordinates written by get_coords_file(), returned as
                 # four-element tuples (ra, dec, pm_ra, pm_dec)
