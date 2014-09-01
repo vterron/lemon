@@ -946,38 +946,30 @@ def main(arguments = None):
     # positive detections by SExtractor, or if incorrect coordinates, that do
     # not correspond to any object, are given with the --coordinates option.
     #
-    # Make a copy of the options.coordinates file and delete the lines of the
-    # objects that are INDEF (i.e., whose magnitude is None). This is possible
-    # because the order of the QPhotResult objects in the QPhot object returned
-    # by qphot.run() is guaranteed to preserve that of the astronomical objects
-    # listed in the coordinates file.
+    # Delete from options.coordinates (well, it is in actuality a new list,
+    # which we then assign to this name) the coordinates of the objects that
+    # are INDEF (i.e., whose magnitude is None). This is possible because the
+    # order of the QPhotResult objects contained in the QPhot object returned
+    # by qphot.run() preserves that of the input Coordinates objects.
 
     msg = "%sDetecting INDEF objects..."
     print msg % style.prefix ,
     sys.stdout.flush()
 
-    with open(options.coordinates, 'rt') as fd:
-        lines = fd.readlines()
-
-    kwargs = dict(prefix = 'PID_%d' % os.getpid(),
-                  suffix = '_NO_INDEF.coords',
-                  text = True)
-
-    # A second coordinates file, listing only non-INDEF objects
-    coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, options.coordinates)
-
     ignored_counter = 0
     non_ignored_counter = 0
     original_size = len(sources_phot)
 
-    for line, object_phot in itertools.izip(lines, sources_phot):
+    assert len(options.coordinates) == len(sources_phot)
+    it = itertools.izip(options.coordinates, sources_phot)
+
+    options.coordinates = []
+    for coord, object_phot in it:
         if object_phot.mag is not None:
-            os.write(coords_fd, line)
+            options.coordinates.append(coord)
             non_ignored_counter += 1
         else:
             ignored_counter += 1
-    os.close(coords_fd)
 
     # Delete INDEF photometric measurements, in-place
     for index in xrange(len(sources_phot) - 1, -1, -1):
