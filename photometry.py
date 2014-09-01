@@ -1002,7 +1002,7 @@ def main(arguments = None):
         print msg % style.prefix ,
         sys.stdout.flush()
 
-        # Do photometry again, use the non-INDEF coordinates file
+        # Do photometry again, use the non-INDEF coordinates
         qphot_args[1] = options.coordinates
 
         with warnings.catch_warnings():
