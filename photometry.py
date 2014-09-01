@@ -41,7 +41,6 @@ detection step and working exclusively with the specified objects.
 
 """
 
-import atexit
 import collections
 import hashlib
 import itertools
@@ -54,7 +53,6 @@ import os.path
 import pwd
 import socket
 import sys
-import tempfile
 import time
 import warnings
 
@@ -175,9 +173,9 @@ def parallel_photometry(args):
     logging.debug(msg % args)
 
     logging.info("Running qphot on %s" % image.path)
-    args = (image, options.coordinates,
-            pparams.aperture, pparams.annulus, pparams.dannulus,
-            maximum, options.exptimek, options.uncimgk)
+    args = (image, options.coordinates, options.epoch,
+            pparams.aperture, pparams.annulus, pparams.dannulus, maximum,
+            options.datek, options.timek, options.exptimek, options.uncimgk)
     img_qphot = qphot.run(*args)
     logging.info("Finished running qphot on %s" % image.path)
 
@@ -284,9 +282,19 @@ coords_group.add_option('--coordinates', action = 'store', type = str,
                         dest = 'coordinates', default = None,
                         help = "path to the file containing the celestial "
                         "coordinates of the objects on which photometry must "
-                        "be done. These coordinates must be given in degrees "
-                        "and listed one per line, in two columns, right "
-                        "ascension and declination, respectively.")
+                        "be done. The file must have two columns, with the "
+                        "right ascension and declination (in decimal degrees) "
+                        "and, optionally, two other columns with the proper "
+                        "motion in right ascension and declination (in "
+                        "seconds of arc per year) surrounded by brackets. The "
+                        "coordinates of the objects with a proper motion are "
+                        "automatically corrected for each image, in order to "
+                        "account for the change in their position over time.")
+
+coords_group.add_option('--epoch', action = 'store', type = int,
+                        dest = 'epoch', default = 2000,
+                        help = "epoch of the coordinates [default: %default]")
+
 parser.add_option_group(coords_group)
 
 qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
@@ -586,16 +594,16 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    # If the --coordinates option has been given, read the text file and
-    # extract the right ascensions and declinations as two-element tuples,
-    # storing them in a list of astromatic.Coordinates objects. Abort the
-    # execution if the coordinates file is empty.
+    # If the --coordinates option has been given, read the text file and store
+    # the four-element tuples (right ascension, declination and proper motions)
+    # in a list, as astromatic.Coordinates objects. Abort the execution if the
+    # coordinates file is empty.
 
     if options.coordinates:
 
         sources_coordinates = []
-        for ra, dec in methods.load_coordinates(options.coordinates):
-            coords = astromatic.Coordinates(ra, dec)
+        for args in methods.load_coordinates(options.coordinates):
+            coords = astromatic.Coordinates(*args)
             sources_coordinates.append(coords)
 
         if not sources_coordinates:
@@ -828,7 +836,18 @@ def main(arguments = None):
         print msg % args
 
     else:
+
+        # The Coordinates objects returned by FITSeeingImage.coordinates() have
+        # all a proper motion of zero, as from a single image (the one where we
+        # have detected them) we cannot determine the motion of any object.
+
         sources_coordinates = sources_img.coordinates
+
+        if __debug__:
+            for coord in sources_coordinates:
+                assert coord.pm_ra  == 0
+                assert coord.pm_dec == 0
+
         assert len(sources_coordinates) == len(sources_img)
         ipercentage = sources_img.ignored / sources_img.total * 100
         rpercentage = len(sources_img) / sources_img.total * 100
@@ -838,22 +857,9 @@ def main(arguments = None):
         msg = "%sThere remain %d sources (%.2f %%) on which to do photometry."
         print msg % (style.prefix, len(sources_img), rpercentage)
 
-        # Save the coordinates of the astronomical objects detected by
-        # SExtractor to a text file, needed to do photometry later on. Note
-        # that we store the absolute pathname of the temporary file in the
-        # options.coordinates attribute, so that the coordinates file can be
-        # always accessed there, independently of whether the user gave the
-        # --coordinates option or not.
-
-        kwargs = dict(prefix = '%s_' % sources_img.basename_woe,
-                      suffix = '_sextractor.coords',
-                      text = True)
-
-        coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
-        atexit.register(methods.clean_tmp_files, options.coordinates)
-        for ra, dec in sources_coordinates:
-            os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
-        os.close(coords_fd)
+    # Use 'options.coordinates' as the name of the list of Coordinates objects,
+    # independently of whether the --coordinates option has been used or not.
+    options.coordinates = sources_coordinates
 
     print style.prefix
     msg = "%sNeed to determine the instrumental magnitude of each source."
@@ -920,9 +926,10 @@ def main(arguments = None):
     # integer supported by the regular integer type. Being at least 2 ** 31 -
     # 1, as a saturation level this value is sufficiently close to infinity.
 
-    qphot_args = [sources_img, options.coordinates,
-                  sources_aperture, sources_annulus, sources_dannulus,
-                  sys.maxint, options.exptimek, None]
+    qphot_args = \
+        [sources_img, options.coordinates, options.epoch,
+         sources_aperture, sources_annulus, sources_dannulus, sys.maxint,
+         options.datek, options.timek, options.exptimek, None]
 
     # The options.exptimek FITS keyword is allowed to be missing from the
     # header of the sources image (for example, a legitimate scenario: we
@@ -947,38 +954,30 @@ def main(arguments = None):
     # positive detections by SExtractor, or if incorrect coordinates, that do
     # not correspond to any object, are given with the --coordinates option.
     #
-    # Make a copy of the options.coordinates file and delete the lines of the
-    # objects that are INDEF (i.e., whose magnitude is None). This is possible
-    # because the order of the QPhotResult objects in the QPhot object returned
-    # by qphot.run() is guaranteed to preserve that of the astronomical objects
-    # listed in the coordinates file.
+    # Delete from options.coordinates (well, it is in actuality a new list,
+    # which we then assign to this name) the coordinates of the objects that
+    # are INDEF (i.e., whose magnitude is None). This is possible because the
+    # order of the QPhotResult objects contained in the QPhot object returned
+    # by qphot.run() preserves that of the input Coordinates objects.
 
     msg = "%sDetecting INDEF objects..."
     print msg % style.prefix ,
     sys.stdout.flush()
 
-    with open(options.coordinates, 'rt') as fd:
-        lines = fd.readlines()
-
-    kwargs = dict(prefix = 'PID_%d' % os.getpid(),
-                  suffix = '_NO_INDEF.coords',
-                  text = True)
-
-    # A second coordinates file, listing only non-INDEF objects
-    coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, options.coordinates)
-
     ignored_counter = 0
     non_ignored_counter = 0
     original_size = len(sources_phot)
 
-    for line, object_phot in itertools.izip(lines, sources_phot):
+    assert len(options.coordinates) == len(sources_phot)
+    it = itertools.izip(options.coordinates, sources_phot)
+
+    options.coordinates = []
+    for coord, object_phot in it:
         if object_phot.mag is not None:
-            os.write(coords_fd, line)
+            options.coordinates.append(coord)
             non_ignored_counter += 1
         else:
             ignored_counter += 1
-    os.close(coords_fd)
 
     # Delete INDEF photometric measurements, in-place
     for index in xrange(len(sources_phot) - 1, -1, -1):
@@ -1011,7 +1010,7 @@ def main(arguments = None):
         print msg % style.prefix ,
         sys.stdout.flush()
 
-        # Do photometry again, use the non-INDEF coordinates file
+        # Do photometry again, use the non-INDEF coordinates
         qphot_args[1] = options.coordinates
 
         with warnings.catch_warnings():
@@ -1030,21 +1029,20 @@ def main(arguments = None):
     output_db = database.LEMONdB(output_db_path)
 
     # The fact that the QPhot object returned by qphot.run() preserves the
-    # order of the astronomical objects listed in options.coordinates proves to
-    # be useful again: it allows us to match the celestial coordinates of each
-    # object (a row in the coordinates file) to the corresponding QPhotResult
-    # object. Note that qphot.run() accepts celestial coordinates but returns
-    # the x- and y-coordinates of their centers, as IRAF's qphot does.
+    # order of the astronomical objects proves to be useful again: it allows us
+    # to match each astromatic.Coordinates object in options.coordinates to the
+    # corresponding QPhotResult object. Note that qphot.run() accepts celestial
+    # coordinates but returns the x- and y-coordinates of their centers, as
+    # IRAF's qphot does.
 
-    sources_coords = list(methods.load_coordinates(options.coordinates))
-    assert len(sources_coords) == len(sources_phot)
-    it = itertools.izip(sources_coords, sources_phot)
+    assert len(options.coordinates) == len(sources_phot)
+    it = itertools.izip(options.coordinates, sources_phot)
     for id_, (object_coords, object_phot) in enumerate(it):
         x, y = object_phot.x, object_phot.y
-        ra, dec = object_coords
+        ra, dec, pm_ra, pm_dec = object_coords
         imag = object_phot.mag
 
-        args = (id_, x, y, ra, dec, imag)
+        args = (id_, x, y, ra, dec, options.epoch, pm_ra, pm_dec, imag)
         output_db.add_star(*args)
 
     output_db.commit()
@@ -1310,6 +1308,7 @@ def main(arguments = None):
         methods.show_progress(0)
         qphot_results = (queue.get() for x in xrange(queue.qsize()))
         for index, args in enumerate(qphot_results):
+
             db_image, pparams, img_qphot = args
             logging.debug("Storing image %s in database" % db_image.path)
             output_db.add_image(db_image)
@@ -1370,6 +1369,49 @@ def main(arguments = None):
                     msg = "%s: measurement for object %d successfully stored"
                     args = db_image.path, object_id
                     logging.debug(msg % args)
+
+                    # Store the pixel (x and y) coordinates where photometry
+                    # has been done. Useful mostly, if not exclusively, for
+                    # debugging purposes, in case we need or want to make sure
+                    # the measurement was taken at the proper-motion corrected
+                    # coordinates.
+
+                    pm_ra, pm_dec = output_db.get_star(object_id)[5:7]
+
+                    if not pm_ra and not pm_dec:
+
+                        msg = "%s: object %d does not have proper motion"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
+
+                    else:
+
+                        assert pm_ra  is not None
+                        assert pm_dec is not None
+
+                        msg = "%s: object %d pm_ra = %f (x = %f)"
+                        args = db_image.path, object_id, pm_ra, object_phot.x
+                        logging.debug(msg % args)
+
+                        msg = "%s: object %d pm_dec = %f (y = %f)"
+                        args = db_image.path, object_id, pm_dec, object_phot.y
+                        logging.debug(msg % args)
+
+                        msg = "%s: storing proper-motion corrections for object %d"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
+
+                        args = (object_id,
+                                db_image.unix_time,
+                                db_image.pfilter,
+                                object_phot.x,
+                                object_phot.y)
+
+                        output_db.add_pm_correction(*args)
+
+                        msg = "%s: proper-motion correction for object %d sucessfully stored"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
 
             methods.show_progress(100 * (index + 1) / len(images))
             if logging_level < logging.WARNING:
