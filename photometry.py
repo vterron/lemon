@@ -828,7 +828,18 @@ def main(arguments = None):
         print msg % args
 
     else:
+
+        # The Coordinates objects returned by FITSeeingImage.coordinates() have
+        # all a proper motion of zero, as from a single image (the one where we
+        # have detected them) we cannot determine the motion of any object.
+
         sources_coordinates = sources_img.coordinates
+
+        if __debug__:
+            for coord in sources_coordinates:
+                assert coord.pm_ra  == 0
+                assert coord.pm_dec == 0
+
         assert len(sources_coordinates) == len(sources_img)
         ipercentage = sources_img.ignored / sources_img.total * 100
         rpercentage = len(sources_img) / sources_img.total * 100
