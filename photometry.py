@@ -849,22 +849,9 @@ def main(arguments = None):
         msg = "%sThere remain %d sources (%.2f %%) on which to do photometry."
         print msg % (style.prefix, len(sources_img), rpercentage)
 
-        # Save the coordinates of the astronomical objects detected by
-        # SExtractor to a text file, needed to do photometry later on. Note
-        # that we store the absolute pathname of the temporary file in the
-        # options.coordinates attribute, so that the coordinates file can be
-        # always accessed there, independently of whether the user gave the
-        # --coordinates option or not.
-
-        kwargs = dict(prefix = '%s_' % sources_img.basename_woe,
-                      suffix = '_sextractor.coords',
-                      text = True)
-
-        coords_fd, options.coordinates = tempfile.mkstemp(**kwargs)
-        atexit.register(methods.clean_tmp_files, options.coordinates)
-        for ra, dec in sources_coordinates:
-            os.write(coords_fd, "%.10f\t%.10f\n" % (ra, dec))
-        os.close(coords_fd)
+    # Use 'options.coordinates' as the name of the list of Coordinates objects,
+    # independently of whether the --coordinates option has been used or not.
+    options.coordinates = sources_coordinates
 
     print style.prefix
     msg = "%sNeed to determine the instrumental magnitude of each source."
