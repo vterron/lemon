@@ -41,7 +41,6 @@ detection step and working exclusively with the specified objects.
 
 """
 
-import atexit
 import collections
 import hashlib
 import itertools
@@ -54,7 +53,6 @@ import os.path
 import pwd
 import socket
 import sys
-import tempfile
 import time
 import warnings
 
