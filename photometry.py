@@ -1300,6 +1300,7 @@ def main(arguments = None):
         methods.show_progress(0)
         qphot_results = (queue.get() for x in xrange(queue.qsize()))
         for index, args in enumerate(qphot_results):
+
             db_image, pparams, img_qphot = args
             logging.debug("Storing image %s in database" % db_image.path)
             output_db.add_image(db_image)
@@ -1360,6 +1361,49 @@ def main(arguments = None):
                     msg = "%s: measurement for object %d successfully stored"
                     args = db_image.path, object_id
                     logging.debug(msg % args)
+
+                    # Store the pixel (x and y) coordinates where photometry
+                    # has been done. Useful mostly, if not exclusively, for
+                    # debugging purposes, in case we need or want to make sure
+                    # the measurement was taken at the proper-motion corrected
+                    # coordinates.
+
+                    pm_ra, pm_dec = output_db.get_star(object_id)[5:7]
+
+                    if not pm_ra and not pm_dec:
+
+                        msg = "%s: object %d does not have proper motion"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
+
+                    else:
+
+                        assert pm_ra  is not None
+                        assert pm_dec is not None
+
+                        msg = "%s: object %d pm_ra = %f (x = %f)"
+                        args = db_image.path, object_id, pm_ra, object_phot.x
+                        logging.debug(msg % args)
+
+                        msg = "%s: object %d pm_dec = %f (y = %f)"
+                        args = db_image.path, object_id, pm_dec, object_phot.y
+                        logging.debug(msg % args)
+
+                        msg = "%s: storing proper-motion corrections for object %d"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
+
+                        args = (object_id,
+                                db_image.unix_time,
+                                db_image.pfilter,
+                                object_phot.x,
+                                object_phot.y)
+
+                        output_db.add_pm_correction(*args)
+
+                        msg = "%s: proper-motion correction for object %d sucessfully stored"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
 
             methods.show_progress(100 * (index + 1) / len(images))
             if logging_level < logging.WARNING:
