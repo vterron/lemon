@@ -586,16 +586,16 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    # If the --coordinates option has been given, read the text file and
-    # extract the right ascensions and declinations as two-element tuples,
-    # storing them in a list of astromatic.Coordinates objects. Abort the
-    # execution if the coordinates file is empty.
+    # If the --coordinates option has been given, read the text file and store
+    # the four-element tuples (right ascension, declination and proper motions)
+    # in a list, as astromatic.Coordinates objects. Abort the execution if the
+    # coordinates file is empty.
 
     if options.coordinates:
 
         sources_coordinates = []
-        for ra, dec in methods.load_coordinates(options.coordinates):
-            coords = astromatic.Coordinates(ra, dec)
+        for args in methods.load_coordinates(options.coordinates):
+            coords = astromatic.Coordinates(*args)
             sources_coordinates.append(coords)
 
         if not sources_coordinates:
