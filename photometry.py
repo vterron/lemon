@@ -284,9 +284,14 @@ coords_group.add_option('--coordinates', action = 'store', type = str,
                         dest = 'coordinates', default = None,
                         help = "path to the file containing the celestial "
                         "coordinates of the objects on which photometry must "
-                        "be done. These coordinates must be given in degrees "
-                        "and listed one per line, in two columns, right "
-                        "ascension and declination, respectively.")
+                        "be done. The file must have two columns, with the "
+                        "right ascension and declination (in decimal degrees) "
+                        "and, optionally, two other columns with the proper "
+                        "motion in right ascension and declination (in "
+                        "seconds of arc per year) surrounded by brackets. The "
+                        "coordinates of the objects with a proper motion are "
+                        "automatically corrected for each image, in order to "
+                        "account for the change in their position over time.")
 
 coords_group.add_option('--epoch', action = 'store', type = int,
                         dest = 'epoch', default = 2000,
