@@ -98,9 +98,8 @@ _lemon_annuli()
 _lemon_photometry()
 {
     local opts
-
     opts="--overwrite --filter --maximum --margin --gain --annuli
-    --cores --verbose --coordinates --aperture --annulus --dannulus
+    --cores --verbose --coordinates --epoch --aperture --annulus --dannulus
     --min-sky --individual-fwhm --aperture-pix --annulus-pix
     --dannulus-pix --snr-percentile --mean --objectk --filterk --datek
     --timek --expk --coaddk --gaink --fwhmk --airmk --uik"

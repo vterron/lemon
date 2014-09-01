@@ -287,6 +287,11 @@ coords_group.add_option('--coordinates', action = 'store', type = str,
                         "be done. These coordinates must be given in degrees "
                         "and listed one per line, in two columns, right "
                         "ascension and declination, respectively.")
+
+coords_group.add_option('--epoch', action = 'store', type = int,
+                        dest = 'epoch', default = 2000,
+                        help = "epoch of the coordinates [default: %default]")
+
 parser.add_option_group(coords_group)
 
 qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
