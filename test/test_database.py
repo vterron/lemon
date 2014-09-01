@@ -52,6 +52,9 @@ from database import \
 from diffphot import Weights
 from json_parse import CandidateAnnuli
 import test.test_fitsimage
+# https://stackoverflow.com/q/12603541/184363
+from test.test_astromatic import CoordinatesTest
+get_random_coords = CoordinatesTest.random
 
 NITERS = 100      # How many times each test case is run with random data
 MIN_NSTARS = 25   # Minimum number of items for random collections of DBStars
@@ -1238,10 +1241,11 @@ class LEMONdBTest(unittest.TestCase):
 
     @classmethod
     def random_stars_info(cls, size):
-        """ Return a generator which steps through 'size' random six-element
-        tuples (the x- and y- coordinates of the star in the reference image,
-        the right ascension and declination and the instrumental magnitude,
-        in this very order), guaranteed to have different IDs.
+        """ Return a generator which steps through 'size' random nine-element
+        tuples (the ID, x- and y- coordinates of the star in the sources image,
+        the right ascension and declination, the astronomical epoch, the two
+        proper motions and the instrumental magnitude, in this very order),
+        guaranteed to have different IDs.
 
         """
 
@@ -1253,18 +1257,19 @@ class LEMONdBTest(unittest.TestCase):
         for star_id in random.sample(stars_ids, size):
             x = random.uniform(0, cls.XSIZE)
             y = random.uniform(0, cls.YSIZE)
-            alpha = random.uniform(0, 360)
-            delta = random.uniform(-90, 90)
+            ra, dec, pm_ra, pm_dec = get_random_coords()
+            epoch = random.choice([1950, 2000])
             imag = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
-            yield star_id, x, y, alpha, delta, imag
+            yield star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag
 
     @classmethod
     def random_star_info(cls, id_ = None):
-        """ Return a six-element tuple with the information of a random star.
+        """ Return a nine-element tuple with the information of a random star.
 
-        The method returns a the ID, x- and y-coordinates, right ascension,
-        declination and instrumental magnitude of a random star. The ID is
-        random unless a value for it is given in the 'id_' parameter.
+        The method returns a tuple with the ID, x- and y-coordinates, right
+        ascension, declination, epoch, both proper motions and instrumental
+        magnitude of a random star. The ID is random unless a value for it
+        is specified with the 'id_' keyword argument.
 
         """
 
@@ -1350,6 +1355,126 @@ class LEMONdBTest(unittest.TestCase):
                     snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
                     rows.append((unix_time, magnitude, snr))
             yield DBStar.make_star(star_id, pfilter, rows)
+
+    def test_add_and_get_pm_correction(self):
+
+        # A specific, non-random test case. Three astronomical objects,
+        # the first two with known proper-motions, the third without it.
+
+        db = LEMONdB(':memory:')
+
+        star1 = self.random_star_info(id_ = 1)
+        star1[6:8] = [0.57095399531758917, -9.0025061305781175]
+        db.add_star(*star1)
+
+        star2 = self.random_star_info(id_ = 2)
+        star2[6:8] = [-0.016290290457260315, -4.9776521868125601]
+        db.add_star(*star2)
+
+        star3 = self.random_star_info(id_ = 3)
+        star3[6:8] = [None, None]
+        db.add_star(*star3)
+
+        pfilter1 = passband.Passband("Johnson V")
+        pfilter2 = passband.Passband("Johnson R")
+
+        img1, img2 = ImageTest.nrandom(2)
+        img1 = img1._replace(pfilter = pfilter1)
+        img2 = img2._replace(pfilter = pfilter2)
+
+        db.add_image(img1)
+        db.add_image(img2)
+
+        utime1 = img1.unix_time
+        utime2 = img2.unix_time
+
+        f = db.add_pm_correction
+        f(1, utime1, pfilter1,  28.87617936271731, -36.84344057247144)
+        f(1, utime2, pfilter2, -34.18950418859132,  10.93687152558971)
+        f(2, utime1, pfilter1,  -4.65494684748566, -31.26563816482958)
+        # Do not store a proper-motion correction for the second image
+
+        x, y = db.get_pm_correction(1, utime1, pfilter1)
+        self.assertAlmostEqual(x,  28.87617936271731)
+        self.assertAlmostEqual(y, -36.84344057247144)
+
+        x, y = db.get_pm_correction(1, utime2, pfilter2)
+        self.assertAlmostEqual(x, -34.18950418859132)
+        self.assertAlmostEqual(y,  10.93687152558971)
+
+        x, y = db.get_pm_correction(2, utime1, pfilter1)
+        self.assertAlmostEqual(x,  -4.65494684748566)
+        self.assertAlmostEqual(y, -31.26563816482958)
+
+        x, y = db.get_pm_correction(2, utime2, pfilter2)
+        self.assertIs(x, None)
+        self.assertIs(y, None)
+
+        # If no proper motion was stored for the astronomical object with
+        # LEMONdB.add_star(), ValueError is raised if we now try to store
+        # a proper-motion correction for it.
+        regexp = re.compile("has no proper motion", re.IGNORECASE)
+        with self.assertRaises(ValueError):
+            db.add_pm_correction(3, utime1, pfilter1, -42.878132, -32.923991)
+        with self.assertRaises(ValueError):
+            db.add_pm_correction(3, utime2, pfilter2, 9.9565731, -21.9961378)
+
+        # UnknownStarError if 'star_id' does not match the ID of any of the
+        # stars in the database
+        star_id = 4
+        star4 = self.random_star_info(id_ = star_id)
+        star4[6:8] = [-8.6902812929289581, -41.295196884794784]
+        self.assertTrue(star_id not in db.star_ids)
+
+        args = star_id, utime1, pfilter1, 4.88648990615375, -3.50462606269579
+        with self.assertRaises(UnknownStarError):
+            db.add_pm_correction(*args)
+
+        # But if the star is added before, it works, of course
+        db.add_star(*star4)
+        db.add_pm_correction(*args)
+        x, y = db.get_pm_correction(star_id, utime1, pfilter1)
+        self.assertAlmostEqual(x, args[-2])
+        self.assertAlmostEqual(y, args[-1])
+
+        # As with LEMONdB.add_photometry(), the UnknownImageError exception is
+        # raised if the image with the specified Unix time *and* photometric
+        # filter does not exist. Try the three possible combinations: missing
+        # Unix time, missing photometric filter, or both.
+
+        # (1) Missing Unix time
+        nonexistent_unix_time = different_runix_time([utime1, utime2])
+        args = star_id, nonexistent_unix_time, pfilter1, 29.94581, -74.20631
+        with self.assertRaises(UnknownImageError):
+            db.add_pm_correction(*args)
+
+        # (2) Missing photometric filter
+        nonexistent_filter = passband.Passband("Johnson I")
+        self.assertTrue(nonexistent_filter not in db.pfilters)
+        args = star_id, utime1, nonexistent_filter, -42.14321, 58.89305
+        with self.assertRaises(UnknownImageError):
+            db.add_pm_correction(*args)
+
+        # (3) Missing Unix time *and* photometric filter
+        args = star_id, nonexistent_unix_time, nonexistent_filter, -57.188, -2.267
+        with self.assertRaises(UnknownImageError):
+            db.add_pm_correction(*args)
+
+        # sqlite3.IntegrityError is raised if we attempt to add a second record
+        # for the same astronomical object, Unix time and photometric filter
+        # (that is, if more than one proper-motion correction is added for the
+        # same object and image)
+        args = [star_id, utime1, pfilter1, -25.592231, -21.32372]
+        regexp = re.compile("columns star_id, image_id are not unique")
+        with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
+            db.add_pm_correction(*args)
+
+        # LEMONdB.get_pm_correction() raises KeyError if the ID does not match
+        # that of any of the astronomical objects already in the database.
+        nonexistent_id = 5
+        self.assertTrue(nonexistent_id not in db.star_ids)
+        with self.assertRaises(KeyError):
+            db.get_pm_correction(nonexistent_id, utime1, pfilter1)
 
     def test_add_and_get_photometry(self):
 
@@ -1963,16 +2088,18 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_most_similar_magnitude(self):
 
-        # The ID, x- and y-image coordinates, right ascension, declination and
+        # The ID, x- and y-image coordinates, right ascension, declination,
+        # epoch, proper motions (where None means that they are not known) and
         # instrumental magnitudes of the five stars that will be used in this
-        # test case. These values are all required by LEMONdB.add_star, but we
-        # are only interested in the first (star ID) and the last (magnitude).
+        # test case. These values are all required by LEMONdB.add_star(), but
+        # we are only interested in the first (star ID) and last (magnitude).
+
         stars_info = \
-        [[1, 115, 235, 145.3, 190.4, 11.5], # star 1
-         [2, 931, 833, 146.2, 191.3, 12.9], # star 2
-         [3, 342, 781, 144.1, 190.9, 10.1], # star 3
-         [4, 782, 101, 143.9, 189.2, 13.4], # star 4
-         [5, 689, 288, 144.2, 189.4, 10.3]] # star 5
+        [[1, 115, 235, 145.3, 190.4, 2000,   None,   None, 11.5], # star 1
+         [2, 931, 833, 146.2, 191.3, 2000,   None,   None, 12.9], # star 2
+         [3, 342, 781, 144.1, 190.9, 2000, -0.021, 0.0013, 10.1], # star 3
+         [4, 782, 101, 143.9, 189.2, 2000,   None,   None, 13.4], # star 4
+         [5, 689, 288, 144.2, 189.4, 2000,   None,   None, 10.3]] # star 5
 
         db = LEMONdB(':memory:')
         for info in stars_info:
