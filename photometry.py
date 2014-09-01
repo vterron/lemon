@@ -1021,21 +1021,20 @@ def main(arguments = None):
     output_db = database.LEMONdB(output_db_path)
 
     # The fact that the QPhot object returned by qphot.run() preserves the
-    # order of the astronomical objects listed in options.coordinates proves to
-    # be useful again: it allows us to match the celestial coordinates of each
-    # object (a row in the coordinates file) to the corresponding QPhotResult
-    # object. Note that qphot.run() accepts celestial coordinates but returns
-    # the x- and y-coordinates of their centers, as IRAF's qphot does.
+    # order of the astronomical objects proves to be useful again: it allows us
+    # to match each astromatic.Coordinates object in options.coordinates to the
+    # corresponding QPhotResult object. Note that qphot.run() accepts celestial
+    # coordinates but returns the x- and y-coordinates of their centers, as
+    # IRAF's qphot does.
 
-    sources_coords = list(methods.load_coordinates(options.coordinates))
-    assert len(sources_coords) == len(sources_phot)
-    it = itertools.izip(sources_coords, sources_phot)
+    assert len(options.coordinates) == len(sources_phot)
+    it = itertools.izip(options.coordinates, sources_phot)
     for id_, (object_coords, object_phot) in enumerate(it):
         x, y = object_phot.x, object_phot.y
-        ra, dec = object_coords
+        ra, dec, pm_ra, pm_dec = object_coords
         imag = object_phot.mag
 
-        args = (id_, x, y, ra, dec, imag)
+        args = (id_, x, y, ra, dec, options.epoch, pm_ra, pm_dec, imag)
         output_db.add_star(*args)
 
     output_db.commit()
