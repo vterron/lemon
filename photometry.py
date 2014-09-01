@@ -175,9 +175,9 @@ def parallel_photometry(args):
     logging.debug(msg % args)
 
     logging.info("Running qphot on %s" % image.path)
-    args = (image, options.coordinates,
-            pparams.aperture, pparams.annulus, pparams.dannulus,
-            maximum, options.exptimek, options.uncimgk)
+    args = (image, options.coordinates, options.epoch,
+            pparams.aperture, pparams.annulus, pparams.dannulus, maximum,
+            options.datek, options.timek, options.exptimek, options.uncimgk)
     img_qphot = qphot.run(*args)
     logging.info("Finished running qphot on %s" % image.path)
 
