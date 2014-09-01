@@ -918,9 +918,10 @@ def main(arguments = None):
     # integer supported by the regular integer type. Being at least 2 ** 31 -
     # 1, as a saturation level this value is sufficiently close to infinity.
 
-    qphot_args = [sources_img, options.coordinates,
-                  sources_aperture, sources_annulus, sources_dannulus,
-                  sys.maxint, options.exptimek, None]
+    qphot_args = \
+        [sources_img, options.coordinates, options.epoch,
+         sources_aperture, sources_annulus, sources_dannulus, sys.maxint,
+         options.datek, options.timek, options.exptimek, None]
 
     # The options.exptimek FITS keyword is allowed to be missing from the
     # header of the sources image (for example, a legitimate scenario: we
