@@ -94,7 +94,8 @@ TEST_OBJECTS = {'IC 5070' : (312.75, 44.37),
                 'Serpens' : (277.454, 1.247),
                 'Orion' : (83.822, -5.391),
                 'Trapezium' : (83.819, -5.387),
-                'Trumpler 37' : (324.536, 57.447)}
+                'Trumpler 37' : (324.536, 57.447),
+                "Barnard's Star" : (269.452, 4.693)}
 
 def get_image_path(name):
     """ Determine the local path to which to download the image of an object.

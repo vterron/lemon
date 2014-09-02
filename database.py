@@ -434,12 +434,15 @@ class LEMONdB(object):
 
         self._execute('''
         CREATE TABLE IF NOT EXISTS stars (
-            id   INTEGER PRIMARY KEY,
-            x    REAL NOT NULL,
-            y    REAL NOT NULL,
-            ra   REAL NOT NULL,
-            dec  REAL NOT NULL,
-            imag REAL NOT NULL)
+            id     INTEGER PRIMARY KEY,
+            x      REAL NOT NULL,
+            y      REAL NOT NULL,
+            ra     REAL NOT NULL,
+            dec    REAL NOT NULL,
+            epoch  REAL NOT NULL,
+            pm_ra  REAL,
+            pm_dec REAL,
+            imag   REAL NOT NULL)
         ''')
 
         self._execute('''
@@ -558,6 +561,23 @@ class LEMONdB(object):
             id   INTEGER PRIMARY KEY,
             fits BLOB NOT NULL,
             FOREIGN KEY (id) REFERENCES images(id))
+        ''')
+
+        # For those astronomical objects with known proper motions, store the
+        # x- and y-coordinates where photometry was done in each image. Mostly
+        # useful for debugging purposes, this information allows us to verify
+        # that the proper-motion correction was correctly applied.
+
+        self._execute('''
+        CREATE TABLE IF NOT EXISTS pm_corrections (
+            id         INTEGER PRIMARY KEY,
+            star_id    INTEGER NOT NULL,
+            image_id   INTEGER NOT NULL,
+            x          REAL NOT NULL,
+            y          REAL NOT NULL,
+            FOREIGN KEY (star_id)  REFERENCES stars(id),
+            FOREIGN KEY (image_id) REFERENCES images(id),
+            UNIQUE (star_id, image_id))
         ''')
 
         self._execute('''
@@ -949,21 +969,22 @@ class LEMONdB(object):
             args[1] = passband.Passband(args[1])
             return Image(*args)
 
-    def add_star(self, star_id, x, y, ra, dec, imag):
+    def add_star(self, star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag):
         """ Add a star to the database.
 
         This method only stores the 'description' of the star, that is, its
-        image and celestial coordinates, as well as its instrumental magnitude
-        in the image on which it was detected. To add photometric records and
-        light curves, use the LEMONdB.add_photometry() and add_light_curve(),
-        methods respectively. Raises DuplicateStarError if the specified ID
-        was already used for another star in the database.
+        image and celestial coordinates, astronomical epoch, proper motions and
+        instrumental magnitude in the image on which it was detected. To add
+        photometric records and light curves, use the LEMONdB.add_photometry()
+        and add_light_curve(), methods respectively. Raises DuplicateStarError
+        if the specified ID was already used for another star in the database.
 
         """
 
-        t = (star_id, x, y, ra, dec, imag)
+        t = (star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag)
         try:
-            self._execute("INSERT INTO stars VALUES (?, ?, ?, ?, ?, ?)", t)
+            stmt = "INSERT INTO stars VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            self._execute(stmt, t)
         except sqlite3.IntegrityError:
             if __debug__:
                 self._execute("SELECT id FROM stars")
@@ -974,15 +995,17 @@ class LEMONdB(object):
     def get_star(self, star_id):
         """ Return the coordinates and magnitude of a star.
 
-        The method returns a five-element tuple with, in this order: the x- and
-        y- coordinates of the star in the image on which it was detected, the
-        right ascension and declination and its instrumental magnitude in the
-        sources image. Raises KeyError is no star in the database has this ID.
+        The method returns an eight-element tuple with, in this order: the x-
+        and y- coordinates of the star in the image where it was detected, its
+        right ascension and declination, astronomical epoch, proper motions in
+        right ascension and declination and, lastly, its instrumental magnitude
+        in the sources image. Raises KeyError is no star in the database has
+        this ID.
 
         """
 
         t = (star_id, )
-        self._execute("SELECT x, y, ra, dec, imag "
+        self._execute("SELECT x, y, ra, dec, epoch, pm_ra, pm_dec, imag "
                       "FROM stars "
                       "WHERE id = ?", t)
         try:
@@ -1001,6 +1024,77 @@ class LEMONdB(object):
         self._execute("SELECT id FROM stars ORDER BY id ASC")
         return list(x[0] for x in self._rows)
 
+    def add_pm_correction(self, star_id, unix_time, pfilter, pm_x, pm_y):
+        """ Store the proper-motion corrected pixel coordinates of a star.
+
+        Store the x- and y-coordinates where photometry of an astronomical
+        object was done in an image. When an object has a proper motion we do
+        not simply give its celestial coordinates as input to IRAF's qphot: we
+        need to correct the right ascension and declination to adjust for the
+        changes in the object's position over time. The image coordinates where
+        photometry was done are expected to be stored for debugging purposes,
+        allowing us to verify, if needed, that proper-motion correction was
+        properly calculated and photometry was done on the right place.
+
+        Raises ValueError if we attempt to add the proper-motion correction of
+        an object for which no proper motion was stored in the database with
+        the LEMONdB.add_star() method. UnknownStarError is raised if 'star_id'
+        does not match the ID of any of the stars in the database, while
+        UnknownImageError is raised if the Unix time and photometric filter do
+        not match those of any of the images previously added. At most one
+        proper-motion correction can be stored for each star and image: the
+        addition of a second correction for the same star ID, Unix time and
+        photometric filter raises sqlite3.IntegrityError.
+
+        """
+
+        try:
+            if None in self.get_star(star_id)[5:7]:
+                msg = ("astronomical object with ID = %d does not have proper "
+                       "motions, so we cannot store proper-motion corrections "
+                       "for it. Where do these values come from?" % star_id)
+                raise ValueError(msg)
+        except KeyError:
+            msg = "star with ID = %d not in database" % star_id
+            raise UnknownStarError(msg)
+
+        try:
+            image_id = self._get_image_id(unix_time, pfilter)
+        except KeyError, e:
+            raise UnknownImageError(str(e))
+
+        t = (None, star_id, image_id, float(pm_x), float(pm_y))
+        stmt = "INSERT INTO pm_corrections VALUES (?, ?, ?, ?, ?)"
+        self._execute(stmt, t)
+
+    def get_pm_correction(self, star_id, unix_time, pfilter):
+        """ Return the proper-motion correction of a star in an image.
+
+        Return the image coordinates of an astronomical object where photometry
+        was done after applying proper-motion correction. Returns a two-element
+        tuple with the x- and y-image coordinates. In case no proper-motion
+        correction is stored for the astronomical object, returns a tuple of
+        two None's. Raises KeyError if 'star_id' does not match the ID of any
+        of the stars in the database.
+
+        """
+
+        image_id = self._get_image_id(unix_time, pfilter)
+        t = (int(star_id), image_id)
+        self._execute("""SELECT x, y
+                         FROM pm_corrections
+                         WHERE  star_id = ?
+                           AND image_id = ?""", t)
+        try:
+            rows = tuple(self._rows)
+            return rows[0]
+        except IndexError:
+            if star_id not in self.star_ids:
+                msg = "star with ID = %d not in database" % star_id
+                raise KeyError(msg)
+            else:
+                return None, None
+
     def add_photometry(self, star_id, unix_time, pfilter, magnitude, snr):
         """ Store the photometric record of a star at a given time and filter.
 
@@ -1008,9 +1102,9 @@ class LEMONdB(object):
         the stars in the database, while UnknownImageError is raised if the
         Unix time and photometric filter do not match those of any of the
         images previously added. At most one photometric record can be stored
-        for each star, image and photometric filter; therefore, the addition of
-        a second record for the same star ID, Unix time and photometric filter
-        causes DuplicatePhotometryError to be raised.
+        for each star and image: the addition of a second record for the same
+        star ID, Unix time and photometric filter causes
+        DuplicatePhotometryError to be raised.
 
         """
 

@@ -176,8 +176,12 @@ class QPhot(list):
         img_path - path to the FITS image on which to do photometry.
         coords_path - path to the text file with the celestial coordinates
                       (right ascension and declination) of the astronomical
-                      objects to be measured. These objects must be listed
-                      one per line, in two columns.
+                      objects to be measured. These objects must be listed one
+                      per line, in two columns. Note that this class does *not*
+                      apply proper-motion correction, so the coordinates must
+                      be corrected before being written to the file. In case
+                      the proper motions of the objects are listed in the file,
+                      in columns third and fourth, ValueError is raised.
 
         """
 
@@ -185,7 +189,7 @@ class QPhot(list):
         self.image = fitsimage.FITSImage(img_path)
         self.coords_path = coords_path
 
-        for ra, dec in methods.load_coordinates(self.coords_path):
+        for ra, dec, pm_ra, pm_dec in methods.load_coordinates(self.coords_path):
             if ra == 0 and dec == 0:
                 msg = (
                   "the right ascension and declination of one or more "
@@ -198,6 +202,14 @@ class QPhot(list):
                 # Emit warning only once
                 warnings.warn(msg)
                 break
+
+            if pm_ra is not None or pm_dec is not None:
+                msg = ("at least one object in the '%s' file lists its proper "
+                       "motions. This is not allowed. The coordinates must be "
+                       "written to the file already adjusted for their proper "
+                       "motions, as this class cannot apply any correction" %
+                       self.coords_path)
+                raise ValueError(msg)
 
     @property
     def path(self):
@@ -429,26 +441,72 @@ class QPhot(list):
         return len(self)
 
 
-def run(img, coords_path,
-        aperture, annulus, dannulus,
-        maximum, exptimek, uncimgk):
+def get_coords_file(coordinates, year, epoch):
+    """ Return a coordinates file with the exact positions of the objects.
+
+    Loop over 'coordinates', an iterable of astromatic.Coordinates objects, and
+    apply proper motion correction, obtaining their exact positions for a given
+    date. These proper-motion corrected coordinates are written to a temporary
+    text file, listed one astronomical object per line and in two columns:
+    right ascension and declination. Returns the path to the temporary file.
+    The user of this function is responsible for deleting the file when done
+    with it.
+
+    Both 'year' and 'epoch' may be decimal numbers, such as 2014.25 for April
+    1, 2014 (since, in common years, April 1 is the 91st day of the year, and
+    91 / 365 = 0.24931507 = ~0.25). Please refer to the documentation of the
+    Coordinates.get_exact_coordinates() method for further information.
+
+    """
+
+    kwargs = dict(prefix = '%f_' % year,
+                  suffix = '_J%d.coords' % epoch,
+                  text = True)
+
+    fd, path = tempfile.mkstemp(**kwargs)
+    fmt = '\t'.join(['%.10f', '%.10f\n'])
+
+    for coord in coordinates:
+
+        # Do not apply any correction if pm_ra and pm_dec are None (which means
+        # that the proper motion of the object is unknown) or zero (because in
+        # this case the coordinates are always the same). Make sure also that
+        # either none or both proper motions are None: we cannot know one but
+        # not the other!
+
+        if None in (coord.pm_ra, coord.pm_dec):
+            assert coord.pm_ra  is None
+            assert coord.pm_dec is None
+
+        if coord.pm_ra or coord.pm_dec:
+            coord = coord.get_exact_coordinates(year, epoch = epoch)
+
+        os.write(fd, fmt % coord[:2])
+
+    os.close(fd)
+    return path
+
+def run(img, coordinates, epoch,
+        aperture, annulus, dannulus, maximum,
+        datek, timek, exptimek, uncimgk):
     """ Do photometry on a FITS image.
 
-    This convenience function does photometry on a FITSImage object, measuring
-    the astronomical objects listed in the 'coords_path' text file. Note that
-    the FITS image *must* have been previously calibrated astrometrically, so
-    that the right ascensions and declinations listed in the text file are
-    meaningful. Returns a QPhot object, using None as the magnitude of those
-    astronomical objects that are INDEF (i.e., so faint that qphot could not
-    measure anything) and positive infinity if they are saturated (i.e., if
-    one or more pixels in the aperture are above the saturation level).
+    This convenience function does photometry on a FITSImage object, applying
+    proper-motion correction to a series of astronomical objects and measuring
+    them. The FITS image must have been previously calibrated astrometrically,
+    so that right ascensions and declinations are meaningful. Returns a QPhot
+    object, using None as the magnitude of those astronomical objects that are
+    INDEF (i.e., so faint that qphot could not measure anything) and positive
+    infinity if they are saturated (i.e., if one or more pixels in the aperture
+    are above the saturation level).
 
     Arguments:
     img - the fitsimage.FITSImage object on which to do photometry.
-    coords_path - the text file containing the celestial coordinates for the
-                  astronomical objects to be measured. These objects must be
-                  listed one per line, in two columns: right ascension and
-                  declination, in this order.
+    coordinates - an iterable of astromatic.Coordinates objects, one for each
+                  astronomical object to be measured.
+    epoch - the epoch of the coordinates of the astronomical objects, used to
+            compute the proper-motion correction. Must be an integer, such as
+            2000 for J2000.
     aperture - the aperture radius, in pixels.
     annulus - the inner radius of the sky annulus, in pixels.
     dannulus - the width of the sky annulus, in pixels.
@@ -457,6 +515,16 @@ def run(img, coords_path,
               astronomical object is set to positive infinity. For coadded
               observations, the effective saturation level is obtained by
               multiplying this value by the number of coadded images.
+    datek - the image header keyword containing the date of the observation, in
+            the format specified in the FITS Standard. The old date format was
+            'yy/mm/dd' and may be used only for dates from 1900 through 1999.
+            The new Y2K compliant date format is 'yyyy-mm-dd' or
+            'yyyy-mm-ddTHH:MM:SS[.sss]'.
+    timek - the image header keyword containing the time at which the
+            observation started, in the format HH:MM:SS[.sss]. This keyword is
+            not necessary (and, therefore, is ignored) if the time is included
+            directly as part of the 'datek' keyword value with the format
+            'yyyy-mm-ddTHH:MM:SS[.sss]'.
     exptimek - the image header keyword containing the exposure time. Needed
                by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
@@ -469,6 +537,13 @@ def run(img, coords_path,
               for on the same FITS image used for photometry, 'img'.
 
     """
+
+    kwargs = dict(date_keyword = datek,
+                  time_keyword = timek,
+                  exp_keyword = exptimek)
+    year = img.year(**kwargs)
+    # The proper-motion corrected objects coordinates
+    coords_path = get_coords_file(coordinates, year, epoch)
 
     img_qphot = QPhot(img.path, coords_path)
     img_qphot.run(annulus, dannulus, aperture, exptimek)
@@ -526,6 +601,7 @@ def run(img, coords_path,
         # will be known to be saturated and their magnitude set to infinity.
         mask_qphot = QPhot(satur_mask_path, coords_path)
         mask_qphot.run(annulus, dannulus, aperture, exptimek)
+        os.unlink(coords_path)
 
         assert len(img_qphot) == len(mask_qphot)
         for object_phot, object_mask in itertools.izip(img_qphot, mask_qphot):

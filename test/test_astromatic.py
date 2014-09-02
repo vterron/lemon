@@ -91,13 +91,34 @@ class CoordinatesTest(unittest.TestCase):
 
     RIGHT_ASCENSION_RANGE = (0, 360)
     DECLINATION_RANGE = (-90, 90)
+    PM_RA_RANGE =  (0, 0.79858)
+    PM_DEC_RANGE = (0, 10.32812)
+
+    @staticmethod
+    def get_random_pm(pm_range):
+        """ Return a positive or negative random number in 'pm_range' """
+
+        value = random.uniform(*pm_range)
+        sign = random.choice([-1, 1])
+        return sign * value
 
     @classmethod
     def random(cls):
         """ Return a random Coordinates object """
+
         ra = random.uniform(*cls.RIGHT_ASCENSION_RANGE)
         dec = random.uniform(*cls.DECLINATION_RANGE)
-        return Coordinates(ra, dec)
+
+        # Use None for both 'pm_ra' and 'pm_dec' or none of them. If does not
+        # make much sense to know the proper motion in declination but not in
+        # right ascension, or vice versa.
+        if random.choice([True, False]):
+            pm_ra  = cls.get_random_pm(cls.PM_RA_RANGE)
+            pm_dec = cls.get_random_pm(cls.PM_DEC_RANGE)
+        else:
+            pm_ra = pm_dec = None
+
+        return Coordinates(ra, dec, pm_ra, pm_dec)
 
     def test_immutability(self):
         """ Make sure that the Coordinates class is immutable """
@@ -121,6 +142,78 @@ class CoordinatesTest(unittest.TestCase):
         coords4 = Coordinates(165.933, 61.7511)
         distance = coords3.distance(coords4)
         self.assertAlmostEqual(distance, 5.374111607543190)
+
+    def test_get_exact_coordinates(self):
+
+        # Barnard's Star (J2000): -798.58 10328.12 (mas/yr)
+        barnard = Coordinates(269.452075, 4.693391, -0.79858, 10.32812)
+
+        # year = epoch, so coordinates do not change
+        coords = barnard.get_exact_coordinates(2000)
+        self.assertEqual(coords.ra,  barnard.ra)
+        self.assertEqual(coords.dec, barnard.dec)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
+
+        # 2005 - 2000 = 5 years
+        # 269.452075 + (-0.79858 * 5) / 3600 = 269.450965861
+        #   4.693391 + (10.32812 * 5) / 3600 =   4.707735611
+        coords = barnard.get_exact_coordinates(2005)
+        self.assertAlmostEqual(coords.ra, 269.450965861)
+        self.assertAlmostEqual(coords.dec,  4.707735611)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
+
+        # 2014.5 = July 3, 2014
+        # 2014.5 - 2000 = 14.5 years
+        # 269.452075 + (-0.79858 * 14.5) / 3600 = 269.448858497
+        #   4.693391 + (10.32812 * 14.5) / 3600 =   4.734990372
+        coords = barnard.get_exact_coordinates(2014.5)
+        self.assertAlmostEqual(coords.ra, 269.448858497)
+        self.assertAlmostEqual(coords.dec,  4.734990372)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
+
+        # 1975.35 = May 9, 1975
+        # 1975.35 - 2000 = -24.65 years
+        # 269.452075 + (-0.79858 * -24.65) / 3600 = 269.457543055
+        #   4.693391 + (10.32812 * -24.65) / 3600 =   4.622672067
+        coords = barnard.get_exact_coordinates(1975.35)
+        self.assertAlmostEqual(coords.ra, 269.457543055)
+        self.assertAlmostEqual(coords.dec,  4.622672067)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
+
+        # Kapteyn's Star (J1950): 6505.08 -5730.84 (mas/yr)
+        kapteyn = Coordinates(77.791453, -44.938748, 6.50508, -5.73084)
+
+        # 2008 - 1950 = 58 years
+        # 77.791453  + ( 6.50508 * 58) / 3600 =  77.896257067
+        # -44.938748 + (-5.73084 * 58) / 3600 = -45.0310782
+        coords = kapteyn.get_exact_coordinates(2008, epoch = 1950)
+        self.assertAlmostEqual(coords.ra,   77.896257067)
+        self.assertAlmostEqual(coords.dec, -45.0310782)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
+
+        # 1905.49180328 = June 30, 1905
+        # 1905.49180328 - 1950 = -44.50819672
+        # 77.791453  + ( 6.50508 * -44.50819672) / 3600 =  77.711028172
+        # -44.938748 + (-5.73084 * -44.50819672) / 3600 = -44.867895402
+        coords = kapteyn.get_exact_coordinates(1905.49180328, epoch = 1950)
+        self.assertAlmostEqual(coords.ra,   77.711028172)
+        self.assertAlmostEqual(coords.dec, -44.867895402)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
+
+        # IOK 1 (z = 6.96, 12.88 Gly)
+        # No proper motion; object does not move
+        iok1 = Coordinates(200.999170, 27.415500)
+        coords = iok1.get_exact_coordinates(2061)
+        self.assertEqual(coords.ra,  iok1.ra)
+        self.assertEqual(coords.dec, iok1.dec)
+        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_dec, None)
 
 
 class StarTest(unittest.TestCase):

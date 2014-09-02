@@ -383,7 +383,7 @@ class FITSImageTest(unittest.TestCase):
             with self.assertRaises(KeyError):
                 img.read_keyword('HIERARCH ' + keyword)
 
-    def test_date(self):
+    def test_date_and_year(self):
 
         def strptime_utc(date_string):
             """ Parse a string representing a UTC time according to strptime's
@@ -410,69 +410,91 @@ class FITSImageTest(unittest.TestCase):
         # Start of observation = 2009-06-12 21:12:47.238, EXPTIME = 1505
         # 2009-06-12 21:12:47.238 + (00:25:05 / 2) =
         # 2009-06-12 21:12:47.238 + 00:12:32.5 =
-        # 2009-06-12 21:25:19.738 UTC
+        # 2009-06-12 21:25:19.738 UTC ~=
+        # 2009.44628104
+
         keywords = {'DATE-OBS' : '2009-06-12T21:12:47.238',
                     'EXPTIME' : 1505}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("2009-06-12 21:25:19.738")
+            expected_year = 2009.44628104
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # (2) Format 'yyyy-mm-ddTHH:MM:SS', without fractions of a second
         # Start of observation = 1998-11-29 02:53:21, EXPTIME = 1834
         # 1998-11-29 02:53:21 + (0:30:34 / 2) =
         # 1998-11-29 02:53:21 + 0:15:17 =
-        # 1998-11-29 03:08:38 UTC
+        # 1998-11-29 03:08:38 UTC ~=
+        # 1998.90994793
+
         keywords = {'DATE-OBS' : '1998-11-29T02:53:21',
                     'EXPTIME' : 1834}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("1998-11-29 03:08:38.0")
+            expected_year = 1998.90994793
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # Repeat (2) with leading and trailing whitespaces
         keywords['DATE-OBS'] = unstrip(keywords['DATE-OBS'])
         with self.random(**keywords) as img:
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # (3) Another one with fractions of a second, turn to a new year
         # Start of observation = 1999-12-31 23:53:12.565, EXPTIME = 4312.56
         # 1999-12-31 23:53:12.565 + (1:11:52.56 / 2) =
         # 1999-12-31 23:53:12.565 + 0:35:56.28 =
-        # 2000-01-01 00:29:08.845 UTC
+        # 2000-01-01 00:29:08.845 UTC =~
+        # 2000.00005528
+
         keywords = {'DATE-OBS' : '1999-12-31T23:53:12.565',
                     'EXPTIME' : 4312.56}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("2000-01-01 00:29:08.845")
+            expected_year = 2000.00005528
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # (4) Format 'yyyy-mm-dd', HH:MM:SS.sss read from TIME-OBS
         # Start of observation = 2003-03-28 04:23:17.87, EXPTIME = 1357.25
         # 2003-03-28 04:23:17.87 + (0:22:37.25 / 2) =
         # 2003-03-28 04:23:17.87 + 0:11:18.625 =
-        # 2003-03-28 04:34:36.495 UTC
+        # 2003-03-28 04:34:36.495 UTC ~=
+        # 2003.23613889
+
         keywords = {'DATE-OBS' : '2003-03-28',
                     'TIME-OBS' : '04:23:17.87',
                     'EXPTIME' : 1357.25}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("2003-03-28 04:34:36.495")
+            expected_year = 2003.23613889
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # Repeat (4) with leading and trailing whitespaces
         keywords['DATE-OBS'] = unstrip(keywords['DATE-OBS'])
         keywords['TIME-OBS'] = unstrip(keywords['TIME-OBS'])
         with self.random(**keywords) as img:
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # (5) Another 'yyyy-mm-dd', HH:MM:SS (no fractions) read from TIME-OBS
         # Start of observation = 2011-06-13 19:04:28, EXPTIME = 2341
         # 2011-06-13 19:04:28 + (0:39:01 / 2) =
         # 2011-06-13 19:04:28 + 0:19:30.5 =
-        # 2011-06-13 19:23:58.5 UTC
+        # 2011-06-13 19:23:58.5 UTC ~=
+        # 2011.44878989
+
         keywords = {'DATE-OBS' : '2011-06-13',
                     'TIME-OBS' : '19:04:28',
                     'EXPTIME' : 2341}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("2011-06-13 19:23:58.5")
+            expected_year = 2011.44878989
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # (6) Repeat (5), but using different, non-standard keywords
         keywords['DATE'] = keywords.pop('DATE-OBS')
@@ -483,40 +505,52 @@ class FITSImageTest(unittest.TestCase):
                           time_keyword = 'TIME',
                           exp_keyword = 'EXPOSURE')
             self.assertAlmostEqual(expected_date, img.date(**kwargs))
+            self.assertAlmostEqual(expected_year, img.year(**kwargs))
 
         # (7) Format 'yy/mm/dd' (only for dates from 1900 through 1999)
         # The year 13, when this format is used, is interpreted as 1913
         # Start of observation = 1913-04-20 22:58:12.1, EXPTIME = 1328
         # 1913-04-20 22:58:12.1 + (0:22:08 / 2) =
         # 1913-04-20 22:58:12.1 + 0:11:04 =
-        # 1913-04-20 23:09:16.1 UTC
+        # 1913-04-20 23:09:16.1 UTC ~=
+        # 1913.30127334
+
         keywords = {
             'DATE-OBS' : '13/04/20',
             'TIME-OBS' : '22:58:12.1',
             'EXPTIME' : 1328}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("1913-04-20 23:09:16.1")
+            expected_year = 1913.30127334
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         # (8) Another 'yy/mm/dd' format: year 89 means here 1989
         # Start of observation = 1989-08-30 01:32:22.14, EXPTIME = 83.55
         # 1989-08-30 01:32:22.14 + (0:01:23.55 / 2) =
         # 1989-08-30 01:32:22.14 + 0:00:41.775 =
-        # 1989-08-30 01:33:03.915
+        # 1989-08-30 01:33:03.915 ~=
+        # 1989.66045101
+
         keywords =  {
             'DATE-OBS' : '89/08/30',
             'TIME-OBS' : '01:32:22.14',
             'EXPTIME' : 83.55}
         with self.random(**keywords) as img:
             expected_date = strptime_utc("1989-08-30 01:33:03.915")
+            expected_year = 1989.66045101
             self.assertAlmostEqual(expected_date, img.date())
+            self.assertAlmostEqual(expected_year, img.year())
 
         def assertRaised(exception, keywords):
             """ Assert that a random FITS image with the 'keywords' FITS
-            keywords raises 'exception' when its date() method is called."""
+            keywords raises 'exception' when both its date() and year()
+            methods are called."""
             with self.random(**keywords) as img:
                 with self.assertRaises(exception):
                     img.date()
+                with self.assertRaises(exception):
+                    img.year()
 
         # Keyword DATE-OBS not found
         keywords = {'EXPTIME' : 1500}
