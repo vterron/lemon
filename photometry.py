@@ -230,7 +230,9 @@ parser.add_option('--filter', action = 'append', type = 'passband',
                   dest = 'filters', default = None,
                   help = "do not do photometry on all the FITS files given "
                   "as input, but only on those taken in this photometric "
-                  "filter. " + defaults.desc['filter'])
+                  "filter. This option may be used multiple times in order "
+                  "to specify more than one filter with which we want to "
+                  "work. " + defaults.desc['filter'])
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
