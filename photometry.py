@@ -226,7 +226,7 @@ parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_DB"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
-parser.add_option('--filter', action = 'store', type = 'passband',
+parser.add_option('--filter', action = 'append', type = 'passband',
                   dest = 'filter', default = None,
                   help = "do not do photometry on all the FITS files given "
                   "as input, but only on those taken in this photometric "
