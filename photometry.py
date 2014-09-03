@@ -790,6 +790,52 @@ def main(arguments = None):
             percentage = discarded / former_total * 100
             print msg % (discarded, percentage)
 
+    # Now the opposite of --filter: discard those FITS images taken in any of
+    # the photometric filters contained in options.excluded_filters. The code
+    # below is very, very similar to that of --filter, but here we discard the
+    # images that match any of the specified filters, instead of those that do
+    # *not* match any of them.
+
+    if options.excluded_filters:
+
+        msg = "%sDiscarding images taken in any of the following filters:"
+        print msg % style.prefix
+
+        for index, pfilter in enumerate(sorted(options.excluded_filters)):
+            msg = "%s (%d) %s: " % (style.prefix, index + 1, pfilter)
+            images = files[pfilter]
+            if not images:
+                msg += "(no images)"
+            else:
+                percentage = len(images) / len(files) * 100
+                args = len(images), percentage
+                msg += "%d files to discard (%.2f %%)" % args
+            print msg
+
+        sys.stdout.flush()
+
+        discarded = 0
+        for pfilter, images in files.items():
+            if pfilter in options.excluded_filters:
+                discarded += len(images)
+                del files[pfilter]
+
+        if not files:
+            print
+            print "%sError. All images were discarded." % style.prefix
+            print style.error_exit_message
+            return 1
+
+        else:
+            former_total = len(files) + discarded
+            msg = "%s%d images (%.2f %%) discarded,"
+            percentage = discarded / former_total * 100
+            print msg % (style.prefix, discarded, percentage) ,
+
+            msg = "%d (%.2f %%) remain."
+            percentage = len(files) / former_total * 100
+            print msg % (len(files), percentage)
+
     # If a JSON file is specified with --annuli, it must list the photometric
     # parameters for all the filters on which photometry is to be done.
     if json_annuli:
