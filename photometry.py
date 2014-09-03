@@ -774,8 +774,14 @@ def main(arguments = None):
             return 1
 
         else:
-            msg = "%s%d images taken in the above filters, %d were discarded."
-            print msg % (style.prefix, len(files), discarded)
+            former_total = len(files) + discarded
+            msg = "%s%d images (%.2f %%) taken in the above filters,"
+            percentage = len(files) / former_total * 100
+            print msg % (style.prefix, len(files), percentage) ,
+
+            msg = "%d (%.2f %%) were discarded."
+            percentage = discarded / former_total * 100
+            print msg % (discarded, percentage)
 
     # If a JSON file is specified with --annuli, it must list the photometric
     # parameters for all the filters on which photometry is to be done.
