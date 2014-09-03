@@ -226,11 +226,13 @@ parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_DB"
 parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
                   help = "overwrite output database if it already exists")
 
-parser.add_option('--filter', action = 'store', type = 'passband',
-                  dest = 'filter', default = None,
+parser.add_option('--filter', action = 'append', type = 'passband',
+                  dest = 'filters', default = None,
                   help = "do not do photometry on all the FITS files given "
                   "as input, but only on those taken in this photometric "
-                  "filter. " + defaults.desc['filter'])
+                  "filter. This option may be used multiple times in order "
+                  "to specify more than one filter with which we want to "
+                  "work. " + defaults.desc['filter'])
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
@@ -744,34 +746,42 @@ def main(arguments = None):
 
     # The --filter option allows the user to specify on which FITS files, among
     # all those received as input, photometry must be done: only those files in
-    # the options.filter photometric filter. The Passband class, which supports
-    # comparison operations, makes it possible to compare filters for what they
-    # really are, not how they were written: "Johnson V" and "johnson_v", for
-    # example, are the same filter after all, but if we just compared the two
-    # strings we would consider them to be different.
-    if options.filter:
+    # any of the photometric filters contained in options.filter. The Passband
+    # class, which supports comparison operations, makes it possible to compare
+    # filters for what they really are, not how they were written: "Johnson V"
+    # and "johnson_v", for example, are the same filter after all, but if we
+    # just compared the two strings we would consider them to be different.
 
-        msg = "%sIgnoring images not taken in the '%s' photometric filter..."
-        print msg % (style.prefix, options.filter) ,
+    if options.filters:
+
+        msg = "%sIgnoring images not taken in any of the following filters:"
+        print msg % style.prefix
+        for index, pfilter in enumerate(sorted(options.filters)):
+            print "%s (%d) %s" % (style.prefix, index + 1, pfilter)
         sys.stdout.flush()
 
         discarded = 0
         for pfilter, images in files.items():
-            if pfilter != options.filter:
+            if pfilter not in options.filters:
                 discarded += len(images)
                 del files[pfilter]
 
         if not files:
             print
-            msg = "%sError. No image was taken in the '%s' filter."
-            print msg % (style.prefix, options.filter)
+            msg = "%sError. No image was taken in any of the above filters."
+            print msg % style.prefix
             print style.error_exit_message
             return 1
 
         else:
-            print 'done.'
-            msg = "%s%d images taken in the '%s' filter, %d were discarded."
-            print msg % (style.prefix, len(files), options.filter, discarded)
+            former_total = len(files) + discarded
+            msg = "%s%d images (%.2f %%) taken in the above filters,"
+            percentage = len(files) / former_total * 100
+            print msg % (style.prefix, len(files), percentage) ,
+
+            msg = "%d (%.2f %%) were discarded."
+            percentage = discarded / former_total * 100
+            print msg % (discarded, percentage)
 
     # If a JSON file is specified with --annuli, it must list the photometric
     # parameters for all the filters on which photometry is to be done.
