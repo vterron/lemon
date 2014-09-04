@@ -129,10 +129,14 @@ def astrometry_net(path, ra = None, dec = None,
              Both the right ascension and declination must be given in order
              for this feature to work. The three arguments must be expressed
              in degrees.
-
     verbosity - the verbosity level. The higher this value, the 'chattier'
                 Astrometry.net will be. Most of the time, a verbosity other
                 than zero, the default value, is only needed for debugging.
+    timeout - the maximum number of seconds that Astrometry.net spends on the
+              image before giving up and raising AstrometryNetTimeoutExpired.
+              Note that the backend configuration file (astrometry.cfg) puts a
+              limit on the CPU time that is spent on an image: this can reduce
+              that value but not increase it.
 
     """
 
