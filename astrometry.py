@@ -86,7 +86,8 @@ class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
         msg = "%s: could not solve field in less than %d seconds"
         return msg % (self.path, self.timeout)
 
-def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
+def astrometry_net(path, ra = None, dec = None,
+                   radius = 1, verbosity = 0, timeout = None):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -190,7 +191,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
         args.append('-%s' % ('v' * verbosity))
 
     try:
-        subprocess.check_call(args)
+        subprocess.check_call(args, timeout = timeout)
 
         # .solved file must exist and contain a binary one
         with open(solved_file, 'rb') as fd:
@@ -204,6 +205,8 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     # If .solved file doesn't exist or contain one
     except (IOError, AstrometryNetUnsolvedField):
         raise AstrometryNetUnsolvedField(path)
+    except subprocess.TimeoutExpired:
+        raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
         methods.clean_tmp_files(output_dir)
 
