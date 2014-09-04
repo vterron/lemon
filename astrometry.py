@@ -376,8 +376,16 @@ def main(arguments = None):
 
         try:
             output_path = astrometry_net(img.path, **kwargs)
-        except AstrometryNetUnsolvedField:
-            msg = "%s did not solve. Ignored." % img.path
+
+        except AstrometryNetUnsolvedField, e:
+
+            # A subclass of AstrometryNetUnsolvedField
+            if isinstance(e, AstrometryNetTimeoutExpired):
+                msg = "%s exceeded the timeout limit. Ignored."
+            else:
+                msg = "%s did not solve. Ignored."
+
+            msg %= img.path
             print style.prefix + msg
             warnings.warn(msg, RuntimeWarning)
             continue
