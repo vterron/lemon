@@ -75,6 +75,17 @@ class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
     def __str__(self):
         return "%s: could not solve field" % self.path
 
+class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
+    """ Raised if the Astrometry.net timeout was reached """
+
+    def __init__(self, path, timeout):
+        self.path = path
+        self.timeout = timeout
+
+    def __str__(self):
+        msg = "%s: could not solve field in less than %d seconds"
+        return msg % (self.path, self.timeout)
+
 def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     """ Do astrometry on a FITS image using Astrometry.net.
 
