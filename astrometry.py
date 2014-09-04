@@ -234,6 +234,17 @@ parser.add_option('--blind', action = 'store_true', dest = 'blind',
                   "pointing, or when they do but it is deemed to be "
                   "entirely unreliable")
 
+parser.add_option('--timeout', action = 'store', type = 'int',
+                  dest = 'timeout', default = 600,
+                  help = "the maximum number of seconds that may be spent "
+                  "attempting to find the astrometric solution of a FITS "
+                  "image. If this time limit is exceeded, we give up and no "
+                  "solution for the image is saved to the output directory. "
+                  "Note, however, that Astrometry.net's backend configuration "
+                  "file (astrometry.cfg) puts a limit on the CPU time that is "
+                  "spent on an image: this option can reduce this value but "
+                  "not increase it. [default: %default]")
+
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
                   help = "string to be appended to output images, before "
