@@ -25,10 +25,18 @@ import logging
 import optparse
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 import warnings
+
+# The 'timeout' argument of subprocess.call() was added in version 3.3.
+# In previous versions we need to use 'subprocess32', a backport of the
+# subprocess module from Python 3.2/3.3 for use on 2.x.
+
+if sys.version_info < (3, 3):
+    import subprocess32 as subprocess
+else:
+    import subprocess
 
 # LEMON modules
 import customparser
@@ -67,7 +75,19 @@ class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
     def __str__(self):
         return "%s: could not solve field" % self.path
 
-def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
+class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
+    """ Raised if the Astrometry.net timeout was reached """
+
+    def __init__(self, path, timeout):
+        self.path = path
+        self.timeout = timeout
+
+    def __str__(self):
+        msg = "%s: could not solve field in less than %d seconds"
+        return msg % (self.path, self.timeout)
+
+def astrometry_net(path, ra = None, dec = None,
+                   radius = 1, verbosity = 0, timeout = None):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -109,10 +129,14 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
              Both the right ascension and declination must be given in order
              for this feature to work. The three arguments must be expressed
              in degrees.
-
     verbosity - the verbosity level. The higher this value, the 'chattier'
                 Astrometry.net will be. Most of the time, a verbosity other
                 than zero, the default value, is only needed for debugging.
+    timeout - the maximum number of seconds that Astrometry.net spends on the
+              image before giving up and raising AstrometryNetTimeoutExpired.
+              Note that the backend configuration file (astrometry.cfg) puts a
+              limit on the CPU time that is spent on an image: this can reduce
+              that value but not increase it.
 
     """
 
@@ -171,7 +195,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
         args.append('-%s' % ('v' * verbosity))
 
     try:
-        subprocess.check_call(args)
+        subprocess.check_call(args, timeout = timeout)
 
         # .solved file must exist and contain a binary one
         with open(solved_file, 'rb') as fd:
@@ -185,6 +209,8 @@ def astrometry_net(path, ra = None, dec = None, radius = 1, verbosity = 0):
     # If .solved file doesn't exist or contain one
     except (IOError, AstrometryNetUnsolvedField):
         raise AstrometryNetUnsolvedField(path)
+    except subprocess.TimeoutExpired:
+        raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
         methods.clean_tmp_files(output_dir)
 
@@ -207,6 +233,17 @@ parser.add_option('--blind', action = 'store_true', dest = 'blind',
                   "your data have no information about the telescope "
                   "pointing, or when they do but it is deemed to be "
                   "entirely unreliable")
+
+parser.add_option('--timeout', action = 'store', type = 'int',
+                  dest = 'timeout', default = 600,
+                  help = "the maximum number of seconds that may be spent "
+                  "attempting to find the astrometric solution of a FITS "
+                  "image. If this time limit is exceeded, we give up and no "
+                  "solution for the image is saved to the output directory. "
+                  "Note, however, that Astrometry.net's backend configuration "
+                  "file (astrometry.cfg) puts a limit on the CPU time that is "
+                  "spent on an image: this option can reduce this value but "
+                  "not increase it. [default: %default]")
 
 parser.add_option('--suffix', action = 'store', type = 'str',
                   dest = 'suffix', default = 'a',
@@ -334,12 +371,21 @@ def main(arguments = None):
         kwargs = dict(ra = ra,
                       dec = dec,
                       radius = options.radius,
-                      verbosity = options.verbose)
+                      verbosity = options.verbose,
+                      timeout = options.timeout)
 
         try:
             output_path = astrometry_net(img.path, **kwargs)
-        except AstrometryNetUnsolvedField:
-            msg = "%s did not solve. Ignored." % img.path
+
+        except AstrometryNetUnsolvedField, e:
+
+            # A subclass of AstrometryNetUnsolvedField
+            if isinstance(e, AstrometryNetTimeoutExpired):
+                msg = "%s exceeded the timeout limit. Ignored."
+            else:
+                msg = "%s did not solve. Ignored."
+
+            msg %= img.path
             print style.prefix + msg
             warnings.warn(msg, RuntimeWarning)
             continue
