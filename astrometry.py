@@ -25,10 +25,18 @@ import logging
 import optparse
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 import warnings
+
+# The 'timeout' argument of subprocess.call() was added in version 3.3.
+# In previous versions we need to use 'subprocess32', a backport of the
+# subprocess module from Python 3.2/3.3 for use on 2.x.
+
+if sys.version_info < (3, 3):
+    import subprocess32 as subprocess
+else:
+    import subprocess
 
 # LEMON modules
 import customparser
