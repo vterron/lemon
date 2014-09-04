@@ -371,7 +371,8 @@ def main(arguments = None):
         kwargs = dict(ra = ra,
                       dec = dec,
                       radius = options.radius,
-                      verbosity = options.verbose)
+                      verbosity = options.verbose,
+                      timeout = options.timeout)
 
         try:
             output_path = astrometry_net(img.path, **kwargs)
