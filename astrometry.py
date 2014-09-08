@@ -194,8 +194,15 @@ def astrometry_net(path, ra = None, dec = None,
     if verbosity:
         args.append('-%s' % ('v' * verbosity))
 
+    # Needed when 'verbosity' is 0
+    null_fd = open(os.devnull, 'w')
+
     try:
-        subprocess.check_call(args, timeout = timeout)
+        kwargs = dict(timeout = timeout)
+        if not verbosity:
+            kwargs['stdout'] = kwargs['stderr'] = null_fd
+
+        subprocess.check_call(args, **kwargs)
 
         # .solved file must exist and contain a binary one
         with open(solved_file, 'rb') as fd:
@@ -212,6 +219,7 @@ def astrometry_net(path, ra = None, dec = None,
     except subprocess.TimeoutExpired:
         raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
+        null_fd.close()
         methods.clean_tmp_files(output_dir)
 
 
