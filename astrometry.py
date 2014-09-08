@@ -129,9 +129,14 @@ def astrometry_net(path, ra = None, dec = None,
              Both the right ascension and declination must be given in order
              for this feature to work. The three arguments must be expressed
              in degrees.
-    verbosity - the verbosity level. The higher this value, the 'chattier'
-                Astrometry.net will be. Most of the time, a verbosity other
-                than zero, the default value, is only needed for debugging.
+    verbosity - the verbosity level. The default value is zero, meaning that
+                the function executes silently. A value of one makes both the
+                standard output and standard error of Astrometry.net visible.
+                Above that, the number of -v flags send to it equals the value
+                of the argument minus one. For example: verbosity = 3 allows us
+                to see stdout and stderr, and calls Astrometry.net with two -v
+                flags. Most of the time, verbosities greater than one are only
+                needed for debugging.
     timeout - the maximum number of seconds that Astrometry.net spends on the
               image before giving up and raising AstrometryNetTimeoutExpired.
               Note that the backend configuration file (astrometry.cfg) puts a
@@ -190,12 +195,23 @@ def astrometry_net(path, ra = None, dec = None,
     if radius is not None:
         args += ['--radius', '%f' % radius]
 
-    # -v / --verbose: be more chatty -- repeat for even more verboseness
-    if verbosity:
-        args.append('-%s' % ('v' * verbosity))
+    # -v / --verbose: be more chatty -- repeat for even more verboseness. A
+    # value of 'verbosity' equal to zero means that both the standard output
+    # and error of Astrometry.net and redirected to the null device. Above
+    # that, we send 'verbosity' minus one -v flags to Astrometry.net.
+
+    if verbosity > 1:
+        args.append('-%s' % ('v' * (verbosity - 1)))
+
+    # Needed when 'verbosity' is 0
+    null_fd = open(os.devnull, 'w')
 
     try:
-        subprocess.check_call(args, timeout = timeout)
+        kwargs = dict(timeout = timeout)
+        if not verbosity:
+            kwargs['stdout'] = kwargs['stderr'] = null_fd
+
+        subprocess.check_call(args, **kwargs)
 
         # .solved file must exist and contain a binary one
         with open(solved_file, 'rb') as fd:
@@ -212,6 +228,7 @@ def astrometry_net(path, ra = None, dec = None,
     except subprocess.TimeoutExpired:
         raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
+        null_fd.close()
         methods.clean_tmp_files(output_dir)
 
 
@@ -252,10 +269,11 @@ parser.add_option('--suffix', action = 'store', type = 'str',
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'] + " The verbosity "
-                  "level is also passed down to Astrometry.net, causing "
-                  "it to be increasingly chattier as more -v flags are "
-                  "given")
+                  help = defaults.desc['verbosity'] + " By default, the "
+                  "standard output and error of Astrometry.net are ignored. "
+                  "The first -v flag is necessary to be able to see them; the "
+                  "rest are passed down to Astrometry.net, causing it to be "
+                  "increasingly chattier as more -v flags are given.")
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
