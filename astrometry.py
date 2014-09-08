@@ -269,10 +269,11 @@ parser.add_option('--suffix', action = 'store', type = 'str',
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'] + " The verbosity "
-                  "level is also passed down to Astrometry.net, causing "
-                  "it to be increasingly chattier as more -v flags are "
-                  "given")
+                  help = defaults.desc['verbosity'] + " By default, the "
+                  "standard output and error of Astrometry.net are ignored. "
+                  "The first -v flag is necessary to be able to see them; the "
+                  "rest are passed down to Astrometry.net, causing it to be "
+                  "increasingly chattier as more -v flags are given.")
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
