@@ -190,9 +190,13 @@ def astrometry_net(path, ra = None, dec = None,
     if radius is not None:
         args += ['--radius', '%f' % radius]
 
-    # -v / --verbose: be more chatty -- repeat for even more verboseness
-    if verbosity:
-        args.append('-%s' % ('v' * verbosity))
+    # -v / --verbose: be more chatty -- repeat for even more verboseness. A
+    # value of 'verbosity' equal to zero means that both the standard output
+    # and error of Astrometry.net and redirected to the null device. Above
+    # that, we send 'verbosity' minus one -v flags to Astrometry.net.
+
+    if verbosity > 1:
+        args.append('-%s' % ('v' * (verbosity - 1)))
 
     # Needed when 'verbosity' is 0
     null_fd = open(os.devnull, 'w')
