@@ -126,13 +126,10 @@ _lemon_photometry()
 _lemon_diffphot()
 {
     local opts
-    opts="--output --overwrite --cores --verbose --minimum-images
-    --stars --minimum-stars --pct --weights-threshold --max-iters
-    --worst-fraction"
+    opts="--overwrite --cores --verbose --minimum-images --stars
+    --minimum-stars --pct --weights-threshold --max-iters --worst-fraction"
 
-    if [[ ${prev} == --output ]]; then
-	_filedir @($LEMONDB_EXTS)
-    elif [[ ${cur} == -* ]]; then
+    if [[ ${cur} == -* ]]; then
 	_match "${opts}"
     else
         _filedir @($LEMONDB_EXTS)
