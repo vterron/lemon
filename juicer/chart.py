@@ -438,7 +438,7 @@ class FindingChartDialog(object):
             # Get the alpha and delta for these x- and y-coordinates
             coords = self.wcs.all_pix2world(event.xdata, event.ydata, 1)
             star_id = self.db.star_closest_to_world_coords(*coords)[0]
-            # LEMONdB.get_star() returns (x, y, ra, dec, imag)
+            # LEMONdB.get_star() returns (x, y, ra, dec, epoch, pm_ra, pm_dec, imag)
             ra, dec = self.db.get_star(star_id)[2:4]
             kwargs = dict(layer = self.MARKERS_LAYER,
                           edgecolor = 'red',

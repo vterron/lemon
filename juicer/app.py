@@ -589,7 +589,7 @@ class StarDetailsGUI(object):
             self.starinfo_view.append_column(column)
 
         store = self.starinfo_store
-        x, y, self.ra, self.dec, imag = self.db.get_star(star_id)
+        x, y, self.ra, self.dec, _, _, _, imag = self.db.get_star(star_id)
         store.append(('Right ascension', '%s' % methods.ra_str(self.ra), True))
         store.append(('Right ascension', '%.4f deg' % self.ra, True))
         store.append(('Declination', '%s' % methods.dec_str(self.dec), True))
@@ -1464,7 +1464,7 @@ class LEMONJuicerGUI(object):
                 if self._aborted:
                     break
 
-                x, y, ra, dec, imag = db.get_star(star_id)
+                x, y, ra, dec, _, _, _, imag = db.get_star(star_id)
                 ra_str  = methods.ra_str(ra)
                 dec_str = methods.dec_str(dec)
                 row = [star_id, ra_str, ra, dec_str, dec, imag]
