@@ -836,14 +836,14 @@ def main(arguments = None):
         print style.error_exit_message
         return 1
 
-    if os.path.exists(options.output_db):
+    if os.path.exists(output_db_path):
         if not options.overwrite:
             print "%sError. The output database '%s' already exists." % \
-                  (style.prefix, options.output_db)
+                  (style.prefix, output_db_path)
             print style.error_exit_message
             return 1
         else:
-            os.unlink(options.output_db)
+            os.unlink(output_db_path)
 
     # Note that we do not allow the user to update an existing LEMON database,
     # although it would make sense if we had just done photometry and now we
@@ -854,11 +854,11 @@ def main(arguments = None):
 
     print "%sMaking a copy of the input database..." % style.prefix ,
     sys.stdout.flush()
-    shutil.copy2(input_db_path, options.output_db)
-    methods.owner_writable(options.output_db, True) # chmod u+w
+    shutil.copy2(input_db_path, output_db_path)
+    methods.owner_writable(output_db_path, True) # chmod u+w
     print 'done.'
 
-    db = database.LEMONdB(options.output_db);
+    db = database.LEMONdB(output_db_path);
     nstars = len(db)
     print "%sThere are %d stars in the database" % (style.prefix, nstars)
 
@@ -935,7 +935,7 @@ def main(arguments = None):
     db.hostname = socket.gethostname()
     db.commit()
 
-    methods.owner_writable(options.output_db, False) # chmod u-w
+    methods.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 
