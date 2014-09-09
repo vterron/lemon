@@ -51,7 +51,7 @@ def show_help(name):
     print
     print "The auxiliary, not-always-necessary commands are:"
     print "   import       Group the images of an observing campaign"
-    print "   seeing       Identify image with best astronomical seeing"
+    print "   seeing       Discard images with bad seeing or elongated"
     print "   annuli       Find optimal parameters for photometry"
 
     print
