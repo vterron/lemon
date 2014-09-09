@@ -818,12 +818,13 @@ def main(arguments = None):
         logging_level = logging.DEBUG
     logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
 
-    if len(args) != 1:
+    if len(args) != 2:
         parser.print_help()
         return 2  # used for command line syntax errors
     else:
-        assert len(args) == 1
+        assert len(args) == 2
         input_db_path = args[0]
+        output_db_path = args[1]
 
     if options.min_cstars > options.ncstars:
         print "%sError. The value of --min-stars must be <= --stars." % style.prefix
