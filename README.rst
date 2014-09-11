@@ -11,7 +11,7 @@ A first overview of LEMON, now slightly outdated, was presented some time ago at
 Commands
 ========
 
-The pipeline consists of **nine commands**, six of which are considered are *essential* because they implement the data reduction and analysis steps and are usually run sequentially. However, depending on your needs only a specific subset of them may be used. In this sense, LEMON can be viewed as a set of tasks that *may* be used as a pipeline. The other three commands are *auxiliary* in the sense that they provide features that are convenient in some, but not all, scenarios.
+The pipeline consists of **nine commands**, six of which are considered to be *essential* because they implement the data reduction and analysis steps and are usually run sequentially. However, depending on your needs only a specific subset of them may be used. In this sense, LEMON can be viewed as a set of tasks that *may* be used as a pipeline. The other three commands are *auxiliary* in the sense that they provide features that are convenient in some, but not all, scenarios.
 
 .. code::
 
