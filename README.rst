@@ -11,22 +11,24 @@ A first overview of LEMON, now slightly outdated, was presented some time ago at
 Commands
 ========
 
-The pipeline consists of **nine commands**, which implement the data reduction and analysis steps and are usually run sequentially, although depending on your needs only a specific subset of them may be used. In this sense, LEMON can be viewed as a set of tasks that *may* be used as a pipeline.
+The pipeline consists of **nine commands**, six of which are considered are *essential* because they implement the data reduction and analysis steps and are usually run sequentially. However, depending on your needs only a specific subset of them may be used. In this sense, LEMON can be viewed as a set of tasks that *may* be used as a pipeline. The other three commands are *auxiliary* in the sense that they provide features that are convenient in some, but not all, scenarios.
 
 .. code::
 
-  usage: lemon [--help] COMMAND [ARGS]
+  usage: lemon [--help] [--version] [--update] COMMAND [ARGS]
 
-  The available commands are:
-     import       Group the images of an observing campaign
-     seeing       Identify image with best astronomical seeing
+  The essential commands are:
      astrometry   Calibrate the images astrometrically
      mosaic       Assemble the images into a mosaic
-     annuli       Find optimal parameters for photometry
      photometry   Perform aperture photometry
      diffphot     Generate light curves
      periods      Dworetsky's string-length method
      juicer       LEMONdB browser and variability analyzer
+
+  The auxiliary, not-always-necessary commands are:
+     import       Group the images of an observing campaign
+     seeing       Discard images with bad seeing or elongated
+     annuli       Find optimal parameters for photometry
 
   See 'lemon COMMAND' for more information on a specific command.
 
