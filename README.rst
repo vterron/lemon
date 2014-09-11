@@ -15,18 +15,20 @@ The pipeline consists of **nine commands**, which implement the data reduction a
 
 .. code::
 
-  usage: lemon [--help] COMMAND [ARGS]
+  usage: lemon [--help] [--version] [--update] COMMAND [ARGS]
 
-  The available commands are:
-     import       Group the images of an observing campaign
-     seeing       Identify image with best astronomical seeing
+  The essential commands are:
      astrometry   Calibrate the images astrometrically
      mosaic       Assemble the images into a mosaic
-     annuli       Find optimal parameters for photometry
      photometry   Perform aperture photometry
      diffphot     Generate light curves
      periods      Dworetsky's string-length method
      juicer       LEMONdB browser and variability analyzer
+
+  The auxiliary, not-always-necessary commands are:
+     import       Group the images of an observing campaign
+     seeing       Discard images with bad seeing or elongated
+     annuli       Find optimal parameters for photometry
 
   See 'lemon COMMAND' for more information on a specific command.
 
