@@ -146,8 +146,6 @@ class PreferencesDialog(object):
 
         data_min = int(numpy.ceil (self.parent.data_min))
         data_max = int(numpy.floor(self.parent.data_max))
-        assert data_min <= vmin
-        assert data_max >= vmax
         assert hasattr(self, 'stretch')
 
         kwargs = dict(lower = data_min, upper = data_max, step_incr = 1)
