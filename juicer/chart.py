@@ -139,10 +139,18 @@ class PreferencesDialog(object):
             for message in msg1, msg2:
                 logging.debug(message)
 
-        # The absolute minimum and maximum values that the two spin buttons can
-        # take are those of the minimum and maximum pixels of the finding chart
-        # image. These are read from the 'data_min' and 'data_max' attributes
-        # of the parent FindingChartDialog object.
+        # Because of the linear normalization formula, which APLpyNormalize
+        # uses by default, it may set a value of 'vmin' smaller than that
+        # of the minimum pixel level of the finding chart (read from the
+        # 'data_min' attribute of the parent FindingChartDialog object):
+        #
+        #   vmin = -0.1 * (vmax - vmin) + vmin
+        #
+        # Therefore, we need to make sure to use the lowest of the two values:
+        # 'vmin' and 'data_min', since (although strange at first) the former
+        # may be smaller than the latter. Analogously, the value of 'vmax'
+        # returned by APLpyNormalize can be greater than the maximum pixel
+        # level, so we must take that into account.
 
         data_min = numpy.ceil (min(self.parent.data_min, vmin))
         data_max = numpy.floor(max(self.parent.data_max, vmax))
