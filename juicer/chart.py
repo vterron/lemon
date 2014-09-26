@@ -145,7 +145,7 @@ class PreferencesDialog(object):
         # of the parent FindingChartDialog object.
 
         data_min = numpy.ceil (min(self.parent.data_min, vmin))
-        data_max = int(numpy.floor(self.parent.data_max))
+        data_max = numpy.floor(max(self.parent.data_max, vmax))
         assert hasattr(self, 'stretch')
 
         kwargs = dict(lower = data_min, upper = data_max, step_incr = 1)
