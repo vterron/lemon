@@ -144,7 +144,7 @@ class PreferencesDialog(object):
         # image. These are read from the 'data_min' and 'data_max' attributes
         # of the parent FindingChartDialog object.
 
-        data_min = int(numpy.ceil (self.parent.data_min))
+        data_min = numpy.ceil (min(self.parent.data_min, vmin))
         data_max = int(numpy.floor(self.parent.data_max))
         assert hasattr(self, 'stretch')
 
