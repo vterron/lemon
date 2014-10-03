@@ -22,11 +22,13 @@
 from __future__ import division
 
 import logging
+import multiprocessing
 import optparse
 import os
 import shutil
 import sys
 import tempfile
+import time
 import warnings
 
 # The 'timeout' argument of subprocess.call() was added in version 3.3.
@@ -463,14 +465,26 @@ def main(arguments = None):
     # Make sure that the output directory exists; create it if it doesn't.
     methods.determine_output_dir(output_dir)
 
-    msg = "%s%d paths given as input, on which astrometry will be done."
-    print msg % (style.prefix, len(input_paths))
     print "%sUsing a local build of Astrometry.net." % style.prefix
-    msg = "%sLines not starting with '%s' come from Astrometry.net."
-    print msg % (style.prefix, style.prefix.strip())
+    msg = "%sDoing astrometry on the %d paths given as input."
+    print msg % (style.prefix, len(input_paths))
+
+    pool = multiprocessing.Pool(options.ncores)
+    map_async_args = ((path, output_dir, options) for path in input_paths)
+    result = pool.map_async(parallel_astrometry, map_async_args)
+
+    while not result.ready():
+        time.sleep(1)
+        methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        # Do not update the progress bar when debugging; instead, print it
+        # on a new line each time. This prevents the next logging message,
+        # if any, from being printed on the same line that the bar.
+        if logging_level < logging.WARNING:
+            print
+
+    result.get() # reraise exceptions of the remote call, if any
+    methods.show_progress(100) # in case the queue was ready too soon
     print
-
-
 
     print "%sYou're done ^_^" % style.prefix
     return 0
