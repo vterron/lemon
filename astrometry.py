@@ -58,6 +58,11 @@ to work it is also necessary to download the index files.
 
 ASTROMETRY_COMMAND = 'solve-field'
 
+# The Queue is global -- this works, but note that we could have
+# passed its reference to the function managed by pool.map_async.
+# See http://stackoverflow.com/a/3217427/184363
+queue = methods.Queue()
+
 class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
     pass
