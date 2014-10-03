@@ -236,6 +236,122 @@ def astrometry_net(path, ra = None, dec = None,
         null_fd.close()
         methods.clean_tmp_files(output_dir)
 
+@methods.print_exception_traceback
+def parallel_astrometry(args):
+    """ Function argument of map_async() to do astrometry in parallel.
+
+    This will be the first argument passed to multiprocessing.Pool.map_async(),
+    which chops the iterable into a number of chunks that are submitted to the
+    process pool as separate tasks. 'args' must be a three-element tuple with
+    (1) a string with the path to the FITS image, (2) a string with the path to
+    the output directory and (3) 'options', the optparse.Values object returned
+    by optparse.OptionParser.parse_args().
+
+    This function does astrometry on each FITS image with the astrometry_net()
+    function. The output FITS files, containing the WCS headers calculated by
+    Astrometry.net, are written to the output directory with the same basename
+    as the original files but with the string options.suffix appended before
+    the file extension.
+
+    The path to each solved image is put, as a string, into the module-level
+    'queue' object, a process shared queue. If the image cannot be solved, None
+    is put instead. Note that the contents of the shared queue are necessary so
+    that the progress bar can be updated to reflect the number of input images
+    that have been processed so far. Apart from that, you most probably do not
+    need to do anything with these paths, as the output files are written to
+    the output directory by astrometry_net().
+
+    """
+
+    path, output_dir, options = args
+
+    img = fitsimage.FITSImage(path)
+    # Add the suffix to the basename of the FITS image
+    root, ext = os.path.splitext(os.path.basename(path))
+    output_filename = root + options.suffix + ext
+    dest_path = os.path.join(output_dir, output_filename)
+
+    if options.blind:
+        msg = "%s: solving the image blindly (--blind option)"
+        logging.debug(msg % img.path)
+        ra = dec = None
+        msg = "%s: using α = δ = None"
+        logging.debug(msg % img.path)
+
+    else:
+
+        try:
+            msg = "%s: reading α from FITS header (keyword '%s')"
+            logging.debug(msg % (img.path, options.rak))
+            ra  = float(img.read_keyword(options.rak))
+            msg = "%s: α = %.5f" % (img.path, ra)
+            logging.debug(msg)
+
+            msg = "%s: reading δ from FITS header (keyword '%s')"
+            logging.debug(msg % (img.path, options.deck))
+            dec = float(img.read_keyword(options.deck))
+            msg = "%s: δ = %.5f" % (img.path, dec)
+            logging.debug(msg)
+
+            msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
+            logging.debug(msg)
+
+        except (ValueError, KeyError), e:
+            msg = "%s: %s" % (img.path, str(e))
+            logging.debug(msg)
+            ra = dec = None
+            msg = "%s: could not read coordinates from FITS header"
+            logging.debug(msg % img.path)
+            msg = "%s: using α = δ = None"
+            logging.debug(msg % img.path)
+
+    kwargs = dict(ra = ra,
+                  dec = dec,
+                  radius = options.radius,
+                  verbosity = options.verbose,
+                  timeout = options.timeout)
+
+    try:
+        output_path = astrometry_net(img.path, **kwargs)
+
+    except AstrometryNetUnsolvedField, e:
+
+        # A subclass of AstrometryNetUnsolvedField
+        if isinstance(e, AstrometryNetTimeoutExpired):
+            msg = "%s exceeded the timeout limit. Ignored."
+        else:
+            msg = "%s did not solve. Ignored."
+
+        msg %= img.path
+        warnings.warn(msg, RuntimeWarning)
+        queue.put(None)
+        logging.debug("%s: None put into global queue" % path)
+        return
+
+    try:
+        shutil.move(output_path, dest_path)
+        logging.debug("%s: solved image saved to %s" % (path, dest_path))
+    except (IOError, OSError), e:
+        logging.debug("%s: can't solve image (%s)" % (path, str(e)))
+        methods.clean_tmp_files(output_path)
+
+    output_img = fitsimage.FITSImage(dest_path)
+
+    debug_args = path, output_img.path
+    logging.debug("%s: updating header of output image (%s)" % debug_args)
+    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+    msg2 = "[Astrometry] WCS solution found by Astrometry.net"
+    msg3 = "[Astrometry] Original image: %s" % img.path
+
+    output_img.add_history(msg1)
+    output_img.add_history(msg2)
+    output_img.add_history(msg3)
+    logging.debug("%s: header of output image (%s) updated" % debug_args)
+
+    queue.put(output_img.path)
+    msg = "{0}: astrometry result ({1!r}) put into global queue"
+    logging.debug(msg.format(*debug_args))
+
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
@@ -350,86 +466,7 @@ def main(arguments = None):
     print msg % (style.prefix, style.prefix.strip())
     print
 
-    for path in input_paths:
-        img = fitsimage.FITSImage(path)
-        # Add the suffix to the basename of the FITS image
-        root, ext = os.path.splitext(os.path.basename(path))
-        output_filename = root + options.suffix + ext
-        dest_path = os.path.join(output_dir, output_filename)
 
-        if options.blind:
-            msg = "%s: solving the image blindly (--blind option)"
-            logging.debug(msg % img.path)
-            ra = dec = None
-            msg = "%s: using α = δ = None"
-            logging.debug(msg % img.path)
-
-        else:
-
-            try:
-                msg = "%s: reading α from FITS header (keyword '%s')"
-                logging.debug(msg % (img.path, options.rak))
-                ra  = float(img.read_keyword(options.rak))
-                msg = "%s: α = %.5f" % (img.path, ra)
-                logging.debug(msg)
-
-                msg = "%s: reading δ from FITS header (keyword '%s')"
-                logging.debug(msg % (img.path, options.deck))
-                dec = float(img.read_keyword(options.deck))
-                msg = "%s: δ = %.5f" % (img.path, dec)
-                logging.debug(msg)
-
-                msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
-                logging.debug(msg)
-
-            except (ValueError, KeyError), e:
-                msg = "%s: %s" % (img.path, str(e))
-                logging.debug(msg)
-                ra = dec = None
-                msg = "%s: could not read coordinates from FITS header"
-                logging.debug(msg % img.path)
-                msg = "%s: using α = δ = None"
-                logging.debug(msg % img.path)
-
-        kwargs = dict(ra = ra,
-                      dec = dec,
-                      radius = options.radius,
-                      verbosity = options.verbose,
-                      timeout = options.timeout)
-
-        try:
-            output_path = astrometry_net(img.path, **kwargs)
-
-        except AstrometryNetUnsolvedField, e:
-
-            # A subclass of AstrometryNetUnsolvedField
-            if isinstance(e, AstrometryNetTimeoutExpired):
-                msg = "%s exceeded the timeout limit. Ignored."
-            else:
-                msg = "%s did not solve. Ignored."
-
-            msg %= img.path
-            print style.prefix + msg
-            warnings.warn(msg, RuntimeWarning)
-            continue
-
-        try:
-            shutil.move(output_path, dest_path)
-        except (IOError, OSError):
-            methods.clean_tmp_files(output_path)
-
-        output_img = fitsimage.FITSImage(dest_path)
-
-        msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
-        msg2 = "[Astrometry] WCS solution found by Astrometry.net"
-        msg3 = "[Astrometry] Original image: %s" % img.path
-
-        output_img.add_history(msg1)
-        output_img.add_history(msg2)
-        output_img.add_history(msg3)
-
-        msg = "%s%s solved and saved to %s"
-        print  msg % (style.prefix, img.path, output_img.path)
 
     print "%sYou're done ^_^" % style.prefix
     return 0
