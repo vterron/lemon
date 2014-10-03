@@ -114,12 +114,9 @@ def astrometry_net(path, ra = None, dec = None,
     the 2MASS catalog [4] has a total size of ~32 gigabytes.
 
     Raises AstrometryNetError if Astrometry.net exits with a non-zero status
-    code, and AstrometryNetUnsolvedField if an astrometric solution cannot be
-    found. The latter usually happens because Astrometry.net has to stop at
-    some point: as long as a reasonable number of stars are detected, there are
-    gazillions of possible matches between the image and the sky to check, so
-    it gives up when the CPU time limit is hit [5]. This limit can be set in
-    the backend.cfg file, by default located in /usr/local/astrometry/etc/.
+    code, AstrometryNetTimeoutExpired if the 'timeout' limit is exceeded and
+    AstrometryNetUnsolvedField if the CPU time limit, set in the backend.cfg
+    file (by default located in /usr/local/astrometry/etc/) is hit.
 
     [1] http://astrometry.net/
     [2] http://astrometry.net/doc/build.html
