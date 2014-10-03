@@ -388,6 +388,10 @@ parser.add_option('--suffix', action = 'store', type = 'str',
                   help = "string to be appended to output images, before "
                   "the file extension, of course [default: %default]")
 
+parser.add_option('--cores', action = 'store', type = 'int',
+                  dest = 'ncores', default = defaults.ncores,
+                  help = defaults.desc['ncores'])
+
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
                   help = defaults.desc['verbosity'] + " By default, the "
