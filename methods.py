@@ -447,15 +447,16 @@ def split_by_diff(iterable, delta = 3):
     return reversed(sublists)
 
 def memoize(f):
-    """ Minimalistic memoization decorator.
-    http://code.activestate.com/recipes/577219-minimalistic-memoization/ """
+    """ Minimalistic memoization decorator (*args / **kwargs)
+    Based on: http://code.activestate.com/recipes/577219/ """
 
     cache = {}
     @functools.wraps(f)
-    def memf(*x):
-        if x not in cache:
-            cache[x] = f(*x)
-        return cache[x]
+    def memf(*args, **kwargs):
+        fkwargs = frozenset(kwargs.iteritems())
+        if (args, fkwargs) not in cache:
+            cache[args, fkwargs] = f(*args, **kwargs)
+        return cache[args, fkwargs]
     return memf
 
 def int_to_roman(i):
