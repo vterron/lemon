@@ -483,6 +483,10 @@ def main(arguments = None):
     methods.show_progress(100) # in case the queue was ready too soon
     print
 
+    # Results in the process shared queue were only necessary to accurately
+    # update the progress bar. They are no longer needed, so empty it now.
+    queue.clear()
+
     print "%sYou're done ^_^" % style.prefix
     return 0
 
