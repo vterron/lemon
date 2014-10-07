@@ -39,6 +39,9 @@ LOGIN_FILE = 'login.cl'
 UPARM_DIR = 'uparm'
 PYRAF_CACHE = 'pyraf'
 
+# The LEMON configuration file
+CONFIG_FILENAME = '~/.lemonrc'
+
 def mkiraf(path):
     """ Create the IRAF login script and the uparm directory.
 

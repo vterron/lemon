@@ -22,8 +22,9 @@
 
 import multiprocessing
 
-# LEMON module
+# LEMON modules
 import passband
+import setup
 
 desc = {} # option descriptions (for optparse)
 
@@ -72,4 +73,4 @@ desc['filter'] = \
 "and H-alpha, but letters, designating a particular section of the " \
 "electromagnetic spectrum, may also be used without a system (e.g., 'V'). " \
 "In addition to the built-in photometric systems, custom filters are " \
-"supported via the %s configuration file." % passband.CONFIG_FILENAME
+"supported via the %s configuration file." % setup.CONFIG_FILENAME

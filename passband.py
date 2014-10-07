@@ -55,7 +55,6 @@ HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
 CUSTOM = 'Custom'
 
-CONFIG_FILENAME = '~/.lemonrc'
 CONFIG_PATH = os.path.expanduser(CONFIG_FILENAME)
 CUSTOM_SECTION = 'custom_filters'
 
