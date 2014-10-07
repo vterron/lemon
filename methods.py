@@ -660,6 +660,11 @@ class Queue(multiprocessing.queues.Queue):
         """ Reliable implementation of multiprocessing.Queue.empty() """
         return not self.qsize()
 
+    def clear(self):
+        """ Remove all elements from the Queue. """
+        while not self.empty():
+            self.get()
+
 def print_exception_traceback(func):
     """ Decorator to print the stack trace of an exception.
 
