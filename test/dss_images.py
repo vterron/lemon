@@ -77,6 +77,7 @@ def get_dss_image(path, ra, dec):
         sys.stdout.flush()
 
     try:
+        urllib.urlcleanup()
         urllib.urlretrieve(url, filename = path, reporthook = update_status)
     except:
         try: os.unlink(path)
