@@ -29,6 +29,7 @@ this file is located, so it does not depend on where it is executed from.
 """
 
 import os
+import os.path
 import errno
 import shutil
 import subprocess
@@ -38,6 +39,10 @@ TERM_TYPE = 'xgterm'
 LOGIN_FILE = 'login.cl'
 UPARM_DIR = 'uparm'
 PYRAF_CACHE = 'pyraf'
+
+# The LEMON configuration file
+CONFIG_FILENAME = '~/.lemonrc'
+CONFIG_PATH = os.path.expanduser(CONFIG_FILENAME)
 
 def mkiraf(path):
     """ Create the IRAF login script and the uparm directory.

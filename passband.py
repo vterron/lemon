@@ -45,6 +45,9 @@ import random
 import re
 import string
 
+# LEMON module
+from setup import CONFIG_PATH
+
 JOHNSON = 'Johnson'
 COUSINS = 'Cousins'
 GUNN = 'Gunn'
@@ -55,8 +58,6 @@ HALPHA = 'Halpha'
 UNKNOWN = 'Unknown'
 CUSTOM = 'Custom'
 
-CONFIG_FILENAME = '~/.lemonrc'
-CONFIG_PATH = os.path.expanduser(CONFIG_FILENAME)
 CUSTOM_SECTION = 'custom_filters'
 
 def load_custom_filters(path = CONFIG_PATH):

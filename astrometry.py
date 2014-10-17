@@ -22,11 +22,13 @@
 from __future__ import division
 
 import logging
+import multiprocessing
 import optparse
 import os
 import shutil
 import sys
 import tempfile
+import time
 import warnings
 
 # The 'timeout' argument of subprocess.call() was added in version 3.3.
@@ -57,6 +59,11 @@ to work it is also necessary to download the index files.
 """
 
 ASTROMETRY_COMMAND = 'solve-field'
+
+# The Queue is global -- this works, but note that we could have
+# passed its reference to the function managed by pool.map_async.
+# See http://stackoverflow.com/a/3217427/184363
+queue = methods.Queue()
 
 class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
@@ -107,12 +114,9 @@ def astrometry_net(path, ra = None, dec = None,
     the 2MASS catalog [4] has a total size of ~32 gigabytes.
 
     Raises AstrometryNetError if Astrometry.net exits with a non-zero status
-    code, and AstrometryNetUnsolvedField if an astrometric solution cannot be
-    found. The latter usually happens because Astrometry.net has to stop at
-    some point: as long as a reasonable number of stars are detected, there are
-    gazillions of possible matches between the image and the sky to check, so
-    it gives up when the CPU time limit is hit [5]. This limit can be set in
-    the backend.cfg file, by default located in /usr/local/astrometry/etc/.
+    code, AstrometryNetTimeoutExpired if the 'timeout' limit is exceeded and
+    AstrometryNetUnsolvedField if the CPU time limit, set in the backend.cfg
+    file (by default located in /usr/local/astrometry/etc/) is hit.
 
     [1] http://astrometry.net/
     [2] http://astrometry.net/doc/build.html
@@ -129,9 +133,14 @@ def astrometry_net(path, ra = None, dec = None,
              Both the right ascension and declination must be given in order
              for this feature to work. The three arguments must be expressed
              in degrees.
-    verbosity - the verbosity level. The higher this value, the 'chattier'
-                Astrometry.net will be. Most of the time, a verbosity other
-                than zero, the default value, is only needed for debugging.
+    verbosity - the verbosity level. The default value is zero, meaning that
+                the function executes silently. A value of one makes both the
+                standard output and standard error of Astrometry.net visible.
+                Above that, the number of -v flags send to it equals the value
+                of the argument minus one. For example: verbosity = 3 allows us
+                to see stdout and stderr, and calls Astrometry.net with two -v
+                flags. Most of the time, verbosities greater than one are only
+                needed for debugging.
     timeout - the maximum number of seconds that Astrometry.net spends on the
               image before giving up and raising AstrometryNetTimeoutExpired.
               Note that the backend configuration file (astrometry.cfg) puts a
@@ -190,12 +199,23 @@ def astrometry_net(path, ra = None, dec = None,
     if radius is not None:
         args += ['--radius', '%f' % radius]
 
-    # -v / --verbose: be more chatty -- repeat for even more verboseness
-    if verbosity:
-        args.append('-%s' % ('v' * verbosity))
+    # -v / --verbose: be more chatty -- repeat for even more verboseness. A
+    # value of 'verbosity' equal to zero means that both the standard output
+    # and error of Astrometry.net and redirected to the null device. Above
+    # that, we send 'verbosity' minus one -v flags to Astrometry.net.
+
+    if verbosity > 1:
+        args.append('-%s' % ('v' * (verbosity - 1)))
+
+    # Needed when 'verbosity' is 0
+    null_fd = open(os.devnull, 'w')
 
     try:
-        subprocess.check_call(args, timeout = timeout)
+        kwargs = dict(timeout = timeout)
+        if not verbosity:
+            kwargs['stdout'] = kwargs['stderr'] = null_fd
+
+        subprocess.check_call(args, **kwargs)
 
         # .solved file must exist and contain a binary one
         with open(solved_file, 'rb') as fd:
@@ -212,7 +232,124 @@ def astrometry_net(path, ra = None, dec = None,
     except subprocess.TimeoutExpired:
         raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
+        null_fd.close()
         methods.clean_tmp_files(output_dir)
+
+@methods.print_exception_traceback
+def parallel_astrometry(args):
+    """ Function argument of map_async() to do astrometry in parallel.
+
+    This will be the first argument passed to multiprocessing.Pool.map_async(),
+    which chops the iterable into a number of chunks that are submitted to the
+    process pool as separate tasks. 'args' must be a three-element tuple with
+    (1) a string with the path to the FITS image, (2) a string with the path to
+    the output directory and (3) 'options', the optparse.Values object returned
+    by optparse.OptionParser.parse_args().
+
+    This function does astrometry on each FITS image with the astrometry_net()
+    function. The output FITS files, containing the WCS headers calculated by
+    Astrometry.net, are written to the output directory with the same basename
+    as the original files but with the string options.suffix appended before
+    the file extension.
+
+    The path to each solved image is put, as a string, into the module-level
+    'queue' object, a process shared queue. If the image cannot be solved, None
+    is put instead. Note that the contents of the shared queue are necessary so
+    that the progress bar can be updated to reflect the number of input images
+    that have been processed so far. Apart from that, you most probably do not
+    need to do anything with these paths, as the output files are written to
+    the output directory by astrometry_net().
+
+    """
+
+    path, output_dir, options = args
+
+    img = fitsimage.FITSImage(path)
+    # Add the suffix to the basename of the FITS image
+    root, ext = os.path.splitext(os.path.basename(path))
+    output_filename = root + options.suffix + ext
+    dest_path = os.path.join(output_dir, output_filename)
+
+    if options.blind:
+        msg = "%s: solving the image blindly (--blind option)"
+        logging.debug(msg % img.path)
+        ra = dec = None
+        msg = "%s: using α = δ = None"
+        logging.debug(msg % img.path)
+
+    else:
+
+        try:
+            msg = "%s: reading α from FITS header (keyword '%s')"
+            logging.debug(msg % (img.path, options.rak))
+            ra  = float(img.read_keyword(options.rak))
+            msg = "%s: α = %.5f" % (img.path, ra)
+            logging.debug(msg)
+
+            msg = "%s: reading δ from FITS header (keyword '%s')"
+            logging.debug(msg % (img.path, options.deck))
+            dec = float(img.read_keyword(options.deck))
+            msg = "%s: δ = %.5f" % (img.path, dec)
+            logging.debug(msg)
+
+            msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
+            logging.debug(msg)
+
+        except (ValueError, KeyError), e:
+            msg = "%s: %s" % (img.path, str(e))
+            logging.debug(msg)
+            ra = dec = None
+            msg = "%s: could not read coordinates from FITS header"
+            logging.debug(msg % img.path)
+            msg = "%s: using α = δ = None"
+            logging.debug(msg % img.path)
+
+    kwargs = dict(ra = ra,
+                  dec = dec,
+                  radius = options.radius,
+                  verbosity = options.verbose,
+                  timeout = options.timeout)
+
+    try:
+        output_path = astrometry_net(img.path, **kwargs)
+
+    except AstrometryNetUnsolvedField, e:
+
+        # A subclass of AstrometryNetUnsolvedField
+        if isinstance(e, AstrometryNetTimeoutExpired):
+            msg = "%s exceeded the timeout limit. Ignored."
+        else:
+            msg = "%s did not solve. Ignored."
+
+        msg %= img.path
+        warnings.warn(msg, RuntimeWarning)
+        queue.put(None)
+        logging.debug("%s: None put into global queue" % path)
+        return
+
+    try:
+        shutil.move(output_path, dest_path)
+        logging.debug("%s: solved image saved to %s" % (path, dest_path))
+    except (IOError, OSError), e:
+        logging.debug("%s: can't solve image (%s)" % (path, str(e)))
+        methods.clean_tmp_files(output_path)
+
+    output_img = fitsimage.FITSImage(dest_path)
+
+    debug_args = path, output_img.path
+    logging.debug("%s: updating header of output image (%s)" % debug_args)
+    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+    msg2 = "[Astrometry] WCS solution found by Astrometry.net"
+    msg3 = "[Astrometry] Original image: %s" % img.path
+
+    output_img.add_history(msg1)
+    output_img.add_history(msg2)
+    output_img.add_history(msg3)
+    logging.debug("%s: header of output image (%s) updated" % debug_args)
+
+    queue.put(output_img.path)
+    msg = "{0}: astrometry result ({1!r}) put into global queue"
+    logging.debug(msg.format(*debug_args))
 
 
 parser = customparser.get_parser(description)
@@ -250,12 +387,17 @@ parser.add_option('--suffix', action = 'store', type = 'str',
                   help = "string to be appended to output images, before "
                   "the file extension, of course [default: %default]")
 
+parser.add_option('--cores', action = 'store', type = 'int',
+                  dest = 'ncores', default = defaults.ncores,
+                  help = defaults.desc['ncores'])
+
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'] + " The verbosity "
-                  "level is also passed down to Astrometry.net, causing "
-                  "it to be increasingly chattier as more -v flags are "
-                  "given")
+                  help = defaults.desc['verbosity'] + " By default, the "
+                  "standard output and error of Astrometry.net are ignored. "
+                  "The first -v flag is necessary to be able to see them; the "
+                  "rest are passed down to Astrometry.net, causing it to be "
+                  "increasingly chattier as more -v flags are given.")
 
 key_group = optparse.OptionGroup(parser, "FITS Keywords",
                                  keywords.group_description)
@@ -320,93 +462,30 @@ def main(arguments = None):
     # Make sure that the output directory exists; create it if it doesn't.
     methods.determine_output_dir(output_dir)
 
-    msg = "%s%d paths given as input, on which astrometry will be done."
-    print msg % (style.prefix, len(input_paths))
     print "%sUsing a local build of Astrometry.net." % style.prefix
-    msg = "%sLines not starting with '%s' come from Astrometry.net."
-    print msg % (style.prefix, style.prefix.strip())
+    msg = "%sDoing astrometry on the %d paths given as input."
+    print msg % (style.prefix, len(input_paths))
+
+    pool = multiprocessing.Pool(options.ncores)
+    map_async_args = ((path, output_dir, options) for path in input_paths)
+    result = pool.map_async(parallel_astrometry, map_async_args)
+
+    while not result.ready():
+        time.sleep(1)
+        methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        # Do not update the progress bar when debugging; instead, print it
+        # on a new line each time. This prevents the next logging message,
+        # if any, from being printed on the same line that the bar.
+        if logging_level < logging.WARNING:
+            print
+
+    result.get() # reraise exceptions of the remote call, if any
+    methods.show_progress(100) # in case the queue was ready too soon
     print
 
-    for path in input_paths:
-        img = fitsimage.FITSImage(path)
-        # Add the suffix to the basename of the FITS image
-        root, ext = os.path.splitext(os.path.basename(path))
-        output_filename = root + options.suffix + ext
-        dest_path = os.path.join(output_dir, output_filename)
-
-        if options.blind:
-            msg = "%s: solving the image blindly (--blind option)"
-            logging.debug(msg % img.path)
-            ra = dec = None
-            msg = "%s: using α = δ = None"
-            logging.debug(msg % img.path)
-
-        else:
-
-            try:
-                msg = "%s: reading α from FITS header (keyword '%s')"
-                logging.debug(msg % (img.path, options.rak))
-                ra  = float(img.read_keyword(options.rak))
-                msg = "%s: α = %.5f" % (img.path, ra)
-                logging.debug(msg)
-
-                msg = "%s: reading δ from FITS header (keyword '%s')"
-                logging.debug(msg % (img.path, options.deck))
-                dec = float(img.read_keyword(options.deck))
-                msg = "%s: δ = %.5f" % (img.path, dec)
-                logging.debug(msg)
-
-                msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
-                logging.debug(msg)
-
-            except (ValueError, KeyError), e:
-                msg = "%s: %s" % (img.path, str(e))
-                logging.debug(msg)
-                ra = dec = None
-                msg = "%s: could not read coordinates from FITS header"
-                logging.debug(msg % img.path)
-                msg = "%s: using α = δ = None"
-                logging.debug(msg % img.path)
-
-        kwargs = dict(ra = ra,
-                      dec = dec,
-                      radius = options.radius,
-                      verbosity = options.verbose,
-                      timeout = options.timeout)
-
-        try:
-            output_path = astrometry_net(img.path, **kwargs)
-
-        except AstrometryNetUnsolvedField, e:
-
-            # A subclass of AstrometryNetUnsolvedField
-            if isinstance(e, AstrometryNetTimeoutExpired):
-                msg = "%s exceeded the timeout limit. Ignored."
-            else:
-                msg = "%s did not solve. Ignored."
-
-            msg %= img.path
-            print style.prefix + msg
-            warnings.warn(msg, RuntimeWarning)
-            continue
-
-        try:
-            shutil.move(output_path, dest_path)
-        except (IOError, OSError):
-            methods.clean_tmp_files(output_path)
-
-        output_img = fitsimage.FITSImage(dest_path)
-
-        msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
-        msg2 = "[Astrometry] WCS solution found by Astrometry.net"
-        msg3 = "[Astrometry] Original image: %s" % img.path
-
-        output_img.add_history(msg1)
-        output_img.add_history(msg2)
-        output_img.add_history(msg3)
-
-        msg = "%s%s solved and saved to %s"
-        print  msg % (style.prefix, img.path, output_img.path)
+    # Results in the process shared queue were only necessary to accurately
+    # update the progress bar. They are no longer needed, so empty it now.
+    queue.clear()
 
     print "%sYou're done ^_^" % style.prefix
     return 0
