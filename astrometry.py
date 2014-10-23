@@ -280,11 +280,7 @@ def parallel_astrometry(args):
     else:
 
         try:
-            msg = "%s: reading α from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.rak))
-            ra  = float(img.read_keyword(options.rak))
-            msg = "%s: α = %.5f" % (img.path, ra)
-            logging.debug(msg)
+            ra  = img.ra (options.rak)
 
             msg = "%s: reading δ from FITS header (keyword '%s')"
             logging.debug(msg % (img.path, options.deck))
