@@ -40,8 +40,9 @@ desc['rak'] = \
 
 deck = 'DEC'
 desc['deck'] = \
-"keyword for the declination of the astronomical object(s), in " \
-"decimal degrees [default: %default]"
+"keyword for the declination of the astronomical object(s), expressed " \
+"either as a floating point number in decimal degrees, or as a string " \
+"in the 'dd:mm:ss[.sss]' format [default: %default]"
 
 datek = 'DATE-OBS'
 desc['datek'] = \
