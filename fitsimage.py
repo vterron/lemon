@@ -557,6 +557,55 @@ class FITSImage(object):
             kwargs = dict(path = self.path, keyword = keyword)
             raise passband.NonRecognizedPassband(pfilter_str, **kwargs)
 
+    def ra(self, ra_keyword = keywords.rak):
+        """ Return the right ascension, in decimal degrees.
+
+        Return the value in decimal degrees of the 'ra_keyword' FITS keyword.
+        The right ascension must be expressed either as a floating point number
+        in units of decimal degrees, or as a string in the 'hh:mm:ss[.sss]'
+        format; otherwise, ValueError is raised. If the keyword cannot be
+        found in the FITS header, raise KeyError.
+
+        """
+
+        msg = "{0}: reading α from FITS header (keyword '{1}')"
+        logging.debug(msg.format(self.path, ra_keyword))
+        ra_str = self.read_keyword(ra_keyword)
+
+        try:
+            ra = float(ra_str)
+            logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
+            return ra
+
+        except ValueError, e:
+
+            msg1 = "{0}: {1}".format(self.path, str(e))
+            msg2 = "{0}: parsing α as sexagesimal".format(self.path)
+            msg3 = "{0}: α = '{1}'".format(self.path, ra_str)
+
+            logging.debug(msg1)
+            logging.debug(msg2)
+            logging.debug(msg3)
+
+            # HH:MM:SS[.sss]
+            regexp = '^(?P<hh>\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            match = re.match(regexp, ra_str.strip())
+            if match:
+                hh =   int(match.group('hh'))
+                mm =   int(match.group('mm'))
+                ss = float(match.group('ss'))
+
+                logging.debug(  "{0}: hours = {1} (α)".format(self.path, hh))
+                logging.debug("{0}: minutes = {1} (α)".format(self.path, mm))
+                logging.debug("{0}: seconds = {1} (α)".format(self.path, ss))
+
+                ra = methods.HMS_to_DD(hh, mm, ss)
+                logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
+                return ra
+            else:
+                msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format"
+                raise ValueError(msg.format(self.path, ra_keyword))
+
     @property
     def basename(self):
         """ Return the base name of the FITS image.
