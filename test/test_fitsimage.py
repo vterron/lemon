@@ -598,3 +598,92 @@ class FITSImageTest(unittest.TestCase):
             keywords['TIME-OBS'] = wrong_time
             assertRaised(fitsimage.NonStandardFITS, keywords)
 
+    def test_ra(self):
+
+        ra_kwd = 'RA'
+
+        keywords = {ra_kwd : 344.412916667}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(keywords[ra_kwd], img.ra(ra_kwd))
+
+        keywords = {ra_kwd.lower() : '19:43:56.01'}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(295.983375, img.ra(ra_kwd))
+
+        keywords = {ra_kwd : '17:58:17          '}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(269.570833333, img.ra(ra_kwd))
+
+        keywords = {ra_kwd.lower() : '    00:42:30.997 '}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(10.6291541667, img.ra(ra_kwd))
+
+        keywords = {ra_kwd : '13:00:01.'}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(195.004166667, img.ra(ra_kwd))
+
+        def assertValueErrorRaised(ra_value):
+            """ Assert that a random FITS image whose right ascension is
+            'ra_value' raises ValueError when its ra() method is called. """
+
+            keywords = {ra_kwd : ra_value}
+            with self.random(**keywords) as img:
+                regexp = "not in decimal degrees or 'HH:MM:SS.sss' format"
+                with self.assertRaisesRegexp(ValueError, regexp):
+                    img.ra(ra_kwd)
+
+        # Not in decimal or dd:mm:ss[.sss] format
+        assertValueErrorRaised('00h42m30s')
+        assertValueErrorRaised('00:42:30.9997')
+        assertValueErrorRaised('3:24:57.12')
+        assertValueErrorRaised('N/A')
+
+        # 'RA' keyword not in FITS header
+        with self.assertRaises(KeyError):
+            with self.random() as img:
+                img.ra(ra_kwd)
+
+    def test_dec(self):
+
+        dec_kwd = 'DEC'
+
+        keywords = {dec_kwd : -52.6956605556}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(keywords[dec_kwd], img.dec(dec_kwd))
+
+        keywords = {dec_kwd.lower() : '45:59:52.768'}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(45.9979911111, img.dec(dec_kwd))
+
+        keywords = {dec_kwd : '+19:10:56          '}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(19.1822222222, img.dec(dec_kwd))
+
+        keywords = {dec_kwd.lower() : '    -08:12:05.8  '}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(-8.20161111111, img.dec(dec_kwd))
+
+        keywords = {dec_kwd : '26:25:08.'}
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(26.4188888889, img.dec(dec_kwd))
+
+        def assertValueErrorRaised(dec_value):
+            """ Assert that a random FITS image whose declination is
+            'dec_value' raises ValueError when its dec() method is called."""
+
+            keywords = {dec_kwd : dec_value}
+            with self.random(**keywords) as img:
+                regexp = "not in decimal degrees or 'DD:MM:SS.sss' format"
+                with self.assertRaisesRegexp(ValueError, regexp):
+                    img.dec(dec_kwd)
+
+        # Not in decimal or dd:mm:ss[.sss] format
+        assertValueErrorRaised('+41d16m9s')
+        assertValueErrorRaised('45:59:52.7685')
+        assertValueErrorRaised('-8:12:05.8')
+        assertValueErrorRaised('N/A')
+
+        # 'DEC' keyword not in FITS header
+        with self.assertRaises(KeyError):
+            with self.random() as img:
+                img.dec(dec_kwd)

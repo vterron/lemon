@@ -280,21 +280,8 @@ def parallel_astrometry(args):
     else:
 
         try:
-            msg = "%s: reading α from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.rak))
-            ra  = float(img.read_keyword(options.rak))
-            msg = "%s: α = %.5f" % (img.path, ra)
-            logging.debug(msg)
-
-            msg = "%s: reading δ from FITS header (keyword '%s')"
-            logging.debug(msg % (img.path, options.deck))
-            dec = float(img.read_keyword(options.deck))
-            msg = "%s: δ = %.5f" % (img.path, dec)
-            logging.debug(msg)
-
-            msg = "%s: radius = %.2f degrees" % (img.path, options.radius)
-            logging.debug(msg)
-
+            ra  = img.ra (options.rak)
+            dec = img.dec(options.deck)
         except (ValueError, KeyError), e:
             msg = "%s: %s" % (img.path, str(e))
             logging.debug(msg)

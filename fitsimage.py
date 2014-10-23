@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# encoding: UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -555,6 +556,104 @@ class FITSImage(object):
         except passband.NonRecognizedPassband:
             kwargs = dict(path = self.path, keyword = keyword)
             raise passband.NonRecognizedPassband(pfilter_str, **kwargs)
+
+    def ra(self, ra_keyword = keywords.rak):
+        """ Return the right ascension, in decimal degrees.
+
+        Return the value in decimal degrees of the 'ra_keyword' FITS keyword.
+        The right ascension must be expressed either as a floating point number
+        in units of decimal degrees, or as a string in the 'hh:mm:ss[.sss]'
+        format; otherwise, ValueError is raised. If the keyword cannot be
+        found in the FITS header, raise KeyError.
+
+        """
+
+        msg = "{0}: reading α from FITS header (keyword '{1}')"
+        logging.debug(msg.format(self.path, ra_keyword))
+        ra_str = self.read_keyword(ra_keyword)
+
+        try:
+            ra = float(ra_str)
+            logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
+            return ra
+
+        except ValueError, e:
+
+            msg1 = "{0}: {1}".format(self.path, str(e))
+            msg2 = "{0}: parsing α as sexagesimal".format(self.path)
+            msg3 = "{0}: α = '{1}'".format(self.path, ra_str)
+
+            logging.debug(msg1)
+            logging.debug(msg2)
+            logging.debug(msg3)
+
+            # HH:MM:SS[.sss]
+            regexp = '^(?P<hh>\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            match = re.match(regexp, ra_str.strip())
+            if match:
+                hh =   int(match.group('hh'))
+                mm =   int(match.group('mm'))
+                ss = float(match.group('ss'))
+
+                logging.debug(  "{0}: hours = {1} (α)".format(self.path, hh))
+                logging.debug("{0}: minutes = {1} (α)".format(self.path, mm))
+                logging.debug("{0}: seconds = {1} (α)".format(self.path, ss))
+
+                ra = methods.HMS_to_DD(hh, mm, ss)
+                logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
+                return ra
+            else:
+                msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format"
+                raise ValueError(msg.format(self.path, ra_keyword))
+
+    def dec(self, dec_keyword = keywords.deck):
+        """ Return the declination, in decimal degrees.
+
+        Return the value in decimal degrees of the 'dec_keyword' FITS keyword.
+        The declination must be expressed either as a floating point number
+        in units of decimal degrees, or as a string in the 'dd:mm:ss[.sss]'
+        format; otherwise, ValueError is raised. If the keyword cannot be
+        found in the FITS header, raise KeyError.
+
+        """
+
+        msg = "{0}: reading δ from FITS header (keyword '{1}')"
+        logging.debug(msg.format(self.path, dec_keyword))
+        dec_str = self.read_keyword(dec_keyword)
+
+        try:
+            dec = float(dec_str)
+            logging.debug("{0}: δ = {1:.5f}".format(self.path, dec))
+            return dec
+
+        except ValueError, e:
+
+            msg1 = "{0}: {1}".format(self.path, str(e))
+            msg2 = "{0}: parsing α as sexagesimal".format(self.path)
+            msg3 = "{0}: δ = '{1}'".format(self.path, dec_str)
+
+            logging.debug(msg1)
+            logging.debug(msg2)
+            logging.debug(msg3)
+
+            # DD:MM:SS[.sss]
+            regexp = '^(?P<dd>([-+])?\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            match = re.match(regexp, dec_str.strip())
+            if match:
+                dd =   int(match.group('dd'))
+                mm =   int(match.group('mm'))
+                ss = float(match.group('ss'))
+
+                logging.debug("{0}: degrees = {1} (δ)".format(self.path, dd))
+                logging.debug("{0}: minutes = {1} (δ)".format(self.path, mm))
+                logging.debug("{0}: seconds = {1} (δ)".format(self.path, ss))
+
+                dec = methods.DMS_to_DD(dd, mm, ss)
+                logging.debug("{0}: δ = {1:.5f}".format(self.path, dec))
+                return dec
+            else:
+                msg = "{0}: '{1}' not in decimal degrees or 'DD:MM:SS.sss' format"
+                raise ValueError(msg.format(self.path, dec_keyword))
 
     @property
     def basename(self):

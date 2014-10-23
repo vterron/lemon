@@ -34,13 +34,15 @@ desc['filterk'] = \
 
 rak = 'RA'
 desc['rak'] = \
-"keyword for the right ascension of the astronomical object(s), " \
-"in decimal degrees [default: %default]"
+"keyword for the right ascension of the astronomical object(s), expressed " \
+"either as a floating point number in decimal degrees, or as a string in " \
+"the 'hh:mm:ss[.sss]' format [default: %default]"
 
 deck = 'DEC'
 desc['deck'] = \
-"keyword for the declination of the astronomical object(s), in " \
-"decimal degrees [default: %default]"
+"keyword for the declination of the astronomical object(s), expressed " \
+"either as a floating point number in decimal degrees, or as a string " \
+"in the 'dd:mm:ss[.sss]' format [default: %default]"
 
 datek = 'DATE-OBS'
 desc['datek'] = \
