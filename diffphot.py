@@ -114,17 +114,23 @@ class Weights(numpy.ndarray):
 
     @classmethod
     def inversely_proportional(cls, values, dtype = numpy.longdouble):
-        """ Receives a series of values and returns the weights that are
-        inversely proportional to them. Note that at least one value is
-        required, and none of them can be zero (as we would be dividing by
-        zero)"""
+        """ Return Weights inversely proportional to 'values'.
+
+        For example, [1, 1, 2] returns Weights([0.4, 0.4, 0.2]). Note that at
+        least one value is required, and that none of them may be zero (as in
+        that case we would be dividing by zero). A copy of 'values' is stored
+        in the 'values' attribute of the returned Weights object.
+
+        """
 
         if not len(values):
             raise ValueError("'values' is an empty sequence")
         if not all(values):
             raise ValueError("'values' cannot contain zeros")
         values = numpy.array(values,  dtype = dtype)
-        return cls(1 / values).normalize()
+        w = cls(1 / values).normalize()
+        w.values = numpy.array(values)
+        return w
 
     def absolute_percent_change(self, other, minimum = None):
         """ Return the percent change of two Weights of the same size. More

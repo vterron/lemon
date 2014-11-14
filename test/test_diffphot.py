@@ -159,17 +159,29 @@ class WeightsTest(unittest.TestCase):
     def test_inversely_proportional(self):
 
         # Basic, specific test cases
-        w1 = Weights.inversely_proportional([3])
+        c1 = [3]
+        w1 = Weights.inversely_proportional(c1)
         assertSequencesAlmostEqual(self, w1, [1])
+        assertSequencesAlmostEqual(self, w1.values, c1)
+        self.assertNotEqual(id(w1.values), id(c1))
 
-        w2 = Weights.inversely_proportional([1, 2])
+        c2 = [1, 2]
+        w2 = Weights.inversely_proportional(c2)
         assertSequencesAlmostEqual(self, w2, [2/3, 1/3])
+        assertSequencesAlmostEqual(self, w2.values, c2)
+        self.assertNotEqual(id(w2.values), id(c2))
 
-        w3 = Weights.inversely_proportional([1, 3])
+        c3 = [1, 3]
+        w3 = Weights.inversely_proportional(c3)
         assertSequencesAlmostEqual(self, w3, [3/4, 1/4])
+        assertSequencesAlmostEqual(self, w3.values, c3)
+        self.assertNotEqual(id(w3.values), id(c3))
 
-        w4 = Weights.inversely_proportional([1, 2, 3])
+        c4 = [1, 2, 3]
+        w4 = Weights.inversely_proportional(c4)
         assertSequencesAlmostEqual(self, w4, [6/11, 3/11, 2/11])
+        assertSequencesAlmostEqual(self, w4.values, c4)
+        self.assertNotEqual(id(w4.values), id(c4))
 
         with self.assertRaises(ValueError):
             Weights.inversely_proportional([])
@@ -182,6 +194,8 @@ class WeightsTest(unittest.TestCase):
             eweights = [1 / x / math.fsum(icoeffs) for x in coeffs]
             self.assertAlmostEqual(iweights.total, 1.0)
             assertSequencesAlmostEqual(self, eweights, iweights)
+            assertSequencesAlmostEqual(self, coeffs, iweights.values)
+            self.assertNotEqual(id(coeffs), id(iweights.values))
 
     def test_absolute_percent_change(self):
 
