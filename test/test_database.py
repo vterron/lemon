@@ -906,9 +906,10 @@ class LightCurveTest(unittest.TestCase):
 
         for weight1, weight2 in zip(sorted(first.weights()),
                                     sorted(first.weights())):
-            # Two-element tuples: ID and the weight
+            # Three-element tuples: ID, weight and standard deviation
             cls.assertEqual(weight1[0], weight2[0])
             cls.assertAlmostEqual(weight1[1], weight2[1])
+            cls.assertAlmostEqual(weight1[2], weight2[2])
 
 
 class LEMONdBTest(unittest.TestCase):
