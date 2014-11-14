@@ -552,6 +552,8 @@ class StarSet(object):
             if not all(curves_stdevs):
                 break
 
+            # The Weights object returned by Weights.inversely_proportional()
+            # stores the standard deviations in the 'values' attribute.
             weights.append(Weights.inversely_proportional(curves_stdevs))
             if weights[-2].absolute_percent_change(weights[-1], minimum = minimum) < pct:
                 break
