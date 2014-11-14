@@ -187,16 +187,15 @@ class ExportCurveDialog(object):
     def dump(self, path, separator = '\t'):
         """ Save a light curve to the plain text file 'path'.
 
-        Iterate over the gtk.ListStore (which is expected, although this is not
-        enforced, to be sorted chronologically; that is, sorted by the value of
-        the first column, which contains the date of observation in Unix time)
-        and save a textual representation of its rows to 'path', truncating the
-        file if it already exists. Not all the rows of the gtk.ListStore (i.e.,
-        the attributes of the light curve, such as the signal-to-noise ratio or
-        the maximum and minimum error induced by the noise) are saved to the
-        file, but only those for which the corresponding checkbox is active
-        (checked). Magnitudes, signal-to-noise ratios and errors are written
-        with the number of decimal places set in the spin button.
+        Iterate over the gtk.ListStore and save a textual representation of its
+        rows to 'path', truncating the file if it already exists. The rows are
+        written to the file chronologically by the date of observation. Not all
+        the rows of the gtk.ListStore (i.e., the attributes of the light curve,
+        such as the signal-to-noise ratio or the maximum and minimum error
+        induced by the noise) are saved to the file, but only those for which
+        the corresponding checkbox is active (checked). Magnitudes,
+        signal-to-noise ratios and errors are written with the number of
+        decimal places set in the spin button.
 
         """
 
@@ -207,7 +206,8 @@ class ExportCurveDialog(object):
 
         with open(path, 'wt') as fd:
 
-            for row in self.store:
+            # First element of each row is the date of observation (Unix)
+            for row in sorted(self.store, key = operator.itemgetter(0)):
 
                 values = []
                 assert len(row) == 7
