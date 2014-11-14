@@ -684,24 +684,25 @@ class LightCurveTest(unittest.TestCase):
 
     def test_init(self):
         for _ in xrange(NITERS):
-            pfilter, cstars, cweights = args = self.random_data()
+            pfilter, cstars, cweights, cstdevs = args = self.random_data()
             curve = LightCurve(*args)
             self.assertEqual(curve.pfilter, pfilter)
             self.assertEqual(curve.cstars, cstars)
             self.assertTrue(numpy.all(numpy.equal(curve.cweights, cweights)))
+            self.assertTrue(numpy.all(numpy.equal(curve.cstdevs, cstdevs)))
 
-        # ValueError raised if number of weigts != number of comparison stars
-        pfilter, cstars, cweights = self.random_data()
+        # ValueError raised if number of weights != stdevs != comparison stars
+        pfilter, cstars, cweights, cstdevs = self.random_data()
         rindex = random.choice(range(len(cweights)))
         cweights = cweights.rescale(rindex) # remove rindex-th coefficient
-        assert len(cstars) != len(cweights)
+        assert len(cstars) != len(cweights) != len(cstdevs)
         with self.assertRaises(ValueError):
-            LightCurve(pfilter, cstars, cweights)
+            LightCurve(pfilter, cstars, cweights, cstdevs)
 
         # Same exception also raised if there are no comparison stars
-        cstars = cweights = []
+        cstars = cweights = cstdevs = []
         with self.assertRaises(ValueError):
-            LightCurve(pfilter, cstars, cweights)
+            LightCurve(pfilter, cstars, cweights, cstdevs)
 
     def test_add_len_and_getitem(self):
         for _ in xrange(NITERS):

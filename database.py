@@ -212,12 +212,17 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, pfilter, cstars, cweights, dtype = numpy.longdouble):
-        """ 'cstars' is a sequence or iterable of the IDs in the LEMONdB of the
-        stars that were used as comparison stars when the light curve was
-        computed, while 'cweights' is another sequence or iterable with the
-        corresponding weights. The i-th comparison star (cstars) is assigned
-        the i-th weight (cweights). The sum of all weights should equal one.
+    def __init__(self, pfilter, cstars, cweights, cstdevs, dtype = numpy.longdouble):
+        """ Initialize a new LightCurve object.
+
+        The 'cstars' argument is a sequence or iterable with the IDs in the
+        LEMONdB of the stars that were used as comparison stars when the light
+        curve was computed. 'cweights' is another sequence or iterable with the
+        corresponding weights, while 'cstdevs' contains the standard deviation
+        of their light curves, and from which (it is assumed) the weights were
+        calculated. The i-th comparison star (cstars) is assigned the i-th
+        weight (cweights) and standard deviation (cstdevs). The sum of all
+        weights should equal one.
 
         """
 
@@ -232,6 +237,7 @@ class LightCurve(object):
         self.pfilter = pfilter
         self.cstars = cstars
         self.cweights = cweights
+        self.cstdevs = cstdevs
         self.dtype = dtype
 
     def add(self, unix_time, magnitude, snr):
