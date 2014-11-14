@@ -770,11 +770,13 @@ class LightCurveTest(unittest.TestCase):
 
     def test_weights(self):
         for _ in xrange(NITERS):
-            pfilter, cstars, cweights = self.random_data()
-            curve = LightCurve(pfilter, cstars, cweights)
-            for index, (cstar_id, cweight) in enumerate(curve.weights()):
+            pfilter, cstars, cweights, cstdevs = self.random_data()
+            curve = LightCurve(pfilter, cstars, cweights, cstdevs)
+            it = enumerate(curve.weights())
+            for index, (cstar_id, cweight, cstdev) in it:
                 self.assertEqual(cstar_id, cstars[index])
                 self.assertEqual(cweight, cweights[index])
+                self.assertEqual(cstdev, cstdevs[index])
 
     def test_amplitude(self):
 

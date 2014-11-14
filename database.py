@@ -30,6 +30,7 @@ relative to the campaign that may be needed for the data analysis process.
 
 import collections
 import copy
+import itertools
 import math
 import numpy
 import numbers
@@ -263,10 +264,14 @@ class LightCurve(object):
         return numpy.std(numpy.array(magnitudes, dtype = self.dtype))
 
     def weights(self):
-        """ Return a generator over the pairs of comparison stars and their
-            corresponding weights """
-        for cstar_id, cweight in zip(self.cstars, self.cweights):
-            yield cstar_id, cweight
+        """ Return a generator over the comparison stars and their weights.
+
+        This method returns a generator of three-element tuples, with (a) the
+        comparison star, (b) its weight and (c) the standard deviation of its
+        light curve, respectively.
+
+        """
+        return itertools.izip(self.cstars, self.cweights, self.cstdevs)
 
     def amplitude(self, npoints = 1, median = True):
         """ Compute the peak-to-peak amplitude of the light curve.
