@@ -629,6 +629,7 @@ class LEMONdB(object):
             star_id   INTEGER NOT NULL,
             filter_id INTEGER NOT NULL,
             cstar_id  INTEGER NOT NULL,
+            stdev     REAL NOT NULL,
             weight    REAL NOT NULL,
             FOREIGN KEY (star_id)    REFERENCES stars(id),
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
@@ -1257,12 +1258,13 @@ class LEMONdB(object):
             args = (star_id, unix_time, methods.utctime(unix_time), pfilter)
             raise DuplicateLightCurvePointError(msg % args)
 
-    def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight):
+    def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight, cstdev):
         """ Add a comparison star to the light curve of a star.
 
-        The method stores 'cstar_id' as the ID of one of the comparison stars,
-        with a weight of 'cweight', that were used to compute the light curve
-        of the star with ID 'star_id' in the 'pfilter' photometric filter.
+        The method stores 'cstar_id' as the ID of one of the comparison stars
+        (with a light curve standard deviation 'cstdev' and the corresponding
+        weight 'cweight') that were used to compute the light curve of the star
+        with ID 'star_id' in the 'pfilter' photometric filter.
 
         Raises UnknownStarError if either 'star_id' or 'cstar_id' do not match
         the ID of any of the stars in the database. Since a star cannot use
@@ -1278,12 +1280,14 @@ class LEMONdB(object):
         mark = self._savepoint()
         try:
             self._add_pfilter(pfilter)
-            # Note the cast to Python's built-in float. Otherwise, if the
+            # Note the casts to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
-            t = (None, star_id, hash(pfilter), cstar_id, float(cweight))
+            cweight = float(cweight)
+            cstdev  = float(cstdev)
+            t = (None, star_id, hash(pfilter), cstar_id, cweight, cstdev)
             self._execute("INSERT INTO cmp_stars "
-                          "VALUES (?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
@@ -1368,7 +1372,7 @@ class LEMONdB(object):
 
         if curve_points:
             # ... as well as the comparison stars.
-            self._execute("SELECT cstar_id, weight "
+            self._execute("SELECT cstar_id, weight, stdev "
                           "FROM cmp_stars INDEXED BY cstars_by_star_filter "
                           "WHERE star_id = ? "
                           "  AND filter_id = ? "
@@ -1380,7 +1384,7 @@ class LEMONdB(object):
                 msg = err_msg + "has no comparison stars (?) in %s" % pfilter
                 raise sqlite3.IntegrityError(msg)
             else:
-                cstars, cweights = zip(*rows)
+                cstars, cweights, cstdevs = zip(*rows)
 
         else:
             if star_id not in self.star_ids:
@@ -1390,7 +1394,7 @@ class LEMONdB(object):
             # No curve in the database for this star and filter
             return None
 
-        curve = LightCurve(pfilter, cstars, cweights, dtype = self.dtype)
+        curve = LightCurve(pfilter, cstars, cweights, cstdevs, dtype = self.dtype)
         for point in curve_points:
             curve.add(*point)
         return curve
@@ -1526,8 +1530,12 @@ class LEMONdB(object):
         if curve is None:
             return None
 
-        phase = LightCurve(pfilter, curve.cstars,
-                           curve.cweights, dtype = curve.dtype)
+        phase = LightCurve(pfilter,
+                           curve.cstars,
+                           curve.cweights,
+                           curve.cstdevs,
+                           dtype = curve.dtype)
+
         unix_times, magnitudes, snrs = zip(*curve)
         zero_t = min(unix_times)
 

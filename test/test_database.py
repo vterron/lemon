@@ -2033,7 +2033,8 @@ class LEMONdBTest(unittest.TestCase):
         pfilter = passband.Passband.random()
         cstars = [2, 3]
         cweights = Weights.random(2)
-        curve = LightCurve(pfilter, cstars, cweights)
+        cstdevs = Weights.inversely_proportional(cweights)
+        curve = LightCurve(pfilter, cstars, cweights, cstdevs)
 
         all_ids = [star_id] + cstars
         [db.add_star(*LEMONdBTest.random_star_info(id_ = x)) for x in all_ids]
