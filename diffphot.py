@@ -58,42 +58,79 @@ class Weights(numpy.ndarray):
     """ Encapsulate the weights associated with some values """
 
     def __new__(cls, coefficients, dtype = numpy.longdouble):
-        """ The constructor does not normalize the Weights, so they do not
-        necessarily have to add up to 1.0. Use Weights.normalize() for that """
+        """ Return a new instance of the Weights class.
+
+        The weights are not automatically normalized for us, so they do not
+        necessarily have to add up to 1.0. Use Weights.normalize() for that.
+        A copy of 'coefficients' is stored in the 'values' attribute of the
+        new Weights object.
+
+        """
+
         if not len(coefficients):
             raise ValueError("arg is an empty sequence")
-        return numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w = numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w.values = numpy.array(coefficients)
+        return w
 
     def __str__(self):
         coeffs_str = ", ".join(["%s" % x for x in self])
         return "%s(%s)" % (self.__class__.__name__, coeffs_str)
 
     def rescale(self, key):
-        """ Exclude the key-th coefficient and return the rescaled Weights """
+        """ Exclude the key-th coefficient and return the rescaled Weights.
+
+        Note that the key-th element is also removed from the 'values'
+        attribute of the returned object. The reason is that, if a coefficient
+        is deleted, there is no longer need to keep track of what its original
+        value was.
+
+        """
+
         if len(self) == 1:
             raise ValueError("cannot rescale one-element instance")
-        return Weights(numpy.delete(self, key)).normalize()
+        w = Weights(numpy.delete(self, key)).normalize()
+        w.values = numpy.delete(self.values, key)
+        return w
 
     @property
     def total(self):
         return numpy.sum(self)
 
     def normalize(self):
-        return Weights(self / self.total)
+        """ Rescale the coefficients to that they add up to one.
+
+        Return a new Weights object where each element has been divided by the
+        sum of all the coefficients. The 'values' attribute of the new object
+        is set to the value of self.values: in this manner, when working with
+        the new Weights object we will always be able to know what were the
+        original coefficients, before the normalization.
+
+        """
+
+        w = Weights(self / self.total)
+        w.values = self.values
+        return w
 
     @classmethod
     def inversely_proportional(cls, values, dtype = numpy.longdouble):
-        """ Receives a series of values and returns the weights that are
-        inversely proportional to them. Note that at least one value is
-        required, and none of them can be zero (as we would be dividing by
-        zero)"""
+        """ Return Weights inversely proportional to 'values'.
+
+        For example, [1, 1, 2] returns Weights([0.4, 0.4, 0.2]). Note that at
+        least one value is required, and that none of them may be zero (as in
+        that case we would be dividing by zero). A copy of 'values' is stored
+        in the 'values' attribute of the returned Weights object.
+
+        """
 
         if not len(values):
             raise ValueError("'values' is an empty sequence")
         if not all(values):
             raise ValueError("'values' cannot contain zeros")
         values = numpy.array(values,  dtype = dtype)
-        return cls(1 / values).normalize()
+        w = cls(1 / values).normalize()
+        w.values = numpy.array(values)
+        return w
 
     def absolute_percent_change(self, other, minimum = None):
         """ Return the percent change of two Weights of the same size. More
@@ -325,6 +362,14 @@ class StarSet(object):
         photometric reference level: for each point in time, subtract the
         instrumental magnitude of the comparison star from that of the star.
 
+        The 'weights' object is **expected** to have been created with the
+        Weights.inversely_proportional() method, assigning to each comparison
+        star a weight inversely proportional to the standard deviation of its
+        light curve. This is very important because this method expects that
+        weights.values stores the *light curve standard deviations* of the
+        comparison stars, and therefore these will be the values stored in
+        the 'cstdevs' attribute of the returned LightCurve object.
+
         Note that it is mandatory that the DBStar has photometric information
         for exactly the same Unix times for which the stars in the set have
         photometric records. In practice, this means that they will be those
@@ -368,11 +413,20 @@ class StarSet(object):
         if _exclude_index is None:
             rweights = weights
         else:
+            # Set the _exclude_index-th star to zero, but preserve the original
+            # value of the 'values' attribute. These are the standard deviations
+            # of the comparison stars, so we do not want to modify them, even if
+            # one of them has not been used as comparison.
+            values = numpy.array(weights.values)
             rweights = weights.rescale(_exclude_index)
             rweights = numpy.insert(rweights, _exclude_index, 0.0)
+            rweights.values = values
+
         assert len(rweights) == len(self)
 
-        args = self.pfilter, self.star_ids, rweights
+        assert hasattr(rweights, 'values')
+        cstdevs = rweights.values
+        args = self.pfilter, self.star_ids, rweights, cstdevs
         curve = database.LightCurve(*args, dtype = self.dtype)
 
         for index, unix_time in enumerate(self._unix_times):
@@ -417,6 +471,12 @@ class StarSet(object):
         reasoning that, the brightest a star, the higher its signal-to-noise
         ratio and lower its noise, and therefore it should be given more
         weight in the first iteration.
+
+        Note that the returned Weights object stores the standard deviations of
+        the light curves of the comparison stars in the 'values' attribute. In
+        this manner, we can always know what was the standard deviation of each
+        of the comparison stars, from which the inversely-proportional weights
+        returned in the Weights object were calculated.
 
         The ValueError exception is raised if there are less than two stars
         in the set. The reason for this is that the standard deviation of the
@@ -492,6 +552,8 @@ class StarSet(object):
             if not all(curves_stdevs):
                 break
 
+            # The Weights object returned by Weights.inversely_proportional()
+            # stores the standard deviations in the 'values' attribute.
             weights.append(Weights.inversely_proportional(curves_stdevs))
             if weights[-2].absolute_percent_change(weights[-1], minimum = minimum) < pct:
                 break

@@ -30,6 +30,7 @@ relative to the campaign that may be needed for the data analysis process.
 
 import collections
 import copy
+import itertools
 import math
 import numpy
 import numbers
@@ -212,12 +213,17 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, pfilter, cstars, cweights, dtype = numpy.longdouble):
-        """ 'cstars' is a sequence or iterable of the IDs in the LEMONdB of the
-        stars that were used as comparison stars when the light curve was
-        computed, while 'cweights' is another sequence or iterable with the
-        corresponding weights. The i-th comparison star (cstars) is assigned
-        the i-th weight (cweights). The sum of all weights should equal one.
+    def __init__(self, pfilter, cstars, cweights, cstdevs, dtype = numpy.longdouble):
+        """ Initialize a new LightCurve object.
+
+        The 'cstars' argument is a sequence or iterable with the IDs in the
+        LEMONdB of the stars that were used as comparison stars when the light
+        curve was computed. 'cweights' is another sequence or iterable with the
+        corresponding weights, while 'cstdevs' contains the standard deviation
+        of their light curves, and from which (it is assumed) the weights were
+        calculated. The i-th comparison star (cstars) is assigned the i-th
+        weight (cweights) and standard deviation (cstdevs). The sum of all
+        weights should equal one.
 
         """
 
@@ -232,6 +238,7 @@ class LightCurve(object):
         self.pfilter = pfilter
         self.cstars = cstars
         self.cweights = cweights
+        self.cstdevs = cstdevs
         self.dtype = dtype
 
     def add(self, unix_time, magnitude, snr):
@@ -257,10 +264,14 @@ class LightCurve(object):
         return numpy.std(numpy.array(magnitudes, dtype = self.dtype))
 
     def weights(self):
-        """ Return a generator over the pairs of comparison stars and their
-            corresponding weights """
-        for cstar_id, cweight in zip(self.cstars, self.cweights):
-            yield cstar_id, cweight
+        """ Return a generator over the comparison stars and their weights.
+
+        This method returns a generator of three-element tuples, with (a) the
+        comparison star, (b) its weight and (c) the standard deviation of its
+        light curve, respectively.
+
+        """
+        return itertools.izip(self.cstars, self.cweights, self.cstdevs)
 
     def amplitude(self, npoints = 1, median = True):
         """ Compute the peak-to-peak amplitude of the light curve.
@@ -618,6 +629,7 @@ class LEMONdB(object):
             star_id   INTEGER NOT NULL,
             filter_id INTEGER NOT NULL,
             cstar_id  INTEGER NOT NULL,
+            stdev     REAL NOT NULL,
             weight    REAL NOT NULL,
             FOREIGN KEY (star_id)    REFERENCES stars(id),
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
@@ -1246,12 +1258,13 @@ class LEMONdB(object):
             args = (star_id, unix_time, methods.utctime(unix_time), pfilter)
             raise DuplicateLightCurvePointError(msg % args)
 
-    def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight):
+    def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight, cstdev):
         """ Add a comparison star to the light curve of a star.
 
-        The method stores 'cstar_id' as the ID of one of the comparison stars,
-        with a weight of 'cweight', that were used to compute the light curve
-        of the star with ID 'star_id' in the 'pfilter' photometric filter.
+        The method stores 'cstar_id' as the ID of one of the comparison stars
+        (with a light curve standard deviation 'cstdev' and the corresponding
+        weight 'cweight') that were used to compute the light curve of the star
+        with ID 'star_id' in the 'pfilter' photometric filter.
 
         Raises UnknownStarError if either 'star_id' or 'cstar_id' do not match
         the ID of any of the stars in the database. Since a star cannot use
@@ -1267,12 +1280,14 @@ class LEMONdB(object):
         mark = self._savepoint()
         try:
             self._add_pfilter(pfilter)
-            # Note the cast to Python's built-in float. Otherwise, if the
+            # Note the casts to Python's built-in float. Otherwise, if the
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
-            t = (None, star_id, hash(pfilter), cstar_id, float(cweight))
+            cweight = float(cweight)
+            cstdev  = float(cstdev)
+            t = (None, star_id, hash(pfilter), cstar_id, cweight, cstdev)
             self._execute("INSERT INTO cmp_stars "
-                          "VALUES (?, ?, ?, ?, ?)", t)
+                          "VALUES (?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
@@ -1357,7 +1372,7 @@ class LEMONdB(object):
 
         if curve_points:
             # ... as well as the comparison stars.
-            self._execute("SELECT cstar_id, weight "
+            self._execute("SELECT cstar_id, weight, stdev "
                           "FROM cmp_stars INDEXED BY cstars_by_star_filter "
                           "WHERE star_id = ? "
                           "  AND filter_id = ? "
@@ -1369,7 +1384,7 @@ class LEMONdB(object):
                 msg = err_msg + "has no comparison stars (?) in %s" % pfilter
                 raise sqlite3.IntegrityError(msg)
             else:
-                cstars, cweights = zip(*rows)
+                cstars, cweights, cstdevs = zip(*rows)
 
         else:
             if star_id not in self.star_ids:
@@ -1379,7 +1394,7 @@ class LEMONdB(object):
             # No curve in the database for this star and filter
             return None
 
-        curve = LightCurve(pfilter, cstars, cweights, dtype = self.dtype)
+        curve = LightCurve(pfilter, cstars, cweights, cstdevs, dtype = self.dtype)
         for point in curve_points:
             curve.add(*point)
         return curve
@@ -1515,8 +1530,12 @@ class LEMONdB(object):
         if curve is None:
             return None
 
-        phase = LightCurve(pfilter, curve.cstars,
-                           curve.cweights, dtype = curve.dtype)
+        phase = LightCurve(pfilter,
+                           curve.cstars,
+                           curve.cweights,
+                           curve.cstdevs,
+                           dtype = curve.dtype)
+
         unix_times, magnitudes, snrs = zip(*curve)
         zero_t = min(unix_times)
 

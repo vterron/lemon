@@ -350,9 +350,8 @@ class StarDetailsGUI(object):
         """ Update the list of reference stars """
 
         self.refstars_store.clear()
-        for star_id, weight in curve.weights():
+        for star_id, weight, stdev in curve.weights():
             imag = self.db.get_star(star_id)[-1]
-            stdev = self.db.get_light_curve(star_id, curve.pfilter).stdev
             args = (star_id, weight, imag, stdev)
             self.refstars_store.append(args)
 
