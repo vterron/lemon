@@ -78,10 +78,20 @@ class Weights(numpy.ndarray):
         return "%s(%s)" % (self.__class__.__name__, coeffs_str)
 
     def rescale(self, key):
-        """ Exclude the key-th coefficient and return the rescaled Weights """
+        """ Exclude the key-th coefficient and return the rescaled Weights.
+
+        Note that the key-th element is also removed from the 'values'
+        attribute of the returned object. The reason is that, if a coefficient
+        is deleted, there is no longer need to keep track of what its original
+        value was.
+
+        """
+
         if len(self) == 1:
             raise ValueError("cannot rescale one-element instance")
-        return Weights(numpy.delete(self, key)).normalize()
+        w = Weights(numpy.delete(self, key)).normalize()
+        w.values = numpy.delete(self.values, key)
+        return w
 
     @property
     def total(self):

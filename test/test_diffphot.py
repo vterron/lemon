@@ -85,14 +85,32 @@ class WeightsTest(unittest.TestCase):
 
         # Basic, specific test cases
         w1 = Weights([0.5, 0.3, 0.2])
-        assertSequencesAlmostEqual(self, w1.rescale(0), [0.6, 0.4])
-        assertSequencesAlmostEqual(self, w1.rescale(1), [5/7, 2/7])
-        assertSequencesAlmostEqual(self, w1.rescale(2), [5/8, 3/8])
+        r0 = w1.rescale(0)
+        r1 = w1.rescale(1)
+        r2 = w1.rescale(2)
+
+        assertSequencesAlmostEqual(self, r0, [0.6, 0.4])
+        assertSequencesAlmostEqual(self, r0.values, [0.3, 0.2])
+
+        assertSequencesAlmostEqual(self, r1, [5/7, 2/7])
+        assertSequencesAlmostEqual(self, r1.values, [0.5, 0.2])
+
+        assertSequencesAlmostEqual(self, r2, [5/8, 3/8])
+        assertSequencesAlmostEqual(self, r2.values, [0.5, 0.3])
 
         w2 = Weights([0.2, 0.4, 0.4])
-        assertSequencesAlmostEqual(self, w2.rescale(0), [0.5, 0.5])
-        assertSequencesAlmostEqual(self, w2.rescale(1), [1/3, 2/3])
-        assertSequencesAlmostEqual(self, w2.rescale(2), [1/3, 2/3])
+        r0 = w2.rescale(0)
+        r1 = w2.rescale(1)
+        r2 = w2.rescale(2)
+
+        assertSequencesAlmostEqual(self, r0, [0.5, 0.5])
+        assertSequencesAlmostEqual(self, r0.values, [0.4, 0.4])
+
+        assertSequencesAlmostEqual(self, r1, [1/3, 2/3])
+        assertSequencesAlmostEqual(self, r1.values, [0.2, 0.4])
+
+        assertSequencesAlmostEqual(self, r2, [1/3, 2/3])
+        assertSequencesAlmostEqual(self, r2.values, [0.2, 0.4])
 
         w3 = Weights([3])
         with self.assertRaises(ValueError):
@@ -115,6 +133,13 @@ class WeightsTest(unittest.TestCase):
             ecoeffs = coeffs[:index] + coeffs[index+1:]
             eweights = Weights(ecoeffs).normalize()
             assertSequencesAlmostEqual(self, rweights, eweights)
+
+            # Except for the excluded, index-th coefficient, a copy of the
+            # original coefficients must be stored in the 'values' attribute.
+            self.assertEqual(len(rweights.values), len(weights) - 1)
+            evalues = numpy.delete(weights, index)
+            assertSequencesAlmostEqual(self, rweights.values, evalues)
+            self.assertNotEqual(id(rweights.values), id(weights.values))
 
     def test_total(self):
         for coeffs in self.rcoefficients:
