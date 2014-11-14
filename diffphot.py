@@ -472,6 +472,12 @@ class StarSet(object):
         ratio and lower its noise, and therefore it should be given more
         weight in the first iteration.
 
+        Note that the returned Weights object stores the standard deviations of
+        the light curves of the comparison stars in the 'values' attribute. In
+        this manner, we can always know what was the standard deviation of each
+        of the comparison stars, from which the inversely-proportional weights
+        returned in the Weights object were calculated.
+
         The ValueError exception is raised if there are less than two stars
         in the set. The reason for this is that the standard deviation of the
         light curve of a star cannot be calculated if it was only observed in
