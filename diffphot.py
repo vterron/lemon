@@ -58,11 +58,20 @@ class Weights(numpy.ndarray):
     """ Encapsulate the weights associated with some values """
 
     def __new__(cls, coefficients, dtype = numpy.longdouble):
-        """ The constructor does not normalize the Weights, so they do not
-        necessarily have to add up to 1.0. Use Weights.normalize() for that """
+        """ Return a new instance of the Weights class.
+
+        The weights are not automatically normalized for us, so they do not
+        necessarily have to add up to 1.0. Use Weights.normalize() for that.
+        A copy of 'coefficients' is stored in the 'values' attribute of the
+        new Weights object.
+
+        """
+
         if not len(coefficients):
             raise ValueError("arg is an empty sequence")
-        return numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w = numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w.values = numpy.array(coefficients)
+        return w
 
     def __str__(self):
         coeffs_str = ", ".join(["%s" % x for x in self])

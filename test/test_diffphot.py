@@ -75,6 +75,11 @@ class WeightsTest(unittest.TestCase):
         for coeffs in self.rcoefficients:
             w = Weights(coeffs)
             assertSequencesAlmostEqual(self, w, coeffs)
+            # A copy of the coefficients is stored in the 'values' attribute.
+            # It must be a copy, so that modifying the original coefficients
+            # does not affect the values stored in the Weights object.
+            assertSequencesAlmostEqual(self, w.values, coeffs)
+            self.assertNotEqual(id(w.values), id(coeffs))
 
     def test_rescale(self):
 
