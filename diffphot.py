@@ -98,7 +98,19 @@ class Weights(numpy.ndarray):
         return numpy.sum(self)
 
     def normalize(self):
-        return Weights(self / self.total)
+        """ Rescale the coefficients to that they add up to one.
+
+        Return a new Weights object where each element has been divided by the
+        sum of all the coefficients. The 'values' attribute of the new object
+        is set to the value of self.values: in this manner, when working with
+        the new Weights object we will always be able to know what were the
+        original coefficients, before the normalization.
+
+        """
+
+        w = Weights(self / self.total)
+        w.values = self.values
+        return w
 
     @classmethod
     def inversely_proportional(cls, values, dtype = numpy.longdouble):

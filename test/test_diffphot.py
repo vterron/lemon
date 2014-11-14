@@ -152,6 +152,9 @@ class WeightsTest(unittest.TestCase):
             self.assertAlmostEqual(nweights.total, 1.0)
             eweights = [x / math.fsum(coeffs) for x in coeffs]
             assertSequencesAlmostEqual(self, nweights, eweights)
+            # A copy of the original coefficients is stored in 'values'
+            assertSequencesAlmostEqual(self, nweights.values, coeffs)
+            self.assertNotEqual(id(nweights.values), id(coeffs))
 
     def test_inversely_proportional(self):
 
