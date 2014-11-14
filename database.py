@@ -629,6 +629,7 @@ class LEMONdB(object):
             star_id   INTEGER NOT NULL,
             filter_id INTEGER NOT NULL,
             cstar_id  INTEGER NOT NULL,
+            stdev     REAL NOT NULL,
             weight    REAL NOT NULL,
             FOREIGN KEY (star_id)    REFERENCES stars(id),
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
