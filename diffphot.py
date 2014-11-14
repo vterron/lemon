@@ -362,6 +362,14 @@ class StarSet(object):
         photometric reference level: for each point in time, subtract the
         instrumental magnitude of the comparison star from that of the star.
 
+        The 'weights' object is **expected** to have been created with the
+        Weights.inversely_proportional() method, assigning to each comparison
+        star a weight inversely proportional to the standard deviation of its
+        light curve. This is very important because this method expects that
+        weights.values stores the *light curve standard deviations* of the
+        comparison stars, and therefore these will be the values stored in
+        the 'cstdevs' attribute of the returned LightCurve object.
+
         Note that it is mandatory that the DBStar has photometric information
         for exactly the same Unix times for which the stars in the set have
         photometric records. In practice, this means that they will be those
@@ -405,11 +413,20 @@ class StarSet(object):
         if _exclude_index is None:
             rweights = weights
         else:
+            # Set the _exclude_index-th star to zero, but preserve the original
+            # value of the 'values' attribute. These are the standard deviations
+            # of the comparison stars, so we do not want to modify them, even if
+            # one of them has not been used as comparison.
+            values = numpy.array(weights.values)
             rweights = weights.rescale(_exclude_index)
             rweights = numpy.insert(rweights, _exclude_index, 0.0)
+            rweights.values = values
+
         assert len(rweights) == len(self)
 
-        args = self.pfilter, self.star_ids, rweights
+        assert hasattr(rweights, 'values')
+        cstdevs = rweights.values
+        args = self.pfilter, self.star_ids, rweights, cstdevs
         curve = database.LightCurve(*args, dtype = self.dtype)
 
         for index, unix_time in enumerate(self._unix_times):
