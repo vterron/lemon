@@ -1530,8 +1530,12 @@ class LEMONdB(object):
         if curve is None:
             return None
 
-        phase = LightCurve(pfilter, curve.cstars,
-                           curve.cweights, dtype = curve.dtype)
+        phase = LightCurve(pfilter,
+                           curve.cstars,
+                           curve.cweights,
+                           curve.cstdevs,
+                           dtype = curve.dtype)
+
         unix_times, magnitudes, snrs = zip(*curve)
         zero_t = min(unix_times)
 
