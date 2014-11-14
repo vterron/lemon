@@ -58,42 +58,79 @@ class Weights(numpy.ndarray):
     """ Encapsulate the weights associated with some values """
 
     def __new__(cls, coefficients, dtype = numpy.longdouble):
-        """ The constructor does not normalize the Weights, so they do not
-        necessarily have to add up to 1.0. Use Weights.normalize() for that """
+        """ Return a new instance of the Weights class.
+
+        The weights are not automatically normalized for us, so they do not
+        necessarily have to add up to 1.0. Use Weights.normalize() for that.
+        A copy of 'coefficients' is stored in the 'values' attribute of the
+        new Weights object.
+
+        """
+
         if not len(coefficients):
             raise ValueError("arg is an empty sequence")
-        return numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w = numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w.values = numpy.array(coefficients)
+        return w
 
     def __str__(self):
         coeffs_str = ", ".join(["%s" % x for x in self])
         return "%s(%s)" % (self.__class__.__name__, coeffs_str)
 
     def rescale(self, key):
-        """ Exclude the key-th coefficient and return the rescaled Weights """
+        """ Exclude the key-th coefficient and return the rescaled Weights.
+
+        Note that the key-th element is also removed from the 'values'
+        attribute of the returned object. The reason is that, if a coefficient
+        is deleted, there is no longer need to keep track of what its original
+        value was.
+
+        """
+
         if len(self) == 1:
             raise ValueError("cannot rescale one-element instance")
-        return Weights(numpy.delete(self, key)).normalize()
+        w = Weights(numpy.delete(self, key)).normalize()
+        w.values = numpy.delete(self.values, key)
+        return w
 
     @property
     def total(self):
         return numpy.sum(self)
 
     def normalize(self):
-        return Weights(self / self.total)
+        """ Rescale the coefficients to that they add up to one.
+
+        Return a new Weights object where each element has been divided by the
+        sum of all the coefficients. The 'values' attribute of the new object
+        is set to the value of self.values: in this manner, when working with
+        the new Weights object we will always be able to know what were the
+        original coefficients, before the normalization.
+
+        """
+
+        w = Weights(self / self.total)
+        w.values = self.values
+        return w
 
     @classmethod
     def inversely_proportional(cls, values, dtype = numpy.longdouble):
-        """ Receives a series of values and returns the weights that are
-        inversely proportional to them. Note that at least one value is
-        required, and none of them can be zero (as we would be dividing by
-        zero)"""
+        """ Return Weights inversely proportional to 'values'.
+
+        For example, [1, 1, 2] returns Weights([0.4, 0.4, 0.2]). Note that at
+        least one value is required, and that none of them may be zero (as in
+        that case we would be dividing by zero). A copy of 'values' is stored
+        in the 'values' attribute of the returned Weights object.
+
+        """
 
         if not len(values):
             raise ValueError("'values' is an empty sequence")
         if not all(values):
             raise ValueError("'values' cannot contain zeros")
         values = numpy.array(values,  dtype = dtype)
-        return cls(1 / values).normalize()
+        w = cls(1 / values).normalize()
+        w.values = numpy.array(values)
+        return w
 
     def absolute_percent_change(self, other, minimum = None):
         """ Return the percent change of two Weights of the same size. More
