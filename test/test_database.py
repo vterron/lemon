@@ -640,11 +640,13 @@ class LightCurveTest(unittest.TestCase):
 
     @classmethod
     def random_data(cls, pfilter = None, cstars = None):
-        """ Return the args needed to instantiate a random LightCurve.
+        """ Return the arguments needed to instantiate a random LightCurve.
 
-        If given, the photometric filter and comparison star IDs are not
-        random. Instead, the passed values (a Passband instance and a
-        sequence of integers, respectively) are used.
+        Return a four-element tuple: (a) a photometric filter and three lists
+        with the (b) comparison stars, (c) weights and (b) standard deviations.
+        If specified, the photometric filter and comparison stars IDs are not
+        random. Instead, the passed values (a Passband instance and a sequence
+        of integers, respectively) are used.
 
         """
 
@@ -656,7 +658,8 @@ class LightCurveTest(unittest.TestCase):
             size = random.randint(MIN_NSTARS, MAX_NSTARS)
             cstars = [random.randint(cls.MIN_ID, cls.MAX_ID) for x in xrange(size)]
         cweights = Weights.random(size)
-        return pfilter, cstars, cweights
+        cstdevs = Weights.inversely_proportional(cweights)
+        return pfilter, cstars, cweights, cstdevs
 
     @classmethod
     def random(cls, pfilter = None, cstars = None):
