@@ -640,11 +640,13 @@ class LightCurveTest(unittest.TestCase):
 
     @classmethod
     def random_data(cls, pfilter = None, cstars = None):
-        """ Return the args needed to instantiate a random LightCurve.
+        """ Return the arguments needed to instantiate a random LightCurve.
 
-        If given, the photometric filter and comparison star IDs are not
-        random. Instead, the passed values (a Passband instance and a
-        sequence of integers, respectively) are used.
+        Return a four-element tuple: (a) a photometric filter and three lists
+        with the (b) comparison stars, (c) weights and (b) standard deviations.
+        If specified, the photometric filter and comparison stars IDs are not
+        random. Instead, the passed values (a Passband instance and a sequence
+        of integers, respectively) are used.
 
         """
 
@@ -656,7 +658,8 @@ class LightCurveTest(unittest.TestCase):
             size = random.randint(MIN_NSTARS, MAX_NSTARS)
             cstars = [random.randint(cls.MIN_ID, cls.MAX_ID) for x in xrange(size)]
         cweights = Weights.random(size)
-        return pfilter, cstars, cweights
+        cstdevs = Weights.inversely_proportional(cweights)
+        return pfilter, cstars, cweights, cstdevs
 
     @classmethod
     def random(cls, pfilter = None, cstars = None):
@@ -681,24 +684,25 @@ class LightCurveTest(unittest.TestCase):
 
     def test_init(self):
         for _ in xrange(NITERS):
-            pfilter, cstars, cweights = args = self.random_data()
+            pfilter, cstars, cweights, cstdevs = args = self.random_data()
             curve = LightCurve(*args)
             self.assertEqual(curve.pfilter, pfilter)
             self.assertEqual(curve.cstars, cstars)
             self.assertTrue(numpy.all(numpy.equal(curve.cweights, cweights)))
+            self.assertTrue(numpy.all(numpy.equal(curve.cstdevs, cstdevs)))
 
-        # ValueError raised if number of weigts != number of comparison stars
-        pfilter, cstars, cweights = self.random_data()
+        # ValueError raised if number of weights != stdevs != comparison stars
+        pfilter, cstars, cweights, cstdevs = self.random_data()
         rindex = random.choice(range(len(cweights)))
         cweights = cweights.rescale(rindex) # remove rindex-th coefficient
-        assert len(cstars) != len(cweights)
+        assert len(cstars) != len(cweights) != len(cstdevs)
         with self.assertRaises(ValueError):
-            LightCurve(pfilter, cstars, cweights)
+            LightCurve(pfilter, cstars, cweights, cstdevs)
 
         # Same exception also raised if there are no comparison stars
-        cstars = cweights = []
+        cstars = cweights = cstdevs = []
         with self.assertRaises(ValueError):
-            LightCurve(pfilter, cstars, cweights)
+            LightCurve(pfilter, cstars, cweights, cstdevs)
 
     def test_add_len_and_getitem(self):
         for _ in xrange(NITERS):
@@ -766,11 +770,13 @@ class LightCurveTest(unittest.TestCase):
 
     def test_weights(self):
         for _ in xrange(NITERS):
-            pfilter, cstars, cweights = self.random_data()
-            curve = LightCurve(pfilter, cstars, cweights)
-            for index, (cstar_id, cweight) in enumerate(curve.weights()):
+            pfilter, cstars, cweights, cstdevs = self.random_data()
+            curve = LightCurve(pfilter, cstars, cweights, cstdevs)
+            it = enumerate(curve.weights())
+            for index, (cstar_id, cweight, cstdev) in it:
                 self.assertEqual(cstar_id, cstars[index])
                 self.assertEqual(cweight, cweights[index])
+                self.assertEqual(cstdev, cstdevs[index])
 
     def test_amplitude(self):
 
