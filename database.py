@@ -1372,7 +1372,7 @@ class LEMONdB(object):
 
         if curve_points:
             # ... as well as the comparison stars.
-            self._execute("SELECT cstar_id, weight "
+            self._execute("SELECT cstar_id, weight, stdev "
                           "FROM cmp_stars INDEXED BY cstars_by_star_filter "
                           "WHERE star_id = ? "
                           "  AND filter_id = ? "
@@ -1384,7 +1384,7 @@ class LEMONdB(object):
                 msg = err_msg + "has no comparison stars (?) in %s" % pfilter
                 raise sqlite3.IntegrityError(msg)
             else:
-                cstars, cweights = zip(*rows)
+                cstars, cweights, cstdevs = zip(*rows)
 
         else:
             if star_id not in self.star_ids:
@@ -1394,7 +1394,7 @@ class LEMONdB(object):
             # No curve in the database for this star and filter
             return None
 
-        curve = LightCurve(pfilter, cstars, cweights, dtype = self.dtype)
+        curve = LightCurve(pfilter, cstars, cweights, cstdevs, dtype = self.dtype)
         for point in curve_points:
             curve.add(*point)
         return curve
