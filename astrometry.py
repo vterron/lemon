@@ -315,7 +315,8 @@ def parallel_astrometry(args):
                   dec = dec,
                   radius = options.radius,
                   verbosity = options.verbose,
-                  timeout = options.timeout)
+                  timeout = options.timeout,
+                  options = options.solve_field_options)
 
     try:
         output_path = astrometry_net(img.path, **kwargs)
