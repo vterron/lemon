@@ -93,8 +93,8 @@ class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
         msg = "%s: could not solve field in less than %d seconds"
         return msg % (self.path, self.timeout)
 
-def astrometry_net(path, ra = None, dec = None,
-                   radius = 1, verbosity = 0, timeout = None):
+def astrometry_net(path, ra = None, dec = None, radius = 1,
+                   verbosity = 0, timeout = None, options = None):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -206,6 +206,20 @@ def astrometry_net(path, ra = None, dec = None,
 
     if verbosity > 1:
         args.append('-%s' % ('v' * (verbosity - 1)))
+
+    # If additional options for solve-field have been specified, append them to
+    # the argument list. All options are assumed to take an argument, except if
+    # they are mapped to None. In this manner, {'--downsample' : 2} is appended
+    # to the argument list as ['--downsample', '2'] (note the automatic cast to
+    # string), while {'--invert' : None} appends only '--invert'.
+
+    if options:
+        for opt, value in options.iteritems():
+            opt = str(opt)
+            if value is None:
+                args.append(opt)
+            else:
+                args += [opt, str(value)]
 
     # Needed when 'verbosity' is 0
     null_fd = open(os.devnull, 'w')
