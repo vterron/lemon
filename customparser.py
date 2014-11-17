@@ -20,6 +20,7 @@
 
 import copy
 import optparse
+import re
 import textwrap
 
 # LEMON modules
@@ -125,4 +126,35 @@ def clear_metavars(parser):
     for group in parser.__dict__['option_groups']:
         for option in group.option_list:
             option.metavar = EMPTY_VALUE
+
+def additional_options_callback(option, opt_str, value, parser):
+    """ opt-parse callback function to parse option strings.
+
+    Use this function to parse a string containing an option with, if any, the
+    argument that it takes. For example, given the string '--downsample = 2',
+    '--downsample' would be recognized as the name of the option, and '2' as
+    the corresponding argument. The name of the option is mapped to the value
+    in option.dest, which is expected to be a dictionary. If the option does
+    not take any argument (for example, '-v' or '--verbose'), it is mapped to
+    None. Raises ValueError if the string can not be successfully parsed.
+
+    option - the Option instance that is calling the callback.
+    opt_str - the option string seen on the command-line.
+    value - the argument to this option seen on the command-line.
+    parser - the OptionParser instance driving the whole thing.
+
+    """
+
+    regexp = "(?P<option>-+\w+)\s*=?\s*(?P<value>\w+)?"
+    match = re.match(regexp, value)
+    if not match:
+        msg = ("cannot parse additional option. Are you using the GNU/POSIX "
+               "syntax? Note that options should always start with one or "
+               "two hyphens. Examples of valid syntax are '-o', '-o value', "
+               "'--name' and '--name=value', among many others.")
+        raise ValueError(msg)
+
+    opt_  = match.group('option')
+    value = match.group('value')
+    getattr(parser.values, option.dest)[opt_] = value
 

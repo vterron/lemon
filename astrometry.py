@@ -93,8 +93,8 @@ class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
         msg = "%s: could not solve field in less than %d seconds"
         return msg % (self.path, self.timeout)
 
-def astrometry_net(path, ra = None, dec = None,
-                   radius = 1, verbosity = 0, timeout = None):
+def astrometry_net(path, ra = None, dec = None, radius = 1,
+                   verbosity = 0, timeout = None, options = None):
     """ Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
@@ -146,6 +146,12 @@ def astrometry_net(path, ra = None, dec = None,
               Note that the backend configuration file (astrometry.cfg) puts a
               limit on the CPU time that is spent on an image: this can reduce
               that value but not increase it.
+    options - a dictionary, containing additional options to be passed to
+              solve-field. Each option must map to the corresponding argument
+              (for example, {'--downsample' : '2'}), except in case they do not
+              take any, when they must map to None (e.g., {'--invert' : None}).
+              Both options and values should be given as strings, but they will
+              be automatically cast to string just to be safe.
 
     """
 
@@ -206,6 +212,20 @@ def astrometry_net(path, ra = None, dec = None,
 
     if verbosity > 1:
         args.append('-%s' % ('v' * (verbosity - 1)))
+
+    # If additional options for solve-field have been specified, append them to
+    # the argument list. All options are assumed to take an argument, except if
+    # they are mapped to None. In this manner, {'--downsample' : 2} is appended
+    # to the argument list as ['--downsample', '2'] (note the automatic cast to
+    # string), while {'--invert' : None} appends only '--invert'.
+
+    if options:
+        for opt, value in options.iteritems():
+            opt = str(opt)
+            if value is None:
+                args.append(opt)
+            else:
+                args += [opt, str(value)]
 
     # Needed when 'verbosity' is 0
     null_fd = open(os.devnull, 'w')
@@ -295,7 +315,8 @@ def parallel_astrometry(args):
                   dec = dec,
                   radius = options.radius,
                   verbosity = options.verbose,
-                  timeout = options.timeout)
+                  timeout = options.timeout,
+                  options = options.solve_field_options)
 
     try:
         output_path = astrometry_net(img.path, **kwargs)
@@ -377,6 +398,14 @@ parser.add_option('--suffix', action = 'store', type = 'str',
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = defaults.ncores,
                   help = defaults.desc['ncores'])
+
+parser.add_option('-o', action = 'callback', type = 'str',
+                  dest = 'solve_field_options', default = {},
+                  callback = customparser.additional_options_callback,
+                  help = "additional options to pass to Astrometry.net's "
+                  "solve-field. The option and the corresponding value, if "
+                  "any, must be given as a string. For example, '--invert' or "
+                  "'--downsample 2'. This option may be used multiple times.")
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
