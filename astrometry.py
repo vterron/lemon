@@ -146,6 +146,12 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
               Note that the backend configuration file (astrometry.cfg) puts a
               limit on the CPU time that is spent on an image: this can reduce
               that value but not increase it.
+    options - a dictionary, containing additional options to be passed to
+              solve-field. Each option must map to the corresponding argument
+              (for example, {'--downsample' : '2'}), except in case they do not
+              take any, when they must map to None (e.g., {'--invert' : None}).
+              Both options and values should be given as strings, but they will
+              be automatically cast to string just to be safe.
 
     """
 
