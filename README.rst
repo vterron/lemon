@@ -40,19 +40,23 @@ Installation
 
 LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for many of them there are not (yet?) Debian packages available, so they have to be installed manually — the configuration of IRAF and PyRAF, although heavily simplified in recent versions, is particularly tedious and painful.
 
-These are the steps to install LEMON on a clean Debian machine:
+These are the steps to install LEMON on a fresh Debian 7 (`Wheezy <https://www.debian.org/releases/wheezy/>`_) machine:
 
-1. ``apt-get install git python-dev python-pip libfreetype6-dev libpng-dev csh libx11-dev libblas-dev liblapack-dev gfortran``
+1. ``apt-get install git python-pip csh``
+#. ``apt-get build-dep python-matplotlib python-scipy``
 #. ``apt-get install openmpi-dev`` # you may need this to compile Montage
+
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
 #. ``pip install "numpy>=1.7.1"``
 #. ``pip install -r pre-requirements.txt``
 #. ``pip install -r requirements.txt``
+
 #. Install `IRAF <http://iraf.noao.edu/>`_
 #. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.19.5 or newer)
 #. Install `Astrometry.net <http://astrometry.net/use.html>`_
 #. Install the MPI-enabled `Montage <http://montage.ipac.caltech.edu/docs/download2.html>`_ binaries [#]_
+
 #. ``python ./setup.py``
 #. ``echo 'PATH=$PATH:~/lemon' >> ~/.bashrc``
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
