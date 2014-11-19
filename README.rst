@@ -38,7 +38,7 @@ Installation
 - Current version: **0.2**
 - View `CHANGELOG <./Misc/CHANGES>`_
 
-LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for many of them there are not (yet?) Debian packages available, so they have to be installed manually — the configuration of IRAF and PyRAF, although heavily simplified in recent versions, is particularly tedious and painful.
+LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for several of them there are not (yet?) Debian packages available, so they have to be installed manually. But fret not — none of them should be particularly difficult to get up and running on your system.
 
 These are the steps to install LEMON on a fresh Debian 7 (`Wheezy <https://www.debian.org/releases/wheezy/>`_) machine:
 
