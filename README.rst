@@ -61,7 +61,7 @@ These are the steps to install LEMON on a fresh Debian 7 (`Wheezy <https://www.d
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
 #. ``./run_tests.py`` — optional, although recommended!
 
-Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation in GNU/Linux systems in the near future, which would enormously simplify the process of installing LEMON. Until then, please bear with us.
+Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation in GNU/Linux systems in the near future. Until then, please bear with us.
 
 .. |logo| image:: ./Misc/lemon-icon_200px.png
           :width: 200 px
