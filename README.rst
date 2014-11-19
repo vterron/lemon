@@ -69,7 +69,7 @@ Note that, starting from version 2.16, IRAF is now released `under a free softwa
 
 .. [#] The important thing to `keep in mind <http://www.astromatic.net/forum/showthread.php?tid=587>`_ is that SExtractor does not rely on the `CLAPACK <http://www.netlib.org/clapack/>`_ implementation of `LAPACK <http://www.netlib.org/lapack/>`_ — instead, it only uses the subset of the LAPACK functions available in `ATLAS <http://math-atlas.sourceforge.net/>`_. That is the reason why, in case the ``liblapack-dev`` package is installed, you may encounter an error such as :code:`configure: error: CBLAS/LAPack library files not found at usual locations! Exiting`. If that is your case, you may need to do something like this:
 
-::
+.. code:: bash
 
   cd ./sextractor-2.19.5
   apt-get install fftw3-dev libatlas-base-dev
@@ -80,7 +80,7 @@ Note that, starting from version 2.16, IRAF is now released `under a free softwa
 
 .. [#] Edit these two lines in ``Montage/Makefile.LINUX`` before doing ``make``
 
-::
+.. code:: bash
 
   # uncomment the next two lines to build MPI modules
   # MPICC  =	mpicc
