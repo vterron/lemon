@@ -38,19 +38,22 @@ Installation
 - Current version: **0.2**
 - View `CHANGELOG <./Misc/CHANGES>`_
 
-LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions on the FITS images. The disadvantage, however, is that for many of them there are not (yet?) Debian packages available, so they have to be installed manually — the configuration of IRAF and PyRAF, although heavily simplified in recent versions, is particularly tedious and painful.
+LEMON stands on the shoulders of many giants, using excellent, robust programs developed by people much more skilled than us to detect sources, do aperture photometry and compute astrometric solutions of the FITS images. The disadvantage, however, is that for several of them there are not (yet?) Debian packages available, so they have to be installed manually. But fret not — none of them should be particularly difficult to get up and running on your system.
 
-These are the steps to install LEMON on a clean Debian machine:
+These are the steps to install LEMON on a fresh Debian 7 (`Wheezy <https://www.debian.org/releases/wheezy/>`_) machine:
 
-1. ``apt-get install git python-dev python-pip libfreetype6-dev libpng-dev csh libx11-dev libblas-dev liblapack-dev gfortran``
+1. ``apt-get install git python-pip csh``
+#. ``apt-get build-dep python-matplotlib python-scipy``
 #. ``apt-get install openmpi-dev`` # you may need this to compile Montage
+
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
-#. ``pip install numpy>=1.7.1``
+#. ``pip install "numpy>=1.7.1"``
 #. ``pip install -r pre-requirements.txt``
 #. ``pip install -r requirements.txt``
+
 #. Install `IRAF <http://iraf.noao.edu/>`_
-#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.19.5 or newer)
+#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.19.5 or newer) [#]_
 #. Install `Astrometry.net <http://astrometry.net/use.html>`_
 #. Install the MPI-enabled `Montage <http://montage.ipac.caltech.edu/docs/download2.html>`_ binaries [#]_
 #. ``python ./setup.py``
@@ -58,15 +61,26 @@ These are the steps to install LEMON on a clean Debian machine:
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
 #. ``./run_tests.py`` — optional, although recommended!
 
-Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation in GNU/Linux systems in the near future, which would enormously simplify the process of installing LEMON. Until then, please bear with us.
+Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation on Debian-based systems in the near future. A similar effort is apparently underway `for Astrometry.net <https://groups.google.com/forum/#!topic/astrometry/M_NL8ldcZVg>`_. Until then, please bear with us.
 
 .. |logo| image:: ./Misc/lemon-icon_200px.png
           :width: 200 px
           :alt: LEMON icon
 
+.. [#] The important thing to `keep in mind <http://www.astromatic.net/forum/showthread.php?tid=587>`_ is that SExtractor does not rely on the `CLAPACK <http://www.netlib.org/clapack/>`_ implementation of `LAPACK <http://www.netlib.org/lapack/>`_ — instead, it only uses the subset of the LAPACK functions available in `ATLAS <http://math-atlas.sourceforge.net/>`_. That is the reason why, in case the ``liblapack-dev`` package is installed, you may encounter an error such as :code:`configure: error: CBLAS/LAPack library files not found at usual locations! Exiting`. If that is your case, you may need to do something like this:
+
+.. code:: bash
+
+  cd ./sextractor-2.19.5
+  apt-get install fftw3-dev libatlas-base-dev
+  update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
+  ./configure --with-atlas-incdir=/usr/include/atlas
+  make
+  make install
+
 .. [#] Edit these two lines in ``Montage/Makefile.LINUX`` before doing ``make``
 
-::
+.. code:: bash
 
   # uncomment the next two lines to build MPI modules
   # MPICC  =	mpicc
