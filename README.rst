@@ -53,10 +53,9 @@ These are the steps to install LEMON on a fresh Debian 7 (`Wheezy <https://www.d
 #. ``pip install -r requirements.txt``
 
 #. Install `IRAF <http://iraf.noao.edu/>`_
-#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.19.5 or newer)
+#. Install `SExtractor <http://www.astromatic.net/software/sextractor>`_ (version 2.19.5 or newer) [#]_
 #. Install `Astrometry.net <http://astrometry.net/use.html>`_
 #. Install the MPI-enabled `Montage <http://montage.ipac.caltech.edu/docs/download2.html>`_ binaries [#]_
-
 #. ``python ./setup.py``
 #. ``echo 'PATH=$PATH:~/lemon' >> ~/.bashrc``
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
@@ -67,6 +66,17 @@ Note that, starting from version 2.16, IRAF is now released `under a free softwa
 .. |logo| image:: ./Misc/lemon-icon_200px.png
           :width: 200 px
           :alt: LEMON icon
+
+.. [#] The important thing to `keep in mind <http://www.astromatic.net/forum/showthread.php?tid=587>`_ is that SExtractor does not rely on the `CLAPACK <http://www.netlib.org/clapack/>`_ implementation of `LAPACK <http://www.netlib.org/lapack/>`_ — instead, it only uses the subset of the LAPACK functions available in `ATLAS <http://math-atlas.sourceforge.net/>`_. That is the reason why, in case the ``liblapack-dev`` package is installed, you may encounter an error such as :code:`configure: error: CBLAS/LAPack library files not found at usual locations! Exiting`. If that is your case, you may need to do something like this:
+
+::
+
+  cd ./sextractor-2.19.5
+  apt-get install fftw3-dev libatlas-base-dev
+  update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
+  ./configure --with-atlas-incdir=/usr/include/atlas
+  make
+  make install
 
 .. [#] Edit these two lines in ``Montage/Makefile.LINUX`` before doing ``make``
 
