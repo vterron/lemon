@@ -21,15 +21,24 @@
 from __future__ import division
 
 description = """
-This module computes the light curve of each star in each photometric filter
-using a moderately-modified version of Broeg's algorithm for computing an
-optimal artificial comparison star. In short, what for each light curve we do
-here is (a) to identify the most constant stars in the field, (b) compute their
-weights, inversely proportional to its standard deviation and (c) generate the
-light curve, subtracting, for each point in time, the magnitude of the star
-from that of the comparison star. In this manner, positive values are returned
-when the star is *brighter* than the comparison star, while *negative* means
-that the star is fainter.
+Use the algorithm described in (Broeg et al. 2005) for computing an optimal
+artificial comparison star and generate the light curve of each astronomical
+object in the different photometric filters. The main difference with respect
+to the approach described in the paper is that the initial weights are given by
+the median of the instrumental magnitudes of each star (so that we rely more on
+the brighter ones, as they have a higher signal-to-noise ratio), instead of by
+the instrumental errors derived from the characteristics of the CCD detector.
+
+(Broeg et al. 2005) http://adsabs.harvard.edu/abs/2005AN....326..134B
+
+Briefly, the approach followed to compute each light curve consists in (a)
+identifying the most constant stars in the field, (b) computing an artificial
+comparison star by taking the weighted mean of the instrumental magnitudes of
+these constant stars, using weights inversely proportional to their standard
+deviations and, lastly, (c) comparing the instrumental magnitude of our star to
+that of the comparison star. In this last step we subtract the magnitude of the
+star from that of the comparison star: in this manner, positive values mean
+that the former is brighter than the latter.
 
 """
 
