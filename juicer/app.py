@@ -170,6 +170,7 @@ class ExportCurveDialog(object):
         self.snr_checkbox.connect('toggled', f('dump_snr'))
         self.merr_pos_checkbox.connect('toggled', f('dump_max_merr'))
         self.merr_neg_checkbox.connect('toggled', f('dump_min_merr'))
+        self.inst_mags_checkbox.connect('toggled', f('dump_instrumental_magnitude'))
         self.spinbutton.connect('output', f('decimal_places', 'get_value'))
 
     def update(self):
