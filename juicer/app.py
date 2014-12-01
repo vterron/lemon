@@ -206,15 +206,22 @@ class ExportCurveDialog(object):
             ndecimals = int(self.spinbutton.get_value())
             return '%.*f' % (ndecimals, value)
 
+        # A dictionary mapping each Unix time to a two-element namedtuple with
+        # the instrumental magnitude of the star and the SNR of the measurement.
+        if self.inst_mags_checkbox.get_active():
+            args = (self.id, self.pfilter)
+            instrumental = self.db.get_instrumental_magnitudes(*args)
+
         with open(path, 'wt') as fd:
 
             # First element of each row is the date of observation (Unix)
             for row in sorted(self.store, key = operator.itemgetter(0)):
+                unix_time = row[0]
 
                 values = []
                 assert len(row) == 7
                 if self.date_secs_checkbox.get_active():
-                    values.append(str(row[0]))
+                    values.append(str(unix_time))
                 if self.date_str_checkbox.get_active():
                     values.append(row[1])
                 if self.date_julian_checkbox.get_active():
@@ -227,6 +234,9 @@ class ExportCurveDialog(object):
                     values.append(parse_float(row[5]))
                 if self.merr_neg_checkbox.get_active():
                     values.append(parse_float(row[6]))
+                if self.inst_mags_checkbox.get_active():
+                    mag = instrumental[unix_time].magnitude
+                    values.append(parse_float(mag))
 
                 fd.write('%s\n' % separator.join(values))
 
