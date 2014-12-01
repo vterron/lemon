@@ -21,13 +21,20 @@
 from __future__ import division
 
 description = """
-This module receives as input a LEMON database and finds the period in each
-photometric filter of each of the stars using the string-length method proposed
-by Dworetsky in 1983. All the periods in the range ]0,n/2], with n being the
-time elapsed between the first and last observations of each star, are
-evaluated. The reason for this is the Nyquist-Shannon sampling theorem,
-according to which at least two samples per period are necessary for detecting
-a certain frequency.
+Take as input a LEMON database and find the period of each astronomical object
+in each photometric filter for which it has a light curve, using the algorithm
+described in (Dworetsky 1983). This is the 'string-length' method, which does a
+brute-force search for identifying the correct period of a variable star from a
+small number of unequally spaced observations. The basic idea is that the right
+period is the one which minimizes the distance between the points of the phased
+light curve.
+
+(Dworetsky 1983) http://adsabs.harvard.edu/abs/1983MNRAS.203..917D
+
+All the periods in the range ]0, n/2], with 'n' being the time elapsed between
+the first and last observations of each astronomical object, are evaluated. The
+reason for this is the Nyquist-Shannon sampling theorem, according to which at
+least two samples per period are necessary for detecting a certain frequency.
 
 """
 
