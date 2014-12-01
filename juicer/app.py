@@ -94,17 +94,16 @@ class ExportCurveDialog(object):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
 
-    def __init__(self, parent_window, builder, config, id_, pfilter,
-                 field_name, curve_store):
+    def __init__(self, parent_window, builder, config, id_, pfilter, db,
+                 curve_store):
         """ Instantiation method for the ExportCurveDialog class.
 
         The 'parent_window' parameter must be the transient parent of the
         dialog, while 'builder' and 'config' are the gtk.GtkBuilder and
-        Configuration instances, respectively, of the parent GTK widget.
-        The 'id_' parameter is the ID of the star, 'pfilter' a Passband
-        instance encapsulating the photometric filter of the light curve
-        and 'field_name' a string containing the name of the observed
-        field, used to suggest a filename in a 'Save As...' dialog.
+        Configuration instances, respectively, of the parent GTK widget. The
+        'id_' parameter is the ID of the star, 'pfilter' a Passband instance
+        encapsulating the photometric filter of the light curve, and 'db' a
+        LEMONdB handle.
 
         Lastly, 'curve_store' must be a gtk.ListStore with the data that will
         be dumped to a file, and should contain seven columns: (1) the date of
@@ -122,7 +121,7 @@ class ExportCurveDialog(object):
         self.config = config
         self.id = id_
         self.pfilter = pfilter
-        self.field_name = field_name
+        self.db = db
         self.store = curve_store
 
         self.dialog = self.get('export-curve-dialog')
@@ -147,6 +146,7 @@ class ExportCurveDialog(object):
         self.snr_checkbox = self.get('snr-checkbox')
         self.merr_pos_checkbox = self.get('merr-pos-checkbox')
         self.merr_neg_checkbox = self.get('merr-neg-checkbox')
+        self.inst_mags_checkbox = self.get('inst-mags-checkbox')
         self.spinbutton = self.get('ndecimals-spinbutton')
         self.update()
 
@@ -169,6 +169,7 @@ class ExportCurveDialog(object):
         self.snr_checkbox.connect('toggled', f('dump_snr'))
         self.merr_pos_checkbox.connect('toggled', f('dump_max_merr'))
         self.merr_neg_checkbox.connect('toggled', f('dump_min_merr'))
+        self.inst_mags_checkbox.connect('toggled', f('dump_instrumental_magnitude'))
         self.spinbutton.connect('output', f('decimal_places', 'get_value'))
 
     def update(self):
@@ -182,6 +183,7 @@ class ExportCurveDialog(object):
         self.snr_checkbox.set_active(config.dumpint('dump_snr'))
         self.merr_pos_checkbox.set_active(config.dumpint('dump_max_merr'))
         self.merr_neg_checkbox.set_active(config.dumpint('dump_min_merr'))
+        self.inst_mags_checkbox.set_active(config.dumpint('dump_instrumental_magnitude'))
         self.spinbutton.set_value(config.dumpint('decimal_places'))
 
     def dump(self, path, separator = '\t'):
@@ -204,15 +206,22 @@ class ExportCurveDialog(object):
             ndecimals = int(self.spinbutton.get_value())
             return '%.*f' % (ndecimals, value)
 
+        # A dictionary mapping each Unix time to a two-element namedtuple with
+        # the instrumental magnitude of the star and the SNR of the measurement.
+        if self.inst_mags_checkbox.get_active():
+            args = (self.id, self.pfilter)
+            instrumental = self.db.get_instrumental_magnitudes(*args)
+
         with open(path, 'wt') as fd:
 
             # First element of each row is the date of observation (Unix)
             for row in sorted(self.store, key = operator.itemgetter(0)):
+                unix_time = row[0]
 
                 values = []
                 assert len(row) == 7
                 if self.date_secs_checkbox.get_active():
-                    values.append(str(row[0]))
+                    values.append(str(unix_time))
                 if self.date_str_checkbox.get_active():
                     values.append(row[1])
                 if self.date_julian_checkbox.get_active():
@@ -225,6 +234,9 @@ class ExportCurveDialog(object):
                     values.append(parse_float(row[5]))
                 if self.merr_neg_checkbox.get_active():
                     values.append(parse_float(row[6]))
+                if self.inst_mags_checkbox.get_active():
+                    mag = instrumental[unix_time].magnitude
+                    values.append(parse_float(mag))
 
                 fd.write('%s\n' % separator.join(values))
 
@@ -253,7 +265,7 @@ class ExportCurveDialog(object):
                 chooser.set_do_overwrite_confirmation(True)
 
                 # Suggest a name for the plain text file
-                field = re.sub(r'\s', '_', self.field_name.lower())
+                field = re.sub(r'\s', '_', self.db.field_name.lower())
                 args = field, self.id, self.pfilter
                 filename = '%s_star_%d_curve_%s' % args
                 chooser.set_current_name(filename)
@@ -756,7 +768,7 @@ class StarDetailsGUI(object):
         """ Dump the points of the light curve to a plain text file """
 
         args = (self.parent._main_window, self._builder, self.config,
-                self.id, self.shown, self.db.field_name, self.curve_store)
+                self.id, self.shown, self.db, self.curve_store)
         dialog = ExportCurveDialog(*args)
         dialog.run()
 
