@@ -94,17 +94,16 @@ class ExportCurveDialog(object):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
 
-    def __init__(self, parent_window, builder, config, id_, pfilter,
-                 field_name, curve_store):
+    def __init__(self, parent_window, builder, config, id_, pfilter, db,
+                 curve_store):
         """ Instantiation method for the ExportCurveDialog class.
 
         The 'parent_window' parameter must be the transient parent of the
         dialog, while 'builder' and 'config' are the gtk.GtkBuilder and
-        Configuration instances, respectively, of the parent GTK widget.
-        The 'id_' parameter is the ID of the star, 'pfilter' a Passband
-        instance encapsulating the photometric filter of the light curve
-        and 'field_name' a string containing the name of the observed
-        field, used to suggest a filename in a 'Save As...' dialog.
+        Configuration instances, respectively, of the parent GTK widget. The
+        'id_' parameter is the ID of the star, 'pfilter' a Passband instance
+        encapsulating the photometric filter of the light curve, and 'db' a
+        LEMONdB handle.
 
         Lastly, 'curve_store' must be a gtk.ListStore with the data that will
         be dumped to a file, and should contain seven columns: (1) the date of
@@ -122,7 +121,7 @@ class ExportCurveDialog(object):
         self.config = config
         self.id = id_
         self.pfilter = pfilter
-        self.field_name = field_name
+        self.db = db
         self.store = curve_store
 
         self.dialog = self.get('export-curve-dialog')
@@ -256,7 +255,7 @@ class ExportCurveDialog(object):
                 chooser.set_do_overwrite_confirmation(True)
 
                 # Suggest a name for the plain text file
-                field = re.sub(r'\s', '_', self.field_name.lower())
+                field = re.sub(r'\s', '_', self.db.field_name.lower())
                 args = field, self.id, self.pfilter
                 filename = '%s_star_%d_curve_%s' % args
                 chooser.set_current_name(filename)
@@ -759,7 +758,7 @@ class StarDetailsGUI(object):
         """ Dump the points of the light curve to a plain text file """
 
         args = (self.parent._main_window, self._builder, self.config,
-                self.id, self.shown, self.db.field_name, self.curve_store)
+                self.id, self.shown, self.db, self.curve_store)
         dialog = ExportCurveDialog(*args)
         dialog.run()
 
