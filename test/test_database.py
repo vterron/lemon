@@ -1881,6 +1881,75 @@ class LEMONdBTest(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             db.get_light_curve(nstar_id, pfilter)
 
+    def test_get_instrumental_magnitudes(self):
+
+        db = LEMONdB(':memory:')
+        johnson_R = passband.Passband('Johnson R')
+        johnson_I = passband.Passband('Johnson I')
+
+        star_ids = [star1_id, star2_id, star3_id] = range(3)
+        for id_ in star_ids:
+            star_info =  self.random_star_info(id_ = id_)
+            db.add_star(*star_info)
+
+        def get_seconds(date_str, format='%d %B %Y'):
+            """ Parse a date, return it in seconds since the epoch."""
+            return time.mktime(time.strptime(date_str, format))
+
+        # Note that the second and fourth images have the same Unix time.
+        # This is not an issue as they have different photometric filters.
+
+        img1 = ImageTest.random(johnson_R)
+        img1 = img1._replace(unix_time = get_seconds("28 December 1903"))
+        img2 = ImageTest.random(johnson_I)
+        img2 = img2._replace(unix_time = get_seconds("11 May 1918"))
+        img3 = ImageTest.random(johnson_R)
+        img3 = img3._replace(unix_time = get_seconds("08 January 1942"))
+        img4 = ImageTest.random(johnson_R)
+        img4 = img4._replace(unix_time = img2.unix_time)
+
+        images = [img1, img2, img3, img4]
+        for img in images:
+            db.add_image(img)
+
+        db.add_photometry(star1_id, img1.unix_time, img1.pfilter, 17.650, 119.3508)
+        db.add_photometry(star1_id, img2.unix_time, img2.pfilter, 16.754, 191.2367)
+        db.add_photometry(star1_id, img3.unix_time, img3.pfilter, 16.802, 174.5824)
+        db.add_photometry(star1_id, img4.unix_time, img4.pfilter, 16.545, 206.4919)
+
+        db.add_photometry(star2_id, img1.unix_time, img1.pfilter, 17.044, 157.0627)
+        db.add_photometry(star2_id, img2.unix_time, img2.pfilter, 17.778, 110.2448)
+        db.add_photometry(star2_id, img3.unix_time, img3.pfilter, 16.881, 121.2279)
+        db.add_photometry(star2_id, img4.unix_time, img4.pfilter, 16.554, 161.5531)
+
+        # The different dictionaries that we expect to be returned...
+        star1_expected_R = {img1.unix_time : (17.650, 119.3508),
+                            img3.unix_time : (16.802, 174.5824),
+                            img4.unix_time : (16.545, 206.4919)}
+
+        star1_expected_I = {img2.unix_time : (16.754, 191.2367)}
+
+        star2_expected_R = {img1.unix_time : (17.044, 157.0627),
+                            img3.unix_time : (16.881, 121.2279),
+                            img4.unix_time : (16.554, 161.5531)}
+
+        star2_expected_I = {img2.unix_time : (17.778, 110.2448)}
+
+        # ... and the dictionaries that the method actually returns
+        star1_magnitudes_R = db.get_instrumental_magnitudes(star1_id, johnson_R)
+        star1_magnitudes_I = db.get_instrumental_magnitudes(star1_id, johnson_I)
+        star2_magnitudes_R = db.get_instrumental_magnitudes(star2_id, johnson_R)
+        star2_magnitudes_I = db.get_instrumental_magnitudes(star2_id, johnson_I)
+
+        self.assertEqual(star1_magnitudes_R, star1_expected_R)
+        self.assertEqual(star1_magnitudes_I, star1_expected_I)
+        self.assertEqual(star2_magnitudes_R, star2_expected_R)
+        self.assertEqual(star2_magnitudes_I, star2_expected_I)
+
+        # The third star has no photometric records
+        self.assertEqual(db.get_instrumental_magnitudes(star3_id, johnson_R), {})
+        self.assertEqual(db.get_instrumental_magnitudes(star3_id, johnson_I), {})
+
     def test_add_and_get_period_and_get_periods(self):
         db = LEMONdB(':memory:')
         nstars = random.randint(MIN_NSTARS, MAX_NSTARS)

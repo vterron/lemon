@@ -1399,6 +1399,30 @@ class LEMONdB(object):
             curve.add(*point)
         return curve
 
+    def get_instrumental_magnitudes(self, star_id, pfilter):
+        """ Return the instrumental magnitudes of an astronomical object.
+
+        Return a dictionary which maps the Unix time of each measurement of an
+        astronomical object to a two-element namedtuple with fields 'magnitude'
+        (the instrumental magnitude returned by qphot and from which the light
+        curves are computed) and 'snr' (the signal-to-noise ratio of the
+        measurement). If there are no measurements for the star in this
+        photometric filter, an empty dictionary is returned.
+
+        """
+
+        t = (star_id, hash(pfilter))
+        self._execute("""
+                      SELECT i.unix_time, p.magnitude, p.snr
+                      FROM photometry AS p, images AS i
+                      ON p.image_id = i.id
+                      WHERE p.star_id = ? AND
+                            i.filter_id = ?
+                      """, t)
+
+        cls = collections.namedtuple('InstrumentalMagnitude', "magnitude snr")
+        return dict((r[0], cls(*r[1:])) for r in self._rows)
+
     def add_period(self, star_id, pfilter, period, step):
         """ Store the string-length period of a star.
 
