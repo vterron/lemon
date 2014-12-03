@@ -152,6 +152,19 @@
                     <property name="position">8</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkCheckButton" id="inst-snr-checkbox">
+                    <property name="label" translatable="yes">Instrumental signal-to-noise ratio</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="active">True</property>
+                    <property name="draw_indicator">True</property>
+                  </object>
+                  <packing>
+                    <property name="position">9</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="fill">False</property>
