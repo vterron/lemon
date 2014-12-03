@@ -211,7 +211,8 @@ class ExportCurveDialog(object):
 
         # A dictionary mapping each Unix time to a two-element namedtuple with
         # the instrumental magnitude of the star and the SNR of the measurement.
-        if self.inst_mags_checkbox.get_active():
+        if self.inst_mags_checkbox.get_active() or \
+           self.inst_snr_checkbox.get_active():
             args = (self.id, self.pfilter)
             instrumental = self.db.get_instrumental_magnitudes(*args)
 
@@ -240,6 +241,9 @@ class ExportCurveDialog(object):
                 if self.inst_mags_checkbox.get_active():
                     mag = instrumental[unix_time].magnitude
                     values.append(parse_float(mag))
+                if self.inst_snr_checkbox.get_active():
+                    snr = instrumental[unix_time].snr
+                    values.append(parse_float(snr))
 
                 fd.write('%s\n' % separator.join(values))
 
