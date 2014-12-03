@@ -147,6 +147,7 @@ class ExportCurveDialog(object):
         self.merr_pos_checkbox = self.get('merr-pos-checkbox')
         self.merr_neg_checkbox = self.get('merr-neg-checkbox')
         self.inst_mags_checkbox = self.get('inst-mags-checkbox')
+        self.inst_snr_checkbox = self.get('inst-snr-checkbox')
         self.spinbutton = self.get('ndecimals-spinbutton')
         self.update()
 
@@ -170,6 +171,7 @@ class ExportCurveDialog(object):
         self.merr_pos_checkbox.connect('toggled', f('dump_max_merr'))
         self.merr_neg_checkbox.connect('toggled', f('dump_min_merr'))
         self.inst_mags_checkbox.connect('toggled', f('dump_instrumental_magnitude'))
+        self.inst_snr_checkbox.connect('toggled', f('dump_instrumental_snr'))
         self.spinbutton.connect('output', f('decimal_places', 'get_value'))
 
     def update(self):
@@ -184,6 +186,7 @@ class ExportCurveDialog(object):
         self.merr_pos_checkbox.set_active(config.dumpint('dump_max_merr'))
         self.merr_neg_checkbox.set_active(config.dumpint('dump_min_merr'))
         self.inst_mags_checkbox.set_active(config.dumpint('dump_instrumental_magnitude'))
+        self.inst_snr_checkbox.set_active(config.dumpint('dump_instrumental_snr'))
         self.spinbutton.set_value(config.dumpint('decimal_places'))
 
     def dump(self, path, separator = '\t'):
@@ -208,7 +211,8 @@ class ExportCurveDialog(object):
 
         # A dictionary mapping each Unix time to a two-element namedtuple with
         # the instrumental magnitude of the star and the SNR of the measurement.
-        if self.inst_mags_checkbox.get_active():
+        if self.inst_mags_checkbox.get_active() or \
+           self.inst_snr_checkbox.get_active():
             args = (self.id, self.pfilter)
             instrumental = self.db.get_instrumental_magnitudes(*args)
 
@@ -237,6 +241,9 @@ class ExportCurveDialog(object):
                 if self.inst_mags_checkbox.get_active():
                     mag = instrumental[unix_time].magnitude
                     values.append(parse_float(mag))
+                if self.inst_snr_checkbox.get_active():
+                    snr = instrumental[unix_time].snr
+                    values.append(parse_float(snr))
 
                 fd.write('%s\n' % separator.join(values))
 

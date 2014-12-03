@@ -82,6 +82,7 @@ DEFAULT_CURVEDUMP_OPTS = dict(
   dump_max_merr = 1,
   dump_min_merr = 1,
   dump_instrumental_magnitude = 1,
+  dump_instrumental_snr = 1,
   decimal_places = 8)
 
 class Configuration(ConfigParser.SafeConfigParser):
