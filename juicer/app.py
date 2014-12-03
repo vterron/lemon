@@ -147,6 +147,7 @@ class ExportCurveDialog(object):
         self.merr_pos_checkbox = self.get('merr-pos-checkbox')
         self.merr_neg_checkbox = self.get('merr-neg-checkbox')
         self.inst_mags_checkbox = self.get('inst-mags-checkbox')
+        self.inst_snr_checkbox = self.get('inst-snr-checkbox')
         self.spinbutton = self.get('ndecimals-spinbutton')
         self.update()
 
@@ -184,6 +185,7 @@ class ExportCurveDialog(object):
         self.merr_pos_checkbox.set_active(config.dumpint('dump_max_merr'))
         self.merr_neg_checkbox.set_active(config.dumpint('dump_min_merr'))
         self.inst_mags_checkbox.set_active(config.dumpint('dump_instrumental_magnitude'))
+        self.inst_snr_checkbox.set_active(config.dumpint('dump_instrumental_snr'))
         self.spinbutton.set_value(config.dumpint('decimal_places'))
 
     def dump(self, path, separator = '\t'):
