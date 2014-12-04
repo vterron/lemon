@@ -48,9 +48,12 @@ will be ignored.
 
 import collections
 import fnmatch
+import numpy
+import operator
 import optparse
 import os
 import os.path
+import pyfits
 import re
 import shutil
 import stat
@@ -209,11 +212,11 @@ def main(arguments = None):
     print "%sDetecting FITS images among the %d indexed regular files..." % \
           (style.prefix, len(files_paths))
 
-    images_set = fitsimage.FITSet()
+    images_set = set()
     methods.show_progress(0.0)
     for path_index, path in enumerate(files_paths):
         try:
-            images_set.append(fitsimage.FITSImage(path))
+            images_set.add(fitsimage.FITSImage(path))
             fraction = (path_index + 1) / len(files_paths) * 100
             methods.show_progress(fraction)
         except fitsimage.NonStandardFITS:
@@ -249,8 +252,7 @@ def main(arguments = None):
         print "%sDiscarding images with a size other than %d x %d pixels, " \
               "the most common..." % (style.prefix, x_size, y_size) ,
         old_size = len(images_set)
-        selected = [img for img in images_set if img.size == (x_size, y_size)]
-        images_set = fitsimage.FITSet(selected)
+        images_set = set(img for img in images_set if img.size == (x_size, y_size))
         print 'done.'
 
         if not images_set:
@@ -274,7 +276,7 @@ def main(arguments = None):
     # exception, which means that the image is filtered out) and, after that,
     # check whether its value matches one of the regular expressions which
     # define the object names to be imported.
-    object_set = fitsimage.FITSet()
+    object_set = set()
 
     # Keep the track of how many images are ignored for each reason
     saturated_excluded = 0
@@ -292,7 +294,8 @@ def main(arguments = None):
                     # number of ADUs is irrelevant we can avoid having to
                     # unnecessarily compute it.
                     if options.max_counts:
-                        median_counts = img.imstat('midpt')
+                        with pyfits.open(img.path, readonly = True) as hdu:
+                            median_counts = numpy.median(hdu[0].data)
                         if median_counts > options.max_counts:
                             print "%s%s excluded (matched, but saturated " \
                                   "with %d ADUs)" % (style.prefix, img.path,
@@ -305,7 +308,7 @@ def main(arguments = None):
                     print "%s%s imported (%s matches '%s')" % (style.prefix,
                            img.path, object_name, pattern)
 
-                    object_set.append(img)
+                    object_set.add(img)
                     break
 
             else: # only executed if for loop exited cleanly
@@ -335,14 +338,16 @@ def main(arguments = None):
     print "%sSorting the FITS files by their date of observation " \
           "[keyword: %s]..." % (style.prefix, options.datek) ,
 
-    sorted_set = object_set.date_sort(date_keyword = options.datek,
-                                      time_keyword = options.timek,
-                                      exp_keyword = options.exptimek)
+    kwargs = dict(date_keyword = options.datek,
+                  time_keyword = options.timek,
+                  exp_keyword = options.exptimek)
+    get_date = operator.methodcaller('date', **kwargs)
+    sorted_imgs = sorted(object_set, key = get_date)
 
     # Let the user know if one or more images could not be sorted (because of
     # problems when parsing the FITS keywords from which the observation date
     # is derived) and thus discarded.
-    difference = len(object_set) - len(sorted_set)
+    difference = len(object_set) - len(sorted_imgs)
     assert difference >= 0
     if difference:
         print
@@ -352,7 +357,7 @@ def main(arguments = None):
               "standard." % style.prefix
 
         # Execution is aborted if all the FITS files were filtered out
-        if not sorted_set:
+        if not sorted_imgs:
             print "%sThere are no FITS files left. Exiting." % style.prefix
             return 1
     else:
@@ -374,7 +379,7 @@ def main(arguments = None):
         # the filename) and select that with most occurrences.
 
         prefixes = collections.defaultdict(int)
-        for prefix in (img.prefix for img in sorted_set):
+        for prefix in (img.prefix for img in sorted_imgs):
             prefixes[prefix] += 1
 
         # Select the prefix (key) that is repeated the most
@@ -389,16 +394,16 @@ def main(arguments = None):
     # affixed to each number so that the lenth of all the basenames is the
     # same. Following Dijkstra's teachings, we start numbering at zero.
 
-    assert len(sorted_set)
-    ndigits = len(str(len(sorted_set) - 1))
+    assert len(sorted_imgs)
+    ndigits = len(str(len(sorted_imgs) - 1))
     print "%s%d digits are needed in order to enumerate %d files." % \
-          (style.prefix, ndigits, len(sorted_set))
+          (style.prefix, ndigits, len(sorted_imgs))
 
     print style.prefix
     print "%sCopying the FITS files to '%s'..." % \
           (style.prefix, output_dir)
 
-    for index, fits_file in enumerate(sorted_set):
+    for index, fits_file in enumerate(sorted_imgs):
 
         # i.e., 'ferM_' + '0000' + '.fits' = 'ferM_0000.fits'
         dest_name = '%s%0*d.fits' % (options.filename, ndigits, index)
@@ -449,13 +454,13 @@ def main(arguments = None):
     # Finally, let the user know how many FITS images, and the fraction of
     # the total, that were imported, as well as their size in megabytes.
     print style.prefix
-    ifraction = len(sorted_set) / len(images_set) * 100
+    ifraction = len(sorted_imgs) / len(images_set) * 100
     print "%sFITS files detected: %d" % (style.prefix, len(images_set))
     print "%sFITS files successfully imported: %d (%.2f%%)" % \
-          (style.prefix, len(sorted_set), ifraction)
+          (style.prefix, len(sorted_imgs), ifraction)
 
     total_size = 0.0
-    for fits_file in sorted_set:
+    for fits_file in sorted_imgs:
         total_size += os.path.getsize(fits_file.path) # in bytes
 
     print "%sTotal size of imported files: %.2f MB" % \
