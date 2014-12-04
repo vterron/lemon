@@ -214,10 +214,6 @@ def str_split_callback(option, opt, value, parser):
 
     setattr(parser.values, option.dest, value.split(','))
 
-
-class WrongIntervalError(ValueError):
-    pass
-
 def owner_writable(path, add):
     """ Make the file owner writeable or unwriteable.
 
