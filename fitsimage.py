@@ -720,63 +720,6 @@ class FITSImage(object):
         logging.debug(msg % args)
         return saturation
 
-    def add_margin(self, left_margin, right_margin, bottom_margin, top_margin):
-        """ Add a blank margin to the FITS image.
-
-        The method adds zero-valued margins of the given width, given in
-        pixels, to the image. Internally, this is achieved by creating a
-        larger, blank canvas with IRAF's mkpattern and then replacing the
-        section of the cavas within those margins with the original image.
-        Returns a FITSImage instance that encapsulates the resulting image,
-        saved to a temporary file and for whose deletion when done with it
-        the user is responsible .
-
-        """
-
-        # No duck typing here
-        if not isinstance(left_margin, int) or \
-           not isinstance(right_margin, int) or \
-           not isinstance(bottom_margin, int) or \
-           not isinstance(top_margin, int):
-            raise ValueError("width of margings must be an integer")
-
-        # Get path to the output temporary file
-        output_fd, output_path = tempfile.mkstemp(suffix = '.fits')
-        os.close(output_fd)
-
-        # Determine the dimensions of the canvas, and therefore those of the
-        # resulting image, by adding the width of the margings in each axis to
-        # the dimensions of the original image.
-        x_size, y_size = self.size
-        dest_x_size = x_size + left_margin + right_margin
-        dest_y_size = y_size + bottom_margin + top_margin
-
-        os.unlink(output_path) # IRAF will refuse to overwrite it
-        artdata.mkpattern(output_path, pattern = 'constant', v1 = 0,
-                          ncols = dest_x_size, nlines = dest_y_size,
-                          header = self.path) # also copy FITS header
-
-        output_image = FITSImage(output_path)
-        assert dest_x_size == output_image.x_size
-        assert dest_y_size == output_image.y_size
-
-        # Finally, copy the original image at the corresponding position in
-        # the blank canvas. IRAF uses one indexing, so we need to transform
-        # our zero-indexed coordinates.
-        x1 = left_margin + 1
-        x2 = x1 + x_size - 1
-        y1 = bottom_margin + 1
-        y2 = y1 + y_size - 1
-
-        assert (x2 - x1 + 1) == x_size
-        assert (y2 - y1 + 1) == y_size
-
-        with open(os.devnull, 'wt') as fd:
-            dest_path = output_image._subscript(x1, x2, y1, y2)
-            pyraf.iraf.imcopy(self.path, dest_path, Stdout = fd)
-
-        return output_image
-
     def imshift(self, xshift, yshift, interp_type = 'linear', prefix = None):
         """ Shift an image in the x- and y-axes.
 
