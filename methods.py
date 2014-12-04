@@ -139,23 +139,6 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
 
         return output_directory
 
-def deprecated(func):
-    """ Mark a function as deprecated.
-
-    This is a decorator which can be used to mark functions as deprecated.
-    It results in a DeprecationWarning being issued when the function is used.
-    [URL] http://code.activestate.com/recipes/391367-deprecated/
-
-    """
-
-    @functools.wraps(func)
-    def depre_func(*args, **kwargs):
-        msg = "call to deprecated function '%s'." % func.__name__
-        warnings.warn(msg, category = DeprecationWarning, stacklevel = 2)
-        return func(*args, **kwargs)
-
-    return depre_func
-
 def DMS_to_DD(degrees, arcminutes, arcseconds):
     """ Degrees, arcminutes, arcseconds to decimal degrees conversion. """
 
