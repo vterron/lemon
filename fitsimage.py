@@ -720,49 +720,6 @@ class FITSImage(object):
         logging.debug(msg % args)
         return saturation
 
-    def check_image(self, check_type = 'OBJECTS'):
-        """ Return one of the multiple SExtractor's check-image.
-
-        The method returns a FITSImage instance with the SExtractor check-image
-        generated for this image. The check-image is saved to a temporary file,
-        for whose deletion when done with it the user is responsible .
-
-        The types of check-image currently accepted by SExtractor are:
-        1. IDENTICAL: identical to input image (useful for converting formats)
-        2. BACKGROUND: full-resolution interpolated background map
-        3. BACKGROUND_RMS: full-resolution interpolated background noise map
-        4. MINIBACKGROUND: low-resolution background map
-        5. MINIBACK_RMS: low-resolution background noise map
-        6. -BACKGROUND: background-subtracted image
-        7. FILTERED: background-subtracted filtered image (requires FILTER = Y)
-        8. OBJECTS: detected objects
-        9. -OBJECTS: background-subtracted image with detected objects blanked
-        10. APERTURES: MAG_APER and MAG_AUTO integration limits.
-        11. SEGMENTATION: display patches corresponding to pixels attributed to
-                          each object.
-
-        """
-
-        prefix = '%s_checkimage_%s_' % (self.basename, check_type.lower())
-        check_fd, check_path = tempfile.mkstemp(prefix = prefix, suffix = '.fits')
-        os.close(check_fd)
-
-        try:
-
-            sextractor_options = dict(CHECKIMAGE_NAME = check_path,
-                                      CHECKIMAGE_TYPE = check_type)
-
-            # Redirect SExtractor output to the null device
-            with open(os.devnull, 'wt') as fd:
-                kwargs = dict(options = sextractor_options,
-                              stdout = fd, stderr = fd)
-                catalog_path = astromatic.sextractor(self.path, **kwargs)
-            return FITSImage(check_path)
-
-        finally:
-            try: os.unlink(catalog_path)
-            except NameError: pass
-
     @property
     def sha1sum(self):
         """ Return the hexadecimal SHA-1 checksum of the FITS image """
