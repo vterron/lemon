@@ -343,12 +343,12 @@ def main(arguments = None):
                   time_keyword = options.timek,
                   exp_keyword = options.exptimek)
     get_date = operator.methodcaller('date', **kwargs)
-    sorted_set = sorted(object_set, key = get_date)
+    sorted_imgs = sorted(object_set, key = get_date)
 
     # Let the user know if one or more images could not be sorted (because of
     # problems when parsing the FITS keywords from which the observation date
     # is derived) and thus discarded.
-    difference = len(object_set) - len(sorted_set)
+    difference = len(object_set) - len(sorted_imgs)
     assert difference >= 0
     if difference:
         print
@@ -358,7 +358,7 @@ def main(arguments = None):
               "standard." % style.prefix
 
         # Execution is aborted if all the FITS files were filtered out
-        if not sorted_set:
+        if not sorted_imgs:
             print "%sThere are no FITS files left. Exiting." % style.prefix
             return 1
     else:
@@ -380,7 +380,7 @@ def main(arguments = None):
         # the filename) and select that with most occurrences.
 
         prefixes = collections.defaultdict(int)
-        for prefix in (img.prefix for img in sorted_set):
+        for prefix in (img.prefix for img in sorted_imgs):
             prefixes[prefix] += 1
 
         # Select the prefix (key) that is repeated the most
@@ -395,16 +395,16 @@ def main(arguments = None):
     # affixed to each number so that the lenth of all the basenames is the
     # same. Following Dijkstra's teachings, we start numbering at zero.
 
-    assert len(sorted_set)
-    ndigits = len(str(len(sorted_set) - 1))
+    assert len(sorted_imgs)
+    ndigits = len(str(len(sorted_imgs) - 1))
     print "%s%d digits are needed in order to enumerate %d files." % \
-          (style.prefix, ndigits, len(sorted_set))
+          (style.prefix, ndigits, len(sorted_imgs))
 
     print style.prefix
     print "%sCopying the FITS files to '%s'..." % \
           (style.prefix, output_dir)
 
-    for index, fits_file in enumerate(sorted_set):
+    for index, fits_file in enumerate(sorted_imgs):
 
         # i.e., 'ferM_' + '0000' + '.fits' = 'ferM_0000.fits'
         dest_name = '%s%0*d.fits' % (options.filename, ndigits, index)
@@ -455,13 +455,13 @@ def main(arguments = None):
     # Finally, let the user know how many FITS images, and the fraction of
     # the total, that were imported, as well as their size in megabytes.
     print style.prefix
-    ifraction = len(sorted_set) / len(images_set) * 100
+    ifraction = len(sorted_imgs) / len(images_set) * 100
     print "%sFITS files detected: %d" % (style.prefix, len(images_set))
     print "%sFITS files successfully imported: %d (%.2f%%)" % \
-          (style.prefix, len(sorted_set), ifraction)
+          (style.prefix, len(sorted_imgs), ifraction)
 
     total_size = 0.0
-    for fits_file in sorted_set:
+    for fits_file in sorted_imgs:
         total_size += os.path.getsize(fits_file.path) # in bytes
 
     print "%sTotal size of imported files: %.2f MB" % \
