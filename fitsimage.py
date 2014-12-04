@@ -173,25 +173,6 @@ class FITSImage(object):
         """ The unambiguous string representation of a FITSImage object """
         return "%s(%r)" % (self.__class__.__name__, self.path)
 
-    def __eq__(self, other):
-        """ Test if both FITSImage instances encapsulate the same FITS image.
-
-        The method returns True if both instances point to the same FITS image,
-        and False otherwise. In order to take into account symbolic links, this
-        is not checked by simply comparing the path of both instances, but by
-        actually testing if both paths point to the same file on disk. If this
-        happens, the inode numbers will be equal, although we must also check
-        that the device the inodes reside on are the same, as two files on
-        different devices might have the same inode number.
-
-        """
-
-        sinode = os.stat(self.path)[stat.ST_INO]
-        oinode = os.stat(other.path)[stat.ST_INO]
-        sdevice = os.stat(self.path)[stat.ST_DEV]
-        odevice = os.stat(other.path)[stat.ST_DEV]
-        return sinode == oinode and sdevice == odevice
-
     def __ne__(self, other):
         return not self == other
 
