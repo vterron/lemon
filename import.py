@@ -48,9 +48,11 @@ will be ignored.
 
 import collections
 import fnmatch
+import numpy
 import optparse
 import os
 import os.path
+import pyfits
 import re
 import shutil
 import stat
@@ -292,7 +294,8 @@ def main(arguments = None):
                     # number of ADUs is irrelevant we can avoid having to
                     # unnecessarily compute it.
                     if options.max_counts:
-                        median_counts = img.imstat('midpt')
+                        with pyfits.open(img.path, readonly = True) as hdu:
+                            median_counts = numpy.median(hdu[0].data)
                         if median_counts > options.max_counts:
                             print "%s%s excluded (matched, but saturated " \
                                   "with %d ADUs)" % (style.prefix, img.path,
