@@ -881,58 +881,6 @@ class FITSet(list):
 
         return selected.sort()
 
-    def date_sort(self, date_keyword = 'DATE-OBS', time_keyword = 'TIME-OBS',
-                  exp_keyword = 'EXPTIME'):
-        """ Sort the images in the set by their observation date.
-
-        The method returns a new instance of FITSet, whose images are sorted
-        into ascending order by the date in which they were taken. In other
-        words, the order of the FITS images in the returned set is determined
-        by their observation date, as returned by FITSImage.date. Images for
-        which one of the keywords cannot be found in the FITS header of that
-        do not follow the FITS standard are excluded from the returned set.
-
-        Keyword arguments:
-        date_kewyord - the FITS keyword in which the date of the observation is
-                       stored, in the format specified in the FITS Standard. The
-                       old date format was 'yy/mm/dd' and may be used only for
-                       dates from 1900 through 1999. The new Y2K compliant date
-                       format is 'yyyy-mm-dd' or 'yyyy-mm-ddTHH:MM:SS[.sss]'.
-        time_keyword - FITS keyword storing the time at which the observation
-                       started, in the format HH:MM:SS[.sss]. This keyword is
-                       ignored (and, thus, should not be used) if the time is
-                       included directly as part of the 'date_keyword' keyword
-                       value with the format 'yyyy-mm-ddTHH:MM:SS[.sss]'.
-        exp_keyword - the FITS keyword in which the duration of the exposure is
-                      stored. It is expected to be a floating-point number which
-                      gives the duration in seconds. The exact definition of
-                      'exposure time' is mission dependent and may, for example,
-                      include corrections for shutter open and close duration,
-                      detector dead time, vignetting, or other effects.
-
-        """
-
-        # Store the date (as Unix time) of observation of each image in a
-        # dictionary, which is used as a cache of dates. It is also here when
-        # we discard those images for which the date cannot be calculated:
-        # KeyError is raised if any of the keywords is not in the header, while
-        # NonStandardFITS is raised if they do not conform to the FITS
-        # specification.
-
-        dates_cache = {}
-        for img in self:
-            try:
-                obs_date = img.date(date_keyword = date_keyword,
-                                    time_keyword = time_keyword,
-                                    exp_keyword = exp_keyword)
-                dates_cache[img] = obs_date
-            except (KeyError, NonStandardFITS):
-                pass
-
-        imgs = sorted(dates_cache.iterkeys(), key = lambda x: dates_cache[x])
-        return FITSet(imgs)
-
-
 class InputFITSFiles(collections.defaultdict):
     """ Map each photometric filter to a list of FITS files.
 

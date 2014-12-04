@@ -49,6 +49,7 @@ will be ignored.
 import collections
 import fnmatch
 import numpy
+import operator
 import optparse
 import os
 import os.path
@@ -338,9 +339,11 @@ def main(arguments = None):
     print "%sSorting the FITS files by their date of observation " \
           "[keyword: %s]..." % (style.prefix, options.datek) ,
 
-    sorted_set = object_set.date_sort(date_keyword = options.datek,
-                                      time_keyword = options.timek,
-                                      exp_keyword = options.exptimek)
+    kwargs = dict(date_keyword = options.datek,
+                  time_keyword = options.timek,
+                  exp_keyword = options.exptimek)
+    get_date = operator.methodcaller('date', **kwargs)
+    sorted_set = sorted(object_set, key = get_date)
 
     # Let the user know if one or more images could not be sorted (because of
     # problems when parsing the FITS keywords from which the observation date
