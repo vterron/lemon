@@ -250,32 +250,6 @@ class StarTest(unittest.TestCase):
             self.assertRaises(AttributeError, setattr, star, name, value)
             self.assertRaises(AttributeError, delattr, star, name)
 
-    def test_distance(self):
-
-        args1 = list(self.rargs())
-        args1[0:2] = 134, 345
-        star1 = Star(*args1)
-
-        args2 = list(self.rargs())
-        args2[0:2] = 178, 471
-        star2 = Star(*args2)
-
-        # ((134 - 178) ^ 2 + (345 - 471) ^ 2) ^ 0.5
-        distance = star1.distance(star2)
-        self.assertAlmostEqual(distance, 133.46160496562297)
-
-        for _ in xrange(NITERS):
-
-            star1 = self.random()
-            star2 = self.random()
-            distance = star1.distance(star2)
-
-            # Compute the expected Euclidean distance with NumPy
-            array1 = numpy.array([star1.x, star1.y])
-            array2 = numpy.array([star2.x, star2.y])
-            expected = numpy.linalg.norm(array1 - array2)
-            self.assertAlmostEqual(distance, expected)
-
 
 class CatalogTest(unittest.TestCase):
 

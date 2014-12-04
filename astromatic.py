@@ -159,9 +159,6 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
     def delta(self):
         return self.sky_coords.dec
 
-    def distance(self, another):
-        """ The Euclidean distance between the image coordinates of two Stars """
-        return self.img_coords.distance(another.img_coords)
 
 class Catalog(tuple):
     """ High-level interface to a SExtractor catalog """
