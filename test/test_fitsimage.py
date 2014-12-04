@@ -199,36 +199,6 @@ class FITSImageTest(unittest.TestCase):
         with self.random() as img1:
             self.assertEqual(img1, eval(repr(img1)))
 
-    def test_eq_and_ne(self):
-
-        with self.random() as img1:
-            self.assertEqual(img1, img1)
-            self.assertFalse(img1 != img1)
-
-            # A different FITS file
-            with self.random() as img2:
-                self.assertNotEqual(img1, img2)
-
-            # The same FITS file
-            img3 = FITSImage(img1.path)
-            self.assertEqual(img1, img3)
-
-            # An exact copy of the FITS file
-            copy_path = self.random_data()[0]
-            shutil.copy2(img1.path, copy_path)
-            with FITSImage(copy_path) as img4:
-                self.assertNotEqual(img1.path, img4.path)
-                self.assertEqual(img1.sha1sum, img4.sha1sum)
-                self.assertNotEqual(img1, img4)
-
-            # A symbolic link to the FITS file
-            currdir = os.path.dirname(os.path.realpath(__file__))
-            symlink_path = os.path.join(currdir, img1.basename)
-            os.symlink(img1.path, symlink_path)
-            with FITSImage(symlink_path) as img5:
-                self.assertNotEqual(img1.path, img5.path)
-                self.assertEqual(img1, img5)
-
     def test_read_keyword(self):
 
         # Read a character string
