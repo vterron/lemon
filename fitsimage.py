@@ -720,18 +720,6 @@ class FITSImage(object):
         logging.debug(msg % args)
         return saturation
 
-    def _subscript(self, x1, x2, y1, y2):
-        """ Return the string representation of the image subscript.
-
-        The method receives four coordinates and returns the path wich would
-        have to be passed to IRAF in order only to work with a section of an
-        image. For the image '/home/123m/ferM_0001.fits' and x1 = 1, x2 = 100,
-        y1 = 1 and y2 = 200, the string '/home/123m/ferM_0001.fiys[1:100,1:200]'
-        would be returned.
-
-        """
-        return "%s[%d:%d,%d:%d]" % (self.path, x1, x2, y1, y2)
-
     def _subscript_instance(self, x1, x2, y1, y2):
         """ Return a FITSImage instance of the subscripted version of the image.
 
