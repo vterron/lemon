@@ -173,9 +173,6 @@ class FITSImage(object):
         """ The unambiguous string representation of a FITSImage object """
         return "%s(%r)" % (self.__class__.__name__, self.path)
 
-    def __ne__(self, other):
-        return not self == other
-
     def read_keyword(self, keyword):
         """ Read a keyword from the header of the FITS image.
 
