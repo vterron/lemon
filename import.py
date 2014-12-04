@@ -212,11 +212,11 @@ def main(arguments = None):
     print "%sDetecting FITS images among the %d indexed regular files..." % \
           (style.prefix, len(files_paths))
 
-    images_set = fitsimage.FITSet()
+    images_set = set()
     methods.show_progress(0.0)
     for path_index, path in enumerate(files_paths):
         try:
-            images_set.append(fitsimage.FITSImage(path))
+            images_set.add(fitsimage.FITSImage(path))
             fraction = (path_index + 1) / len(files_paths) * 100
             methods.show_progress(fraction)
         except fitsimage.NonStandardFITS:
@@ -252,8 +252,7 @@ def main(arguments = None):
         print "%sDiscarding images with a size other than %d x %d pixels, " \
               "the most common..." % (style.prefix, x_size, y_size) ,
         old_size = len(images_set)
-        selected = [img for img in images_set if img.size == (x_size, y_size)]
-        images_set = fitsimage.FITSet(selected)
+        images_set = set(img for img in images_set if img.size == (x_size, y_size))
         print 'done.'
 
         if not images_set:
@@ -277,7 +276,7 @@ def main(arguments = None):
     # exception, which means that the image is filtered out) and, after that,
     # check whether its value matches one of the regular expressions which
     # define the object names to be imported.
-    object_set = fitsimage.FITSet()
+    object_set = set()
 
     # Keep the track of how many images are ignored for each reason
     saturated_excluded = 0
@@ -309,7 +308,7 @@ def main(arguments = None):
                     print "%s%s imported (%s matches '%s')" % (style.prefix,
                            img.path, object_name, pattern)
 
-                    object_set.append(img)
+                    object_set.add(img)
                     break
 
             else: # only executed if for loop exited cleanly
