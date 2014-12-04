@@ -299,24 +299,6 @@ class FITSImage(object):
         finally:
             handler.close(output_verify = 'ignore')
 
-    def add_comment(self, comment):
-        """ Add a descriptive comment to the header of the image.
-
-        According to the FITS standard, the 'COMMENTS' keyword has no
-        associated value and columns 9-80 may contain any ASCII text. Any
-        number of COMMENT card images may appear in a header. Ironically,
-        there is no comment in a commentary card, only a string value.
-        This method does not update the in-memory copy of the header.
-
-        """
-
-        handler = pyfits.open(self.path, mode = 'update')
-        try:
-            header = handler[0].header
-            header.add_comment(comment)
-        finally:
-            handler.close(output_verify = 'ignore')
-
     def add_history(self, history):
         """ Add another record to the history of the FITS image.
 
