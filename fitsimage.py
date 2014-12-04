@@ -720,20 +720,6 @@ class FITSImage(object):
         logging.debug(msg % args)
         return saturation
 
-    def _subscript_instance(self, x1, x2, y1, y2):
-        """ Return a FITSImage instance of the subscripted version of the image.
-
-        The method returns an instance of FITSImage that encapsulates the
-        'subscripted' path of the image. Although still pointing to the same
-        FITS image, these instances can be used to perform IRAF tasks on a
-        section of the image, such as ferM_0001.fits[0:100,400:450].
-
-        """
-
-        simage = FITSImage(self.path)
-        simage.path = simage._subscript(x1, x2, y1, y2)
-        return simage
-
     def imstat(self, statistic, x1 = None, x2 = None, y1 = None, y2 = None):
         """ Compute image pixel statistics.
 
