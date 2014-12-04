@@ -250,39 +250,6 @@ class StarTest(unittest.TestCase):
             self.assertRaises(AttributeError, setattr, star, name, value)
             self.assertRaises(AttributeError, delattr, star, name)
 
-    def test_angular_distance(self):
-
-        # The first case is taken from Sten Odenwald's Ask the Astronomer
-        # [http://www.astronomycafe.net/qadir/q1890.html]. Except for the right
-        # ascension and declination, which we set manually, the two Stars are
-        # instantiated with random data.
-
-        args1 = list(self.rargs())
-        args1[2:4] = 100.2, -16.58
-        star1 = Star(*args1)
-
-        args2 = list(self.rargs())
-        args2[2:4] = 87.5, 7.38
-        star2 = Star(*args2)
-
-        sky_distance = star1.angular_distance(star2)
-        self.assertAlmostEqual(sky_distance, 27.054384870767787)
-
-        # The second case is an example by David Oesper, taken from The Sky
-        # This Week [http://www.skythisweek.info/angsep.pdf]. It computes the
-        # angular distance between Merak and Dubhe, in the Big Dipper.
-
-        args3 = list(self.rargs())
-        args3[2:4] = 165.458, 56.3825
-        star3 = Star(*args3)
-
-        args4 = list(self.rargs())
-        args4[2:4] = 165.933, 61.7511
-        star4 = Star(*args4)
-
-        sky_distance = star3.angular_distance(star4)
-        self.assertAlmostEqual(sky_distance, 5.374111607543190)
-
     def test_distance(self):
 
         args1 = list(self.rargs())

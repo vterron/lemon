@@ -159,10 +159,6 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
     def delta(self):
         return self.sky_coords.dec
 
-    def angular_distance(self, another):
-        """ Return the angular distance, in degrees, between two Stars. """
-        return self.sky_coords.distance(another.sky_coords)
-
     def distance(self, another):
         """ The Euclidean distance between the image coordinates of two Stars """
         return self.img_coords.distance(another.img_coords)
