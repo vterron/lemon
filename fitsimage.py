@@ -626,45 +626,6 @@ class FITSImage(object):
         return str_char
 
     @property
-    def number(self):
-        """ Extract the number that follows the filename prefix.
-
-        The method strips the filename of its prefix and, after that, loops
-        over the resulting substring until a non-numeric character is found,
-        moment at which the seen (and contiguous) numbers seen so far are
-        returned as a string. For example, for the image /caha/ferM_0013.fits,
-        the string '0013' would be returned.
-
-        The reason why the number is returned as a string is to not remove
-        the leading zeros, if any. The value returned by the method may, thus,
-        need to be cast to integer.
-
-        """
-
-        # Strip the prefix, if any, from the filename
-        f_prefix = self.prefix
-        if f_prefix:
-            basename_woprefix = self.basename[len(f_prefix):]
-        else:
-            basename_woprefix = self.basename
-
-        characters = basename_woprefix
-        for index in xrange(len(characters) - 1):
-            if not characters[:index+1].isdigit():
-                break
-
-        # The variable 'index' will not be defined when the basename of the
-        # image, without its prefix, is less than two characters long. If that
-        # is the case, the for loop does not iterate over any value, and thus
-        # the return statement in the try clause raises UnboundLocalError.
-
-        try:
-            return characters[:index]
-        except UnboundLocalError:
-            assert len(characters) < 2
-            return ''
-
-    @property
     def x_size(self):
         """ Return the number of pixels of the image in the x-axis."""
         return self.size[0]
