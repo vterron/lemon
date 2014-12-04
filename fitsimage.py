@@ -720,39 +720,6 @@ class FITSImage(object):
         logging.debug(msg % args)
         return saturation
 
-    def imshift(self, xshift, yshift, interp_type = 'linear', prefix = None):
-        """ Shift an image in the x- and y-axes.
-
-        This method, a high-level wrapper around IRAF's imshift, shifts an
-        image in x and y such that xout = xin + xshift and yout = yin + yshift.
-        The output image gray levels are determined by interpolating in the
-        input image at the positions of the shifted output pixels.
-
-        Returns a FITSImage instance that encapsulates the resulting image,
-        saved to a temporary file and for whose deletion when done with it the
-        user is responsible.
-
-        Keyword arguments:
-        interp_type - the interpolant type used to compute the output shifted
-                      image. Defaults to 'linear' (bilinear interpolation in
-                      x and y, although any of the other values accepted by
-                      IRAF's imshift may be used.
-        prefix - if specified, the file name of the output image will begin
-                 with this prefix; otherwise, a default prefix is used.
-
-        """
-
-        kwargs = dict(prefix = prefix, suffix = '.fits')
-        output_fd, output_path = tempfile.mkstemp(**kwargs)
-        os.close(output_fd)
-
-        os.unlink(output_path) # IRAF will refuse to overwrite it
-        pyraf.iraf.imshift(self.path, output_path, xshift, yshift,
-                           interp_type = interp_type,
-                           boundary_type = 'constant')
-
-        return FITSImage(output_path)
-
     def check_image(self, check_type = 'OBJECTS'):
         """ Return one of the multiple SExtractor's check-image.
 
