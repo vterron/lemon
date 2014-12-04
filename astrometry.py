@@ -25,6 +25,7 @@ import logging
 import multiprocessing
 import optparse
 import os
+import os.path
 import shutil
 import sys
 import tempfile
@@ -166,7 +167,8 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     output_dir = tempfile.mkdtemp(**kwargs)
 
     # Path to the temporary FITS file containing the WCS header
-    root, ext = os.path.splitext(img.basename)
+    basename = os.path.basename(path)
+    root, ext = os.path.splitext(basename)
     kwargs = dict(prefix = '%s_astrometry_' % root, suffix = ext)
     with tempfile.NamedTemporaryFile(**kwargs) as fd:
         output_path = fd.name

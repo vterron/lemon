@@ -601,18 +601,6 @@ class FITSImage(object):
                 raise ValueError(msg.format(self.path, dec_keyword))
 
     @property
-    def basename(self):
-        """ Return the base name of the FITS image.
-
-        The method returns the string that results from deleting from the path
-        of the image any prefix up to the last slash. For example, for an image
-        located in /caha/ferM_0013.fits, 'ferM_0013.fits' is returned.
-
-        """
-
-        return os.path.basename(self.path)
-
-    @property
     def basename_woe(self):
         """ Return the base name of the FITS image, without extension.
 
