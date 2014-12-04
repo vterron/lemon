@@ -218,56 +218,6 @@ def str_split_callback(option, opt, value, parser):
 class WrongIntervalError(ValueError):
     pass
 
-def intervals_split_callback(option, opt, value, parser):
-    """ opt-parse callback function to parse a list of intervals.
-
-    Intended to be used to parse opt-parse options that contain list of
-    intervals, the method receives, comma-separated, dash-separated integers
-    and returns the values as a list of two-element tuples. '1-4,5-6', for
-    example, returns [(1,4),(5,6)].
-
-    As a special case, the one-character '*' string would translate into (-inf,
-    inf), which means that all numbers belong to the interval. Also, missing
-    values are understood as positive or negative infinity, depending on
-    whether it is the lower or upper bound of the range. Thus, '-5' translates
-    into (-inf, 5), while '6-' is equivalent to (6, inf). This means that '-'
-    is a synonym for '*', as both are equal to (-inf, inf).
-
-    The WrongIntervalError exception is raised for improperly-formatted
-    intervals and also for ranges which overlap with the preceding one.
-
-    """
-
-    intervals = []
-    numbers = value.split(',')
-
-    if len(numbers) == 1 and numbers[0] == '*':
-        intervals.append((float('-inf'), float('inf'))) # all the elements
-    else:
-        for pair in numbers:
-            try:
-                # May raise "need more than 1 value to unpack" (ValueError)
-                lower, upper = pair.split('-')
-            except ValueError:
-                raise WrongIntervalError(pair)
-
-            lower = float('-inf') if not lower else int(lower)
-            upper = float('inf') if not upper else int(upper)
-
-            if lower > upper:
-                msg = "error in '%s': upper bound must be greater " \
-                      "than or equal to the lower bound" % pair
-                raise WrongIntervalError(msg)
-
-            if intervals and lower <= intervals[-1][-1]:
-                msg = "error in '%s': cannot overlap with preceding " \
-                      "interval" % pair
-                raise WrongIntervalError(msg)
-
-            intervals.append((lower, upper))
-
-    setattr(parser.values, option.dest, intervals)
-
 def owner_writable(path, add):
     """ Make the file owner writeable or unwriteable.
 
