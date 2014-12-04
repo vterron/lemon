@@ -53,13 +53,7 @@ class SExtractorError(subprocess.CalledProcessError):
 
 class Pixel(collections.namedtuple('Pixel', "x y")):
     """ A pair of immutable x- and y-coordinates. """
-
-    def distance(self, another):
-        """ Return the Euclidean distance between two Pixels """
-
-        x_axis = pow(self.x - another.x, 2)
-        y_axis = pow(self.y - another.y, 2)
-        return math.sqrt(x_axis + y_axis)
+    pass
 
 class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
     """ The immutable celestial coordinates of an astronomical object.
@@ -117,7 +111,7 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
         return self.__class__(ra, dec, None, None)
 
 
-class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
+class Star(collections.namedtuple('_Star', "img_coords, sky_coords, area, "
            "mag, saturated, snr, fwhm, elongation")):
     """ An immutable class with a source detected by SExtractor. """
 
@@ -165,13 +159,6 @@ class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
     def delta(self):
         return self.sky_coords.dec
 
-    def angular_distance(self, another):
-        """ Return the angular distance, in degrees, between two Stars. """
-        return self.sky_coords.distance(another.sky_coords)
-
-    def distance(self, another):
-        """ The Euclidean distance between the image coordinates of two Stars """
-        return self.img_coords.distance(another.img_coords)
 
 class Catalog(tuple):
     """ High-level interface to a SExtractor catalog """

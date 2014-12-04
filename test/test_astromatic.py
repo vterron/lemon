@@ -61,32 +61,6 @@ class PixelTest(unittest.TestCase):
             self.assertRaises(AttributeError, setattr, pixel, name, value)
             self.assertRaises(AttributeError, delattr, pixel, name)
 
-    def test_distance(self):
-
-        pixel1 = Pixel(4, 6)
-        pixel2 = Pixel(8, 5)
-        distance = pixel1.distance(pixel2)
-        # ((4 - 8) ^ 2 + (6 - 5) ^ 2) ^ 0.5
-        self.assertAlmostEqual(distance, 4.1231056256176606)
-
-        pixel1 = Pixel(2.14, 1.89)
-        pixel2 = Pixel(3.34, 8.01)
-        distance = pixel1.distance(pixel2)
-        # ((2.14 - 3.34) ^ 2 + (1.89 - 8.01) ^ 2) ^ 0.5
-        self.assertAlmostEqual(distance, 6.2365375008894155)
-
-        for _ in xrange(NITERS):
-
-            pixel1 = self.random()
-            pixel2 = self.random()
-            distance = pixel1.distance(pixel2)
-
-            # Compute the expected Euclidean distance with NumPy
-            array1 = numpy.array([pixel1.x, pixel1.y])
-            array2 = numpy.array([pixel2.x, pixel2.y])
-            expected = numpy.linalg.norm(array1 - array2)
-            self.assertAlmostEqual(distance, expected)
-
 class CoordinatesTest(unittest.TestCase):
 
     RIGHT_ASCENSION_RANGE = (0, 360)
@@ -275,65 +249,6 @@ class StarTest(unittest.TestCase):
             value = random.random()
             self.assertRaises(AttributeError, setattr, star, name, value)
             self.assertRaises(AttributeError, delattr, star, name)
-
-    def test_angular_distance(self):
-
-        # The first case is taken from Sten Odenwald's Ask the Astronomer
-        # [http://www.astronomycafe.net/qadir/q1890.html]. Except for the right
-        # ascension and declination, which we set manually, the two Stars are
-        # instantiated with random data.
-
-        args1 = list(self.rargs())
-        args1[2:4] = 100.2, -16.58
-        star1 = Star(*args1)
-
-        args2 = list(self.rargs())
-        args2[2:4] = 87.5, 7.38
-        star2 = Star(*args2)
-
-        sky_distance = star1.angular_distance(star2)
-        self.assertAlmostEqual(sky_distance, 27.054384870767787)
-
-        # The second case is an example by David Oesper, taken from The Sky
-        # This Week [http://www.skythisweek.info/angsep.pdf]. It computes the
-        # angular distance between Merak and Dubhe, in the Big Dipper.
-
-        args3 = list(self.rargs())
-        args3[2:4] = 165.458, 56.3825
-        star3 = Star(*args3)
-
-        args4 = list(self.rargs())
-        args4[2:4] = 165.933, 61.7511
-        star4 = Star(*args4)
-
-        sky_distance = star3.angular_distance(star4)
-        self.assertAlmostEqual(sky_distance, 5.374111607543190)
-
-    def test_distance(self):
-
-        args1 = list(self.rargs())
-        args1[0:2] = 134, 345
-        star1 = Star(*args1)
-
-        args2 = list(self.rargs())
-        args2[0:2] = 178, 471
-        star2 = Star(*args2)
-
-        # ((134 - 178) ^ 2 + (345 - 471) ^ 2) ^ 0.5
-        distance = star1.distance(star2)
-        self.assertAlmostEqual(distance, 133.46160496562297)
-
-        for _ in xrange(NITERS):
-
-            star1 = self.random()
-            star2 = self.random()
-            distance = star1.distance(star2)
-
-            # Compute the expected Euclidean distance with NumPy
-            array1 = numpy.array([star1.x, star1.y])
-            array2 = numpy.array([star2.x, star2.y])
-            expected = numpy.linalg.norm(array1 - array2)
-            self.assertAlmostEqual(distance, expected)
 
 
 class CatalogTest(unittest.TestCase):
