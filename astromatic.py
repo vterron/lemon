@@ -111,7 +111,7 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
         return self.__class__(ra, dec, None, None)
 
 
-class Star(collections.namedtuple('Pixel', "img_coords, sky_coords, area, "
+class Star(collections.namedtuple('_Star', "img_coords, sky_coords, area, "
            "mag, saturated, snr, fwhm, elongation")):
     """ An immutable class with a source detected by SExtractor. """
 
