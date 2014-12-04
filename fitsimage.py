@@ -601,20 +601,6 @@ class FITSImage(object):
                 raise ValueError(msg.format(self.path, dec_keyword))
 
     @property
-    def extension(self):
-        """ Return the extension of the FITS image.
-
-        The method returns the extension of the filename, that is, the
-        characters that follow the rightmost dot ('.'), which is also
-        included, in the filename. For example, for an image located in
-        /caha/ferM_0013.fits, the string '.fits' is returned.
-        An empty string is returned if the filename has no extension.
-
-        """
-
-        return os.path.splitext(self.path)[1]
-
-    @property
     def prefix(self):
         """ Extract the leftmost non-numeric substring of the image base name.
 
