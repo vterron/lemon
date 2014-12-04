@@ -601,19 +601,6 @@ class FITSImage(object):
                 raise ValueError(msg.format(self.path, dec_keyword))
 
     @property
-    def basename_woe(self):
-        """ Return the base name of the FITS image, without extension.
-
-        The method returns the basename of the image with its extension
-        stripped. That is, all the characters of the base name starting from
-        the rightmost dot are discarded. For example, for an image located in
-        /caha/ferM_0013.fits, the string 'ferM_0013' is returned.
-
-        """
-
-        return os.path.splitext(self.basename)[0]
-
-    @property
     def extension(self):
         """ Return the extension of the FITS image.
 
@@ -641,7 +628,9 @@ class FITSImage(object):
         """
 
         str_char = ''
-        for character in self.basename_woe:
+        basename = os.path.basename(self.path)
+        root = os.path.splitext(basename)[0]
+        for character in root:
             try:
                 int(character)
                 return str_char # stop as soon as an integer is found
