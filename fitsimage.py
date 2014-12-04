@@ -35,6 +35,7 @@ import collections
 import datetime
 import fnmatch
 import hashlib
+import itertools
 import logging
 import numpy
 import numbers
@@ -747,9 +748,7 @@ class InputFITSFiles(collections.defaultdict):
 
     def __iter__(self):
         """ Iterate over the FITS files, regardless or their filter """
-        for pfilter in self.itervalues():
-            for img in pfilter:
-                yield img
+        return itertools.chain(*self.itervalues())
 
     def __len__(self):
         """ Return the number of FITS files, in any filter """
