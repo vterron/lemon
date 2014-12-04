@@ -53,13 +53,7 @@ class SExtractorError(subprocess.CalledProcessError):
 
 class Pixel(collections.namedtuple('Pixel', "x y")):
     """ A pair of immutable x- and y-coordinates. """
-
-    def distance(self, another):
-        """ Return the Euclidean distance between two Pixels """
-
-        x_axis = pow(self.x - another.x, 2)
-        y_axis = pow(self.y - another.y, 2)
-        return math.sqrt(x_axis + y_axis)
+    pass
 
 class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
     """ The immutable celestial coordinates of an astronomical object.
