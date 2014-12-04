@@ -720,59 +720,6 @@ class FITSImage(object):
         logging.debug(msg % args)
         return saturation
 
-    def normalize(self, path = None, fraction = 0.5, method = 'mean'):
-        """ Normalize the image, by dividing it by its central value.
-
-        This method, originally written for normalizing flat-field images,
-        calculates the central value of the image (the median by default,
-        although other parameters accepted by imstat, such as 'mean', may be
-        used) and divides all the pixels by the result. The dimensions of the
-        central area are defined in terms of the fraction of the smallest axis:
-        a square of side fraction * min(x,y) will be centered in the image and
-        those pixels that fall within it used to compute the central value used
-        for the normalization.
-
-        In case the value of 'fraction' causes the square area to be bigger than
-        the image itself, the method defaults back to the full frame dimensions,
-        that is, the entire image will be used for the normalization. Note that
-        this may happen for values smaller than (but very close to) one, as for
-        images with sides of an odd number of pixels the coordinates of its
-        center are rounded to the nearest integer.
-
-        If no output path is given, the normalized image is saved to a temporary
-        file created in the most secure manner possible -- readable and writable
-        only by the creating user ID. The method returns a FITSImage instance
-        which encapsulates the resulting image.
-
-        """
-
-        # Determine the coordinates of the central area
-        x_size, y_size = self.size
-        x_center, y_center = self.center
-        square_width = min(x_size, y_size)
-        half_width = int((square_width * fraction) / 2)
-        x1 = x_center - half_width
-        x2 = x_center + half_width
-        y1 = y_center - half_width
-        y2 = y_center + half_width
-
-        if min(x1, y1) < 1 or x2 > self.x_size or y2 > self.y_size:
-            msg = "exceeded frame dimensions, using full frame instead"
-            warnings.warn(msg, RuntimeWarning)
-            x1 = y1 = 1
-            x2 = self.x_size
-            y2 = self.y_size
-
-        subscripted_img = self._subscript_instance(x1, x2, y1, y2)
-        central_value = subscripted_img.imstat(method)
-
-        if not path:
-            prefix = '%s_normalized_%s_' % (os.path.basename(self.path), fraction)
-            fd, path = tempfile.mkstemp(prefix = prefix, suffix = '.fits')
-            os.close(fd)
-
-        return self.imarith('/', central_value, output_path = path)
-
     def add_margin(self, left_margin, right_margin, bottom_margin, top_margin):
         """ Add a blank margin to the FITS image.
 
