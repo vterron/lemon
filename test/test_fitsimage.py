@@ -197,7 +197,7 @@ class FITSImageTest(unittest.TestCase):
 
     def test_repr(self):
         with self.random() as img1:
-            self.assertEqual(img1, eval(repr(img1)))
+            self.assertEqual(img1.path, eval(repr(img1)).path)
 
     def test_read_keyword(self):
 
