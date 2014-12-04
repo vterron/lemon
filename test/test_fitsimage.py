@@ -51,7 +51,7 @@ class FITSImage(fitsimage.FITSImage):
         return self
 
     def __exit__(self, *args):
-        self.unlink()
+        os.unlink(self.path)
 
 
 class FITSImageTest(unittest.TestCase):
@@ -185,15 +185,6 @@ class FITSImageTest(unittest.TestCase):
             text_path = fd.name
             with self.assertRaises(fitsimage.NonStandardFITS):
                 FITSImage(text_path)
-
-    def test_unlink(self):
-        for _ in xrange(NITERS):
-            img = self.random()
-            path = img.path
-            self.assertTrue(os.path.exists(path))
-            img.unlink()
-            self.assertFalse(os.path.exists(path))
-            self.assertEqual(img.path, None)
 
     def test_repr(self):
         with self.random() as img1:

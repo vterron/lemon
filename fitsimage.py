@@ -154,21 +154,6 @@ class FITSImage(object):
                 msg = "%s (%s)" % (self.path, str(e))
                 raise NonStandardFITS(msg)
 
-    def unlink(self):
-        """ Remove the FITS image.
-
-        Delete the FITS file encapsulated by this object. Be careful! This
-        removes the file, not the object! If something goes wrong, this method
-        raises the same exceptions as os.unlink(). The 'path' attribute is set
-        to None after the deletion. No method of the class is guaranteed to
-        work properly (and, most probably, will not work at all) after
-        FITSImage.unlink() is called, as the file does not exist anymore.
-
-        """
-
-        os.unlink(self.path)
-        self.path = None
-
     def __repr__(self):
         """ The unambiguous string representation of a FITSImage object """
         return "%s(%r)" % (self.__class__.__name__, self.path)
