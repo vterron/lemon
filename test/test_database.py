@@ -1146,7 +1146,13 @@ class LEMONdBTest(unittest.TestCase):
             database are modified (i.e., that the transacion is rolled back)"""
 
             before_tables = self.images_filters_tables_status(db)
-            regexp = re.compile("%s may not be NULL" % attr, re.IGNORECASE)
+
+            # SQLite 3.7.13 complains that the attribute "may not be NULL",
+            # while in 3.8.7.1 the message is "NOT NULL constraint failed".
+            # Do not worry about the specifics as long as the name of the
+            # attribute is part of the exception message. See issue #41.
+            regexp = re.compile(attr, re.IGNORECASE)
+
             img = img_None_attr(attr)
             with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
                 db.add_image(img, _is_sources_img = is_sources_img)
