@@ -1478,7 +1478,14 @@ class LEMONdBTest(unittest.TestCase):
         # (that is, if more than one proper-motion correction is added for the
         # same object and image)
         args = [star_id, utime1, pfilter1, -25.592231, -21.32372]
-        regexp = re.compile("columns star_id, image_id are not unique")
+
+        # SQLite 3.7.13 complains that "columns star_id, image_id are not
+        # unique", while in 3.8.7.1 the message is "UNIQUE constraint failed:
+        # pm_corrections.star_id, pm_corrections.image_id". Do not worry about
+        # the specifics as long as the exception message tells us that this is
+        # a UNIQUE-type integrity error. See issue #42.
+        regexp = re.compile('UNIQUE', re.IGNORECASE)
+
         with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
             db.add_pm_correction(*args)
 
