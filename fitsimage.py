@@ -624,6 +624,21 @@ class FITSImage(object):
         """ Returns the x, y coordinates of the central pixel of the image. """
         return list(int(round(x / 2)) for x in self.size)
 
+    def _get_wcs(self):
+        """ Return the astropy.wcs.WCS object for the header of this image. """
+
+        # astropy.wcs.WCS() is extremely slow (in the order of minutes) if we
+        # work with the in-memory FITS header (self._header). I cannot fathom
+        # the reason, but the problem goes away if we use astropy.io.fits to
+        # load the FITS header, as illustrated in the Astropy documentation:
+        # http://docs.astropy.org/en/stable/wcs/index.html
+        with astropy.io.fits.open(self.path) as hdulist:
+            header = hdulist[0].header
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return astropy.wcs.WCS(header)
+
     def center_wcs(self):
         """ Return the world coordinates of the central pixel of the image.
 
@@ -639,17 +654,7 @@ class FITSImage(object):
 
         """
 
-        # astropy.wcs.WCS() is extremely slow (in the order of minutes) if we
-        # work with the in-memory FITS header (self._header). I cannot fathom
-        # the reason, but the problem goes away if we use astropy.io.fits to
-        # load the FITS header, as illustrated in the Astropy documentation:
-        # http://docs.astropy.org/en/stable/wcs/index.html
-        with astropy.io.fits.open(self.path) as hdulist:
-            header = hdulist[0].header
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            wcs = astropy.wcs.WCS(header)
+        wcs = self._get_wcs()
         pixcrd = numpy.array([self.center])
         ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
         return ra, dec
