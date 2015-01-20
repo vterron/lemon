@@ -685,6 +685,15 @@ class FITSImage(object):
 
         return ra, dec
 
+    def has_wcs(self):
+        """ Check whether the header of the image contains WCS information. """
+
+        try:
+            self.center_wcs()
+            return True
+        except NoWCSInformationError:
+            return False
+
     def saturation(self, maximum, coaddk = keywords.coaddk):
         """ Return the effective saturation level, in ADUs.
 
