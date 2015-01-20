@@ -656,6 +656,12 @@ class FITSImage(object):
         values ourselves -- provided, of course, that our images are calibrated
         astrometrically.
 
+        Raises NoWCSInformationError if the header of the FITS image does not
+        contain an astrometric solution -- i.e., if the astropy.wcs.WCS class
+        is unable to recognize it as such. This is something that should very
+        rarely happen, and almost positively caused by non-standard systems or
+        FITS keywords.
+
         """
 
         center = tuple(self.center)
