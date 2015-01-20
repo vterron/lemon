@@ -61,6 +61,10 @@ class NonStandardFITS(IOError):
     """ Raised when a non-standard file is attempted to be opened."""
     pass
 
+class NoWCSInformationError(ValueError):
+    """ Raised if WCS information is not found in a FITS header. """
+    pass
+
 class FITSImage(object):
     """ Encapsulates a FITS image located in the filesystem. """
 
