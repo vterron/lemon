@@ -771,7 +771,7 @@ class InputFITSFiles(collections.defaultdict):
 
     def __iter__(self):
         """ Iterate over the FITS files, regardless or their filter """
-        return itertools.chain(*self.itervalues())
+        return itertools.chain.from_iterable(self.itervalues())
 
     def __len__(self):
         """ Return the number of FITS files, in any filter """
