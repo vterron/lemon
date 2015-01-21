@@ -160,9 +160,8 @@ def main(arguments = None):
             print style.error_exit_message
             return 1
 
-    if options.filter:
-        # Map each filter to a list of FITSImage objects
-        files = fitsimage.InputFITSFiles()
+    # Map each filter to a list of paths
+    files = fitsimage.InputFITSFiles()
 
     msg = "%sMaking sure the %d input paths are FITS images..."
     print msg % (style.prefix, len(input_paths))
@@ -173,9 +172,8 @@ def main(arguments = None):
         # one of the paths is not a standard-conforming FITS file.
         try:
             img = fitsimage.FITSImage(path)
-            if options.filter:
-                pfilter = img.pfilter(options.filterk)
-                files[pfilter].append(path)
+            pfilter = img.pfilter(options.filterk)
+            files[pfilter].append(path)
         except fitsimage.NonStandardFITS:
             print
             msg = "'%s' is not a standard FITS file"
@@ -234,7 +232,7 @@ def main(arguments = None):
     input_dir = tempfile.mkdtemp(**kwargs)
     atexit.register(methods.clean_tmp_files, input_dir)
 
-    for path in input_paths:
+    for path in files:
         source = os.path.abspath(path)
         basename = os.path.basename(path)
         link_name = os.path.join(input_dir, basename)
