@@ -61,6 +61,10 @@ class NonStandardFITS(IOError):
     """ Raised when a non-standard file is attempted to be opened."""
     pass
 
+class NoWCSInformationError(ValueError):
+    """ Raised if WCS information is not found in a FITS header. """
+    pass
+
 class FITSImage(object):
     """ Encapsulates a FITS image located in the filesystem. """
 
@@ -624,6 +628,21 @@ class FITSImage(object):
         """ Returns the x, y coordinates of the central pixel of the image. """
         return list(int(round(x / 2)) for x in self.size)
 
+    def _get_wcs(self):
+        """ Return the astropy.wcs.WCS object for the header of this image. """
+
+        # astropy.wcs.WCS() is extremely slow (in the order of minutes) if we
+        # work with the in-memory FITS header (self._header). I cannot fathom
+        # the reason, but the problem goes away if we use astropy.io.fits to
+        # load the FITS header, as illustrated in the Astropy documentation:
+        # http://docs.astropy.org/en/stable/wcs/index.html
+        with astropy.io.fits.open(self.path) as hdulist:
+            header = hdulist[0].header
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return astropy.wcs.WCS(header)
+
     def center_wcs(self):
         """ Return the world coordinates of the central pixel of the image.
 
@@ -637,22 +656,43 @@ class FITSImage(object):
         values ourselves -- provided, of course, that our images are calibrated
         astrometrically.
 
+        Raises NoWCSInformationError if the header of the FITS image does not
+        contain an astrometric solution -- i.e., if the astropy.wcs.WCS class
+        is unable to recognize it as such. This is something that should very
+        rarely happen, and almost positively caused by non-standard systems or
+        FITS keywords.
+
         """
 
-        # astropy.wcs.WCS() is extremely slow (in the order of minutes) if we
-        # work with the in-memory FITS header (self._header). I cannot fathom
-        # the reason, but the problem goes away if we use astropy.io.fits to
-        # load the FITS header, as illustrated in the Astropy documentation:
-        # http://docs.astropy.org/en/stable/wcs/index.html
-        with astropy.io.fits.open(self.path) as hdulist:
-            header = hdulist[0].header
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            wcs = astropy.wcs.WCS(header)
-        pixcrd = numpy.array([self.center])
+        center = tuple(self.center)
+        wcs = self._get_wcs()
+        pixcrd = numpy.array([center])
         ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
+
+        # We could use astropy.wcs.WCS.has_celestial for this, but as of today
+        # [Tue Jan 20 2015] it is only available in the development version of
+        # Astropy. Therefore, do a simple (but in theory enough) check: if the
+        # header does not contain an astrometric solution, WCS.all_pix2world()
+        # will not be able to transform the pixel coordinates, and therefore
+        # will return the same coordinates as the FITSImage.center attribute.
+
+        if (ra, dec) == center:
+            msg = ("{0}: the header of the FITS image does not seem to "
+                   "contain WCS information. You may want to make sure that "
+                   "the image has been solved astrometrically, for example "
+                   "with the 'astrometry' LEMON command.".format(self.path))
+            raise NoWCSInformationError(msg)
+
         return ra, dec
+
+    def has_wcs(self):
+        """ Check whether the header of the image contains WCS information. """
+
+        try:
+            self.center_wcs()
+            return True
+        except NoWCSInformationError:
+            return False
 
     def saturation(self, maximum, coaddk = keywords.coaddk):
         """ Return the effective saturation level, in ADUs.
@@ -731,7 +771,7 @@ class InputFITSFiles(collections.defaultdict):
 
     def __iter__(self):
         """ Iterate over the FITS files, regardless or their filter """
-        return itertools.chain(*self.itervalues())
+        return itertools.chain.from_iterable(self.itervalues())
 
     def __len__(self):
         """ Return the number of FITS files, in any filter """
