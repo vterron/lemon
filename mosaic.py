@@ -218,6 +218,18 @@ def main(arguments = None):
             msg = "%s%d images taken in the '%s' filter, %d were discarded."
             print msg % (style.prefix, len(files), options.filter, discarded)
 
+    # montage.mosaic() silently ignores those FITS images that have no WCS
+    # information in their headers, and also raises a rather cryptic exception
+    # (mMakeHdr: Invalid table file) if none of them has been astrometrically
+    # solved. Instead of ignoring some images without warning or showing a
+    # confusing error message that makes it almost impossible to understand
+    # what may be failing, use FITSImage.center_wcs() to make sure that all the
+    # images have WCS information, raising NoWCSInformationError otherwise.
+
+    for img in files:
+        # May raise NoWCSInformationError
+        img.center_wcs()
+
     # montage.mosaic() requires as first argument the directory containing the
     # input FITS images but, in order to maintain the same syntax across all
     # LEMON commands, we receive them as command-line arguments. Thus, create a
