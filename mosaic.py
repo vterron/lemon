@@ -172,8 +172,19 @@ def main(arguments = None):
         # one of the paths is not a standard-conforming FITS file.
         try:
             img = fitsimage.FITSImage(path)
-            pfilter = img.pfilter(options.filterk)
+
+            # If we do not need to know the photometric filter (because the
+            # --filter was not given) do not read it from the FITS header.
+            # Instead, use None. This means that 'files', a dictionary, will
+            # only have a key, None, mapping to all the input FITS images.
+
+            if options.filter:
+                pfilter = img.pfilter(options.filterk)
+            else:
+                pfilter = None
+
             files[pfilter].append(img)
+
         except fitsimage.NonStandardFITS:
             print
             msg = "'%s' is not a standard FITS file"
