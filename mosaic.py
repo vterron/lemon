@@ -166,6 +166,21 @@ def main(arguments = None):
             print style.error_exit_message
             return 1
 
+    # Workaround for a bug in montage.mosaic() that raises an error ('mpirun
+    # has exited due to process rank [...] without calling "finalize"...') if
+    # mpi = True and background_match = True. Until this is fixed, we can only
+    # use one core if the --background-match option is given by the user.
+
+    if options.background_match and options.ncores > 1:
+        options.ncores = 1
+        for msg in (
+            "{0}Warning: --background-match is incompatible with --cores > 1.",
+            "{0}Setting the --cores option to a value of one.",
+            "{0}This is a workaround for a known bug in montage-wrapper:",
+            "{0}https://github.com/astropy/montage-wrapper/issues/18"):
+            print msg.format(style.prefix)
+        print
+
     # Map each filter to a list of FITSImage objects
     files = fitsimage.InputFITSFiles()
 
