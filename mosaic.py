@@ -85,6 +85,12 @@ parser.add_option('--no-reprojection', action = 'store_false',
                   dest = 'reproject', default = True,
                   help = "do not reproject the mosaic so that North is up.")
 
+parser.add_option('--combine', action = 'store',
+                  dest = 'combine', default = 'mean',
+                  help = "how FITS images are combined - this should be one "
+                  "of 'mean', 'median', or 'count'. For more details on how "
+                  "Montage performs co-addition, see [4] [default: %default]")
+
 parser.add_option('--filter', action = 'store', type = 'passband',
                   dest = 'filter', default = None,
                   help = "do not combine all the FITS files given as input, "
@@ -272,7 +278,9 @@ def main(arguments = None):
     atexit.register(methods.clean_tmp_files, output_dir)
     os.rmdir(output_dir)
 
-    kwargs = dict(background_match = options.background_match)
+    kwargs = dict(background_match = options.background_match,
+                  combine = options.combine)
+
     if options.ncores > 1:
         kwargs['mpi'] = True              # use MPI whenever possible
         kwargs['n_proc'] = options.ncores # number of MPI processes

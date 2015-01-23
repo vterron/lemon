@@ -54,11 +54,13 @@ _lemon_seeing()
 _lemon_mosaic()
 {
     local opts
-    opts="--overwrite --background-match --no-reprojection --filter --cores
-          --filterk"
+    opts="--overwrite --background-match --no-reprojection --combine
+          --filter --cores --filterk"
 
     if [[ ${cur} == -* ]]; then
 	_match "${opts}"
+    elif [[ ${prev} == --combine ]]; then
+	_match "mean median count"
     else
         _filedir @($FITS_EXTS)
     fi
