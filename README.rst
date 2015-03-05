@@ -45,6 +45,7 @@ These are the steps to install LEMON on a fresh Debian 7 (`Wheezy <https://www.d
 1. ``apt-get install git python-pip csh``
 #. ``apt-get build-dep python-matplotlib python-scipy``
 #. ``apt-get install openmpi-dev``
+#. ``easy_install -U distribute``
 
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
