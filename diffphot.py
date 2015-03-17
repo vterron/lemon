@@ -898,7 +898,7 @@ def main(arguments = None):
         output_db_path = args[1]
 
     if options.min_cstars > options.ncstars:
-        print "%sError. The value of --min-stars must be <= --stars." % style.prefix
+        print "%sError. The value of --minimum-stars must be <= --stars." % style.prefix
         print style.error_exit_message
         return 1
 
