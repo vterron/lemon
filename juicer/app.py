@@ -32,10 +32,13 @@ import datetime
 import functools
 import operator
 import os.path
+import random
 import re
 import sys
 import time
+import warnings
 
+import matplotlib
 import matplotlib.figure
 from matplotlib.backends.backend_gtkagg \
      import FigureCanvasGTKAgg as FigureCanvas
@@ -334,10 +337,30 @@ class StarDetailsGUI(object):
 
         else:
             self.set_canvas(True)
+
+            # The color to use for each photometric filter is defined in the
+            # [colors] section of the .juicer configuration file. However, the
+            # user may have added a custom filter (via the [custom_filters]
+            # section in .lemonrc) without necessarily specifying a color for
+            # it. When that happens, warn the user and pick a random color.
+
+            try:
+                color = self.config.color(curve.pfilter.letter)
+            except ConfigParser.NoOptionError:
+                cycle = matplotlib.rcParams['axes.color_cycle']
+                color = random.choice(cycle)
+                msg = ("cannot find a color specified for photometric filter "
+                       "'{0}', so we will use a random one instead: {1}. This "
+                       "probably means that it is a user-defined filter. If "
+                       "that is the case, you may want to add its color to "
+                       "the [colors] section of the configuration file.".
+                       format(curve.pfilter, color))
+                warnings.warn(msg)
+
             kwargs = dict(airmasses = airmasses,
                           julian = show_julian_dates,
                           delta = 3 * 3600,
-                          color = self.config.color(curve.pfilter.letter))
+                          color = color)
 
             plot.curve_plot(self.figure, curve, **kwargs)
             self.figure.canvas.draw()
