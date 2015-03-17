@@ -89,7 +89,7 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     ax1 = figure.add_subplot(111)
     ax1.errorbar(dates, magnitudes, color = color, marker = marker,
                  fmt = 's', yerr = (negative_errors, positive_errors))
-    ax1.set_ylabel("Magnitude (diff)")
+    ax1.set_ylabel(r"$\Delta$ magnitude") # mathtext
     ax1.grid(True)
 
     # Use 5% of the height of the plot as the upper and bottom margin of the
