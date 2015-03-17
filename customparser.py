@@ -145,7 +145,7 @@ def additional_options_callback(option, opt_str, value, parser):
 
     """
 
-    regexp = "(?P<option>-+\w+)\s*=?\s*(?P<value>\w+)?"
+    regexp = "=?(?P<option>-+[\w-]+)\s*=?\s*(?P<value>\w+)?"
     match = re.match(regexp, value)
     if not match:
         msg = ("cannot parse additional option. Are you using the GNU/POSIX "
