@@ -403,9 +403,10 @@ parser.add_option('-o', action = 'callback', type = 'str',
                   dest = 'solve_field_options', default = {},
                   callback = customparser.additional_options_callback,
                   help = "additional options to pass to Astrometry.net's "
-                  "solve-field. The option and the corresponding value, if "
-                  "any, must be given as a string. For example, '--invert' or "
-                  "'--downsample 2'. This option may be used multiple times.")
+                  "solve-field. If the option and the corresponding value, "
+                  "if any, contain any whitespace they must be enclosed in "
+                  "quotes. For example: -o=--invert, -o '--downsample 2', "
+                  "-o --sigma=3. This option may be used multiple times.")
 
 parser.add_option('-v', '--verbose', action = 'count',
                   dest = 'verbose', default = defaults.verbosity,
