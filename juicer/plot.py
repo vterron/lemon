@@ -144,6 +144,7 @@ def curve_plot(figure, curve, marker = 'o', color = '',
             ax2.xaxis.set_major_formatter(xticks_formatter)
 
         ax2.set_ylabel('Airmass', rotation = 270)
+        ax2.yaxis.labelpad = 17 # padding between axis and label
         periods = methods.split_by_diff(unix_times, delta = delta)
         for period_unix_times in periods:
 
