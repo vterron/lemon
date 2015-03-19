@@ -23,6 +23,7 @@ from __future__ import division
 
 import math
 import operator
+import numpy
 
 def snr_to_error(snr):
     """ Signal-to-noise ratio to error in magnitudes conversion.
@@ -45,11 +46,11 @@ def snr_to_error(snr):
 
     """
 
-    if not snr > 1:
+    if not numpy.any(snr > 1):
         raise ValueError("SNR cannot be less than or equal to one")
 
     operators = (operator.add, operator.sub)
-    return tuple([-2.5 * math.log10(f(1, 1 / snr)) for f in operators])
+    return tuple([-2.5 * numpy.log10(f(1, 1 / snr)) for f in operators])
 
 def error_to_snr(error):
     """ Error in magnitudes to signal-to-noise ratio conversion.
@@ -76,7 +77,7 @@ def error_to_snr(error):
 
     """
 
-    return (1 if error < 0 else -1) / (math.pow(10, error / -2.5) - 1)
+    return (1 if error < 0 else -1) / (math.pow(10, error / -2.5) - 1)	
 
 def difference_error(*errors):
     """ Return the absolute error of the difference of a series of errors.
