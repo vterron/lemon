@@ -3,23 +3,27 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to LEMON's documentation!
-=================================
+LEMON: differential photometry
+==============================
 
-Contents:
+LEMON is a scientific pipeline, written in Python_, that determines the changes in the brightness of astronomical objects over time and compiles their measurements into `light curves`_. The aim of this program is to make it possible to completely **reduce thousands of FITS images of time series** in a matter of only a few hours, requiring minimal user interaction.
 
-.. toctree::
-   :maxdepth: 2
-   :numbered:
+For example, to get the light curve of a transit of WASP-10b_:
 
-   commands/index.rst
+::
 
+    $ lemon astrometry data/*.fits WASP10/
+    $ lemon mosaic WASP10/*.fits WASP10-mosaic.fits
+    $ lemon photometry WASP10-mosaic.fits WASP10/*.fits phot.LEMONdB
+    $ lemon diffphot phot.LEMONdB curves.LEMONdB
 
+The above commands produce, among many other, the following plot:
 
-Indices and tables
-==================
+.. image:: _static/WASP-10b-2011-08-03.svg
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+LEMON aims at taking most of the burden out of the astronomer, working out of the box with any set of images that conform to the `FITS standard`_. In most scenarios, the above four commands are enough to generate the high-precision light curves of all your astronomical objects.
 
+.. _Python: https://www.python.org/
+.. _light curves: https://en.wikipedia.org/wiki/Light_curve
+.. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
+.. _FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
