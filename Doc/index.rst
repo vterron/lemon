@@ -17,7 +17,7 @@ For example, to get the light curve of a transit of WASP-10b_:
     $ lemon photometry WASP10-mosaic.fits WASP10/*.fits phot.LEMONdB
     $ lemon diffphot phot.LEMONdB curves.LEMONdB
 
-The above commands produce, among many other, the following plot:
+The above commands produce, among many others, the following plot:
 
 .. image:: _static/WASP-10b-2011-08-03.svg
 
