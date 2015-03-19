@@ -51,12 +51,10 @@ import fnmatch
 import numpy
 import operator
 import optparse
-import os
 import os.path
 import pyfits
 import re
 import shutil
-import stat
 import sys
 
 # LEMON modules
@@ -414,8 +412,7 @@ def main(arguments = None):
         # The permission bits have been copied, but we need to make sure
         # that the copy of the FITS file is always writable, no matter what
         # the original permissions were. This is equivalent to `chmod u+w`
-        mode = os.stat(dest_path)[stat.ST_MODE] | stat.S_IWUSR
-        os.chmod(dest_path, mode)
+        methods.owner_writable(dest_path, True)
 
         dest_img = fitsimage.FITSImage(dest_path)
 
