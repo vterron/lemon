@@ -27,3 +27,9 @@ LEMON aims at taking most of the burden out of the astronomer, working out of th
 .. _light curves: https://en.wikipedia.org/wiki/Light_curve
 .. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
 .. _FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
+
+User Guide
+==========
+
+.. toctree::
+   :maxdepth: 1
