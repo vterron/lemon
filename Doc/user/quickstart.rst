@@ -16,4 +16,30 @@ images from a transit of exoplanet `WASP-10b`_.
 
 Let's take a look at each of the steps of the data reduction.
 
+Do astrometry
+-------------
+
+Your FITS images need to be astrometrically solved before we can do
+photometry. The ``astrometry`` command takes multiple FITS files as
+input and writes a copy of them, containing the WCS header, to the
+output directory specified in the last argument.
+
+::
+
+    $ lemon astrometry data/*.fits WASP10/
+    >> The output directory 'WASP10' did not exist, so it had to be created.
+    >> Using a local build of Astrometry.net.
+    >> Doing astrometry on the 193 paths given as input.
+    >> 100%[======================================================================>]
+    >> You're done ^_^
+
+As all LEMON commands, ``astrometry`` spawns multiple processes in
+order to fully leverage all the processors your machine has. This
+usually results in significant speed-ups on multi-core systems. If
+that is not your case, this can always be modified via the ``--cores``
+option.
+
+The ``astrometry`` command is built on top of `Astrometry.net`_.
+
 .. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
+.. _Astrometry.net: http://astrometry.net/
