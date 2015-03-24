@@ -35,3 +35,4 @@ User Guide
    :maxdepth: 1
 
    user/install
+   user/quickstart
