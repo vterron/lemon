@@ -41,5 +41,42 @@ option.
 
 The ``astrometry`` command is built on top of `Astrometry.net`_.
 
+Mosaic the data
+---------------
+
+Now that the FITS images are astrometrically calibrated, let's
+reproject them onto a common coordinate system and combine them into a
+mosaic. This creates the image in which astronomical objects are
+detected. As this image maximizes the signal-to-noise ratio, it allows
+for a much more accurate determination of the centroid of each star,
+galaxy or any other celestial object.
+
+The ``mosaic`` command takes multiple FITS as input and combines
+them. The last argument that it receives is the name of the file to
+which the resulting image is written.
+
+::
+
+    $ lemon mosaic WASP10/*.fits WASP10-mosaic.fits
+    >> Making sure the 193 input paths are FITS images...
+    >> 100%[======================================================================>]
+    INFO: Listing raw frames [montage_wrapper.wrappers]
+    INFO: Computing optimal header [montage_wrapper.wrappers]
+    INFO: Projecting raw frames [montage_wrapper.wrappers]
+    INFO: Mosaicking frames [montage_wrapper.wrappers]
+    INFO: Deleting work directory [montage_wrapper.wrappers]
+    >> Reproject mosaic to point North... done.
+    >> You're done ^_^
+
+It is worth mentioning ``--background-match``, an option which removes
+any discrepancies in the brightness or background of the FITS images
+before mosaicking them. Although a rather powerful feature, it is
+disabled by default as it makes the assembling of the images take
+remarkably longer and requires much more storage for the temporary
+files it generates.
+
+The ``mosaic`` command is built on top of `Montage`_.
+
 .. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
 .. _Astrometry.net: http://astrometry.net/
+.. _Montage: http://montage.ipac.caltech.edu/
