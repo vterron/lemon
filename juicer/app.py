@@ -1688,27 +1688,6 @@ class LEMONJuicerGUI(object):
         star_id = view.get_model()[row][id_index]
         self.view_star(star_id, view)
 
-    def append_amplitudes_search(self, result, connect):
-        """ Append an AmplitudesSearchPage to the gtk.Notebook.
-
-        Append the gtk.ScrolledWindow (with the result of the search) of an
-        AmplitudesSearchPage object to the gtk.Notebook. The 'row-activated'
-        signal is connected to the LEMONJuicerGUI.handle_row_activated method
-        depending on the truth value of 'connect'.
-
-        """
-
-        if connect:
-            view = result.view # gtk.GtkTreeView
-            view.connect('row-activated', self.handle_row_activated)
-
-        self.nampl_searches += 1
-        label = gtk.Label(result.get_label(self.nampl_searches))
-        window = result.get_window()
-        self._notebook.append_page(window, label)
-        self._notebook.set_tab_reorderable(window, False)
-        self._notebook.set_current_page(-1)
-
     def search_by_amplitudes(self, window):
         """ Identify stars with amplitudes correlated to the wavelength. These
         are listed in a gtk.ScrolledWindow which is appended to the notebook"""
