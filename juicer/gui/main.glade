@@ -305,31 +305,6 @@
                     <property name="homogeneous">True</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkSeparatorToolItem" id="separator-two">
-                    <property name="visible">True</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="amplitudes-search-button">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="is_important">True</property>
-                    <property name="label" translatable="yes">_Amplitudes</property>
-                    <property name="use_underline">True</property>
-                    <property name="stock_id">gtk-find</property>
-                    <accelerator key="a" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-                    <signal name="clicked" handler="search_by_amplitudes"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
               </object>
               <packing>
                 <property name="position">0</property>
