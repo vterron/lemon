@@ -951,7 +951,6 @@ class LEMONJuicerGUI(object):
         # location and any Matplotlib panning and zooming.
         self.finding_chart_dialog = None
 
-        self.amplitudes_search_button = builder.get_object('amplitudes-search-button')
         self.amplitudes_search_menuitem = builder.get_object('amplitudes-search-item')
 
         # Create an accelerator group and add it to the toplevel window. These
@@ -1153,7 +1152,6 @@ class LEMONJuicerGUI(object):
         self.close_menu_item.set_sensitive(npages_left)
         self.finding_chart_menuitem.set_sensitive(npages_left)
         self.finding_chart_button.set_sensitive(npages_left)
-        self.amplitudes_search_button.set_sensitive(npages_left)
         self.amplitudes_search_menuitem.set_sensitive(npages_left)
 
     def handle_quit(self, obj):
@@ -1567,7 +1565,6 @@ class LEMONJuicerGUI(object):
                 self.close_menu_item.set_sensitive(True)
                 self.finding_chart_menuitem.set_sensitive(True)
                 self.finding_chart_button.set_sensitive(True)
-                self.amplitudes_search_button.set_sensitive(True)
                 self.amplitudes_search_menuitem.set_sensitive(True)
 
         except Exception, err:
