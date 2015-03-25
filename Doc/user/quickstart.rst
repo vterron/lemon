@@ -16,6 +16,9 @@ images from a transit of exoplanet `WASP-10b`_.
 
 Let's take a look at each of the steps of the data reduction.
 
+
+.. _quickstart-astrometry:
+
 Do astrometry
 -------------
 
@@ -40,6 +43,9 @@ that is not your case, this can always be modified via the ``--cores``
 option.
 
 The ``astrometry`` command is built on top of `Astrometry.net`_.
+
+
+.. _quickstart-mosaic:
 
 Mosaic the data
 ---------------
@@ -71,6 +77,9 @@ remarkably longer and requires much more storage for the temporary
 files it generates.
 
 The ``mosaic`` command is built on top of `Montage`_.
+
+
+.. _quickstart-photometry:
 
 Do photometry
 -------------
