@@ -951,8 +951,6 @@ class LEMONJuicerGUI(object):
         # location and any Matplotlib panning and zooming.
         self.finding_chart_dialog = None
 
-        self.amplitudes_search_menuitem = builder.get_object('amplitudes-search-item')
-
         # Create an accelerator group and add it to the toplevel window. These
         # accelerators will be always available (except when a modal dialog is
         # active, of course), since they are 'inherited' by the child windows.
@@ -1152,7 +1150,6 @@ class LEMONJuicerGUI(object):
         self.close_menu_item.set_sensitive(npages_left)
         self.finding_chart_menuitem.set_sensitive(npages_left)
         self.finding_chart_button.set_sensitive(npages_left)
-        self.amplitudes_search_menuitem.set_sensitive(npages_left)
 
     def handle_quit(self, obj):
         """ Close the application after removing all the pages of the notebook """
@@ -1565,7 +1562,6 @@ class LEMONJuicerGUI(object):
                 self.close_menu_item.set_sensitive(True)
                 self.finding_chart_menuitem.set_sensitive(True)
                 self.finding_chart_button.set_sensitive(True)
-                self.amplitudes_search_menuitem.set_sensitive(True)
 
         except Exception, err:
             path = os.path.basename(path)
