@@ -1279,16 +1279,11 @@ class LEMONJuicerGUI(object):
 
         with util.destroying(gtk.FileChooserDialog(**kwargs)) as dialog:
 
-            # By default, both LEMON databases (.LEMONdB extension) and JSON
-            # files (with a previous search for wavelength-amplitude correlated
-            # stars) are displayed by the gtk.FileChooserDialog. Two additional
-            # filters are added in case the user is interested in a specific
-            # type of file.
+            # Only LEMON databases (.LEMONdB extension) are displayed by the
+            # gtk.FileChooserDialog.
 
             db_extension = '.LEMONdB'
             db_pattern = '*' + db_extension
-            json_extension = '.json'
-            json_pattern = '*' + json_extension
 
             # Return the function that can be used to filter files with the
             # gtk.FileFilter.add_custom method. 'filter_info' is a 4-element
@@ -1299,22 +1294,10 @@ class LEMONJuicerGUI(object):
                     return filter_info[0].lower().endswith(extension.lower())
                 return func
             db_filter = ends_with(db_extension)
-            json_filter = ends_with(json_extension)
-
-            filt = gtk.FileFilter()
-            filt.set_name("All LEMON Files")
-            filt.add_custom(gtk.FILE_FILTER_FILENAME, db_filter)
-            filt.add_custom(gtk.FILE_FILTER_FILENAME, json_filter)
-            dialog.add_filter(filt)
 
             filt = gtk.FileFilter()
             filt.set_name("LEMON Database (%s)" % db_pattern)
             filt.add_custom(gtk.FILE_FILTER_FILENAME, db_filter)
-            dialog.add_filter(filt)
-
-            filt = gtk.FileFilter()
-            filt.set_name('LEMON JSON File (%s)' % json_pattern)
-            filt.add_custom(gtk.FILE_FILTER_FILENAME, json_filter)
             dialog.add_filter(filt)
 
             dialog.set_icon_from_file(self.LEMON_ICON)
@@ -1324,11 +1307,8 @@ class LEMONJuicerGUI(object):
                 path = dialog.get_filename()
                 dialog.destroy()
 
-                if path.lower().endswith(db_extension.lower()):
-                    self.open_db(path)
-                else:
-                    assert path.lower().endswith(json_extension.lower())
-                    self.open_amplitudes_json(path)
+                assert path.lower().endswith(db_extension.lower())
+                self.open_db(path)
 
     def open_db(self, path):
 
@@ -1713,67 +1693,6 @@ class LEMONJuicerGUI(object):
             assert julian_column.get_title() == 'JD'
             visible = widget.get_active()
             julian_column.set_visible(visible)
-
-    def open_amplitudes_json(self, path):
-        """ Parse a JSON file and deserialize an AmplitudesSearchPage object.
-
-        The gtk.ScrolledWindow returned by the AmplitudesSearchPage instance is
-        appended to the gtk.Notebook so that the stars found in the serialized
-        search are presented to the user exactly as other search results. The
-        only difference is that the 'row-activated' signal is ignored if the
-        JSON file has been opened before the LEMONdB: without access to the
-        database we cannot show the details of any star.
-
-        """
-
-        try:
-            result = search.AmplitudesSearchPage.load(path)
-        except Exception, err:
-            title = "Error while loading JSON file"
-            msg = "File '%s' could not be loaded. Please make sure that you " \
-            "are opening a JSON file created by LEMON through 'Save As'. " \
-            "The error was: \n\n%s" % (path, str(err))
-            util.show_error_dialog(self._main_window, title, msg)
-            return
-
-        # The search results stored in the JSON file must refer to the current
-        # LEMONdB, if any. This can be verified as the 'database_id' attribute
-        # of the root element must equal the value of the LEMONdB.id property,
-        # as the latter is written to the JSON file when results are serialized.
-
-        if self.db is not None:
-            ids = result.id, self.db.id
-            if operator.ne(*ids):
-                title = "JSON file does not match LEMONdB"
-                msg = "The LEMONdB to which the search results in this JSON " \
-                "file correspond (ID = %s) is different from the one " \
-                "currently open (ID = %s). The file, therefore, cannot be " \
-                "be loaded, as it refers to a different LEMONdB." % ids
-                args = self._main_window, title, msg
-                kwargs = dict(buttons = gtk.BUTTONS_CLOSE)
-                util.show_error_dialog(*args, **kwargs)
-                return
-
-        connect_double_click = self.db is not None
-        self.append_amplitudes_search(result, connect_double_click)
-
-        # Make sure that the 'Close' button and menu item are sensitive (they
-        # will be disabled if the JSON file is opened before the LEMONdB, but
-        # we need a way to close the page when we are done with it).
-        self.close_button.set_sensitive(True)
-        self.close_menu_item.set_sensitive(True)
-
-        # If no LEMONdB is open, double-clicking on a row will have no effect
-        if self.db is None:
-            title = "Double-click has been disabled"
-            msg = "Please note that double-clicking on a star will not open " \
-            "a page with its information: as the JSON file has been opened " \
-            "before the LEMON database, no other information than what is " \
-            "presented here is available."
-            args = self._main_window, title, msg
-            kwargs = dict(msg_type = gtk.MESSAGE_WARNING,
-                          buttons = gtk.BUTTONS_CLOSE)
-            util.show_message_dialog(*args, **kwargs)
 
     def handle_finding_chart(self, widget, set_visibility = None):
         """ Display the reference frame in a new dialog.
