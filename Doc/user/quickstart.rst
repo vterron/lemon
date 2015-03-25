@@ -162,6 +162,48 @@ celestial coordinates of the objects to measure.
 
 The ``photometry`` command is built on top of `IRAF`_ and `SExtractor`_.
 
+
+.. _quickstart-diffphot:
+
+Generate the light curves
+-------------------------
+
+The ``diffphot`` command takes a LEMON database with :ref:`the
+photometric measurements <quickstart-photometry>` and computes the
+differential light curve of each astronomical object in each of the
+filters in which it was observed. The second argument is the name of
+the output LEMON database to which to store the light curves, as well
+as a copy of all the information present in the input database.
+
+::
+
+    $ lemon diffphot WASP10-phot.LEMONdB WASP10-diff.LEMONdB
+    >> Making a copy of the input database... done.
+    >> There are 146 stars in the database
+    >>
+    >> Light curves for the B filter will now be generated.
+    >> Loading photometric information... done.
+    >> 100%[======================================================================>]
+    >> Storing the light curves in the database...
+    >> 100%[======================================================================>]
+    >>
+    >> Light curves for the V filter will now be generated.
+    >> Loading photometric information... done.
+    >> 100%[======================================================================>]
+    >> Storing the light curves in the database...
+    >> 100%[======================================================================>]
+    >> Updating statistics about tables and indexes... done.
+    >> You're done ^_^
+
+The algorithm, our implementation of that described in
+`2005AN....326..134B`_, computes an optimal artificial comparison star
+for each of our astronomical objects, identifying those that are the
+most constant and assigning them weights inversely proportional to
+their statistical dispersion. This is an iterative process that, at
+each step, discards the ``--worst-fraction`` objects until only the
+best ones remain. These are then combined into the artificial
+comparison star.
+
 .. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
 .. _Astrometry.net: http://astrometry.net/
 .. _Montage: http://montage.ipac.caltech.edu/
@@ -169,3 +211,4 @@ The ``photometry`` command is built on top of `IRAF`_ and `SExtractor`_.
 .. _aperture photometry: http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?qphot
 .. _IRAF: http://iraf.noao.edu/
 .. _SExtractor: http://www.astromatic.net/software/sextractor
+.. _2005AN....326..134B: http://adsabs.harvard.edu/abs/2005AN....326..134B
