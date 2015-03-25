@@ -50,11 +50,12 @@ The ``astrometry`` command is built on top of `Astrometry.net`_.
 Mosaic the data
 ---------------
 
-Now that the FITS images are astrometrically calibrated, let's
-reproject them onto a common coordinate system and combine them into a
-mosaic. The ``mosaic`` command takes multiple FITS as input and
-combines them. The last argument that it receives is the name of the
-file to which the resulting image is written.
+Now that the FITS images are :ref:`astrometrically calibrated
+<quickstart-astrometry>`, let's reproject them onto a common
+coordinate system and combine them into a mosaic. The ``mosaic``
+command takes multiple FITS as input and combines them. The last
+argument that it receives is the name of the file to which the
+resulting image is written.
 
 ::
 
@@ -84,10 +85,11 @@ The ``mosaic`` command is built on top of `Montage`_.
 Do photometry
 -------------
 
-The mosaic that we have created is the image in which our astronomical
-objects are detected. As it maximizes the signal-to-noise ratio, this
-allows for a much more accurate determination of the centroid of each
-star, galaxy or any other celestial object.
+The :ref:`mosaic that we have created <quickstart-mosaic>` is the
+image in which our astronomical objects are detected. As it maximizes
+the signal-to-noise ratio, this allows for a much more accurate
+determination of the centroid of each star, galaxy or any other
+celestial object.
 
 The ``photometry`` command does `aperture photometry`_ on all the FITS
 images that it receives as argument, using the first one to detect the
