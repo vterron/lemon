@@ -527,9 +527,3 @@ class AmplitudesSearchMessageWindow(object):
         checkbox_enabled = widget.get_active()
         for w in self.exclude_widgets.itervalues():
             w.set_sensitive(checkbox_enabled)
-
-
-def amplitudes_search(parent_window, builder, db, config):
-    dialog = AmplitudesSearchMessageWindow(parent_window, builder, db, config)
-    return dialog.run()
-
