@@ -1688,15 +1688,6 @@ class LEMONJuicerGUI(object):
         star_id = view.get_model()[row][id_index]
         self.view_star(star_id, view)
 
-    def search_by_amplitudes(self, window):
-        """ Identify stars with amplitudes correlated to the wavelength. These
-        are listed in a gtk.ScrolledWindow which is appended to the notebook"""
-
-        args = self._main_window, self._builder, self.db.path, self.config
-        result = search.amplitudes_search(*args)
-        if result is not None:
-            self.append_amplitudes_search(result, True)
-
     def change_snr_threshold(self, widget):
         """ Select a new SNR threshold and update all the plots with it """
 
