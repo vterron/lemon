@@ -1021,11 +1021,6 @@ class LEMONJuicerGUI(object):
             raise ConfigParser.ParsingError(msg)
         builder.get_object(name).set_active(True)
 
-        # The searches for stars by amplitudes (Find → Amplitudes-wavelength
-        # correlation) are numbered sequentially and in Roman numerals: i.e.,
-        # the first one is labeled with 'I', the second with 'II', etc.
-        self.nampl_searches = 0
-
         if db_path:
             self.open_db(db_path)
 
@@ -1334,12 +1329,6 @@ class LEMONJuicerGUI(object):
         overview = self._builder.get_object('database-overview')
         self.view = self._builder.get_object('table-view')
         self.view.connect('row-activated', self.handle_row_activated)
-
-        # Reset the counter of searches for stars by amplitudes: if we are
-        # working with a LEMONdB, have made four searches and open another
-        # LEMONdB, we do not want the next search to be considered the
-        # fifth — it is the *first* search for this database.
-        self.nampl_searches = 0
 
         # Display a dialog with a progress bar which is updated as all the
         # stars are loaded into memory, as this may take a while. A 'Cancel'
