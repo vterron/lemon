@@ -57,7 +57,6 @@ import methods
 import mining
 import plot
 import snr
-import search
 import simbad
 import util
 from version import __version__
