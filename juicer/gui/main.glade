@@ -201,28 +201,6 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="find-menu">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">F_ind</property>
-                <property name="use_underline">True</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="menu2">
-                    <property name="visible">True</property>
-                    <child>
-                      <object class="GtkMenuItem" id="amplitudes-search-item">
-                        <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="tooltip_text" translatable="yes">Find stars with amplitudes correlated to the wavelength</property>
-                        <property name="label" translatable="yes">Amplitudes-wavelength correlations</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="search_by_amplitudes"/>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
               <object class="GtkMenuItem" id="help-menu">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Help</property>
@@ -299,31 +277,6 @@
                     <property name="is_important">True</property>
                     <property name="label" translatable="yes">Finding _Chart</property>
                     <property name="use_underline">True</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkSeparatorToolItem" id="separator-two">
-                    <property name="visible">True</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="amplitudes-search-button">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="is_important">True</property>
-                    <property name="label" translatable="yes">_Amplitudes</property>
-                    <property name="use_underline">True</property>
-                    <property name="stock_id">gtk-find</property>
-                    <accelerator key="a" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-                    <signal name="clicked" handler="search_by_amplitudes"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>

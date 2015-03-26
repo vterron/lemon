@@ -60,17 +60,6 @@ DEFAULT_COLORS = dict(
   L = '0.75', # light gray
   M = '0.50' ) # dark gray
 
-# The options of the search for amplitude-wavelength correlated stars
-AMPLSEARCH_SECTION = 'amplitudes-search'
-DEFAULT_AMPLSEARCH_OPTS = dict(
-  increasing = 1,
-  npoints = 10,
-  use_median = 1,
-  exclude_noisy = 1,
-  noisy_nstdevs = 10,
-  noisy_use_median = 1,
-  noisy_min_ratio = 2.0)
-
 # The options for how light curves are dumped to plain-text files
 CURVEDUMP_SECTION = 'curve-export'
 DEFAULT_CURVEDUMP_OPTS = dict(
@@ -101,9 +90,6 @@ class Configuration(ConfigParser.SafeConfigParser):
      "[%s]" % COLOR_SECTION] +
     ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()] +
     ['',
-     "[%s]" % AMPLSEARCH_SECTION] +
-    ["%s = %s" % (k, v) for k, v in DEFAULT_AMPLSEARCH_OPTS.iteritems()] +
-    ['',
      "[%s]" % CURVEDUMP_SECTION] +
     ["%s = %s" % (k, v) for k, v in DEFAULT_CURVEDUMP_OPTS.iteritems()])
 
@@ -128,18 +114,6 @@ class Configuration(ConfigParser.SafeConfigParser):
         """ Write to disk the configuration file """
         with open(self.path, 'wt') as fd:
             self.write(fd)
-
-    def amplint(self, option):
-        """ Coerce 'option' in the amplitudes search section to an integer """
-        return self.getint(AMPLSEARCH_SECTION, option)
-
-    def amplfloat(self, option):
-        """ Coerce 'option' in the amplitudes search section to a float """
-        return self.getfloat(AMPLSEARCH_SECTION, option)
-
-    def amplset(self, option, value):
-        """ Set 'option' to 'value' in the amplitudes search section """
-        self.set(AMPLSEARCH_SECTION, option, str(value))
 
     # SafeConfigParser is an old-style class (does not support properties)
     def get_minimum_snr(self):
