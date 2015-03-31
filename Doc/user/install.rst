@@ -17,7 +17,7 @@ These are the steps to install LEMON on a fresh `Debian 7`_ machine:
 #. ``git clone git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
 #. ``pip install "numpy>=1.7.1"``
-#. ``pip install -r pre-requirements.txt``
+#. ``pip install -r pre-requirements.txt`` # :download:`[View] <../../pre-requirements.txt>`
 #. ``pip install -r requirements.txt``
 
 #. Install IRAF_.
