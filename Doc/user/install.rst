@@ -18,7 +18,7 @@ These are the steps to install LEMON on a fresh `Debian 7`_ machine:
 #. ``cd ~/lemon``
 #. ``pip install "numpy>=1.7.1"``
 #. ``pip install -r pre-requirements.txt`` # :download:`[View] <../../pre-requirements.txt>`
-#. ``pip install -r requirements.txt``
+#. ``pip install -r requirements.txt`` # :download:`[View] <../../requirements.txt>`
 
 #. Install IRAF_.
 #. Install SExtractor_ (version 2.19.5 or newer) [#]_
