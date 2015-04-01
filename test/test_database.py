@@ -939,9 +939,6 @@ class LEMONdBTest(unittest.TestCase):
     MIN_NFILTERS = 1
     MAX_NFILTERS = len(passband.Passband.all())
 
-    PERIOD_PROB = 0.50  # Probability of a star having a period in a filter;
-                        # using in test test_and_get_period_and_get_periods
-
     @staticmethod
     def random_path():
         """ Return to path to a temporary file, without creating it """
