@@ -1006,21 +1006,6 @@ class LEMONJuicerGUI(object):
         checkbox = builder.get_object('plot-julian-dates-checkbox')
         checkbox.set_active(get_view_booloption(config.PLOT_JULIAN))
 
-        # Activate one of the radio buttons (periods expressed in days,
-        # hh:mm:ss or seconds) depending on the integer value of the option
-        args = config.VIEW_SECTION, config.PERIODS_UNIT
-        periods_unit = self.config.getint(*args)
-        if periods_unit == config.PERIODS_DAYS:
-            name = 'radio-view-period-days'
-        elif periods_unit == config.PERIODS_HHMMSS:
-            name = 'radio-view-period-hhmmss'
-        elif periods_unit == config.PERIODS_SECONDS:
-            name = 'radio-view-period-seconds'
-        else:
-            msg = "invalid value for option '%s'" % periods_unit
-            raise ConfigParser.ParsingError(msg)
-        builder.get_object(name).set_active(True)
-
         if db_path:
             self.open_db(db_path)
 
