@@ -939,10 +939,6 @@ class LEMONdBTest(unittest.TestCase):
     MIN_NFILTERS = 1
     MAX_NFILTERS = len(passband.Passband.all())
 
-    # Minimum and maximum random steps (used with the string-length method)
-    MIN_STEP = 1
-    MAX_STEP = 3600 # one hour
-
     PERIOD_PROB = 0.50  # Probability of a star having a period in a filter;
                         # using in test test_and_get_period_and_get_periods
 
