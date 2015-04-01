@@ -21,10 +21,9 @@
 from __future__ import division
 
 """
-This module implements LEMONdB, the interface to the databases to which
-photometric information (photometry.py), light curves (diffphot.py) and star
-periods (periods.py) are saved. These databases contain all the information
-relative to the campaign that may be needed for the data analysis process.
+This module implements LEMONdB, the interface to the SQLite databases to which
+photometric information and light curves are saved. These databases contain all
+the information that may be needed for the data analysis.
 
 """
 
