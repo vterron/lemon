@@ -1167,32 +1167,6 @@ class LEMONJuicerGUI(object):
         except AttributeError:
             pass
 
-    def handle_select_period_units(self, button):
-
-        def set_column(index):
-            """ Set the visibility of the index-th column of the GtkTreeView,
-            depending on whether the button is active or not"""
-            self.view.get_column(index).set_visible(button.get_active())
-
-        try:
-            if button.get_label() == 'Days':
-                for index in self.period_days_indexes:
-                    set_column(index)
-
-            elif button.get_label() == 'hh:mm:ss':
-                for index in self.period_hhmmss_indexes:
-                    set_column(index)
-
-            elif button.get_label() == 'Seconds':
-                for index in self.period_seconds_indexes:
-                    set_column(index)
-            else:
-                msg = "unknown button label"
-                raise ValueError(msg)
-
-        except AttributeError:
-            pass
-
     def handle_open(self, window):
         kwargs = dict(title = None,
                       action = gtk.FILE_CHOOSER_ACTION_OPEN,
