@@ -19,13 +19,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Description of the optparse.OptionGroup
-group_description = \
-"These options customize the FITS keywords from which some information " \
-"needed by the module is extracted. The default values are those of the " \
-"images taken with the CCD SITE#2b instrument at the 1,23m CAHA " \
-"telescope. Setting one of these options to an incorrect value will " \
-"almost certainly result in apocalyptic consequences."
-
+group_description = (
+"These options customize the FITS keywords from which some required "
+"information is extracted. The default values are expected to work "
+"well with any file that conforms to the FITS standard. If that is "
+"not your case, you should make sure to set these options to the "
+"correct values, or otherwise face apocalyptic consequences.")
 
 desc = {} # option descriptions (for optparse)
 filterk = 'FILTER'
