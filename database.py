@@ -635,21 +635,6 @@ class LEMONdB(object):
         self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_filter "
                       "ON cmp_stars(star_id, filter_id)")
 
-        self._execute('''
-        CREATE TABLE IF NOT EXISTS periods (
-            id        INTEGER PRIMARY KEY,
-            star_id   INTEGER NOT NULL,
-            filter_id INTEGER NOT NULL,
-            step      REAL NOT NULL,
-            period    REAL NOT NULL,
-            FOREIGN KEY (star_id)    REFERENCES stars(id),
-            FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
-            UNIQUE (star_id, filter_id))
-        ''')
-
-        self._execute("CREATE INDEX IF NOT EXISTS period_by_star_filter "
-                      "ON periods(star_id, filter_id)")
-
     def _table_count(self, table):
         """ Return the number of rows in 'table' """
         self._execute("SELECT COUNT(*) FROM %s" % table)
