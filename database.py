@@ -332,10 +332,6 @@ class UnknownImageError(sqlite3.IntegrityError):
     """ Raised when an image foreign key constraint fails """
     pass
 
-class DuplicatePeriodError(sqlite3.IntegrityError):
-    """ Raised if more than one period for the same star and filter is added"""
-    pass
-
 class DuplicatePhotometryError(sqlite3.IntegrityError):
     """ Raised of more than one record for the same star and image is added"""
     pass
