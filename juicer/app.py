@@ -612,35 +612,16 @@ class StarDetailsGUI(object):
         store.append(('x-coordinate', '%.2f' % x, True))
         store.append(('y-coordinate', '%.2f' % y, True))
 
-        # Two rows (sexagesimal and decimal) are used for the coordinates, and
-        # three for each period (days, hh:mm:ss and seconds), but only one will
-        # be shown at a time. To hide some of the rows of a TreeView, we need
-        # to use a TreeModelFilter, which acts as a wrapper for the TreeModel,
-        # allowing you to choose which rows are displayed based on the value of
-        # a gobject.TYPE_BOOLEAN column, or based on the output of a certain
-        # function. [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
+        # Two rows (sexagesimal and decimal) are used for the coordinates, but
+        # only one will be shown at a given time. To hide some of the rows of a
+        # TreeView, we need to use a TreeModelFilter, which acts as a wrapper
+        # for the TreeModel, allowing us to choose which rows are displayed
+        # based on the value of a gobject.TYPE_BOOLEAN column, or based on the
+        # output of a certain function.
+        # [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
 
         self.sex_indexes = [0, 2]
         self.dec_indexes = [1, 3]
-        self.period_days_indexes = []
-        self.period_hhmmss_indexes = []
-        self.period_seconds_indexes = []
-
-        for pfilter in self.db.pfilters:
-            star_period = self.db.get_period(star_id, pfilter)
-            if star_period is not None:
-                period, step = star_period
-                name = 'Period %s' % pfilter.letter
-
-                store.append((name, "%.4f days" % (period / 3600 / 24), True))
-                hhmmss = str(datetime.timedelta(seconds = period))
-                store.append((name, "%s hours" % hhmmss, True))
-                store.append((name, "%d secs" % period, True))
-
-                length = len(store)
-                self.period_days_indexes.append(length - 3)
-                self.period_hhmmss_indexes.append(length - 2)
-                self.period_seconds_indexes.append(length - 1)
 
         # A row per filter with the standard deviation of the light curve;
         # these rows are inserted even for the photometric filters in which the
@@ -667,15 +648,6 @@ class StarDetailsGUI(object):
         self._builder.get_object('radio-view-decimal').connect(*args)
         self.handle_toggle_view_sexagesimal()
         self.handle_toggle_view_decimal()
-
-        # Hide all the period rows but one
-        buttons = [self._builder.get_object('radio-view-period-days'),
-                   self._builder.get_object('radio-view-period-hhmmss'),
-                   self._builder.get_object('radio-view-period-seconds')]
-        args = 'toggled', self.handle_select_period_units
-        for button in buttons:
-            button.connect(*args)
-            self.handle_select_period_units(button)
 
         self.shown = None  # pfilter currently shown
         self.id = star_id
