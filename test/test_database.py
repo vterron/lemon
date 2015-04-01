@@ -39,7 +39,6 @@ from database import \
   (DBStar,
    DuplicateLightCurvePointError,
    DuplicateImageError,
-   DuplicatePeriodError,
    DuplicatePhotometryError,
    DuplicateStarError,
    Image,
@@ -1962,127 +1961,6 @@ class LEMONdBTest(unittest.TestCase):
         # The third star has no photometric records
         self.assertEqual(db.get_instrumental_magnitudes(star3_id, johnson_R), {})
         self.assertEqual(db.get_instrumental_magnitudes(star3_id, johnson_I), {})
-
-    def test_add_and_get_period_and_get_periods(self):
-        db = LEMONdB(':memory:')
-        nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
-        for star_info in LEMONdBTest.random_stars_info(nstars):
-            db.add_star(*star_info)
-
-        # Add random periods to the database, with the probability of each star
-        # having had its period calculated being PERIOD_PROB. Use a two-level
-        # dictionary to map each star ID to a photometric filter to a
-        # two-element tuple with the period and string-length step that was
-        # used. None is used, instead of a tuple, when the period is missing.
-
-        periods = collections.defaultdict(dict)
-        nfilters = random.randint(self.MIN_NFILTERS, self.MAX_NFILTERS)
-        spfilters = random.sample(passband.Passband.all(), nfilters)
-
-        for pfilter in spfilters:
-            for star_id in db.star_ids:
-                if random.random() < self.PERIOD_PROB:
-                    period = random.uniform(self.MIN_PERIOD, self.MAX_PERIOD)
-                    step = random.uniform(self.MIN_STEP, self.MAX_STEP)
-                    args = (period, step)
-                    db.add_period(star_id, pfilter, *args)
-                else:
-                    args = None
-                periods[star_id][pfilter] = args
-
-        # Now read all the periods, and check that they are equal
-        star_ids = db.star_ids
-        random.shuffle(star_ids)
-        random.shuffle(spfilters)
-        for star_id in star_ids:
-            for pfilter in spfilters:
-                istar_period = periods[star_id][pfilter]
-                ostar_period = db.get_period(star_id, pfilter)
-                if ostar_period is None:
-                    self.assertEqual(istar_period, ostar_period)
-                else:
-                    iperiod, istep = istar_period
-                    operiod, ostep = ostar_period
-                    self.assertAlmostEqual(iperiod, operiod)
-                    self.assertAlmostEqual(istep, ostep)
-
-            # The LEMONdB.get_periods method returns a NumPy
-            # array with all the periods of the star.
-            expected_periods = []
-            for pfilter in periods[star_id].iterkeys():
-                period = periods[star_id][pfilter]
-                if period is not None:
-                    expected_periods.append(period[0])
-
-            returned_periods = list(db.get_periods(star_id))
-
-            expected_periods.sort()
-            returned_periods.sort()
-
-            self.assertEqual(len(expected_periods), len(returned_periods))
-            if len(expected_periods):
-                for iperiod, operiod in zip(expected_periods, returned_periods):
-                    self.assertAlmostEqual(iperiod, operiod)
-
-        # LEMONdB.get_periods returns an empty array if there are no periods
-        db = LEMONdB(':memory:')
-        star_id = random.randint(self.MIN_ID, self.MAX_ID)
-        db.add_star(*LEMONdBTest.random_star_info(id_ = star_id))
-        self.assertEqual([], list(db.get_periods(star_id)))
-
-        # Finally, check that the proper exceptions are raised when
-        # needed. Again, we need to ensure that when an error occurs
-        # none of the tables of the database is modified.
-
-        # LEMONdB.add_period raises UnknownStarError if the star ID does
-        # not match that of any of the stars already stored in the database
-        db = LEMONdB(':memory:')
-        star_id = 1
-        pfilter = passband.Passband.random()
-        period, step = 1400, 15
-
-        def tables_status(db):
-            """ Return three sorted tuples with all the information stored in
-            the PHOTOMETRIC_FILTERS and PERIODS tables of the 'db' LEMONdB """
-
-            query_filters = "SELECT * FROM photometric_filters ORDER BY id"
-            query_periods = "SELECT * FROM periods ORDER BY id"
-            db._execute(query_filters)
-            filters = tuple(db._rows)
-            db._execute(query_periods)
-            periods = tuple(db._rows)
-            return filters, periods
-
-        args = star_id, pfilter, period, step
-        before_tables = tables_status(db)
-        with self.assertRaises(UnknownStarError):
-            db.add_period(*args)
-        self.assertEqual(tables_status(db), before_tables)
-        # If the star is added, the ID is no longer unknown
-        db.add_star(*LEMONdBTest.random_star_info(id_ = star_id))
-        db.add_period(*args) # it works!
-
-        # DuplicatePeriodError is raised if the same is added twice
-        before_tables = tables_status(db)
-        with self.assertRaises(DuplicatePeriodError):
-            db.add_period(*args)
-        self.assertEqual(tables_status(db), before_tables)
-
-        # A period is considered duplicate even if we use a different value;
-        # which must be unique is the (star ID, photometric filter) pair
-        before_tables = tables_status(db)
-        with self.assertRaises(DuplicatePeriodError):
-            db.add_period(star_id, pfilter, 3755, 13)
-        self.assertEqual(tables_status(db), before_tables)
-
-        # Both LEMONdB.get_period and LEMONdB.get_periods must raise KeyError
-        # id the star with the specified ID is not stored in the database
-        star2_id = 89
-        assert star2_id not in db.star_ids
-        with self.assertRaises(KeyError):
-            db.get_period(star2_id, pfilter)
-        with self.assertRaises(KeyError):
-            db.get_periods(star2_id)
 
     def test_airmasses(self):
         db = LEMONdB(':memory:')
