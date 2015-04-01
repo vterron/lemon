@@ -460,32 +460,6 @@ class StarDetailsGUI(object):
         for index in self.dec_indexes:
             self.starinfo_store[index][-1] = button.get_active()
 
-    def handle_select_period_units(self, button):
-
-        def set_row(index):
-            """ Set the visibility of the index-th column of the GtkTreeView,
-            depending on whether the button is active or not"""
-            self.starinfo_store[index][-1] = button.get_active()
-
-        try:
-            if button.get_label() == 'Days':
-                for index in self.period_days_indexes:
-                    set_row(index)
-
-            elif button.get_label() == 'hh:mm:ss':
-                for index in self.period_hhmmss_indexes:
-                    set_row(index)
-
-            elif button.get_label() == 'Seconds':
-                for index in self.period_seconds_indexes:
-                    set_row(index)
-            else:
-                msg = "unknown button label"
-                raise ValueError(msg)
-
-        except AttributeError:
-            pass
-
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
@@ -638,35 +612,16 @@ class StarDetailsGUI(object):
         store.append(('x-coordinate', '%.2f' % x, True))
         store.append(('y-coordinate', '%.2f' % y, True))
 
-        # Two rows (sexagesimal and decimal) are used for the coordinates, and
-        # three for each period (days, hh:mm:ss and seconds), but only one will
-        # be shown at a time. To hide some of the rows of a TreeView, we need
-        # to use a TreeModelFilter, which acts as a wrapper for the TreeModel,
-        # allowing you to choose which rows are displayed based on the value of
-        # a gobject.TYPE_BOOLEAN column, or based on the output of a certain
-        # function. [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
+        # Two rows (sexagesimal and decimal) are used for the coordinates, but
+        # only one will be shown at a given time. To hide some of the rows of a
+        # TreeView, we need to use a TreeModelFilter, which acts as a wrapper
+        # for the TreeModel, allowing us to choose which rows are displayed
+        # based on the value of a gobject.TYPE_BOOLEAN column, or based on the
+        # output of a certain function.
+        # [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
 
         self.sex_indexes = [0, 2]
         self.dec_indexes = [1, 3]
-        self.period_days_indexes = []
-        self.period_hhmmss_indexes = []
-        self.period_seconds_indexes = []
-
-        for pfilter in self.db.pfilters:
-            star_period = self.db.get_period(star_id, pfilter)
-            if star_period is not None:
-                period, step = star_period
-                name = 'Period %s' % pfilter.letter
-
-                store.append((name, "%.4f days" % (period / 3600 / 24), True))
-                hhmmss = str(datetime.timedelta(seconds = period))
-                store.append((name, "%s hours" % hhmmss, True))
-                store.append((name, "%d secs" % period, True))
-
-                length = len(store)
-                self.period_days_indexes.append(length - 3)
-                self.period_hhmmss_indexes.append(length - 2)
-                self.period_seconds_indexes.append(length - 1)
 
         # A row per filter with the standard deviation of the light curve;
         # these rows are inserted even for the photometric filters in which the
@@ -693,15 +648,6 @@ class StarDetailsGUI(object):
         self._builder.get_object('radio-view-decimal').connect(*args)
         self.handle_toggle_view_sexagesimal()
         self.handle_toggle_view_decimal()
-
-        # Hide all the period rows but one
-        buttons = [self._builder.get_object('radio-view-period-days'),
-                   self._builder.get_object('radio-view-period-hhmmss'),
-                   self._builder.get_object('radio-view-period-seconds')]
-        args = 'toggled', self.handle_select_period_units
-        for button in buttons:
-            button.connect(*args)
-            self.handle_select_period_units(button)
 
         self.shown = None  # pfilter currently shown
         self.id = star_id
@@ -1006,21 +952,6 @@ class LEMONJuicerGUI(object):
         checkbox = builder.get_object('plot-julian-dates-checkbox')
         checkbox.set_active(get_view_booloption(config.PLOT_JULIAN))
 
-        # Activate one of the radio buttons (periods expressed in days,
-        # hh:mm:ss or seconds) depending on the integer value of the option
-        args = config.VIEW_SECTION, config.PERIODS_UNIT
-        periods_unit = self.config.getint(*args)
-        if periods_unit == config.PERIODS_DAYS:
-            name = 'radio-view-period-days'
-        elif periods_unit == config.PERIODS_HHMMSS:
-            name = 'radio-view-period-hhmmss'
-        elif periods_unit == config.PERIODS_SECONDS:
-            name = 'radio-view-period-seconds'
-        else:
-            msg = "invalid value for option '%s'" % periods_unit
-            raise ConfigParser.ParsingError(msg)
-        builder.get_object(name).set_active(True)
-
         if db_path:
             self.open_db(db_path)
 
@@ -1208,59 +1139,6 @@ class LEMONJuicerGUI(object):
         except AttributeError:
             pass
 
-    def handle_select_period_units(self, button):
-
-        def set_column(index):
-            """ Set the visibility of the index-th column of the GtkTreeView,
-            depending on whether the button is active or not"""
-            self.view.get_column(index).set_visible(button.get_active())
-
-        try:
-            if button.get_label() == 'Days':
-                for index in self.period_days_indexes:
-                    set_column(index)
-
-            elif button.get_label() == 'hh:mm:ss':
-                for index in self.period_hhmmss_indexes:
-                    set_column(index)
-
-            elif button.get_label() == 'Seconds':
-                for index in self.period_seconds_indexes:
-                    set_column(index)
-            else:
-                msg = "unknown button label"
-                raise ValueError(msg)
-
-        except AttributeError:
-            pass
-
-    def save_periods_unit_radio_item(self, button):
-        """ Update the configuration file with the new value of the option
-         every time a radio item with the unit of the periods is selected"""
-
-        # This function gets called twice every time a new option is selected,
-        # as two different buttons are being toggled. We are only interesed in
-        # the one which has been activated, though.
-        if not button.get_active():
-            return
-
-        if button.get_label() == 'Days':
-            option = config.PERIODS_DAYS
-
-        elif button.get_label() == 'hh:mm:ss':
-            option = config.PERIODS_HHMMSS
-
-        elif button.get_label() == 'Seconds':
-            option = config.PERIODS_SECONDS
-
-        else:
-            msg = "unknown button label"
-            raise ValueError(msg)
-
-        # Update the configuration file with the new value of the option
-        args = config.VIEW_SECTION, config.PERIODS_UNIT, str(option)
-        self.config.set(*args)
-
     def handle_open(self, window):
         kwargs = dict(title = None,
                       action = gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -1366,25 +1244,6 @@ class LEMONJuicerGUI(object):
             self.dec_sex_index = star_attrs.index('δ')
             self.dec_dec_index = self.dec_sex_index + 1
 
-            # Three columns are used for each period, to show it in days (a
-            # real number), hh:mm:ss (str) or seconds (int). Periods will be
-            # sorted always by their value in seconds. We need to keep an
-            # internal list with the indexes of each type of column, to make
-            # them visible or not depending on the option selected at View -
-            # Periods.
-
-            self.period_days_indexes = []
-            self.period_hhmmss_indexes = []
-            self.period_seconds_indexes = []
-
-            for pfilter in db_pfilters:
-                label = "Period %s" % pfilter.letter
-                star_attrs += [label] * 3
-                length = len(star_attrs)
-                self.period_days_indexes.append(length - 3)
-                self.period_hhmmss_indexes.append(length - 2)
-                self.period_seconds_indexes.append(length - 1)
-
             # Two additional columns for each photometric filter, with (a) the
             # standard deviation of the points of each light curve and (b) a
             # boolean value indicating whether (a) must be shown. The latter
@@ -1405,7 +1264,6 @@ class LEMONJuicerGUI(object):
                 self.stdevs_visibility_indexes.append(length - 1)
 
             args = [int, str, float, str, float, float]
-            args += [float, str, int] * len(db.pfilters)
             args += [float, bool] * len(db.pfilters)
             self.store = gtk.ListStore(*args)
 
@@ -1421,25 +1279,6 @@ class LEMONJuicerGUI(object):
                     sort_index = self.ra_dec_index
                 elif index == self.dec_sex_index:
                     sort_index = self.dec_dec_index
-
-                # Periods are in the following order: days, hh:mm:ss, seconds.
-                # We want to sort hh:mm:ss periods not lexicographically, but
-                # by the value of the third column, which stores seconds.
-
-                # The first of these columns also be sorted by the period in
-                # days (a real number) but then, when setting the 'visible'
-                # attribute below, we would get the "unable to set property
-                # `visible' of type `gboolean' from value of type `gdouble'"
-                # error. To avoid this, we sort all periods and determine their
-                # visibility using the columns which contain them in seconds.
-                elif index in self.period_days_indexes:
-                    kwargs['visible'] = sort_index = index + 2
-
-                elif index in self.period_hhmmss_indexes:
-                    kwargs['visible'] = sort_index = index + 1
-
-                elif index in self.period_seconds_indexes:
-                    kwargs['visible'] = sort_index = index
 
                 # The cells with standard deviations are only displayed if the
                 # value in the adjacent column, which stores whether the light
@@ -1472,19 +1311,6 @@ class LEMONJuicerGUI(object):
                 ra_str  = methods.ra_str(ra)
                 dec_str = methods.dec_str(dec)
                 row = [star_id, ra_str, ra, dec_str, dec, imag]
-
-                for pfilter in db_pfilters:
-                    # Returns a two-element tuple, with the period of the star,
-                    # in seconds, and the step that the string-length method
-                    # used. In case the period is unknown, None is returned.
-                    star_period = db.get_period(star_id, pfilter)
-                    if star_period is None:
-                        row += [UNKNOWN_VALUE, str(UNKNOWN_VALUE), UNKNOWN_VALUE]
-                    else:
-                        period, step = star_period
-                        row.append(period / 3600 / 24) # days
-                        row.append(str(datetime.timedelta(seconds = period)))
-                        row.append(period) # seconds
 
                 for pfilter in db_pfilters:
                     # None returned if the star doesn't have this light curve
@@ -1522,13 +1348,6 @@ class LEMONJuicerGUI(object):
                 # Show sexagesimal, decimal coordinates or both
                 self.handle_toggle_view_sexagesimal()
                 self.handle_toggle_view_decimal()
-
-                # Hide all the period columns but one
-                buttons = [self._builder.get_object('radio-view-period-days'),
-                           self._builder.get_object('radio-view-period-hhmmss'),
-                           self._builder.get_object('radio-view-period-seconds')]
-                for button in buttons:
-                    self.handle_select_period_units(button)
 
                 self.view.set_model(self.store)
 

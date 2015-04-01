@@ -101,51 +101,6 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="view-submenu-item2">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Periods</property>
-                        <property name="use_underline">True</property>
-                        <child type="submenu">
-                          <object class="GtkMenu" id="view-periods">
-                            <property name="visible">True</property>
-                            <child>
-                              <object class="GtkRadioMenuItem" id="radio-view-period-days">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">Days</property>
-                                <property name="use_underline">True</property>
-                                <property name="draw_as_radio">True</property>
-                                <signal name="toggled" handler="handle_select_period_units"/>
-                                <signal name="toggled" handler="save_periods_unit_radio_item"/>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkRadioMenuItem" id="radio-view-period-hhmmss">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">hh:mm:ss</property>
-                                <property name="use_underline">True</property>
-                                <property name="active">True</property>
-                                <property name="draw_as_radio">True</property>
-                                <property name="group">radio-view-period-days</property>
-                                <signal name="toggled" handler="handle_select_period_units"/>
-                                <signal name="toggled" handler="save_periods_unit_radio_item"/>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkRadioMenuItem" id="radio-view-period-seconds">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">Seconds</property>
-                                <property name="use_underline">True</property>
-                                <property name="draw_as_radio">True</property>
-                                <property name="group">radio-view-period-days</property>
-                                <signal name="toggled" handler="handle_select_period_units"/>
-                                <signal name="toggled" handler="save_periods_unit_radio_item"/>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
                       <object class="GtkMenuItem" id="plot-submenu-item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Plots</property>

@@ -138,22 +138,6 @@ _lemon_diffphot()
     fi
 }
 
-_lemon_periods()
-{
-
-    local opts
-    opts="--overwrite --initial-step --exhaustive-step --cores
-    --verbose"
-
-    if [[ ${prev} == --output ]]; then
-	_filedir @($LEMONDB_EXTS)
-    elif [[ ${cur} == -* ]]; then
-	_match "${opts}"
-    else
-        _filedir @($LEMONDB_EXTS)
-    fi
-}
-
 _lemon_juicer()
 {
     _filedir @($LEMONDB_EXTS)
@@ -166,7 +150,7 @@ _lemon()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     commands="import seeing astrometry mosaic annuli photometry
-    diffphot periods juicer"
+    diffphot juicer"
 
     # The options that autocomplete depend on the LEMON command being
     # executed. For example, the '--exact' option is specific to the
@@ -200,10 +184,6 @@ _lemon()
 	;;
     diffphot)
 	_lemon_diffphot
-	return 0
-	;;
-    periods)
-	_lemon_periods
 	return 0
 	;;
     juicer)

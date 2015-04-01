@@ -27,15 +27,12 @@ CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
 VIEW_SECTION = 'view'
 VIEW_SEXAGESIMAL = 'sexagesimal'
 VIEW_DECIMAL = 'decimal'
-PERIODS_UNIT = 'periods'
-PERIODS_DAYS, PERIODS_HHMMSS, PERIODS_SECONDS = range(3)
 PLOT_AIRMASSES = 'airmasses'
 PLOT_JULIAN = 'julian_dates'
 PLOT_MIN_SNR = 'snr_threshold'
 
 DEFAULT_VIEW_SEXAGESIMAL = True
 DEFAULT_VIEW_DECIMAL = False
-DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
 DEFAULT_PLOT_AIRMASSES = True
 DEFAULT_PLOT_JULIAN = False
 DEFAULT_PLOT_MIN_SNR = 100
@@ -81,7 +78,6 @@ class Configuration(ConfigParser.SafeConfigParser):
     DEFAULT_CONFIG = '\n'.join(
     ["[%s]" % VIEW_SECTION,
      "%s = %d" % (VIEW_SEXAGESIMAL, DEFAULT_VIEW_SEXAGESIMAL),
-     "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
      "%s = %d" % (VIEW_DECIMAL, DEFAULT_VIEW_DECIMAL),
      "%s = %d" % (PLOT_AIRMASSES, DEFAULT_PLOT_AIRMASSES),
      "%s = %d" % (PLOT_JULIAN, DEFAULT_PLOT_JULIAN),

@@ -21,10 +21,9 @@
 from __future__ import division
 
 """
-This module implements LEMONdB, the interface to the databases to which
-photometric information (photometry.py), light curves (diffphot.py) and star
-periods (periods.py) are saved. These databases contain all the information
-relative to the campaign that may be needed for the data analysis process.
+This module implements LEMONdB, the interface to the SQLite databases to which
+photometric information and light curves are saved. These databases contain all
+the information that may be needed for the data analysis.
 
 """
 
@@ -332,10 +331,6 @@ class UnknownImageError(sqlite3.IntegrityError):
     """ Raised when an image foreign key constraint fails """
     pass
 
-class DuplicatePeriodError(sqlite3.IntegrityError):
-    """ Raised if more than one period for the same star and filter is added"""
-    pass
-
 class DuplicatePhotometryError(sqlite3.IntegrityError):
     """ Raised of more than one record for the same star and image is added"""
     pass
@@ -638,21 +633,6 @@ class LEMONdB(object):
 
         self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_filter "
                       "ON cmp_stars(star_id, filter_id)")
-
-        self._execute('''
-        CREATE TABLE IF NOT EXISTS periods (
-            id        INTEGER PRIMARY KEY,
-            star_id   INTEGER NOT NULL,
-            filter_id INTEGER NOT NULL,
-            step      REAL NOT NULL,
-            period    REAL NOT NULL,
-            FOREIGN KEY (star_id)    REFERENCES stars(id),
-            FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
-            UNIQUE (star_id, filter_id))
-        ''')
-
-        self._execute("CREATE INDEX IF NOT EXISTS period_by_star_filter "
-                      "ON periods(star_id, filter_id)")
 
     def _table_count(self, table):
         """ Return the number of rows in 'table' """
@@ -1422,95 +1402,6 @@ class LEMONdB(object):
 
         cls = collections.namedtuple('InstrumentalMagnitude', "magnitude snr")
         return dict((r[0], cls(*r[1:])) for r in self._rows)
-
-    def add_period(self, star_id, pfilter, period, step):
-        """ Store the string-length period of a star.
-
-        Add to the database the period of the star, computed using Dworetsky's
-        string-length method (http://adsabs.harvard.edu/abs/1983MNRAS.203..917D)
-        with a step of 'step' seconds.
-
-        Raises UnknownStarError if 'star_id' does not match the ID of any of
-        the stars in the database, and DuplicatePeriodError if the period of
-        this star in this photometric filter is already in the database. As the
-        filter may have to be added, the database is modified atomically, so it
-        is guaranteed to be left untouched in case an error is encountered.
-
-        """
-
-        mark = self._savepoint()
-        try:
-            self._add_pfilter(pfilter)
-            # Note the casts to Python's built-in float. Otherwise, if the
-            # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
-            # Error binding parameter - probably unsupported type"
-            t = (None, star_id, hash(pfilter), float(step), float(period))
-            self._execute("INSERT INTO periods "
-                          "VALUES (?, ?, ?, ?, ?)", t)
-            self._release(mark)
-
-        except sqlite3.IntegrityError:
-            self._rollback_to(mark)
-            if not star_id in self.star_ids:
-                msg = "star with ID = %d not in database" % star_id
-                raise UnknownStarError(msg)
-            else:
-                msg = "period for star ID = %d and photometric filter " \
-                      "%s already in database" % (star_id, pfilter)
-            raise DuplicatePeriodError(msg)
-
-    def get_period(self, star_id, pfilter):
-        """ Return the period of a star.
-
-        The method returns a two-element tuple with the string-length period of
-        the star in a photometric filter and the step that was used to find it.
-        Both values are expressed in seconds. Raises KeyError is no star has
-        the specified ID, while, if the star exists but its period in this
-        photometric filter is not stored in the database, None is returned.
-
-        """
-
-        t = (star_id, hash(pfilter))
-        self._execute("SELECT period, step "
-                      "FROM periods INDEXED BY period_by_star_filter "
-                      "WHERE star_id = ? "
-                      "  AND filter_id = ?", t)
-        try:
-            rows = tuple(self._rows)
-            return rows[0]
-        except IndexError:
-            if star_id not in self.star_ids:
-                msg = "star with ID = %d not in database" % star_id
-                raise KeyError(msg)
-            else:
-                return None
-
-    def get_periods(self, star_id):
-        """ Return all the periods of a star.
-
-        Return a NumPy array with the string-length periods of the star in all
-        the photometric filters for which they are known. This is a convenience
-        function to retrieve the periods of the star (in order to, for example,
-        examine how similar they are) without having to call LEMONdB.get_period
-        star multiple times. Raises KeyError is no star has the specified ID
-
-        In case no period of the star is known, an empty array is returned. The
-        periods may be returned in any order, so there is no way of knowing to
-        which photometric filter each one correspond. Use LEMONdB.get_period
-        instead if you need to know what the period is in a specific filter.
-
-        """
-
-        t = (star_id,)
-        self._execute("SELECT period "
-                      "FROM periods INDEXED BY period_by_star_filter "
-                      "WHERE star_id = ? ", t)
-        periods = tuple(x[0] for x in self._rows)
-        if not periods and star_id not in self.star_ids:
-            msg = "star with ID = %d not in database" % star_id
-            raise KeyError(msg)
-        else:
-            return numpy.array(periods)
 
     def airmasses(self, pfilter):
         """ Return the airmasses of the images in a photometric filter.
