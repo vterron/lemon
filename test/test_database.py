@@ -939,10 +939,6 @@ class LEMONdBTest(unittest.TestCase):
     MIN_NFILTERS = 1
     MAX_NFILTERS = len(passband.Passband.all())
 
-    # Minimum and maximum values (in seconds) for random periods
-    MIN_PERIOD = 1
-    MAX_PERIOD = 3600 * 24 * 365 # a year
-
     # Minimum and maximum random steps (used with the string-length method)
     MIN_STEP = 1
     MAX_STEP = 3600 # one hour
