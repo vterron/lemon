@@ -1272,25 +1272,6 @@ class LEMONJuicerGUI(object):
             self.dec_sex_index = star_attrs.index('δ')
             self.dec_dec_index = self.dec_sex_index + 1
 
-            # Three columns are used for each period, to show it in days (a
-            # real number), hh:mm:ss (str) or seconds (int). Periods will be
-            # sorted always by their value in seconds. We need to keep an
-            # internal list with the indexes of each type of column, to make
-            # them visible or not depending on the option selected at View -
-            # Periods.
-
-            self.period_days_indexes = []
-            self.period_hhmmss_indexes = []
-            self.period_seconds_indexes = []
-
-            for pfilter in db_pfilters:
-                label = "Period %s" % pfilter.letter
-                star_attrs += [label] * 3
-                length = len(star_attrs)
-                self.period_days_indexes.append(length - 3)
-                self.period_hhmmss_indexes.append(length - 2)
-                self.period_seconds_indexes.append(length - 1)
-
             # Two additional columns for each photometric filter, with (a) the
             # standard deviation of the points of each light curve and (b) a
             # boolean value indicating whether (a) must be shown. The latter
@@ -1311,7 +1292,6 @@ class LEMONJuicerGUI(object):
                 self.stdevs_visibility_indexes.append(length - 1)
 
             args = [int, str, float, str, float, float]
-            args += [float, str, int] * len(db.pfilters)
             args += [float, bool] * len(db.pfilters)
             self.store = gtk.ListStore(*args)
 
@@ -1327,25 +1307,6 @@ class LEMONJuicerGUI(object):
                     sort_index = self.ra_dec_index
                 elif index == self.dec_sex_index:
                     sort_index = self.dec_dec_index
-
-                # Periods are in the following order: days, hh:mm:ss, seconds.
-                # We want to sort hh:mm:ss periods not lexicographically, but
-                # by the value of the third column, which stores seconds.
-
-                # The first of these columns also be sorted by the period in
-                # days (a real number) but then, when setting the 'visible'
-                # attribute below, we would get the "unable to set property
-                # `visible' of type `gboolean' from value of type `gdouble'"
-                # error. To avoid this, we sort all periods and determine their
-                # visibility using the columns which contain them in seconds.
-                elif index in self.period_days_indexes:
-                    kwargs['visible'] = sort_index = index + 2
-
-                elif index in self.period_hhmmss_indexes:
-                    kwargs['visible'] = sort_index = index + 1
-
-                elif index in self.period_seconds_indexes:
-                    kwargs['visible'] = sort_index = index
 
                 # The cells with standard deviations are only displayed if the
                 # value in the adjacent column, which stores whether the light
@@ -1378,19 +1339,6 @@ class LEMONJuicerGUI(object):
                 ra_str  = methods.ra_str(ra)
                 dec_str = methods.dec_str(dec)
                 row = [star_id, ra_str, ra, dec_str, dec, imag]
-
-                for pfilter in db_pfilters:
-                    # Returns a two-element tuple, with the period of the star,
-                    # in seconds, and the step that the string-length method
-                    # used. In case the period is unknown, None is returned.
-                    star_period = db.get_period(star_id, pfilter)
-                    if star_period is None:
-                        row += [UNKNOWN_VALUE, str(UNKNOWN_VALUE), UNKNOWN_VALUE]
-                    else:
-                        period, step = star_period
-                        row.append(period / 3600 / 24) # days
-                        row.append(str(datetime.timedelta(seconds = period)))
-                        row.append(period) # seconds
 
                 for pfilter in db_pfilters:
                     # None returned if the star doesn't have this light curve
@@ -1428,13 +1376,6 @@ class LEMONJuicerGUI(object):
                 # Show sexagesimal, decimal coordinates or both
                 self.handle_toggle_view_sexagesimal()
                 self.handle_toggle_view_decimal()
-
-                # Hide all the period columns but one
-                buttons = [self._builder.get_object('radio-view-period-days'),
-                           self._builder.get_object('radio-view-period-hhmmss'),
-                           self._builder.get_object('radio-view-period-seconds')]
-                for button in buttons:
-                    self.handle_select_period_units(button)
 
                 self.view.set_model(self.store)
 
