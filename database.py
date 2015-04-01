@@ -1423,42 +1423,6 @@ class LEMONdB(object):
         cls = collections.namedtuple('InstrumentalMagnitude', "magnitude snr")
         return dict((r[0], cls(*r[1:])) for r in self._rows)
 
-    def add_period(self, star_id, pfilter, period, step):
-        """ Store the string-length period of a star.
-
-        Add to the database the period of the star, computed using Dworetsky's
-        string-length method (http://adsabs.harvard.edu/abs/1983MNRAS.203..917D)
-        with a step of 'step' seconds.
-
-        Raises UnknownStarError if 'star_id' does not match the ID of any of
-        the stars in the database, and DuplicatePeriodError if the period of
-        this star in this photometric filter is already in the database. As the
-        filter may have to be added, the database is modified atomically, so it
-        is guaranteed to be left untouched in case an error is encountered.
-
-        """
-
-        mark = self._savepoint()
-        try:
-            self._add_pfilter(pfilter)
-            # Note the casts to Python's built-in float. Otherwise, if the
-            # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
-            # Error binding parameter - probably unsupported type"
-            t = (None, star_id, hash(pfilter), float(step), float(period))
-            self._execute("INSERT INTO periods "
-                          "VALUES (?, ?, ?, ?, ?)", t)
-            self._release(mark)
-
-        except sqlite3.IntegrityError:
-            self._rollback_to(mark)
-            if not star_id in self.star_ids:
-                msg = "star with ID = %d not in database" % star_id
-                raise UnknownStarError(msg)
-            else:
-                msg = "period for star ID = %d and photometric filter " \
-                      "%s already in database" % (star_id, pfilter)
-            raise DuplicatePeriodError(msg)
-
     def get_period(self, star_id, pfilter):
         """ Return the period of a star.
 
