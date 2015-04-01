@@ -460,32 +460,6 @@ class StarDetailsGUI(object):
         for index in self.dec_indexes:
             self.starinfo_store[index][-1] = button.get_active()
 
-    def handle_select_period_units(self, button):
-
-        def set_row(index):
-            """ Set the visibility of the index-th column of the GtkTreeView,
-            depending on whether the button is active or not"""
-            self.starinfo_store[index][-1] = button.get_active()
-
-        try:
-            if button.get_label() == 'Days':
-                for index in self.period_days_indexes:
-                    set_row(index)
-
-            elif button.get_label() == 'hh:mm:ss':
-                for index in self.period_hhmmss_indexes:
-                    set_row(index)
-
-            elif button.get_label() == 'Seconds':
-                for index in self.period_seconds_indexes:
-                    set_row(index)
-            else:
-                msg = "unknown button label"
-                raise ValueError(msg)
-
-        except AttributeError:
-            pass
-
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
         return self.airmasses_checkbox.get_active()
