@@ -1234,33 +1234,6 @@ class LEMONJuicerGUI(object):
         except AttributeError:
             pass
 
-    def save_periods_unit_radio_item(self, button):
-        """ Update the configuration file with the new value of the option
-         every time a radio item with the unit of the periods is selected"""
-
-        # This function gets called twice every time a new option is selected,
-        # as two different buttons are being toggled. We are only interesed in
-        # the one which has been activated, though.
-        if not button.get_active():
-            return
-
-        if button.get_label() == 'Days':
-            option = config.PERIODS_DAYS
-
-        elif button.get_label() == 'hh:mm:ss':
-            option = config.PERIODS_HHMMSS
-
-        elif button.get_label() == 'Seconds':
-            option = config.PERIODS_SECONDS
-
-        else:
-            msg = "unknown button label"
-            raise ValueError(msg)
-
-        # Update the configuration file with the new value of the option
-        args = config.VIEW_SECTION, config.PERIODS_UNIT, str(option)
-        self.config.set(*args)
-
     def handle_open(self, window):
         kwargs = dict(title = None,
                       action = gtk.FILE_CHOOSER_ACTION_OPEN,
