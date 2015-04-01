@@ -1423,32 +1423,6 @@ class LEMONdB(object):
         cls = collections.namedtuple('InstrumentalMagnitude', "magnitude snr")
         return dict((r[0], cls(*r[1:])) for r in self._rows)
 
-    def get_period(self, star_id, pfilter):
-        """ Return the period of a star.
-
-        The method returns a two-element tuple with the string-length period of
-        the star in a photometric filter and the step that was used to find it.
-        Both values are expressed in seconds. Raises KeyError is no star has
-        the specified ID, while, if the star exists but its period in this
-        photometric filter is not stored in the database, None is returned.
-
-        """
-
-        t = (star_id, hash(pfilter))
-        self._execute("SELECT period, step "
-                      "FROM periods INDEXED BY period_by_star_filter "
-                      "WHERE star_id = ? "
-                      "  AND filter_id = ?", t)
-        try:
-            rows = tuple(self._rows)
-            return rows[0]
-        except IndexError:
-            if star_id not in self.star_ids:
-                msg = "star with ID = %d not in database" % star_id
-                raise KeyError(msg)
-            else:
-                return None
-
     def get_periods(self, star_id):
         """ Return all the periods of a star.
 
