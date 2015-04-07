@@ -14,7 +14,7 @@ For example, to get the light curve of a transit of WASP-10b_:
 
 The above commands produce, among many others, the following plot:
 
-.. image:: Doc/_static/WASP-10b-2011-08-03.svg
+.. image:: Doc/_static/WASP-10b-2011-08-03.jpg
 
 Homepage
 --------
