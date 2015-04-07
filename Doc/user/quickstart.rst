@@ -222,15 +222,27 @@ field. You can sort them by any column (right ascension, declination,
 `instrumental magnitude`_ or standard deviation of their light curves)
 by clicking on their headers, as usual.
 
-.. thumbnail:: images/gui/main-window.png
-    :width: 626 px
-    :align: center
-    :title: The GUI main window
+.. only:: html
+
+    .. thumbnail:: images/gui/main-window.png
+        :width: 626 px
+        :align: center
+        :title: The GUI main window
+
+.. only:: latex
+
+    .. image:: images/gui/main-window.png
 
 A double-click on any object displays all its data, including the light curve:
 
-.. thumbnail:: images/gui/star-details.png
-    :title: The window with all the information of one of the stars
+.. only:: html
+
+    .. thumbnail:: images/gui/star-details.png
+        :title: The window with all the information of one of the stars
+
+.. only:: latex
+
+    .. image:: images/gui/star-details.png
 
 For further analysis, ``Export`` allows you save the raw data, from
 which each light curve is plotted, to a text file. You can select the
@@ -238,10 +250,16 @@ fields that for each photometric measurement are written to the
 file. There are three different formats available for the date:
 `Julian days`_, `Unix time`_ and `a textual representation`_.
 
-.. thumbnail:: images/gui/export-to-file.png
-    :width: 338 px
-    :align: center
-    :title: Exporting the light curve to a text file
+.. only:: html
+
+    .. thumbnail:: images/gui/export-to-file.png
+        :width: 338 px
+        :align: center
+        :title: Exporting the light curve to a text file
+
+.. only:: latex
+
+    .. image:: images/gui/export-to-file.png
 
 The ``Finding Chart`` button allows you to visually select the object
 that you are interested in, instead of having to examine the list
@@ -251,10 +269,16 @@ takes you to a window like the above, with all its data. You can, of
 course, use the `matplotlib interactive navigation toolbar`_ to pan,
 zoom, move back and forward, et cetera.
 
-.. thumbnail:: images/gui/finding-chart.png
-    :width: 652 px
-    :align: center
-    :title: The GUI finding chart
+.. only:: html
+
+    .. thumbnail:: images/gui/finding-chart.png
+        :width: 652 px
+        :align: center
+        :title: The GUI finding chart
+
+.. only:: latex
+
+    .. image:: images/gui/finding-chart.png
 
 .. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
 .. _Astrometry.net: http://astrometry.net/

@@ -19,8 +19,14 @@ For example, to get the light curve of a transit of WASP-10b_:
 
 The above commands produce, among many others, the following plot:
 
-.. thumbnail:: _static/WASP-10b-2011-08-03.svg
-    :title: The light curve of a transit of exoplanet WASP-10b
+.. only:: html
+
+    .. thumbnail:: _static/WASP-10b-2011-08-03.svg
+        :title: The light curve of a transit of exoplanet WASP-10b
+
+.. only:: latex
+
+    .. image:: _static/WASP-10b-2011-08-03.jpg
 
 LEMON aims at taking most of the burden out of the astronomer, working out of the box with any set of images that conform to the `FITS standard`_. In most scenarios, the above four commands are enough to generate the high-precision light curves of all your astronomical objects.
 
