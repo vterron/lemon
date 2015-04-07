@@ -17,9 +17,10 @@ For example, to get the light curve of a transit of WASP-10b_:
     $ lemon photometry WASP10-mosaic.fits WASP10/*.fits phot.LEMONdB
     $ lemon diffphot phot.LEMONdB curves.LEMONdB
 
-The above commands produce, among many other, the following plot:
+The above commands produce, among many others, the following plot:
 
-.. image:: _static/WASP-10b-2011-08-03.svg
+.. thumbnail:: _static/WASP-10b-2011-08-03.svg
+    :title: The light curve of a transit of exoplanet WASP-10b
 
 LEMON aims at taking most of the burden out of the astronomer, working out of the box with any set of images that conform to the `FITS standard`_. In most scenarios, the above four commands are enough to generate the high-precision light curves of all your astronomical objects.
 
@@ -27,3 +28,12 @@ LEMON aims at taking most of the burden out of the astronomer, working out of th
 .. _light curves: https://en.wikipedia.org/wiki/Light_curve
 .. _WASP-10b: http://exoplanet.eu/catalog/wasp-10_b/
 .. _FITS standard: http://fits.gsfc.nasa.gov/fits_standard.html
+
+User Guide
+==========
+
+.. toctree::
+   :maxdepth: 2
+
+   user/install
+   user/quickstart
