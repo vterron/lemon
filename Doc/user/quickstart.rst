@@ -225,7 +225,7 @@ by clicking on their headers, as usual.
 .. only:: html
 
     .. thumbnail:: images/gui/main-window.png
-        :width: 626 px
+        :width: 639 px
         :align: center
         :title: The GUI main window
 
@@ -238,7 +238,7 @@ A double-click on any object displays all its data, including the light curve:
 .. only:: html
 
     .. thumbnail:: images/gui/star-details.png
-        :title: The window with all the information of one of the stars
+        :title: The window with all the information of WASP-10
 
 .. only:: latex
 
@@ -274,7 +274,7 @@ zoom, move back and forward, et cetera.
     .. thumbnail:: images/gui/finding-chart.png
         :width: 652 px
         :align: center
-        :title: The GUI finding chart
+        :title: The GUI finding chart, with WASP-10 marked in red
 
 .. only:: latex
 
