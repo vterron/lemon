@@ -52,10 +52,9 @@ Note that, starting from version 2.16, IRAF is now released `under a free softwa
   # BINS = 	$(SBINS) $(MBINS)
 
 
-Pip
----
+.. note::
 
-LEMON is **not** yet available on PyPI_, but we intend to package it soon. This will enormously simplify the installation process, which should consist of a single ``pip install lemon`` command — provided that IRAF_, SExtractor_, `Astrometry.net`_ and Montage_ are already installed on your system.
+   LEMON is **not** yet available on PyPI_, but we intend to package it soon. This will enormously simplify the installation process, which should consist of a single ``pip install lemon`` command — provided that IRAF_, SExtractor_, `Astrometry.net`_ and Montage_ are already installed on your system.
 
 .. _Debian 7: https://www.debian.org/releases/wheezy/
 .. _IRAF: http://iraf.noao.edu/
