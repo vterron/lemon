@@ -21,12 +21,12 @@ The above commands produce, among many others, the following plot:
 
 .. only:: html
 
-    .. thumbnail:: _static/WASP-10b-2011-08-03.svg
-        :title: The light curve of a transit of exoplanet WASP-10b
+    .. thumbnail:: _static/HAT-P-16b-2014-10-31.svg
+        :title: The light curve of a transit of exoplanet HAT-P-16b
 
 .. only:: latex
 
-    .. image:: _static/WASP-10b-2011-08-03.jpg
+    .. image:: _static/HAT-P-16b-2014-10-31.jpg
 
 LEMON aims at taking most of the burden out of the astronomer, working out of the box with any set of images that conform to the `FITS standard`_. In most scenarios, the above four commands are enough to generate the high-precision light curves of all your astronomical objects.
 
