@@ -27,15 +27,12 @@ CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
 VIEW_SECTION = 'view'
 VIEW_SEXAGESIMAL = 'sexagesimal'
 VIEW_DECIMAL = 'decimal'
-PERIODS_UNIT = 'periods'
-PERIODS_DAYS, PERIODS_HHMMSS, PERIODS_SECONDS = range(3)
 PLOT_AIRMASSES = 'airmasses'
 PLOT_JULIAN = 'julian_dates'
 PLOT_MIN_SNR = 'snr_threshold'
 
 DEFAULT_VIEW_SEXAGESIMAL = True
 DEFAULT_VIEW_DECIMAL = False
-DEFAULT_PERIODS_UNIT = PERIODS_HHMMSS
 DEFAULT_PLOT_AIRMASSES = True
 DEFAULT_PLOT_JULIAN = False
 DEFAULT_PLOT_MIN_SNR = 100
@@ -60,17 +57,6 @@ DEFAULT_COLORS = dict(
   L = '0.75', # light gray
   M = '0.50' ) # dark gray
 
-# The options of the search for amplitude-wavelength correlated stars
-AMPLSEARCH_SECTION = 'amplitudes-search'
-DEFAULT_AMPLSEARCH_OPTS = dict(
-  increasing = 1,
-  npoints = 10,
-  use_median = 1,
-  exclude_noisy = 1,
-  noisy_nstdevs = 10,
-  noisy_use_median = 1,
-  noisy_min_ratio = 2.0)
-
 # The options for how light curves are dumped to plain-text files
 CURVEDUMP_SECTION = 'curve-export'
 DEFAULT_CURVEDUMP_OPTS = dict(
@@ -92,7 +78,6 @@ class Configuration(ConfigParser.SafeConfigParser):
     DEFAULT_CONFIG = '\n'.join(
     ["[%s]" % VIEW_SECTION,
      "%s = %d" % (VIEW_SEXAGESIMAL, DEFAULT_VIEW_SEXAGESIMAL),
-     "%s = %d" % (PERIODS_UNIT, DEFAULT_PERIODS_UNIT),
      "%s = %d" % (VIEW_DECIMAL, DEFAULT_VIEW_DECIMAL),
      "%s = %d" % (PLOT_AIRMASSES, DEFAULT_PLOT_AIRMASSES),
      "%s = %d" % (PLOT_JULIAN, DEFAULT_PLOT_JULIAN),
@@ -100,9 +85,6 @@ class Configuration(ConfigParser.SafeConfigParser):
      '',
      "[%s]" % COLOR_SECTION] +
     ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()] +
-    ['',
-     "[%s]" % AMPLSEARCH_SECTION] +
-    ["%s = %s" % (k, v) for k, v in DEFAULT_AMPLSEARCH_OPTS.iteritems()] +
     ['',
      "[%s]" % CURVEDUMP_SECTION] +
     ["%s = %s" % (k, v) for k, v in DEFAULT_CURVEDUMP_OPTS.iteritems()])
@@ -128,18 +110,6 @@ class Configuration(ConfigParser.SafeConfigParser):
         """ Write to disk the configuration file """
         with open(self.path, 'wt') as fd:
             self.write(fd)
-
-    def amplint(self, option):
-        """ Coerce 'option' in the amplitudes search section to an integer """
-        return self.getint(AMPLSEARCH_SECTION, option)
-
-    def amplfloat(self, option):
-        """ Coerce 'option' in the amplitudes search section to a float """
-        return self.getfloat(AMPLSEARCH_SECTION, option)
-
-    def amplset(self, option, value):
-        """ Set 'option' to 'value' in the amplitudes search section """
-        self.set(AMPLSEARCH_SECTION, option, str(value))
 
     # SafeConfigParser is an old-style class (does not support properties)
     def get_minimum_snr(self):

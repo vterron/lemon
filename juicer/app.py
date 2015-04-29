@@ -32,10 +32,13 @@ import datetime
 import functools
 import operator
 import os.path
+import random
 import re
 import sys
 import time
+import warnings
 
+import matplotlib
 import matplotlib.figure
 from matplotlib.backends.backend_gtkagg \
      import FigureCanvasGTKAgg as FigureCanvas
@@ -54,7 +57,6 @@ import methods
 import mining
 import plot
 import snr
-import search
 import simbad
 import util
 from version import __version__
@@ -334,10 +336,30 @@ class StarDetailsGUI(object):
 
         else:
             self.set_canvas(True)
+
+            # The color to use for each photometric filter is defined in the
+            # [colors] section of the .juicer configuration file. However, the
+            # user may have added a custom filter (via the [custom_filters]
+            # section in .lemonrc) without necessarily specifying a color for
+            # it. When that happens, warn the user and pick a random color.
+
+            try:
+                color = self.config.color(curve.pfilter.letter)
+            except ConfigParser.NoOptionError:
+                cycle = matplotlib.rcParams['axes.color_cycle']
+                color = random.choice(cycle)
+                msg = ("cannot find a color specified for photometric filter "
+                       "'{0}', so we will use a random one instead: {1}. This "
+                       "probably means that it is a user-defined filter. If "
+                       "that is the case, you may want to add its color to "
+                       "the [colors] section of the configuration file.".
+                       format(curve.pfilter, color))
+                warnings.warn(msg)
+
             kwargs = dict(airmasses = airmasses,
                           julian = show_julian_dates,
                           delta = 3 * 3600,
-                          color = self.config.color(curve.pfilter.letter))
+                          color = color)
 
             plot.curve_plot(self.figure, curve, **kwargs)
             self.figure.canvas.draw()
@@ -437,32 +459,6 @@ class StarDetailsGUI(object):
         button = self._builder.get_object('radio-view-decimal')
         for index in self.dec_indexes:
             self.starinfo_store[index][-1] = button.get_active()
-
-    def handle_select_period_units(self, button):
-
-        def set_row(index):
-            """ Set the visibility of the index-th column of the GtkTreeView,
-            depending on whether the button is active or not"""
-            self.starinfo_store[index][-1] = button.get_active()
-
-        try:
-            if button.get_label() == 'Days':
-                for index in self.period_days_indexes:
-                    set_row(index)
-
-            elif button.get_label() == 'hh:mm:ss':
-                for index in self.period_hhmmss_indexes:
-                    set_row(index)
-
-            elif button.get_label() == 'Seconds':
-                for index in self.period_seconds_indexes:
-                    set_row(index)
-            else:
-                msg = "unknown button label"
-                raise ValueError(msg)
-
-        except AttributeError:
-            pass
 
     def airmasses_visible(self):
         """ Return the state (active or not) of the airmasses checkbox """
@@ -616,35 +612,16 @@ class StarDetailsGUI(object):
         store.append(('x-coordinate', '%.2f' % x, True))
         store.append(('y-coordinate', '%.2f' % y, True))
 
-        # Two rows (sexagesimal and decimal) are used for the coordinates, and
-        # three for each period (days, hh:mm:ss and seconds), but only one will
-        # be shown at a time. To hide some of the rows of a TreeView, we need
-        # to use a TreeModelFilter, which acts as a wrapper for the TreeModel,
-        # allowing you to choose which rows are displayed based on the value of
-        # a gobject.TYPE_BOOLEAN column, or based on the output of a certain
-        # function. [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
+        # Two rows (sexagesimal and decimal) are used for the coordinates, but
+        # only one will be shown at a given time. To hide some of the rows of a
+        # TreeView, we need to use a TreeModelFilter, which acts as a wrapper
+        # for the TreeModel, allowing us to choose which rows are displayed
+        # based on the value of a gobject.TYPE_BOOLEAN column, or based on the
+        # output of a certain function.
+        # [http://faq.pygtk.org/index.py?file=faq13.048.htp&req=show]
 
         self.sex_indexes = [0, 2]
         self.dec_indexes = [1, 3]
-        self.period_days_indexes = []
-        self.period_hhmmss_indexes = []
-        self.period_seconds_indexes = []
-
-        for pfilter in self.db.pfilters:
-            star_period = self.db.get_period(star_id, pfilter)
-            if star_period is not None:
-                period, step = star_period
-                name = 'Period %s' % pfilter.letter
-
-                store.append((name, "%.4f days" % (period / 3600 / 24), True))
-                hhmmss = str(datetime.timedelta(seconds = period))
-                store.append((name, "%s hours" % hhmmss, True))
-                store.append((name, "%d secs" % period, True))
-
-                length = len(store)
-                self.period_days_indexes.append(length - 3)
-                self.period_hhmmss_indexes.append(length - 2)
-                self.period_seconds_indexes.append(length - 1)
 
         # A row per filter with the standard deviation of the light curve;
         # these rows are inserted even for the photometric filters in which the
@@ -671,15 +648,6 @@ class StarDetailsGUI(object):
         self._builder.get_object('radio-view-decimal').connect(*args)
         self.handle_toggle_view_sexagesimal()
         self.handle_toggle_view_decimal()
-
-        # Hide all the period rows but one
-        buttons = [self._builder.get_object('radio-view-period-days'),
-                   self._builder.get_object('radio-view-period-hhmmss'),
-                   self._builder.get_object('radio-view-period-seconds')]
-        args = 'toggled', self.handle_select_period_units
-        for button in buttons:
-            button.connect(*args)
-            self.handle_select_period_units(button)
 
         self.shown = None  # pfilter currently shown
         self.id = star_id
@@ -929,9 +897,6 @@ class LEMONJuicerGUI(object):
         # location and any Matplotlib panning and zooming.
         self.finding_chart_dialog = None
 
-        self.amplitudes_search_button = builder.get_object('amplitudes-search-button')
-        self.amplitudes_search_menuitem = builder.get_object('amplitudes-search-item')
-
         # Create an accelerator group and add it to the toplevel window. These
         # accelerators will be always available (except when a modal dialog is
         # active, of course), since they are 'inherited' by the child windows.
@@ -986,26 +951,6 @@ class LEMONJuicerGUI(object):
 
         checkbox = builder.get_object('plot-julian-dates-checkbox')
         checkbox.set_active(get_view_booloption(config.PLOT_JULIAN))
-
-        # Activate one of the radio buttons (periods expressed in days,
-        # hh:mm:ss or seconds) depending on the integer value of the option
-        args = config.VIEW_SECTION, config.PERIODS_UNIT
-        periods_unit = self.config.getint(*args)
-        if periods_unit == config.PERIODS_DAYS:
-            name = 'radio-view-period-days'
-        elif periods_unit == config.PERIODS_HHMMSS:
-            name = 'radio-view-period-hhmmss'
-        elif periods_unit == config.PERIODS_SECONDS:
-            name = 'radio-view-period-seconds'
-        else:
-            msg = "invalid value for option '%s'" % periods_unit
-            raise ConfigParser.ParsingError(msg)
-        builder.get_object(name).set_active(True)
-
-        # The searches for stars by amplitudes (Find → Amplitudes-wavelength
-        # correlation) are numbered sequentially and in Roman numerals: i.e.,
-        # the first one is labeled with 'I', the second with 'II', etc.
-        self.nampl_searches = 0
 
         if db_path:
             self.open_db(db_path)
@@ -1131,8 +1076,6 @@ class LEMONJuicerGUI(object):
         self.close_menu_item.set_sensitive(npages_left)
         self.finding_chart_menuitem.set_sensitive(npages_left)
         self.finding_chart_button.set_sensitive(npages_left)
-        self.amplitudes_search_button.set_sensitive(npages_left)
-        self.amplitudes_search_menuitem.set_sensitive(npages_left)
 
     def handle_quit(self, obj):
         """ Close the application after removing all the pages of the notebook """
@@ -1196,59 +1139,6 @@ class LEMONJuicerGUI(object):
         except AttributeError:
             pass
 
-    def handle_select_period_units(self, button):
-
-        def set_column(index):
-            """ Set the visibility of the index-th column of the GtkTreeView,
-            depending on whether the button is active or not"""
-            self.view.get_column(index).set_visible(button.get_active())
-
-        try:
-            if button.get_label() == 'Days':
-                for index in self.period_days_indexes:
-                    set_column(index)
-
-            elif button.get_label() == 'hh:mm:ss':
-                for index in self.period_hhmmss_indexes:
-                    set_column(index)
-
-            elif button.get_label() == 'Seconds':
-                for index in self.period_seconds_indexes:
-                    set_column(index)
-            else:
-                msg = "unknown button label"
-                raise ValueError(msg)
-
-        except AttributeError:
-            pass
-
-    def save_periods_unit_radio_item(self, button):
-        """ Update the configuration file with the new value of the option
-         every time a radio item with the unit of the periods is selected"""
-
-        # This function gets called twice every time a new option is selected,
-        # as two different buttons are being toggled. We are only interesed in
-        # the one which has been activated, though.
-        if not button.get_active():
-            return
-
-        if button.get_label() == 'Days':
-            option = config.PERIODS_DAYS
-
-        elif button.get_label() == 'hh:mm:ss':
-            option = config.PERIODS_HHMMSS
-
-        elif button.get_label() == 'Seconds':
-            option = config.PERIODS_SECONDS
-
-        else:
-            msg = "unknown button label"
-            raise ValueError(msg)
-
-        # Update the configuration file with the new value of the option
-        args = config.VIEW_SECTION, config.PERIODS_UNIT, str(option)
-        self.config.set(*args)
-
     def handle_open(self, window):
         kwargs = dict(title = None,
                       action = gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -1257,16 +1147,11 @@ class LEMONJuicerGUI(object):
 
         with util.destroying(gtk.FileChooserDialog(**kwargs)) as dialog:
 
-            # By default, both LEMON databases (.LEMONdB extension) and JSON
-            # files (with a previous search for wavelength-amplitude correlated
-            # stars) are displayed by the gtk.FileChooserDialog. Two additional
-            # filters are added in case the user is interested in a specific
-            # type of file.
+            # Only LEMON databases (.LEMONdB extension) are displayed by the
+            # gtk.FileChooserDialog.
 
             db_extension = '.LEMONdB'
             db_pattern = '*' + db_extension
-            json_extension = '.json'
-            json_pattern = '*' + json_extension
 
             # Return the function that can be used to filter files with the
             # gtk.FileFilter.add_custom method. 'filter_info' is a 4-element
@@ -1277,22 +1162,10 @@ class LEMONJuicerGUI(object):
                     return filter_info[0].lower().endswith(extension.lower())
                 return func
             db_filter = ends_with(db_extension)
-            json_filter = ends_with(json_extension)
-
-            filt = gtk.FileFilter()
-            filt.set_name("All LEMON Files")
-            filt.add_custom(gtk.FILE_FILTER_FILENAME, db_filter)
-            filt.add_custom(gtk.FILE_FILTER_FILENAME, json_filter)
-            dialog.add_filter(filt)
 
             filt = gtk.FileFilter()
             filt.set_name("LEMON Database (%s)" % db_pattern)
             filt.add_custom(gtk.FILE_FILTER_FILENAME, db_filter)
-            dialog.add_filter(filt)
-
-            filt = gtk.FileFilter()
-            filt.set_name('LEMON JSON File (%s)' % json_pattern)
-            filt.add_custom(gtk.FILE_FILTER_FILENAME, json_filter)
             dialog.add_filter(filt)
 
             dialog.set_icon_from_file(self.LEMON_ICON)
@@ -1302,11 +1175,8 @@ class LEMONJuicerGUI(object):
                 path = dialog.get_filename()
                 dialog.destroy()
 
-                if path.lower().endswith(db_extension.lower()):
-                    self.open_db(path)
-                else:
-                    assert path.lower().endswith(json_extension.lower())
-                    self.open_amplitudes_json(path)
+                assert path.lower().endswith(db_extension.lower())
+                self.open_db(path)
 
     def open_db(self, path):
 
@@ -1337,12 +1207,6 @@ class LEMONJuicerGUI(object):
         overview = self._builder.get_object('database-overview')
         self.view = self._builder.get_object('table-view')
         self.view.connect('row-activated', self.handle_row_activated)
-
-        # Reset the counter of searches for stars by amplitudes: if we are
-        # working with a LEMONdB, have made four searches and open another
-        # LEMONdB, we do not want the next search to be considered the
-        # fifth — it is the *first* search for this database.
-        self.nampl_searches = 0
 
         # Display a dialog with a progress bar which is updated as all the
         # stars are loaded into memory, as this may take a while. A 'Cancel'
@@ -1380,25 +1244,6 @@ class LEMONJuicerGUI(object):
             self.dec_sex_index = star_attrs.index('δ')
             self.dec_dec_index = self.dec_sex_index + 1
 
-            # Three columns are used for each period, to show it in days (a
-            # real number), hh:mm:ss (str) or seconds (int). Periods will be
-            # sorted always by their value in seconds. We need to keep an
-            # internal list with the indexes of each type of column, to make
-            # them visible or not depending on the option selected at View -
-            # Periods.
-
-            self.period_days_indexes = []
-            self.period_hhmmss_indexes = []
-            self.period_seconds_indexes = []
-
-            for pfilter in db_pfilters:
-                label = "Period %s" % pfilter.letter
-                star_attrs += [label] * 3
-                length = len(star_attrs)
-                self.period_days_indexes.append(length - 3)
-                self.period_hhmmss_indexes.append(length - 2)
-                self.period_seconds_indexes.append(length - 1)
-
             # Two additional columns for each photometric filter, with (a) the
             # standard deviation of the points of each light curve and (b) a
             # boolean value indicating whether (a) must be shown. The latter
@@ -1419,7 +1264,6 @@ class LEMONJuicerGUI(object):
                 self.stdevs_visibility_indexes.append(length - 1)
 
             args = [int, str, float, str, float, float]
-            args += [float, str, int] * len(db.pfilters)
             args += [float, bool] * len(db.pfilters)
             self.store = gtk.ListStore(*args)
 
@@ -1435,25 +1279,6 @@ class LEMONJuicerGUI(object):
                     sort_index = self.ra_dec_index
                 elif index == self.dec_sex_index:
                     sort_index = self.dec_dec_index
-
-                # Periods are in the following order: days, hh:mm:ss, seconds.
-                # We want to sort hh:mm:ss periods not lexicographically, but
-                # by the value of the third column, which stores seconds.
-
-                # The first of these columns also be sorted by the period in
-                # days (a real number) but then, when setting the 'visible'
-                # attribute below, we would get the "unable to set property
-                # `visible' of type `gboolean' from value of type `gdouble'"
-                # error. To avoid this, we sort all periods and determine their
-                # visibility using the columns which contain them in seconds.
-                elif index in self.period_days_indexes:
-                    kwargs['visible'] = sort_index = index + 2
-
-                elif index in self.period_hhmmss_indexes:
-                    kwargs['visible'] = sort_index = index + 1
-
-                elif index in self.period_seconds_indexes:
-                    kwargs['visible'] = sort_index = index
 
                 # The cells with standard deviations are only displayed if the
                 # value in the adjacent column, which stores whether the light
@@ -1486,19 +1311,6 @@ class LEMONJuicerGUI(object):
                 ra_str  = methods.ra_str(ra)
                 dec_str = methods.dec_str(dec)
                 row = [star_id, ra_str, ra, dec_str, dec, imag]
-
-                for pfilter in db_pfilters:
-                    # Returns a two-element tuple, with the period of the star,
-                    # in seconds, and the step that the string-length method
-                    # used. In case the period is unknown, None is returned.
-                    star_period = db.get_period(star_id, pfilter)
-                    if star_period is None:
-                        row += [UNKNOWN_VALUE, str(UNKNOWN_VALUE), UNKNOWN_VALUE]
-                    else:
-                        period, step = star_period
-                        row.append(period / 3600 / 24) # days
-                        row.append(str(datetime.timedelta(seconds = period)))
-                        row.append(period) # seconds
 
                 for pfilter in db_pfilters:
                     # None returned if the star doesn't have this light curve
@@ -1537,13 +1349,6 @@ class LEMONJuicerGUI(object):
                 self.handle_toggle_view_sexagesimal()
                 self.handle_toggle_view_decimal()
 
-                # Hide all the period columns but one
-                buttons = [self._builder.get_object('radio-view-period-days'),
-                           self._builder.get_object('radio-view-period-hhmmss'),
-                           self._builder.get_object('radio-view-period-seconds')]
-                for button in buttons:
-                    self.handle_select_period_units(button)
-
                 self.view.set_model(self.store)
 
                 # Although an extremely rare case, LEMONdB.field_name will be
@@ -1565,8 +1370,6 @@ class LEMONJuicerGUI(object):
                 self.close_menu_item.set_sensitive(True)
                 self.finding_chart_menuitem.set_sensitive(True)
                 self.finding_chart_button.set_sensitive(True)
-                self.amplitudes_search_button.set_sensitive(True)
-                self.amplitudes_search_menuitem.set_sensitive(True)
 
         except Exception, err:
             path = os.path.basename(path)
@@ -1666,36 +1469,6 @@ class LEMONJuicerGUI(object):
         star_id = view.get_model()[row][id_index]
         self.view_star(star_id, view)
 
-    def append_amplitudes_search(self, result, connect):
-        """ Append an AmplitudesSearchPage to the gtk.Notebook.
-
-        Append the gtk.ScrolledWindow (with the result of the search) of an
-        AmplitudesSearchPage object to the gtk.Notebook. The 'row-activated'
-        signal is connected to the LEMONJuicerGUI.handle_row_activated method
-        depending on the truth value of 'connect'.
-
-        """
-
-        if connect:
-            view = result.view # gtk.GtkTreeView
-            view.connect('row-activated', self.handle_row_activated)
-
-        self.nampl_searches += 1
-        label = gtk.Label(result.get_label(self.nampl_searches))
-        window = result.get_window()
-        self._notebook.append_page(window, label)
-        self._notebook.set_tab_reorderable(window, False)
-        self._notebook.set_current_page(-1)
-
-    def search_by_amplitudes(self, window):
-        """ Identify stars with amplitudes correlated to the wavelength. These
-        are listed in a gtk.ScrolledWindow which is appended to the notebook"""
-
-        args = self._main_window, self._builder, self.db.path, self.config
-        result = search.amplitudes_search(*args)
-        if result is not None:
-            self.append_amplitudes_search(result, True)
-
     def change_snr_threshold(self, widget):
         """ Select a new SNR threshold and update all the plots with it """
 
@@ -1721,67 +1494,6 @@ class LEMONJuicerGUI(object):
             assert julian_column.get_title() == 'JD'
             visible = widget.get_active()
             julian_column.set_visible(visible)
-
-    def open_amplitudes_json(self, path):
-        """ Parse a JSON file and deserialize an AmplitudesSearchPage object.
-
-        The gtk.ScrolledWindow returned by the AmplitudesSearchPage instance is
-        appended to the gtk.Notebook so that the stars found in the serialized
-        search are presented to the user exactly as other search results. The
-        only difference is that the 'row-activated' signal is ignored if the
-        JSON file has been opened before the LEMONdB: without access to the
-        database we cannot show the details of any star.
-
-        """
-
-        try:
-            result = search.AmplitudesSearchPage.load(path)
-        except Exception, err:
-            title = "Error while loading JSON file"
-            msg = "File '%s' could not be loaded. Please make sure that you " \
-            "are opening a JSON file created by LEMON through 'Save As'. " \
-            "The error was: \n\n%s" % (path, str(err))
-            util.show_error_dialog(self._main_window, title, msg)
-            return
-
-        # The search results stored in the JSON file must refer to the current
-        # LEMONdB, if any. This can be verified as the 'database_id' attribute
-        # of the root element must equal the value of the LEMONdB.id property,
-        # as the latter is written to the JSON file when results are serialized.
-
-        if self.db is not None:
-            ids = result.id, self.db.id
-            if operator.ne(*ids):
-                title = "JSON file does not match LEMONdB"
-                msg = "The LEMONdB to which the search results in this JSON " \
-                "file correspond (ID = %s) is different from the one " \
-                "currently open (ID = %s). The file, therefore, cannot be " \
-                "be loaded, as it refers to a different LEMONdB." % ids
-                args = self._main_window, title, msg
-                kwargs = dict(buttons = gtk.BUTTONS_CLOSE)
-                util.show_error_dialog(*args, **kwargs)
-                return
-
-        connect_double_click = self.db is not None
-        self.append_amplitudes_search(result, connect_double_click)
-
-        # Make sure that the 'Close' button and menu item are sensitive (they
-        # will be disabled if the JSON file is opened before the LEMONdB, but
-        # we need a way to close the page when we are done with it).
-        self.close_button.set_sensitive(True)
-        self.close_menu_item.set_sensitive(True)
-
-        # If no LEMONdB is open, double-clicking on a row will have no effect
-        if self.db is None:
-            title = "Double-click has been disabled"
-            msg = "Please note that double-clicking on a star will not open " \
-            "a page with its information: as the JSON file has been opened " \
-            "before the LEMON database, no other information than what is " \
-            "presented here is available."
-            args = self._main_window, title, msg
-            kwargs = dict(msg_type = gtk.MESSAGE_WARNING,
-                          buttons = gtk.BUTTONS_CLOSE)
-            util.show_message_dialog(*args, **kwargs)
 
     def handle_finding_chart(self, widget, set_visibility = None):
         """ Display the reference frame in a new dialog.

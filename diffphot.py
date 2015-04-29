@@ -849,7 +849,7 @@ parser.add_option_group(broeg_group)
 
 best_group = optparse.OptionGroup(parser, "Worst and Best Stars", "")
 best_group.add_option('--worst-fraction', action = 'store', type = 'float',
-                      dest = 'worst_fraction', default = 0.75,
+                      dest = 'worst_fraction', default = 0.10,
                       help = "the fraction of the stars that will be "
                       "discarded at each step when identifying which are the "
                       "most constant stars. The lower this value, the most "
@@ -898,7 +898,7 @@ def main(arguments = None):
         output_db_path = args[1]
 
     if options.min_cstars > options.ncstars:
-        print "%sError. The value of --min-stars must be <= --stars." % style.prefix
+        print "%sError. The value of --minimum-stars must be <= --stars." % style.prefix
         print style.error_exit_message
         return 1
 

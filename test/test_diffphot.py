@@ -373,7 +373,7 @@ class StarSetTest(unittest.TestCase):
             dstar = self.rDBStars(size = len(stars),
                                   nrecords = len(stars[0]),
                                   pfilter = stars[0].pfilter)[0]
-            if set(dstar._unix_times) != (stars[0]._unix_times):
+            if set(dstar._unix_times) != set(stars[0]._unix_times):
                 stars.append(dstar)
                 break
 

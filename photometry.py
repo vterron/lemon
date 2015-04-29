@@ -926,10 +926,14 @@ def main(arguments = None):
         ipercentage = sources_img.ignored / sources_img.total * 100
         rpercentage = len(sources_img) / sources_img.total * 100
 
-        msg = "%s%d detections (%.2f %%) within %d pixels of the edge were removed."
-        print msg % (style.prefix, sources_img.ignored, ipercentage, options.margin)
-        msg = "%sThere remain %d sources (%.2f %%) on which to do photometry."
-        print msg % (style.prefix, len(sources_img), rpercentage)
+        if sources_img.ignored:
+            msg = "%s%d detections (%.2f %%) within %d pixels of the edge were removed."
+            print msg % (style.prefix, sources_img.ignored, ipercentage, options.margin)
+            msg = "%sThere remain %d sources (%.2f %%) on which to do photometry."
+            print msg % (style.prefix, len(sources_img), rpercentage)
+        else:
+            msg = "%sDetected %d sources on which to do photometry."
+            print msg % (style.prefix, len(sources_img))
 
     # Use 'options.coordinates' as the name of the list of Coordinates objects,
     # independently of whether the --coordinates option has been used or not.
