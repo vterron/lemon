@@ -41,6 +41,7 @@ detection step and working exclusively with the specified objects.
 
 """
 
+import atexit
 import collections
 import hashlib
 import itertools
@@ -51,8 +52,10 @@ import optparse
 import os
 import os.path
 import pwd
+import shutil
 import socket
 import sys
+import tempfile
 import time
 import warnings
 
@@ -863,16 +866,26 @@ def main(arguments = None):
     print "%sRunning SExtractor on the sources image..." % style.prefix ,
     sys.stdout.flush()
 
+    # Work on a temporary copy of the input image, in order not to modify it.
+    basename = os.path.basename(sources_img_path)
+    root, extension = os.path.splitext(basename)
+    kwargs = dict(prefix = '{0}_'.format(root),
+                  suffix = extension)
+    tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
+    os.close(tmp_fd)
+    shutil.copy2(sources_img_path, tmp_sources_img_path)
+    atexit.register(methods.clean_tmp_files, tmp_sources_img_path)
+
     # Remove from the FITS header the path to the on-disk catalog, if present,
     # thus forcing SExtractor to detect sources on the image. This is necessary
     # because, if SExtractor (via the seeing.FITSeeingImage class) were run on
     # the image before it was calibrated astrometrically, the on-disk catalog
     # would only contain the X and Y image coordinates of the astronomical
     # objects, using zero for both their right ascensions and declinations.
-    img = fitsimage.FITSImage(sources_img_path)
+    img = fitsimage.FITSImage(tmp_sources_img_path)
     img.delete_keyword(keywords.sex_catalog)
 
-    args = (sources_img_path, options.maximum, options.margin)
+    args = (tmp_sources_img_path, options.maximum, options.margin)
     kwargs = dict(coaddk = options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
