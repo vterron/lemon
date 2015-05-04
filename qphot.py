@@ -522,12 +522,15 @@ def run(img, coordinates, epoch,
             the format specified in the FITS Standard. The old date format was
             'yy/mm/dd' and may be used only for dates from 1900 through 1999.
             The new Y2K compliant date format is 'yyyy-mm-dd' or
-            'yyyy-mm-ddTHH:MM:SS[.sss]'.
+            'yyyy-mm-ddTHH:MM:SS[.sss]'. This keyword is not necessary if none
+            of the astromatic.Coordinates objects have a known proper motion.
+            When that is the case, it is not even read from the FITS header.
     timek - the image header keyword containing the time at which the
             observation started, in the format HH:MM:SS[.sss]. This keyword is
             not necessary (and, therefore, is ignored) if the time is included
             directly as part of the 'datek' keyword value with the format
-            'yyyy-mm-ddTHH:MM:SS[.sss]'.
+            'yyyy-mm-ddTHH:MM:SS[.sss]'. As with 'datek', if no object has a
+            proper motion this keyword is ignored and not read from the header.
     exptimek - the image header keyword containing the exposure time. Needed
                by qphot in order to normalize the computed magnitudes to an
                exposure time of one time unit.
