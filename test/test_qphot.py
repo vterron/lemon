@@ -169,6 +169,27 @@ class QPhotTest(unittest.TestCase):
             for phot, expected_phot in zip(result, ngc2264_expected_output):
                 self.assertEqual(phot, expected_phot)
 
+        # When none of the coordinates have a known proper motion, KeyError is
+        # *not* raised if 'datek' / 'timek' cannot be found in the FITS header:
+        # since there are no proper motions to correct, qphot.run() does not
+        # even bother reading the keywords from the header.
+
+        kwargs = self.QPHOT_KWARGS.copy()
+        kwargs['datek'] = 'MISSING-KWD'
+        kwargs['timek'] = 'MISSING-KWD'
+
+        path = fix_DSS_image(ngc2264_path)
+        with test.test_fitsimage.FITSImage(path) as img:
+
+            # Make sure that both keywords are missing from the FITS header
+            with self.assertRaises(KeyError):
+                img.read_keyword(kwargs['datek'])
+            with self.assertRaises(KeyError):
+                img.read_keyword(kwargs['timek'])
+
+            # No exception raised, although both keywords are missing
+            qphot.run(img, ngc2264_input_coords, **kwargs)
+
     def test_qphot_run_proper_motions(self):
 
         # Do photometry on Barnard's Star, the star with the largest-known
