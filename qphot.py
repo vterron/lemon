@@ -37,6 +37,7 @@ import logging
 import math
 import os
 import os.path
+import re
 import sys
 import tempfile
 import warnings
@@ -543,7 +544,41 @@ def run(img, coordinates, epoch,
     kwargs = dict(date_keyword = datek,
                   time_keyword = timek,
                   exp_keyword = exptimek)
-    year = img.year(**kwargs)
+
+    # The date of observation is only actually needed when we need to apply
+    # proper motion corrections. Therefore, don't call FITSImage.year() unless
+    # one or more of the astromatic.Coordinates objects have a proper motion.
+    # This avoids an unnecessary KeyError exception when we do photometry on a
+    # FITS image without the 'datek' or 'timek' keywords (for example, a mosaic
+    # created with IPAC's Montage): when that happens we cannot apply proper
+    # motion corrections, that's right, but that's not an issue if none of our
+    # objects have a known proper motion.
+
+    for coord in coordinates:
+
+        if coord.pm_ra or coord.pm_dec:
+            try:
+                year = img.year(**kwargs)
+                break
+
+            except KeyError as e:
+                # Include the missing FITS keyword in the exception message
+                regexp = "keyword '(?P<keyword>.*?)' not found"
+                match = re.search(regexp, str(e))
+                assert match is not None
+                msg = ("{0}: keyword '{1}' not found. It is needed in order "
+                       "to be able to apply proper-motion correction, as one "
+                       "or more astronomical objects have known proper motions"
+                       .format(img.path, match.group('keyword')))
+                raise KeyError(msg)
+
+        else:
+            # No object has a known proper motion, so don't call
+            # FITSImage.year().  Use the same value as the epoch, so that when
+            # get_coords_file() below applies the proper motion correction the
+            # input and output coordinates are the same.
+            year = epoch
+
     # The proper-motion corrected objects coordinates
     coords_path = get_coords_file(coordinates, year, epoch)
 
