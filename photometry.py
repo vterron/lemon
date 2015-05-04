@@ -885,7 +885,12 @@ def main(arguments = None):
     img = fitsimage.FITSImage(tmp_sources_img_path)
     img.delete_keyword(keywords.sex_catalog)
 
-    args = (tmp_sources_img_path, options.maximum, options.margin)
+    # Do not use options.maximum as the saturation level in the call to
+    # FITSeeingImage.__init__(): even if we use a rather large value, this may
+    # result in some stars being marked as saturated if enough FITS images are
+    # combined with Montage.
+
+    args = (tmp_sources_img_path, sys.maxint, options.margin)
     kwargs = dict(coaddk = options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
