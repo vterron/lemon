@@ -904,7 +904,7 @@ class LightCurveTest(unittest.TestCase):
             cls.assertAlmostEqual(point1[2], point2[2])
 
         for weight1, weight2 in zip(sorted(first.weights()),
-                                    sorted(first.weights())):
+                                    sorted(second.weights())):
             # Three-element tuples: ID, weight and standard deviation
             cls.assertEqual(weight1[0], weight2[0])
             cls.assertAlmostEqual(weight1[1], weight2[1])
