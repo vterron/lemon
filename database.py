@@ -1528,7 +1528,12 @@ class LEMONdB(object):
         """
 
         self._execute("SELECT object FROM images")
-        object_names = [x[0] for x in self._rows]
+        object_names = (x[0] for x in self._rows)
+
+        # The OBJECT (or equivalent) keyword is required for all the FITS
+        # images on which we do photometry, but it may not be present in
+        # the sources image (for example, if we use a Montage mosaic).
+        object_names = [name for name in object_names if name is not None]
 
         if not object_names:
             msg = "database contains no images"
