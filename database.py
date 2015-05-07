@@ -1265,7 +1265,7 @@ class LEMONdB(object):
             # Error binding parameter - probably unsupported type"
             cweight = float(cweight)
             cstdev  = float(cstdev)
-            t = (None, star_id, hash(pfilter), cstar_id, cweight, cstdev)
+            t = (None, star_id, hash(pfilter), cstar_id, cstdev, cweight)
             self._execute("INSERT INTO cmp_stars "
                           "VALUES (?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
