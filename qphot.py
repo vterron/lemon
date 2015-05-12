@@ -543,6 +543,13 @@ def run(img, coordinates, epoch,
               level) of the very image on which photometry is done. If this
               argument is set to an empty string or None, saturation is checked
               for on the same FITS image used for photometry, 'img'.
+    cbox - the width of the centering box, in pixels. Accurate centers for each
+           astronomical object are computed using the centroid centering
+           algorithm. This means that, unless this argument is zero (the
+           default value), photometry is not done exactly on the specified
+           coordinates, but instead where IRAF has determined that the actual,
+           accurate center of each object is. This is usually a good thing, and
+           helps improve the photometry.
 
     """
 
