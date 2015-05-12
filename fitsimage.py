@@ -628,6 +628,7 @@ class FITSImage(object):
         """ Returns the x, y coordinates of the central pixel of the image. """
         return list(int(round(x / 2)) for x in self.size)
 
+    @methods.memoize
     def _get_wcs(self):
         """ Return the astropy.wcs.WCS object for the header of this image. """
 
