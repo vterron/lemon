@@ -492,7 +492,8 @@ def get_coords_file(coordinates, year, epoch):
 
 def run(img, coordinates, epoch,
         aperture, annulus, dannulus, maximum,
-        datek, timek, exptimek, uncimgk):
+        datek, timek, exptimek, uncimgk,
+        cbox = 0):
     """ Do photometry on a FITS image.
 
     This convenience function does photometry on a FITSImage object, applying
@@ -587,7 +588,7 @@ def run(img, coordinates, epoch,
     coords_path = get_coords_file(coordinates, year, epoch)
 
     img_qphot = QPhot(img.path, coords_path)
-    img_qphot.run(annulus, dannulus, aperture, exptimek)
+    img_qphot.run(annulus, dannulus, aperture, exptimek, cbox=cbox)
 
     # How do we know whether one or more pixels in the aperture are above a
     # saturation threshold? As suggested by Frank Valdes at the IRAF.net
@@ -640,14 +641,52 @@ def run(img, coordinates, epoch,
         # Now we just do photometry again, on the same pixels, but this time on
         # the saturation mask. Those objects for which we get a non-zero flux
         # will be known to be saturated and their magnitude set to infinity.
+
+        # If 'cbox' is other than zero, the center of each object may have been
+        # recentered by qphot using the centroid centering algorithm. When that
+        # is the case, we need to feed run() with these more accurate centers.
+        # Since the QPhotResult objects contain x- and y-coordinates (qphot
+        # does not support 'world' coordinates as the output system), we need
+        # to convert them back to right ascension and declination.
+
+        if cbox:
+
+            root, _ = os.path.splitext(os.path.basename(img.path))
+            kwargs = dict(prefix = root + '_',
+                          suffix = '_satur.coords',
+                          text = True)
+
+            os.unlink(coords_path)
+            fd, coords_path = tempfile.mkstemp(**kwargs)
+            for object_phot in img_qphot:
+                centered_x, centered_y = object_phot.x, object_phot.y
+                ra, dec = img.pix2world(centered_x, centered_y)
+                os.write(fd, "{0} {1}\n".format(ra, dec))
+            os.close(fd)
+
         mask_qphot = QPhot(satur_mask_path, coords_path)
-        mask_qphot.run(annulus, dannulus, aperture, exptimek)
+        # No centering this time: if cbox != 0 the accurate centers for each
+        # astronomical object have been computed using the centroid centering
+        # algorithm, so we're already feeding run() with the accurate values.
+        mask_qphot.run(annulus, dannulus, aperture, exptimek, cbox=0)
         os.unlink(coords_path)
 
         assert len(img_qphot) == len(mask_qphot)
         for object_phot, object_mask in itertools.izip(img_qphot, mask_qphot):
-            assert object_phot.x == object_mask.x
-            assert object_phot.y == object_mask.y
+
+            if __debug__:
+
+                # In cbox != 0 we cannot expect the coordinates to be the exact
+                # same: the previous call to run() returned x and y coordinates
+                # that we converted to celestial coordinates, and now qphot is
+                # giving as output image coordinates again. It is unavoidable
+                # to lose some precision. Anyway, this does not affect the
+                # result: photometry was still done on almost the absolute
+                # exact coordinates that we wanted it to.
+
+                if not cbox:
+                    assert object_phot.x == object_mask.x
+                    assert object_phot.y == object_mask.y
 
             if object_mask.flux > 0:
                 object_phot = object_phot._replace(mag = float('infinity'))
