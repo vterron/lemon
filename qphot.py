@@ -223,7 +223,7 @@ class QPhot(list):
         """ Remove all the photometric measurements. """
         del self[:]
 
-    def run(self, annulus, dannulus, aperture, exptimek):
+    def run(self, annulus, dannulus, aperture, exptimek, cbox = 0):
         """ Run IRAF's qphot on the FITS image.
 
         This method is a wrapper, equivalent to (1) running 'qphot' on a FITS
@@ -317,14 +317,8 @@ class QPhot(list):
             args = sys.stderr, regexp, MissingFITSKeyword
             stderr = methods.StreamToWarningFilter(*args)
 
-            # Run qphot on the image and save the output to our temporary
-            # file. Note that cbox *must* be set to zero, as otherwise qphot
-            # will compute accurate centers for each object using the centroid
-            # centering algorithm. This is generally a good thing, but in our
-            # case we want the photometry to be done exactly on the specified
-            # coordinates.
-
-            kwargs = dict(cbox = 0, annulus = annulus, dannulus = dannulus,
+            # Run qphot on the image and save the output to our temporary file.
+            kwargs = dict(cbox = cbox, annulus = annulus, dannulus = dannulus,
                           aperture = aperture, coords = self.coords_path,
                           output = qphot_output, exposure = exptimek,
                           wcsin = 'world', interactive = 'no',
