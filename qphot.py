@@ -287,6 +287,13 @@ class QPhot(list):
                    warning is issued and the default value of '' used instead.
                    Although non-fatal, this means that magnitudes will not be
                    normalized, which probably is not what you want.
+        cbox - the width of the centering box, in pixels. Accurate centers for
+               each astronomical object are computed using the centroid
+               centering algorithm. This means that, unless this argument is
+               zero (the default value), photometry is not done exactly on the
+               specified coordinates, but instead where IRAF has determined
+               that the actual, accurate center of each object is. This is
+               usually a good thing, and helps improve the photometry.
 
         """
 
