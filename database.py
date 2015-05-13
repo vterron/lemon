@@ -1265,7 +1265,7 @@ class LEMONdB(object):
             # Error binding parameter - probably unsupported type"
             cweight = float(cweight)
             cstdev  = float(cstdev)
-            t = (None, star_id, hash(pfilter), cstar_id, cweight, cstdev)
+            t = (None, star_id, hash(pfilter), cstar_id, cstdev, cweight)
             self._execute("INSERT INTO cmp_stars "
                           "VALUES (?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
@@ -1528,7 +1528,12 @@ class LEMONdB(object):
         """
 
         self._execute("SELECT object FROM images")
-        object_names = [x[0] for x in self._rows]
+        object_names = (x[0] for x in self._rows)
+
+        # The OBJECT (or equivalent) keyword is required for all the FITS
+        # images on which we do photometry, but it may not be present in
+        # the sources image (for example, if we use a Montage mosaic).
+        object_names = [name for name in object_names if name is not None]
 
         if not object_names:
             msg = "database contains no images"

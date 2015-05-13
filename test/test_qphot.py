@@ -169,6 +169,58 @@ class QPhotTest(unittest.TestCase):
             for phot, expected_phot in zip(result, ngc2264_expected_output):
                 self.assertEqual(phot, expected_phot)
 
+        # When none of the coordinates have a known proper motion, KeyError is
+        # *not* raised if 'datek' / 'timek' cannot be found in the FITS header:
+        # since there are no proper motions to correct, qphot.run() does not
+        # even bother reading the keywords from the header.
+
+        kwargs = self.QPHOT_KWARGS.copy()
+        kwargs['datek'] = 'MISSING-KWD'
+        kwargs['timek'] = 'MISSING-KWD'
+
+        path = fix_DSS_image(ngc2264_path)
+        with test.test_fitsimage.FITSImage(path) as img:
+
+            # Make sure that both keywords are missing from the FITS header
+            with self.assertRaises(KeyError):
+                img.read_keyword(kwargs['datek'])
+            with self.assertRaises(KeyError):
+                img.read_keyword(kwargs['timek'])
+
+            # No exception raised, although both keywords are missing
+            qphot.run(img, ngc2264_input_coords, **kwargs)
+
+    def test_qphot_run_nonzero_cbox(self):
+
+        # A call to run() with a 'cbox' other than zero. Although the four
+        # input coordinates are the same as in the previous test case, the
+        # output image coordinates are slightly different, as qphot has
+        # computed the accurate center for each object using the centroid
+        # centering algorithm.
+
+        ngc2264_path = './test/test_data/fits/NGC_2264.fits'
+        ngc2264_input_coords = (
+            astromatic.Coordinates(100.1191901, 9.8177770),
+            astromatic.Coordinates(100.1543316, 9.7909363),
+            astromatic.Coordinates(100.1597762, 9.7878795),
+            astromatic.Coordinates(100.1598790, 9.9627296))
+
+        ngc2264_expected_output = (
+            #                 x        y        mag     sum      flux     stdev
+            qphot.QPhotResult(877.992, 171.373, 17.627, 6248653, 3737111, 484.8067),
+            qphot.QPhotResult(752.713, 76.071,  17.904, 5820262, 2894284, 548.6724),
+            qphot.QPhotResult(735.552, 65.18,   17.785, 6019633, 3231141, 575.0005),
+            qphot.QPhotResult(734.0,   689.025, 17.639, 6075931, 3694561, 567.6364))
+
+        kwargs = self.QPHOT_KWARGS.copy()
+        kwargs['cbox'] = 5
+
+        path = fix_DSS_image(ngc2264_path)
+        with test.test_fitsimage.FITSImage(path) as img:
+            result = qphot.run(img, ngc2264_input_coords, **kwargs)
+            for phot, expected_phot in zip(result, ngc2264_expected_output):
+                self.assertEqual(phot, expected_phot)
+
     def test_qphot_run_proper_motions(self):
 
         # Do photometry on Barnard's Star, the star with the largest-known

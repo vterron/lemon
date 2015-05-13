@@ -41,6 +41,7 @@ detection step and working exclusively with the specified objects.
 
 """
 
+import atexit
 import collections
 import hashlib
 import itertools
@@ -51,8 +52,10 @@ import optparse
 import os
 import os.path
 import pwd
+import shutil
 import socket
 import sys
+import tempfile
 import time
 import warnings
 
@@ -176,7 +179,7 @@ def parallel_photometry(args):
     args = (image, options.coordinates, options.epoch,
             pparams.aperture, pparams.annulus, pparams.dannulus, maximum,
             options.datek, options.timek, options.exptimek, options.uncimgk)
-    img_qphot = qphot.run(*args)
+    img_qphot = qphot.run(*args, cbox=options.cbox)
     logging.info("Finished running qphot on %s" % image.path)
 
     msg = "%s: qphot.run() returned %d records"
@@ -240,6 +243,20 @@ parser.add_option('--exclude', action = 'append', type = 'passband',
                   "filter. This option is the opposite of --filter, and may "
                   "be as well used multiple times in order to specify more "
                   "than one photometric filter that must be discarded.")
+
+parser.add_option('--cbox', action = 'store', type = 'float',
+                  dest = 'cbox', default = 5,
+                  help = "the width, in pixels, of the centering box to "
+                  "search for the accurate center of the astronomical object "
+                  "around the input coordinates. Distortions introduced in "
+                  "the FoV by the optics, limitations in the precision of the "
+                  "astrometry or proper movements of objects can contribute "
+                  "to an apparent movement of the center of the object. In "
+                  "these cases, leaving a few pixels' margin to search for "
+                  "the center of the star improves the photometry. If you "
+                  "absolutely trust the celestial coordinates of each object "
+                  "and want photometry to be done without any centering, you "
+                  "may set this option to zero [default: %default]")
 
 parser.add_option('--maximum', action = 'store', type = 'int',
                   dest = 'maximum', default = defaults.maximum,
@@ -863,16 +880,31 @@ def main(arguments = None):
     print "%sRunning SExtractor on the sources image..." % style.prefix ,
     sys.stdout.flush()
 
+    # Work on a temporary copy of the input image, in order not to modify it.
+    basename = os.path.basename(sources_img_path)
+    root, extension = os.path.splitext(basename)
+    kwargs = dict(prefix = '{0}_'.format(root),
+                  suffix = extension)
+    tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
+    os.close(tmp_fd)
+    shutil.copy2(sources_img_path, tmp_sources_img_path)
+    atexit.register(methods.clean_tmp_files, tmp_sources_img_path)
+
     # Remove from the FITS header the path to the on-disk catalog, if present,
     # thus forcing SExtractor to detect sources on the image. This is necessary
     # because, if SExtractor (via the seeing.FITSeeingImage class) were run on
     # the image before it was calibrated astrometrically, the on-disk catalog
     # would only contain the X and Y image coordinates of the astronomical
     # objects, using zero for both their right ascensions and declinations.
-    img = fitsimage.FITSImage(sources_img_path)
+    img = fitsimage.FITSImage(tmp_sources_img_path)
     img.delete_keyword(keywords.sex_catalog)
 
-    args = (sources_img_path, options.maximum, options.margin)
+    # Do not use options.maximum as the saturation level in the call to
+    # FITSeeingImage.__init__(): even if we use a rather large value, this may
+    # result in some stars being marked as saturated if enough FITS images are
+    # combined with Montage.
+
+    args = (tmp_sources_img_path, sys.maxint, options.margin)
     kwargs = dict(coaddk = options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
     print 'done.'
@@ -1021,7 +1053,7 @@ def main(arguments = None):
     with warnings.catch_warnings():
         kwargs = dict(category = qphot.MissingFITSKeyword)
         warnings.filterwarnings('ignore', **kwargs)
-        sources_phot = qphot.run(*qphot_args)
+        sources_phot = qphot.run(*qphot_args, cbox=options.cbox)
 
     print 'done.'
 
@@ -1094,7 +1126,7 @@ def main(arguments = None):
         with warnings.catch_warnings():
             kwargs = dict(category = qphot.MissingFITSKeyword)
             warnings.filterwarnings('ignore', **kwargs)
-            non_INDEF_phot = qphot.run(*qphot_args)
+            non_INDEF_phot = qphot.run(*qphot_args, cbox=options.cbox)
 
         assert sources_phot == non_INDEF_phot
         print 'done.'

@@ -628,6 +628,7 @@ class FITSImage(object):
         """ Returns the x, y coordinates of the central pixel of the image. """
         return list(int(round(x / 2)) for x in self.size)
 
+    @methods.memoize
     def _get_wcs(self):
         """ Return the astropy.wcs.WCS object for the header of this image. """
 
@@ -642,6 +643,40 @@ class FITSImage(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             return astropy.wcs.WCS(header)
+
+    def pix2world(self, x, y):
+        """ Transform pixel coordinates to world coordinates.
+
+        Return a two-element tuple with the right ascension and declination to
+        which the specified x- and y-coordinates correspond in the FITS image.
+        Raises NoWCSInformationError if the header of the FITS image does not
+        contain an astrometric solution -- i.e., if the astropy.wcs.WCS class
+        is unable to recognize it as such. This is something that should very
+        rarely happen, and almost positively caused by non-standard systems or
+        FITS keywords.
+
+        """
+
+        coords = (x, y)
+        wcs = self._get_wcs()
+        pixcrd = numpy.array([coords])
+        ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
+
+        # We could use astropy.wcs.WCS.has_celestial for this, but as of today
+        # [Tue Jan 20 2015] it is only available in the development version of
+        # Astropy. Therefore, do a simple (but in theory enough) check: if the
+        # header does not contain an astrometric solution, WCS.all_pix2world()
+        # will not be able to transform the pixel coordinates, and therefore
+        # will return the same coordinates as the FITSImage.center attribute.
+
+        if (ra, dec) == coords:
+            msg = ("{0}: the header of the FITS image does not seem to "
+                   "contain WCS information. You may want to make sure that "
+                   "the image has been solved astrometrically, for example "
+                   "with the 'astrometry' LEMON command.".format(self.path))
+            raise NoWCSInformationError(msg)
+
+        return ra, dec
 
     def center_wcs(self):
         """ Return the world coordinates of the central pixel of the image.
@@ -665,25 +700,7 @@ class FITSImage(object):
         """
 
         center = tuple(self.center)
-        wcs = self._get_wcs()
-        pixcrd = numpy.array([center])
-        ra, dec = wcs.all_pix2world(pixcrd, 1)[0]
-
-        # We could use astropy.wcs.WCS.has_celestial for this, but as of today
-        # [Tue Jan 20 2015] it is only available in the development version of
-        # Astropy. Therefore, do a simple (but in theory enough) check: if the
-        # header does not contain an astrometric solution, WCS.all_pix2world()
-        # will not be able to transform the pixel coordinates, and therefore
-        # will return the same coordinates as the FITSImage.center attribute.
-
-        if (ra, dec) == center:
-            msg = ("{0}: the header of the FITS image does not seem to "
-                   "contain WCS information. You may want to make sure that "
-                   "the image has been solved astrometrically, for example "
-                   "with the 'astrometry' LEMON command.".format(self.path))
-            raise NoWCSInformationError(msg)
-
-        return ra, dec
+        return self.pix2world(*center)
 
     def has_wcs(self):
         """ Check whether the header of the image contains WCS information. """

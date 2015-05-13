@@ -100,11 +100,12 @@ _lemon_annuli()
 _lemon_photometry()
 {
     local opts
-    opts="--overwrite --filter --exclude --maximum --margin --gain --annuli
-    --cores --verbose --coordinates --epoch --aperture --annulus --dannulus
-    --min-sky --individual-fwhm --aperture-pix --annulus-pix
-    --dannulus-pix --snr-percentile --mean --objectk --filterk --datek
-    --timek --expk --coaddk --gaink --fwhmk --airmk --uik"
+    opts="--overwrite --filter --exclude --cbox --maximum --margin
+    --gain --annuli --cores --verbose --coordinates --epoch --aperture
+    --annulus --dannulus --min-sky --individual-fwhm --aperture-pix
+    --annulus-pix --dannulus-pix --snr-percentile --mean --objectk
+    --filterk --datek --timek --expk --coaddk --gaink --fwhmk --airmk
+    --uik"
 
     case $prev in
 	--annuli)
