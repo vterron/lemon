@@ -497,7 +497,7 @@ class Passband(object):
         elif system == SDSS:
             letter = "%s'" % letter
         elif system == HALPHA:
-            system = 'H-alpha'
+            system = 'Ha'
 
         return "%s %s" % (system, letter)
 
