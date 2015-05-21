@@ -50,6 +50,7 @@ from setup import CONFIG_PATH
 
 JOHNSON = 'Johnson'
 COUSINS = 'Cousins'
+HARRIS = 'Harris'
 GUNN = 'Gunn'
 SDSS = 'SDSS'
 TWOMASS = '2MASS'
@@ -88,9 +89,10 @@ def load_custom_filters(path = CONFIG_PATH):
 # re.search(REGEXPS[GUNN], 'rGunn', re.IGNORECASE) produces a match.
 
 REGEXPS = {JOHNSON : 'Johnson|John',
+           HARRIS : 'Harris|Har',
            COUSINS : 'Cousins|Cou',
            GUNN : 'Gunn|Gun',
-           SDSS : "SDSS|'",
+           SDSS : "SDSS|'|Sloan",
            TWOMASS : '2MASS|2M',
            STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
            HALPHA : 'H(a(lpha)?)?\d{4}'}
@@ -172,6 +174,7 @@ class Passband(object):
     The photometric systems currently supported are:
 
     - Johnson (1965): UBVRI(JHKLMN)
+    - Harris (USNO) : UBVRI
     - Cousins (1976): RI
     - Strömgren and Crawford (1956): uvbyHbeta
     - Thuan and Gunn (1976): uvgr
@@ -206,6 +209,7 @@ class Passband(object):
 
     SYSTEM_LETTERS = {JOHNSON : tuple('UBVRIJHKLMN'),
                       COUSINS : tuple('VRI'),
+		      HARRIS : tuple('UBVRI'),
                       GUNN : tuple('UVGR'),
                       SDSS : tuple('UGRIZ'),
                       TWOMASS : ('J', 'H', 'KS'),
