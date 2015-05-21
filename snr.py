@@ -77,7 +77,7 @@ def error_to_snr(error):
 
     """
 
-    return (1 if error < 0 else -1) / (math.pow(10, error / -2.5) - 1)	
+    return (1 if error < 0 else -1) / (math.pow(10, error / -2.5) - 1)
 
 def difference_error(*errors):
     """ Return the absolute error of the difference of a series of errors.
