@@ -252,7 +252,7 @@ class Passband(object):
 
         """
 
-        regexp = "^H(a(lpha)?)?(?P<wavelength>\d{4})(?P<bandwidth>/\d{2})?$"
+        regexp = ".*H(a(lpha)?)?(?P<wavelength>\d{4})(?P<bandwidth>/\d{2})?.*"
         match = re.match(regexp, name, re.IGNORECASE)
         if match is not None:
             return match.group('wavelength')
