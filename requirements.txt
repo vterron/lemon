@@ -10,7 +10,7 @@ APLpy>=0.9.9
 scipy>=0.12.0
 matplotlib>=1.2.1
 mock>=1.0.1
-pyfits==3.2
+pyfits>=3.2
 pyraf>=2.1.1
 uncertainties>=2.4.1
 unittest2>=0.5.1

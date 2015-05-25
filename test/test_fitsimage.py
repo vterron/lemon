@@ -156,10 +156,10 @@ class FITSImageTest(unittest.TestCase):
         del handler[0].header['SIMPLE']
         handler.close(output_verify = 'ignore')
 
-        # Ignore PyFITS warning: "Error validating header for HDU #0 (note:
-        # PyFITS uses zero-based indexing). Block does not begin with SIMPLE or
-        # XTENSION. There may be extra bytes after the last HDU or the file is
-        # corrupted".
+        # Ignore PyFITS <= 3.2 warning: "Error validating header for HDU #0
+        # (note: PyFITS uses zero-based indexing). Block does not begin with
+        # SIMPLE or XTENSION. There may be extra bytes after the last HDU or
+        # the file is corrupted".
 
         with warnings.catch_warnings():
             msg = "(?s)Error validating header for .+ file is corrupted."
