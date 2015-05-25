@@ -110,8 +110,28 @@ class FITSImage(object):
             handler = pyfits.open(self.path, mode = 'readonly')
             try:
 
-                if not handler[0].header['SIMPLE']:
-                    msg = "%s: value of 'SIMPLE' keyword is not 'T'"
+                # This is kind of an ugly hack to make sure that all PyFITS
+                # versions are supported. Up to version 3.2, PyFITS returned
+                # the HDUs exactly as it saw them. This allowed us to check the
+                # existence and value of the 'SIMPLE' keyword in order to make
+                # sure the file conforms to the FITS standard. However, PyFITS
+                # 3.3 changed this, and now adds the keywords required for a
+                # minimal viable primary HDU: this means that the header will
+                # always contain the 'SIMPLE' keyword. Refer to this link for
+                # more info: https://github.com/spacetelescope/PyFITS/issues/94
+
+                try:
+                    type_ = pyfits.info(self.path, output=False)[0][2]
+                    if type_ == 'NonstandardHDU':
+                        # 'SIMPLE' exists but does not equal 'T'
+                        msg = "%s: value of 'SIMPLE' keyword is not 'T'"
+                        raise NonStandardFITS(msg % self.path)
+
+                except AttributeError as e:
+                    # 'SIMPLE' keyword does not exist
+                    error_msg = "'_ValidHDU' object has no attribute '_summary'"
+                    assert error_msg in str(e)
+                    msg = "%s: 'SIMPLE' keyword missing from header"
                     raise NonStandardFITS(msg % self.path)
 
                 # A copy of the FITS header is kept in memory and the file is
