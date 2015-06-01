@@ -262,8 +262,15 @@ class QPhotTest(unittest.TestCase):
 
         barnard_path = "./test/test_data/fits/Barnard's_Star.fits"
         barnard = astromatic.Coordinates(269.452075, 4.693391, -0.79858, 10.32812)
-        expected_output = (   #  x        y       mag     sum     flux      stdev
-            qphot.QPhotResult(440.947, 382.595, 17.245, 8563646, 5311413, 1039.844))
+
+        nbits = methods.get_nbits()
+        if nbits == 64:
+            expected_output = (   #  x        y       mag     sum     flux      stdev
+                qphot.QPhotResult(440.947, 382.595, 17.245, 8563646, 5311413, 1039.844))
+        else:
+            assert nbits == 32
+            expected_output = (                                      # <<>>
+                qphot.QPhotResult(440.947, 382.595, 17.245, 8563646, 5312029, 1039.844))
 
         path = fix_DSS_image(barnard_path)
         with test.test_fitsimage.FITSImage(path) as img:
