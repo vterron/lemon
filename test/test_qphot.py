@@ -223,17 +223,25 @@ class QPhotTest(unittest.TestCase):
 
         ngc2264_path = './test/test_data/fits/NGC_2264.fits'
         ngc2264_input_coords = (
-            astromatic.Coordinates(100.1191901, 9.8177770),
             astromatic.Coordinates(100.1543316, 9.7909363),
             astromatic.Coordinates(100.1597762, 9.7878795),
-            astromatic.Coordinates(100.1598790, 9.9627296))
+            astromatic.Coordinates(100.1598790, 9.9627296),
+            astromatic.Coordinates(100.1191901, 9.8177770))
 
-        ngc2264_expected_output = (
+        ngc2264_expected_output = [
             #                 x        y        mag     sum      flux     stdev
-            qphot.QPhotResult(877.992, 171.373, 17.627, 6248653, 3737111, 484.8067),
             qphot.QPhotResult(752.713, 76.071,  17.904, 5820262, 2894284, 548.6724),
             qphot.QPhotResult(735.552, 65.18,   17.785, 6019633, 3231141, 575.0005),
-            qphot.QPhotResult(734.0,   689.025, 17.639, 6075931, 3694561, 567.6364))
+            qphot.QPhotResult(734.0,   689.025, 17.639, 6075931, 3694561, 567.6364)]
+
+        nbits = methods.get_nbits()
+        if nbits == 64:
+            ngc2264_expected_output += [                             # <<>>
+                qphot.QPhotResult(877.992, 171.373, 17.627, 6248653, 3737111, 484.8067)]
+        else:
+            assert nbits == 32
+            ngc2264_expected_output += [                             # <<>>
+                qphot.QPhotResult(877.992, 171.373, 17.627, 6248653, 3737479, 484.8067)]
 
         kwargs = self.QPHOT_KWARGS.copy()
         kwargs['cbox'] = 5
