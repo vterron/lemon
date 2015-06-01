@@ -139,29 +139,52 @@ class QPhotTest(unittest.TestCase):
 
         ngc2264_path = './test/test_data/fits/NGC_2264.fits'
         ngc2264_input_coords = (
-            astromatic.Coordinates(100.1191901, 9.8177770),
             astromatic.Coordinates(100.1543316, 9.7909363),
             astromatic.Coordinates(100.1597762, 9.7878795),
-            astromatic.Coordinates(100.1598790, 9.9627296),
             astromatic.Coordinates(100.2147546, 9.8636567),
-            astromatic.Coordinates(100.2446191, 9.8962391),
             astromatic.Coordinates(100.2502955, 9.8714701),
-            astromatic.Coordinates(100.2579343, 9.8802548),
             astromatic.Coordinates(100.2933265, 9.8838196),
+            astromatic.Coordinates(100.1191901, 9.8177770),
+            astromatic.Coordinates(100.1598790, 9.9627296),
+            astromatic.Coordinates(100.2446191, 9.8962391),
+            astromatic.Coordinates(100.2579343, 9.8802548),
             astromatic.Coordinates(100.3635468, 9.8540181))
 
-        ngc2264_expected_output = (
+        ngc2264_expected_output = [
             #                 x        y        mag     sum      flux     stdev
-            qphot.QPhotResult(878.62,  171.496, 17.623, 6266626, 3749740, 484.9941),
             qphot.QPhotResult(755.241, 75.308,  17.821, 6015410, 3124231, 579.0784),
             qphot.QPhotResult(736.138, 64.345,  17.777, 6035459, 3254578, 572.4526),
-            qphot.QPhotResult(734.601, 689.319, 17.631, 6102620, 3723123, 555.338),
             qphot.QPhotResult(542.399, 334.835, 18.01,  5197306, 2624735, 374.3998),
-            qphot.QPhotResult(437.227, 451.111, 18.54,  9239881, 1611601, 3583.002),
             qphot.QPhotResult(417.419, 362.544, 18.305, 4541155, 2001931, 362.4446),
-            qphot.QPhotResult(390.527, 393.897, 17.768, 5925938, 3280150, 450.3236),
-            qphot.QPhotResult(266.116, 406.437, 18.12,  4804557, 2372792, 378.5256),
-            qphot.QPhotResult(19.449,  299.555, 17.409, 7143799, 4567058, 540.6945))
+            qphot.QPhotResult(266.116, 406.437, 18.12,  4804557, 2372792, 378.5256)]
+
+        # IRAF returns different values depending on the architecture (32 vs 64
+        # bits). This is a very strange and confusing behavior, since most of
+        # the time only the *flux* is different, while the magnitude, total
+        # number of counts and even the standard deviation are the same. The
+        # difference looks too big and specific to be only caused by the
+        # limitations of floating-point arithmetic. Until the transition to
+        # Astropy's photutils, take into account both cases (32- vs 64-bit
+        # architecture). See issue #56 for futher information:
+        # https://github.com/vterron/lemon/issues/57
+
+        nbits = methods.get_nbits()
+        if nbits == 64:
+            ngc2264_expected_output += [                             # <<>>
+                qphot.QPhotResult(878.62,  171.496, 17.623, 6266626, 3749740, 484.9941),
+                qphot.QPhotResult(734.601, 689.319, 17.631, 6102620, 3723123, 555.338) ,
+                qphot.QPhotResult(437.227, 451.111, 18.54,  9239881, 1611601, 3583.002),
+                qphot.QPhotResult(390.527, 393.897, 17.768, 5925938, 3280150, 450.3236),
+                qphot.QPhotResult(19.449,  299.555, 17.409, 7143799, 4567058, 540.6945)]
+        else:
+            assert nbits == 32
+            ngc2264_expected_output += [                             # <<>>
+                qphot.QPhotResult(878.62,  171.496, 17.623, 6266626, 3750371, 484.9941),
+                qphot.QPhotResult(734.601, 689.319, 17.631, 6102620, 3723439, 555.338) ,
+                qphot.QPhotResult(437.227, 451.111, 18.54,  9239881, 1611932, 3583.002),
+                #                                             <<>>
+                qphot.QPhotResult(390.527, 393.897, 17.768, 5925937, 3280362, 450.3236),
+                qphot.QPhotResult(19.449,  299.555, 17.409, 7143799, 4567332, 540.6945)]
 
         path = fix_DSS_image(ngc2264_path)
         with test.test_fitsimage.FITSImage(path) as img:
