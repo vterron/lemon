@@ -32,3 +32,4 @@ Felipe Gallego, for reporting a bug in get__version__()
 Muhammad Yusuf, for reporting bugs in the unit tests
 Pablo Galindo, our most relentless bug hunter
 Jorge Gómez, for reporting a bug with PyFITS > 3.2
+Ted Groner, for reporting a bug in the unit tests on 32-bit IRAF
