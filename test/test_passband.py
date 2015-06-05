@@ -30,8 +30,8 @@ import methods
 import passband
 from test import unittest
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
-                     JOHNSON, COUSINS, GUNN, SDSS, TWOMASS, STROMGREN, HALPHA, \
-                     UNKNOWN, CUSTOM
+                     JOHNSON, COUSINS, HARRIS, GUNN, SDSS, TWOMASS, STROMGREN, \
+                     HALPHA, UNKNOWN, CUSTOM
 
 NITERS  = 100     # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
@@ -128,6 +128,9 @@ class PassbandTest(unittest.TestCase):
 
     def test_cousins_filters(self):
         self._test_photometric_system(COUSINS)
+
+    def test_harris(self):
+        self._test_photometric_system(HARRIS)
 
     def test_gunn_filters(self):
         self._test_photometric_system(GUNN)
