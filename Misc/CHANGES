@@ -1,3 +1,97 @@
+0.3 (2015-06-08)
+================
+
+- Fix NotImplementedError raised by Queue.qsize() on Mac OS X (9ca6b4b)
+- Show the stack trace of exceptions raised by map_async() (348e0e5)
+- Use unittest2 in Python versions < 2.7 (90d43aa)
+- Require SExtractor >= 2.19.5 (8165cbe)
+- Add support for user-defined photometric filters (dd278a2)
+- Raise an error if the α or δ of an image are out of range (0e28041)
+- Add --version option (f2c8971)
+- Add --update option (6cb2f79)
+- Notify the user when there is a new version available (723e76e)
+- Use more widespread default option values (be7671c)
+- Use JSON to serialize data — say bye to XML (aeab015)
+- Fix outdated version warnings — take dates into account (6dfe004)
+- Add support for astronomical objects with known proper motions (4cdc774)
+- Differentiate between 'essential' and 'auxiliary' commands (756ebed)
+- Add support for sexagesimal coordinates (51277fc)
+- Update README for Debian 7 (Wheezy) (ca2b696)
+- Remove (lots of) unused code (844a7d8)
+- Remove 'periods' command (0748dfc)
+- Add support for the Harris photometric system (3117d6a)
+
+Documentation
+*************
+- Add brief introduction (041eb30)
+- Add Installation section (edf16f6)
+- Add Quickstart (b16ec3d)
+- Add "Fork me on GitHub" ribbon (e8ffde5)
+- Use 'thumbnail' directive for HTML builds and 'image' for LaTeX builds (f48b5d7)
+- Show an example light curve of HAT-P-16b (0e09f7d)
+
+astrometry
+**********
+- Ignore FITS files that cannot be astrometrically solved (ca44b80)
+- Add options --rack and --deck (4ad0329 and f879a06)
+- Limit the search to the α and δ read from the FITS header (e9d8c7c)
+- Add --blind option (0bf7bad)
+- Add --timeout option (bddfacd)
+- Add multicore support (6ffe2c5)
+- Add -o option (2a3eb4f)
+
+mosaic
+******
+- Add --filter option (76a3a80)
+- Reproject the mosaic so that North is up (f73293d)
+- Add --no-reprojection option (26c4e07)
+- Require all mosaicked images to be astrometrically solved (b16a9bf)
+- Ignore the photometric filter of the images unless --filter is given (3c8b08c)
+- Add --combine option (2b91673)
+- Add workaround for 'background_match' bug in montage.mosaic() (a8ec3c5)
+
+photometry
+**********
+- Avoid bug in IRAF that returns invalid xcenter values (2869943)
+- Allow missing FITS keywords in the sources image (afcc3f8)
+- Remove warning message if --expk is missing from sources image (d043495)
+- Allow to do photometry on the sources FITS image (9edc3ae)
+- Allow to use the --filter option multiple times (1585212)
+- Add --exclude option (0e0e81d)
+- Do not talk about --margin if no astronomical object is ignored (37fc430)
+- Make it possible to use Montage mosaics as the sources image (095d6f3)
+- Add --cbox option (5d307d3)
+- Fix qphot unit tests for 32-bit IRAF (8772356)
+
+diffphot
+********
+- Remove --output option (fac49a9)
+- Fix bug with comparison stars without a standard deviation (cfa00ee)
+- Set the default value of --worst-fraction to 0.10 (e36625c)
+
+juicer
+******
+- Open LEMONdBs from the command line (868c6f0)
+- Show celestial coordinates in finding chart (b5cf393)
+- Add 'Look up in SIMBAD' button (540eb5c)
+- Use world coordinates to mark stars in finding chart (79b8fbf)
+- Limit instrumental magnitudes to three decimal places (266780b)
+- Add a 'Preferences' dialog to the finding chart (a636d86)
+- Fix ValueError if we double click on stars without light curves (785a49d)
+- Add an option to use Julian Dates (9a23043)
+- Allow to export instrumental magnitudes and SNRs to a file (e6a3f40)
+- Plot user-defined filters without a specified color with a random one (3aa1d10)
+- Use "Δ magnitude" as the label of the y-axis (fc3fcea)
+- Prevent the y-axis label from overlapping with the airmass ticks (3608d07)
+- Remove "Select stars by their amplitudes" (257e774)
+
+seeing
+******
+- Add option --overwrite (3676803)
+- Do not modify input FITS files (53406c0)
+- Fix error caused by HIERARCH + CONTINUE keywords (f1c4912)
+- Avoid unnecessary copy of the temporary FITS files (68ca820)
+
 0.2 (2014-03-24)
 ================
 
