@@ -48,7 +48,8 @@ if [[ $ARCH_64_BITS == 1 ]]; then
 else
     IRAF_TAR="iraf.lnux.x86.tar.gz"
 fi
-IRAF_URL=$DOWNLOADS_SERVER$IRAF_TAR
+IRAF_SERVER="ftp://iraf.noao.edu/iraf/v216/PCIX/"
+IRAF_URL=$IRAF_SERVER$IRAF_TAR
 
 IRAF_DIR="/iraf/iraf/"
 mkdir -p $IRAF_DIR
