@@ -42,7 +42,6 @@ cd ~
 
 ########### Install IRAF ################
 
-DOWNLOADS_SERVER="http://www.iaa.es/lemon/travis/"
 if [[ $ARCH_64_BITS == 1 ]]; then
     IRAF_TAR="iraf.lnux.x86_64.tar.gz"
 else
@@ -88,7 +87,6 @@ cd $CWD # back to the LEMON directory
 # a copy on our server.
 
 TEST_FITS_DIR="test/test_data/fits/"
-DOWNLOADS_SERVER="http://www.iaa.es/lemon/travis/"
 DSS_IMAGES_URL="https://github.com/lemon/test-data/raw/master/DSS/"
 
 DSS_FILENAMES=(
