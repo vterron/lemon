@@ -89,15 +89,28 @@ cd $CWD # back to the LEMON directory
 
 TEST_FITS_DIR="test/test_data/fits/"
 DOWNLOADS_SERVER="http://www.iaa.es/lemon/travis/"
-DSS_IMAGES_TAR="DSS-fits-images.tar"
-DSS_IMAGES_URL=$DOWNLOADS_SERVER$DSS_IMAGES_TAR
+DSS_IMAGES_URL="https://github.com/lemon/test-data/raw/master/DSS/"
+
+DSS_FILENAMES=(
+ "Barnard's_Star.fits"
+ "IC_5070.fits"
+ "IC_5146.fits"
+ "Messier_92.fits"
+ "NGC_2264.fits"
+ "Orion.fits"
+ "RMC_136.fits"
+ "Serpens.fits"
+ "Trapezium.fits"
+ "Trumpler_37.fits"
+)
 
 mkdir -p $TEST_FITS_DIR
 cd $TEST_FITS_DIR
+
 echo "Downloading test FITS images to $(pwd)"
-wget $DSS_IMAGES_URL
-tar xf $DSS_IMAGES_TAR
-rm $DSS_IMAGES_TAR
+for filename in "${DSS_FILENAMES[@]}"; do
+    wget $DSS_IMAGES_URL$filename -O $filename;
+done;
 
 cd $CWD
 
