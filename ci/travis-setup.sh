@@ -29,12 +29,9 @@ apt-get install python-dev python-pip python-numpy python-scipy libjpeg62  \
                 python-matplotlib python-mock libfreetype6-dev libpng12-dev \
                 csh libx11-dev libplplot11 alien realpath
 
-pip install "astropy>=0.2.4"
-pip install "d2to1>=0.2.10"
-pip install "APLpy>=0.9.9"
-pip install "pyfits==3.2"
-pip install "pyraf>=2.1.1"
-pip install "uncertainties>=2.4.1"
+pip install "numpy>=1.7.1"
+pip install -r pre-requirements.txt
+pip install -r requirements.txt
 
 CWD=$(pwd)
 
@@ -42,13 +39,13 @@ cd ~
 
 ########### Install IRAF ################
 
-DOWNLOADS_SERVER="http://www.iaa.es/lemon/travis/"
 if [[ $ARCH_64_BITS == 1 ]]; then
     IRAF_TAR="iraf.lnux.x86_64.tar.gz"
 else
     IRAF_TAR="iraf.lnux.x86.tar.gz"
 fi
-IRAF_URL=$DOWNLOADS_SERVER$IRAF_TAR
+IRAF_SERVER="ftp://iraf.noao.edu/iraf/v216/PCIX/"
+IRAF_URL=$IRAF_SERVER$IRAF_TAR
 
 IRAF_DIR="/iraf/iraf/"
 mkdir -p $IRAF_DIR
@@ -73,7 +70,8 @@ else
     SEXTRACTOR_RMP="sextractor-2.19.5-1.i386.rpm"
 fi
 
-SEXTRACTOR_URL=$DOWNLOADS_SERVER$SEXTRACTOR_RPM
+SEXTRACTOR_SERVER="http://www.astromatic.net/download/sextractor/"
+SEXTRACTOR_URL=$SEXTRACTOR_SERVER$SEXTRACTOR_RPM
 wget $SEXTRACTOR_URL
 alien -i $SEXTRACTOR_RPM
 rm $SEXTRACTOR_RPM
@@ -86,16 +84,28 @@ cd $CWD # back to the LEMON directory
 # a copy on our server.
 
 TEST_FITS_DIR="test/test_data/fits/"
-DOWNLOADS_SERVER="http://www.iaa.es/lemon/travis/"
-DSS_IMAGES_TAR="DSS-fits-images.tar"
-DSS_IMAGES_URL=$DOWNLOADS_SERVER$DSS_IMAGES_TAR
+DSS_IMAGES_URL="https://github.com/lemon/test-data/raw/master/DSS/"
+
+DSS_FILENAMES=(
+ "Barnard's_Star.fits"
+ "IC_5070.fits"
+ "IC_5146.fits"
+ "Messier_92.fits"
+ "NGC_2264.fits"
+ "Orion.fits"
+ "RMC_136.fits"
+ "Serpens.fits"
+ "Trapezium.fits"
+ "Trumpler_37.fits"
+)
 
 mkdir -p $TEST_FITS_DIR
 cd $TEST_FITS_DIR
+
 echo "Downloading test FITS images to $(pwd)"
-wget $DSS_IMAGES_URL
-tar xf $DSS_IMAGES_TAR
-rm $DSS_IMAGES_TAR
+for filename in "${DSS_FILENAMES[@]}"; do
+    wget $DSS_IMAGES_URL$filename -O $filename;
+done;
 
 cd $CWD
 
