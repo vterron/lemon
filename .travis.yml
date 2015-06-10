@@ -19,7 +19,8 @@ before_install:
   # SCAMP requires libplplotd.so.9, but Ubuntu 12.04 installs libplplotd.so.11
   - sudo ln -s /usr/lib/libplplotd.so.{11,9}
 
-  - sudo ./ci/travis-setup.sh
+  # 'travis_wait': avoid timeout during SciPy installation
+  - travis_wait sudo ./ci/travis-setup.sh
   - python ./setup.py
 
 script:
