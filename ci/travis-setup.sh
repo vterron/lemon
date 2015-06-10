@@ -20,14 +20,9 @@ else
     echo "32-bit"
 fi
 
-# Use apt-get, instead of pip, in order to install as many Python dependencies
-# as possible: some packages, like NumPY and SciPy, contain a lot of C code,
-# which would otherwise have to be compiled every time the Travis tests are run.
-# The binary packages allow us to avoid this, resulting in an enormous speed-up.
-
-apt-get install python-dev python-pip python-numpy python-scipy libjpeg62  \
-                python-matplotlib python-mock libfreetype6-dev libpng12-dev \
-                csh libx11-dev libplplot11 alien realpath
+apt-get install git python-pip csh
+apt-get build-dep python-matplotlib python-scipy
+easy_install -U distribute
 
 pip install "numpy>=1.7.1"
 pip install -r pre-requirements.txt
