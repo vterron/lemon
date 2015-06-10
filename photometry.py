@@ -26,10 +26,11 @@ This module does aperture photometry on all the FITS images that it receives as
 arguments. Astronomical objects are automatically detected, using SExtractor,
 on the first image (which will be referred to from now on as the 'sources
 image'), and then photometry is done for their celestial coordinates on the
-rest of the images. The output is a LEMON database. The sources image is also
-used to extract the instrumental magnitude that for each astronomical object
-is stored in the LEMONdB, in order to allow us to approximately estimate how
-bright each object is.
+rest of the images. The output is a LEMON database, which contains the 
+instrumental magnitudes (with 25 as zero point) and signal-to-noise ratio 
+for the stars detected in the sources image. Additionally, the instrumental 
+magnitudes of the stars in the sources image is also stored in the database, 
+in order to allow us to approximately estimate how bright each object is. 
 
 By default, the sizes of the aperture and sky annulus are determined by the
 median FWHM of the images in each photometric filter, but different options
