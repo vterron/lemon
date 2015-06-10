@@ -20,7 +20,7 @@ else
     echo "32-bit"
 fi
 
-apt-get install git python-pip csh
+apt-get install git python-pip csh realpath
 apt-get build-dep python-matplotlib python-scipy
 easy_install -U distribute
 
