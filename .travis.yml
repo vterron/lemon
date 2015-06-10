@@ -17,7 +17,7 @@ before_install:
   - sudo ln -Tsf /{run,dev}/shm
 
   # 'travis_wait': avoid timeout during SciPy installation
-  - travis_wait sudo ./ci/travis-setup.sh
+  - travis_wait 30 sudo ./ci/travis-setup.sh
   - python ./setup.py
 
 script:
