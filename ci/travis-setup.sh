@@ -20,14 +20,6 @@ else
     echo "32-bit"
 fi
 
-apt-get install git python-pip csh realpath
-apt-get build-dep python-matplotlib python-scipy
-easy_install -U distribute
-
-pip install "numpy>=1.7.1"
-pip install -r pre-requirements.txt
-pip install -r requirements.txt
-
 CWD=$(pwd)
 
 cd ~
