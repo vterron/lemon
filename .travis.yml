@@ -15,6 +15,7 @@ before_install:
   # http://github.com/travis-ci/travis-core/issues/187
   - sudo rm -rf /dev/shm
   - sudo ln -Tsf /{run,dev}/shm
+  - sudo apt-get update
   - sudo apt-get install -y git python-pip csh realpath
   - sudo apt-get build-dep -y python-matplotlib python-scipy
   - sudo easy_install -U distribute
