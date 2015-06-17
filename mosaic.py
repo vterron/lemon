@@ -294,7 +294,9 @@ def main(arguments = None):
     os.rmdir(output_dir)
 
     kwargs = dict(background_match = options.background_match,
-                  combine = options.combine)
+                  combine = options.combine,
+                  bitpix=-64,
+                  )
 
     if options.ncores > 1:
         kwargs['mpi'] = True              # use MPI whenever possible
