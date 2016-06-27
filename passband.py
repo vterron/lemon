@@ -92,7 +92,7 @@ REGEXPS = {JOHNSON : 'Johnson|John',
            HARRIS : 'Harris|Har',
            COUSINS : 'Cousins|Cou',
            GUNN : 'Gunn|Gun',
-           SDSS : "SDSS|'|Sloan",
+           SDSS : "SDSS|'|prime|Sloan",
            TWOMASS : '2MASS|2M',
            STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
            HALPHA : 'H(a(lpha)?)?\d{4}'}

@@ -22,6 +22,23 @@
 "z'SDSS", 'Z'
 "z'Sloan", 'Z'
 
+# Suggested by @cdilga at issue #90
+# https://github.com/vterron/lemon/issues/90
+
+"zprime", 'Z'
+"uprime", 'U'
+"gprime", 'G'
+"rprime", 'R'
+"iprime", 'I'
+
+# ... and, by extension:
+
+"z prime", 'Z'
+"u_prime", 'U'
+"G-prime", 'G'
+"r_PRIME", 'R'
+"iPrime", 'I'
+
 # These are *real* examples of SDSS filters, kindly provided by César
 # Husillos and Pablo Ramírez, who found them among the FITS images of
 # several astronomical campaigns.
