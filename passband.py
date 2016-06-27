@@ -90,7 +90,7 @@ def load_custom_filters(path = CONFIG_PATH):
 
 REGEXPS = {JOHNSON : 'Johnson|John',
            HARRIS : 'Harris|Har',
-           COUSINS : 'Cousins|Cou',
+           COUSINS : 'Cousins?|Cous?',
            GUNN : 'Gunn|Gun',
            SDSS : "SDSS|'|prime|Sloan",
            TWOMASS : '2MASS|2M',
