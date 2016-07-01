@@ -32,3 +32,8 @@ script:
   - export iraf=/iraf/iraf/
   - export IRAFARCH=linux64
   - ./run_tests.py
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
