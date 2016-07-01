@@ -41,10 +41,7 @@ cd $IRAF_DIR
 
 wget $IRAF_URL
 tar xfz $IRAF_TAR
-
-iraf=$IRAF_DIR
-export iraf
-yes "" | $iraf/unix/hlib/install
+yes "" | ./install --system
 rm $IRAF_TAR
 
 ########### Install SExtractor ###########
