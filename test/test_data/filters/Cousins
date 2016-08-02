@@ -10,6 +10,21 @@
 "rCousins", 'R'
 "iCousins", 'I'
 
+# Suggested by @paramoreta at issue #81
+# https://github.com/vterron/lemon/issues/81
+
+"CousR", 'R'
+"Cous I", 'I'
+"CousinR", 'R'
+"Cousin I", 'I'
+
+# ... and, by extension:
+
+"Cous_R", 'R'
+"Cous-I", 'I'
+"r-Cousin", 'R'
+"Icousin", 'I'
+
 # Extremely convoluted test cases
 
 " coui_-_", 'I'

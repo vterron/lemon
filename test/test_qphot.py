@@ -296,5 +296,5 @@ class QPhotTest(unittest.TestCase):
             wcs = astropy.wcs.WCS(img._header)
             ra, dec = wcs.all_pix2world(result.x, result.y, 1)
             f = self.assertAlmostEqual
-            f(ra,  expected_coordinates.ra,  delta = 1e-4) # delta = 0.024 arcsec
-            f(dec, expected_coordinates.dec, delta = 1e-7) # delta = 0.00036 arsec
+            f(ra,  expected_coordinates.ra,  delta = 1e-3) # delta = 0.24 arcsec
+            f(dec, expected_coordinates.dec, delta = 1e-3) # delta = 3.6 arcsec

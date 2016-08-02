@@ -90,9 +90,9 @@ def load_custom_filters(path = CONFIG_PATH):
 
 REGEXPS = {JOHNSON : 'Johnson|John',
            HARRIS : 'Harris|Har',
-           COUSINS : 'Cousins|Cou',
+           COUSINS : 'Cousins?|Cous?',
            GUNN : 'Gunn|Gun',
-           SDSS : "SDSS|'|Sloan",
+           SDSS : "SDSS|'|prime|Sloan",
            TWOMASS : '2MASS|2M',
            STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
            HALPHA : 'H(a(lpha)?)?\d{4}'}
@@ -107,8 +107,10 @@ class NonRecognizedPassband(ValueError):
     ERROR_NOTE = ("If this is a legitimate filter name, and you think LEMON "
                   "should be able to recognize it, please let us know at "
                   "[http://github.com/vterron/lemon/issues]. In the meantime, "
-                  "you can define your own filters in the %s file, as options "
-                  "of the [%s] section" % (CONFIG_PATH, CUSTOM_SECTION))
+                  "you can define your own filters in the {} file, as options "
+                  "of the [{}] section. For an example, see "
+                  "[https://github.com/vterron/lemon/issues/14#issuecomment-"
+                  "43504285").format(CONFIG_PATH, CUSTOM_SECTION)
 
     def __init__(self, name, path = None, keyword = None):
         """ Instantiation method for the NonRecognizedPassband class.
