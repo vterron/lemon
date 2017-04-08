@@ -34,10 +34,11 @@ import subprocess
 import methods
 
 CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')
-SEXTRACTOR_CONFIG = os.path.join(CONFIG_FILES_DIR, 'sextractor.sex')
-SEXTRACTOR_PARAMS = os.path.join(CONFIG_FILES_DIR, 'sextractor.param')
-SEXTRACTOR_FILTER = os.path.join(CONFIG_FILES_DIR, 'sextractor.conv')
-SEXTRACTOR_STARNNW = os.path.join(CONFIG_FILES_DIR, 'sextractor.nnw')
+_get_file = functools.partial(os.path.join, CONFIG_FILES_DIR)
+SEXTRACTOR_CONFIG  = _get_file('sextractor.sex')
+SEXTRACTOR_PARAMS  = _get_file('sextractor.param')
+SEXTRACTOR_FILTER  = _get_file('sextractor.conv')
+SEXTRACTOR_STARNNW = _get_file('sextractor.nnw')
 SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 SEXTRACTOR_REQUIRED_VERSION = (2, 19, 5)
 
