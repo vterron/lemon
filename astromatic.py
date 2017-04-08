@@ -195,7 +195,7 @@ class Catalog(tuple):
         # indexes, as they are one-based.
 
         for line in contents:
-            if line[0][0] == '#':
+            if line[0].startswith('#'):
                 param_name = line[2]
                 if param_name.upper() == parameter.upper():
                     param_index = int(line[1]) - 1
@@ -297,7 +297,7 @@ class Catalog(tuple):
         elong_index = get_index('ELONGATION')
 
         for line in contents:
-            if line[0][0] != '#': # ignore comments
+            if not line[0].startswith('#'): # ignore comments
 
                 def get_param(index, type_ = float):
                     """ Get the index-th element of 'line', cast to 'type_'"""
