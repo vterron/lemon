@@ -20,13 +20,14 @@
 
 from __future__ import division
 
+import astropy.coordinates
+import astropy.units
 import collections
 import functools
 import hashlib
 import os
 import os.path
 import re
-import math
 import tempfile
 import subprocess
 
@@ -71,18 +72,13 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
         return super(Coordinates, cls).__new__(cls, ra, dec, pm_ra, pm_dec)
 
     def distance(self, another):
-        """ The angular distance, in degrees, between two Coordinates. """
+        """The angular distance, in degrees, between two Coordinates."""
 
-        # Formula: cos(A) = sin(d1)sin(d2) + cos(d1)cos(d2)cos(ra1-ra2)
-        # http://www.astronomycafe.net/qadir/q1890.html
-
-        ra1  = math.radians(self.ra)
-        dec1 = math.radians(self.dec)
-        ra2  = math.radians(another.ra)
-        dec2 = math.radians(another.dec)
-        return math.degrees(math.acos(math.sin(dec1) * math.sin(dec2) +
-                                      math.cos(dec1) * math.cos(dec2) *
-                                      math.cos(ra1-ra2)))
+        make_coord = functools.partial(
+            astropy.coordinates.SkyCoord, unit=astropy.units.deg)
+        c1 = make_coord(ra=self.ra, dec=self.dec)
+        c2 = make_coord(ra=another.ra, dec=another.dec)
+        return c1.separation(c2).deg
 
     def get_exact_coordinates(self, year, epoch = 2000):
         """ Determine exact positions by applying proper motion correction.
