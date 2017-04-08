@@ -52,9 +52,8 @@ class SExtractorUpgradeRequired(StandardError):
 class SExtractorError(subprocess.CalledProcessError):
     pass
 
-class Pixel(collections.namedtuple('Pixel', "x y")):
-    """ A pair of immutable x- and y-coordinates. """
-    pass
+"""A pair of immutable x- and y-coordinates."""
+Pixel = collections.namedtuple('Pixel', "x y")
 
 class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
     """ The immutable celestial coordinates of an astronomical object.
