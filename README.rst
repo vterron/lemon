@@ -21,6 +21,14 @@ Homepage
 
 http://lemon.readthedocs.org/
 
+Acknowledging us
+----------------
+
+If you use LEMON, please consider citing the package via its Zenodo_ record.
+
+.. image:: https://zenodo.org/badge/4550305.svg
+   :target: https://zenodo.org/badge/latestdoi/4550305
+
 Project Status
 --------------
 
@@ -31,3 +39,4 @@ Project Status
 .. _Python: https://www.python.org/
 .. _light curves: https://en.wikipedia.org/wiki/Light_curve
 .. _HAT-P-16b: http://exoplanet.eu/catalog/hat-p-16_b/
+.. _Zenodo: https://zenodo.org/
