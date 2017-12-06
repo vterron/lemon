@@ -233,9 +233,8 @@ class Catalog(tuple):
         and perhaps FLAGS = 8+16+32 = 56. [End of quote]
 
         A flag is saturated, therefore, if 4 was one of the values that were
-        added to calculate it. In order to test this, the flag is represented
-        as a binary string and we check whether the third bit (2**(3-1) == 4)
-        from the left equals one.
+        added to calculate it. In order to test this, we check that the value
+        of the third bit (2**(3-1) == 4) is not zero.
 
         Since the value of the flag is determined by the first eight powers of
         two, its minimum valid value is zero and the maximum (2**8)-1 = 255.
@@ -247,12 +246,7 @@ class Catalog(tuple):
         if not 0 <= flag_value <= 255:
             msg = "flag value out of range [0, 255]"
             raise ValueError(msg)
-
-        # Convert from, for example, '0b1' to '1', and then fill in with as
-        # many zeros are needed to represent the flag as an eight-bit binary
-        # number ('00000001'), so that we can always check the value of the
-        # third least significant bit.
-        return int(bin(flag_value)[2:].zfill(8)[-3]) == 1
+        return flag_value & 1<<2 != 0
 
     @classmethod
     def _load_stars(cls, path):
