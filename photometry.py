@@ -274,19 +274,6 @@ parser.add_option('--gain', action = 'store', type = 'float',
                   "this option is given, the value will not be read from the "
                   "FITS header (--gaink option)")
 
-parser.add_option('--annuli', action = 'store', type = str,
-                  dest = 'json_annuli', default = None,
-                  help = "ignore the Aperture Photometry (FWHM and Pixels) "
-                  "sections below an instead read the apertures and sky annuli "
-                  "to use from a JSON file output by the 'annuli' command. "
-                  "This file should, of course, have been generated for the "
-                  "same set of images on which photometry is now being done. "
-                  "For this same reason, the execution will be aborted if the "
-                  "JSON file does not have information for the photometric "
-                  "filters of all the input FITS files. Even when this option "
-                  "is used, the aperture and sky annulus used for the sources "
-                  "image are determined by the 'Aperture Photometry' sections.")
-
 parser.add_option('--cores', action = 'store', type = 'int',
                   dest = 'ncores', default = defaults.ncores,
                   help = defaults.desc['ncores'])

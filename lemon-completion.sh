@@ -78,40 +78,17 @@ _lemon_astrometry()
     fi
 }
 
-_lemon_annuli()
-{
-    local opts
-    opts="--overwrite --margin --gain --cores --verbose --aperture
-    --annulus --dannulus --min-sky --constant --minimum-constant
-    --lower --upper --step --sky --width --snr-percentile --mean
-    --maximum --minimum-images --minimum-stars --pct
-    --weights-threshold --max-iters --worst-fraction -objectk
-    --filterk --datek --timek --expk --coaddk --gaink --fwhmk
-    --airmk --uik"
-
-    if [[ ${cur} == -* ]]; then
-	_match "${opts}"
-    else
-	# Input FITS images / output JSON file
-        _filedir @($FITS_EXTS|$JSON_EXTS)
-    fi
-}
-
 _lemon_photometry()
 {
     local opts
     opts="--overwrite --filter --exclude --cbox --maximum --margin
-    --gain --annuli --cores --verbose --coordinates --epoch --aperture
+    --gain --cores --verbose --coordinates --epoch --aperture
     --annulus --dannulus --min-sky --individual-fwhm --aperture-pix
     --annulus-pix --dannulus-pix --snr-percentile --mean --objectk
     --filterk --datek --timek --expk --coaddk --gaink --fwhmk --airmk
     --uik"
 
     case $prev in
-	--annuli)
-	    _filedir @($JSON_EXTS)
-	    return 0
-	    ;;
 	--coordinates)
 	    _filedir
 	    return 0
@@ -150,7 +127,7 @@ _lemon()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="import seeing astrometry mosaic annuli photometry
+    commands="import seeing astrometry mosaic photometry
     diffphot juicer"
 
     # The options that autocomplete depend on the LEMON command being
@@ -174,10 +151,6 @@ _lemon()
     astrometry)
 	_lemon_astrometry
 	return 0
-	;;
-    annuli)
-	_lemon_annuli
-        return 0
 	;;
     photometry)
 	_lemon_photometry
