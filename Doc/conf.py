@@ -14,6 +14,12 @@
 import sys, os
 import datetime
 
+# Fix for error "cannot import name 'make_admonition'".
+# https://github.com/spinus/sphinxcontrib-images/issues/41
+from docutils.parsers.rst.directives.admonitions import BaseAdmonition
+from sphinx.util import compat
+compat.make_admonition = BaseAdmonition
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
