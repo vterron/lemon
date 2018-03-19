@@ -2495,5 +2495,5 @@ class LEMONdBTest(unittest.TestCase):
         point_3 = (227.21558, 2.34333)
         star_id, distance = db.star_closest_to_world_coords(*point_3)
         self.assertAlmostEqual(star_id, 1)
-        self.assertEqual(distance, 47.939281840122732)
+        self.assertAlmostEqual(distance, 47.939281840122732)
 
