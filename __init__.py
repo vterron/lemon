@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 #encoding:UTF-8
 
 from version import __version_info__, __version__

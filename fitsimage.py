@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 # encoding: UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
