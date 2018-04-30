@@ -72,7 +72,9 @@ class AstrometryNetNotInstalled(StandardError):
 
 class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
-    pass
+
+    def __str__(self):
+        return "Command: " + " ".join(self.cmd)
 
 class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
     """ Raised if Astrometry.net could not solve the field """
