@@ -552,12 +552,13 @@ class Queue(multiprocessing.queues.Queue):
         self.size = SharedCounter(0)
 
     def put(self, *args, **kwargs):
-        self.size.increment(1)
         super(Queue, self).put(*args, **kwargs)
+        self.size.increment(1)
 
     def get(self, *args, **kwargs):
+        item = super(Queue, self).get(*args, **kwargs)
         self.size.increment(-1)
-        return super(Queue, self).get(*args, **kwargs)
+        return item
 
     def qsize(self):
         """ Reliable implementation of multiprocessing.Queue.qsize() """
