@@ -23,11 +23,11 @@ from __future__ import division
 import StringIO
 import operator
 import os
+import Queue
 import random
 import time
 import warnings
 
-from Queue import Full, Empty
 
 # LEMON modules
 from test import unittest
@@ -376,24 +376,19 @@ class StreamToWarningFilterTest(unittest.TestCase):
 class MethodsQueueTest(unittest.TestCase):
 
     def test_queue_min_size(self):
-        q = methods.Queue(1)
+        q = methods.Queue()
         self.assertEqual(q.qsize(), 0)
-        try:
+        with self.assertRaises(Queue.Empty):
             q.get_nowait()
-        except Empty:
-            pass
         self.assertEqual(q.qsize(), 0)
 
     def test_queue_max_size(self):
-        q = methods.Queue(1)
-
+        q = methods.Queue(maxsize=1)
         self.assertEqual(0, q.qsize())
         q.put_nowait("1")
         self.assertEqual(1, q.qsize())
-        try:
+        with self.assertRaises(Queue.Full):
             q.put_nowait("1")
-        except Full:
-            pass
         self.assertEqual(1, q.qsize())
 
         # Pause to allow queue to complete operation before terminating
