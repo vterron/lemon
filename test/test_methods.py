@@ -375,6 +375,10 @@ class StreamToWarningFilterTest(unittest.TestCase):
 
 class MethodsQueueTest(unittest.TestCase):
 
+    def shortDescription(self):
+        """Don't use the first line of the test method's docstring."""
+        pass
+
     def test_put_and_get(self):
         """Test that this is a FIFO queue."""
 
