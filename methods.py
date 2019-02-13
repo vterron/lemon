@@ -549,20 +549,20 @@ class Queue(multiprocessing.queues.Queue):
 
     def __init__(self, *args, **kwargs):
         super(Queue, self).__init__(*args, **kwargs)
-        self.size = SharedCounter(0)
+        self._size = SharedCounter(0)
 
     def put(self, *args, **kwargs):
         super(Queue, self).put(*args, **kwargs)
-        self.size.increment(1)
+        self._size.increment(1)
 
     def get(self, *args, **kwargs):
         item = super(Queue, self).get(*args, **kwargs)
-        self.size.increment(-1)
+        self._size.increment(-1)
         return item
 
     def qsize(self):
         """ Reliable implementation of multiprocessing.Queue.qsize() """
-        return self.size.value
+        return self._size.value
 
     def empty(self):
         """ Reliable implementation of multiprocessing.Queue.empty() """
@@ -740,4 +740,3 @@ def get_nbits():
         return 64
     else:
         return 32 # safe guess
-
