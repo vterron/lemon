@@ -26,11 +26,11 @@ This module does aperture photometry on all the FITS images that it receives as
 arguments. Astronomical objects are automatically detected, using SExtractor,
 on the first image (which will be referred to from now on as the 'sources
 image'), and then photometry is done for their celestial coordinates on the
-rest of the images. The output is a LEMON database, which contains the 
-instrumental magnitudes (with 25 as zero point) and signal-to-noise ratio 
-for the stars detected in the sources image. Additionally, the instrumental 
-magnitudes of the stars in the sources image is also stored in the database, 
-in order to allow us to approximately estimate how bright each object is. 
+rest of the images. The output is a LEMON database, which contains the
+instrumental magnitudes (with 25 as zero point) and signal-to-noise ratio
+for the stars detected in the sources image. Additionally, the instrumental
+magnitudes of the stars in the sources image is also stored in the database,
+in order to allow us to approximately estimate how bright each object is.
 
 By default, the sizes of the aperture and sky annulus are determined by the
 median FWHM of the images in each photometric filter, but different options
@@ -61,6 +61,7 @@ import time
 import warnings
 
 # LEMON modules
+from util import Queue
 import astromatic
 import customparser
 import database
@@ -81,7 +82,7 @@ DANNULUS_TOO_THIN_MSG = \
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = Queue()
 
 def get_fwhm(img, options):
     """ Return the FWHM of the FITS image.
@@ -1573,4 +1574,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

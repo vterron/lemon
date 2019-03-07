@@ -47,6 +47,7 @@ import tempfile
 import time
 
 # LEMON modules
+from util import Queue
 import astromatic
 import customparser
 import defaults
@@ -428,7 +429,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 # This Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = Queue()
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"

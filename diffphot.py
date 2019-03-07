@@ -56,6 +56,7 @@ import sys
 import time
 
 # LEMON modules
+from util import Queue
 import customparser
 import database
 import defaults
@@ -708,7 +709,7 @@ class StarSet(object):
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = Queue()
 
 @methods.print_exception_traceback
 def parallel_light_curves(args):
@@ -1012,4 +1013,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

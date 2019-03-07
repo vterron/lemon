@@ -42,6 +42,7 @@ else:
     import subprocess
 
 # LEMON modules
+from util import Queue
 import customparser
 import defaults
 import fitsimage
@@ -64,7 +65,7 @@ ASTROMETRY_COMMAND = 'solve-field'
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = Queue()
 
 class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
@@ -509,4 +510,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-
