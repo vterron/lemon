@@ -149,6 +149,18 @@ class LoadCoordinatesTest(unittest.TestCase):
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
+    def test_load_coordinates_sci_notation(self):
+
+        # For some datasets that generate coords so close to zero that they end up in scientific notation
+
+        for _ in xrange(NITERS):
+            data = '7.9720694373e-05 44.6352243008'
+            with methods.tempinput(data) as path:
+                coordinates = methods.load_coordinates(path)
+                for coords in coordinates:
+                    self.assertEqual(coords, (7.9720694373e-05, 44.6352243008, None, None))
+
+
     def test_load_coordinates_empty_lines_and_comments(self):
 
         # The same as test_load_coordinates(), but randomly inserting a few

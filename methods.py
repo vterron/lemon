@@ -284,7 +284,7 @@ def load_coordinates(path):
             if re.match(regexp, line):
                 continue
 
-            kwargs = dict(float = "([+-]?\d+(\.\d+)*)")
+            kwargs = dict(float = "([+-]?\d+(\.\d+)(?:[eE][+\-]?\d+)*)")
             regexp = ("^\s*"
                       "(?P<ra>{float})"
                       "\s+"
