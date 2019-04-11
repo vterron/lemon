@@ -149,16 +149,27 @@ class LoadCoordinatesTest(unittest.TestCase):
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
-    def test_load_coordinates_sci_notation(self):
+    def test_load_coordinates_scientific_notation(self):
 
         # For some datasets that generate coords so close to zero that they end up in scientific notation
 
-        for _ in xrange(NITERS):
-            data = '7.9720694373e-05 44.6352243008'
-            with methods.tempinput(data) as path:
-                coordinates = methods.load_coordinates(path)
-                for coords in coordinates:
-                    self.assertEqual(coords, (7.9720694373e-05, 44.6352243008, None, None))
+        data = '7.9720694373e-05 44.6352243008'
+        with methods.tempinput(data) as path:
+            coordinates = methods.load_coordinates(path)
+            coords_list = list(coordinates)
+            self.assertEqual(len(coords_list), 1)
+            self.assertEqual(coords_list[0], (7.9720694373e-05, 44.6352243008, None, None))
+
+    def test_load_coordinates_scientific_notation_with_propper_motion(self):
+
+        # For some datasets that generate coords so close to zero that they end up in scientific notation
+
+        data = '7.9720694373e-05 44.6352243008 [0.00123] [0.0000432]'
+        with methods.tempinput(data) as path:
+            coordinates = methods.load_coordinates(path)
+            coords_list = list(coordinates)
+            self.assertEqual(len(coords_list), 1)
+            self.assertEqual(coords_list[0], (7.9720694373e-05, 44.6352243008, 0.00123, 4.32e-05))
 
 
     def test_load_coordinates_empty_lines_and_comments(self):
