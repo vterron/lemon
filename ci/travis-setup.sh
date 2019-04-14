@@ -26,12 +26,8 @@ cd ~
 
 ########### Install IRAF ################
 
-if [[ $ARCH_64_BITS == 1 ]]; then
-    IRAF_TAR="iraf.lnux.x86_64.tar.gz"
-else
-    IRAF_TAR="iraf.lnux.x86.tar.gz"
-fi
-IRAF_SERVER="ftp://iraf.noao.edu/iraf/v216/PCIX/"
+IRAF_TAR="v2.16.1+2018.11.01.tar.gz"
+IRAF_SERVER="https://github.com/iraf-community/iraf/archive/"
 IRAF_URL=$IRAF_SERVER$IRAF_TAR
 
 IRAF_DIR="/iraf/iraf/"
@@ -41,6 +37,7 @@ cd $IRAF_DIR
 
 wget $IRAF_URL
 tar xfz $IRAF_TAR
+mv iraf-2.16.1-2018.11.01/* .
 yes "" | ./install --system
 rm $IRAF_TAR
 
