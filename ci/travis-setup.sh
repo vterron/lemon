@@ -65,7 +65,7 @@ cd $CWD # back to the LEMON directory
 # a copy on our server.
 
 TEST_FITS_DIR="test/test_data/fits/"
-DSS_IMAGES_URL="https://github.com/lemon/test-data/raw/master/DSS/"
+DSS_IMAGES_URL="https://github.com/vterron/lemon-test-data/raw/master/DSS/"
 
 DSS_FILENAMES=(
  "Barnard's_Star.fits"
