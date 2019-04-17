@@ -38,7 +38,12 @@ cd $IRAF_DIR
 wget $IRAF_URL
 tar xfz $IRAF_TAR
 mv iraf-2.16.1-2018.11.01/* .
+
+# https://iraf-community.github.io/install
 yes "" | ./install --system
+make linux64
+make sysgen 2>&1 | tee build.log
+./test/run_tests
 rm $IRAF_TAR
 
 ########### Install SExtractor ###########
