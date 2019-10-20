@@ -30,7 +30,6 @@ import tempfile
 from test import unittest
 import astromatic
 import fitsimage
-import methods
 import platform
 import qphot
 import test.test_fitsimage

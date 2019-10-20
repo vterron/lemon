@@ -29,7 +29,6 @@ import time
 import warnings
 
 # LEMON module
-import methods
 import util
 
 LEMON_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -25,7 +25,6 @@ import atexit
 import aplpy
 import gtk
 import logging
-import methods
 import numpy
 import os
 import pyfits

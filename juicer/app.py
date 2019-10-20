@@ -53,7 +53,6 @@ sys.path.append(path)
 import chart
 import config
 import glade
-import methods
 import mining
 import plot
 import snr

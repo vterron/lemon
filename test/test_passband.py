@@ -27,7 +27,6 @@ import string
 
 # LEMON modules
 import util
-import methods
 import passband
 from test import unittest
 from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \

@@ -53,7 +53,6 @@ import customparser
 import defaults
 import fitsimage
 import keywords
-import methods
 import style
 
 class FITSeeingImage(fitsimage.FITSImage):

@@ -45,7 +45,6 @@ import warnings
 
 # LEMON modules
 import fitsimage
-import methods
 import util
 
 # Tell PyRAF to skip all graphics initialization and run in terminal-only mode.

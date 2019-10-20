@@ -43,7 +43,6 @@ import tempfile
 # LEMON modules
 import astromatic
 import json_parse
-import methods
 import passband
 import util
 

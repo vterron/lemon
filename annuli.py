@@ -66,7 +66,6 @@ import diffphot
 import fitsimage
 import keywords
 import json_parse
-import methods
 import mining
 import photometry
 import subprocess

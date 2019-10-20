@@ -38,7 +38,6 @@ import scipy.stats
 
 # LEMON modules
 import database
-import methods
 import util
 
 class NoStarsSelectedError(ValueError):

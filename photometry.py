@@ -69,7 +69,6 @@ import defaults
 import fitsimage
 import json_parse
 import keywords
-import methods
 import qphot
 import seeing
 import style

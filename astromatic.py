@@ -32,7 +32,6 @@ import tempfile
 import subprocess
 
 # LEMON modules
-import methods
 import util
 
 CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')

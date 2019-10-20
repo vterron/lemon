@@ -36,7 +36,6 @@ import astromatic
 from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
 import fitsimage
-import methods
 import util
 
 NITERS = 100

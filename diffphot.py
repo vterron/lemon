@@ -60,7 +60,6 @@ import util
 import customparser
 import database
 import defaults
-import methods
 import snr
 import style
 

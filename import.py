@@ -61,7 +61,6 @@ import sys
 import customparser
 import keywords
 import fitsimage
-import methods
 import style
 import util
 

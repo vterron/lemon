@@ -48,7 +48,6 @@ import warnings
 # LEMON modules
 import util
 import keywords
-import methods
 import passband
 import style
 
