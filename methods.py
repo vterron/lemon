@@ -94,24 +94,6 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
 
         return output_directory
 
-def str_split_callback(option, opt, value, parser):
-    """ opt-parse callback function to parse a list of values.
-
-    This method is intended to be used in order to parse opt-parse options that
-    contain a list of values. In other words, the received comma-separated
-    values are converted to a list, so that when the user specifies, i.e.,
-    '--groups one,two' the value returned by opt-parse is ['one', 'two'].
-    [URL] http://stackoverflow.com/questions/392041/python-optparse-list
-
-    option - the Option instance that is calling the callback.
-    opt_str - the option string seen on the command-line.
-    value - the argument to this option seen on the command-line.
-    parser - the OptionParser instance driving the whole thing.
-
-    """
-
-    setattr(parser.values, option.dest, value.split(','))
-
 def owner_writable(path, add):
     """ Make the file owner writeable or unwriteable.
 
