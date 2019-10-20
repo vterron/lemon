@@ -31,16 +31,16 @@ import warnings
 # LEMON modules
 from test import unittest
 from astromatic import Coordinates
-import methods
+import util
 
-class MethodsFunctionsTests(unittest.TestCase):
+class FuncCatchllallTest(unittest.TestCase):
 
     def test_func_catchall(self):
 
         # Returns func(*args, **kwargs) ...
-        self.assertEqual(3,  methods.func_catchall(operator.div, 9, 3))
-        self.assertEqual(4,  methods.func_catchall(int, '4'))
-        self.assertEqual(-5, methods.func_catchall(max, -1, -5, 4, key=abs))
+        self.assertEqual(3,  util.func_catchall(operator.div, 9, 3))
+        self.assertEqual(4,  util.func_catchall(int, '4'))
+        self.assertEqual(-5, util.func_catchall(max, -1, -5, 4, key=abs))
 
         # ... unless the function raises an exception. In that case, it is
         # catched and None is returned instead.
@@ -48,8 +48,8 @@ class MethodsFunctionsTests(unittest.TestCase):
         def foo_except():
             raise ValueError
 
-        self.assertEqual(None, methods.func_catchall(foo_except))
-        self.assertEqual(None, methods.func_catchall(operator.div, 1, 0))
+        self.assertEqual(None, util.func_catchall(foo_except))
+        self.assertEqual(None, util.func_catchall(operator.div, 1, 0))
 
 
 class StreamToWarningFilterTest(unittest.TestCase):
@@ -65,7 +65,7 @@ class StreamToWarningFilterTest(unittest.TestCase):
         regexp = '(?P<msg>{0})'.format(expected_output)
         category = UserWarning
         args = output, regexp, category
-        stdout_filter = methods.StreamToWarningFilter(*args)
+        stdout_filter = util.StreamToWarningFilter(*args)
 
         with warnings.catch_warnings():
             warnings.filterwarnings('error')
@@ -89,7 +89,7 @@ class StreamToWarningFilterTest(unittest.TestCase):
         regexp = "Warning: Keyword: (?P<msg>{0})".format(expected_output)
         category = RuntimeWarning
         args = output, regexp, category
-        stdout_filter = methods.StreamToWarningFilter(*args)
+        stdout_filter = util.StreamToWarningFilter(*args)
 
         with warnings.catch_warnings():
             warnings.filterwarnings('error')
@@ -110,7 +110,7 @@ class StreamToWarningFilterTest(unittest.TestCase):
         regexp = 'v(?P<msg>(\d\.?)+)'
         category = UserWarning
         args = output, regexp, category
-        stdout_filter = methods.StreamToWarningFilter(*args)
+        stdout_filter = util.StreamToWarningFilter(*args)
 
         with warnings.catch_warnings():
             warnings.filterwarnings('error')
@@ -130,7 +130,7 @@ class StreamToWarningFilterTest(unittest.TestCase):
         output = StringIO.StringIO()
         regexp = 'spam'
         args = output, regexp, UserWarning
-        stdout_filter = methods.StreamToWarningFilter(*args)
+        stdout_filter = util.StreamToWarningFilter(*args)
 
         with self.assertRaisesRegexp(IndexError, "no such group"):
             stdout_filter.write("spam")
@@ -140,7 +140,7 @@ class StreamToWarningFilterTest(unittest.TestCase):
         fd = open(os.devnull, 'wt')
         regexp = "Keyword (?P<msg>EXPTIME) not found"
         args = fd, regexp, RuntimeWarning
-        devnull_filter = methods.StreamToWarningFilter(*args)
+        devnull_filter = util.StreamToWarningFilter(*args)
         # Must close the underlying file object
         devnull_filter.close()
         self.assertTrue(fd.closed)
