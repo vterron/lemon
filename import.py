@@ -88,7 +88,7 @@ parser.usage = "%prog [OPTION]... INPUT_DIRS... OUTPUT_DIR"
 
 parser.add_option('--object', action = 'callback', type = 'str',
                   dest = 'objectn', default = ['*'],
-                  callback = methods.str_split_callback,
+                  callback = str_split_callback,
                   help = "list of case-insensitive patterns, according to the "
                   "rules used by the Unix shell, and separated by commas, of "
                   "the object names to import. Those FITS images whose object "
