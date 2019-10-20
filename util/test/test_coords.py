@@ -139,6 +139,32 @@ class LoadCoordinatesTest(unittest.TestCase):
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
+    def test_load_coordinates_scientific_notation(self):
+
+        # For some datasets that generate coords so close to zero that they end up in scientific notation
+
+        data = '7.9720694373e-05 44.6352243008'
+        with tempinput(data) as path:
+            coordinates = load_coordinates(path)
+            coords_list = list(coordinates)
+            self.assertEqual(len(coords_list), 1)
+            ra, dec, pm_ra, pm_dec = coords_list[0]
+            self.assertAlmostEqual(ra, 7.9720694373e-05)
+            self.assertAlmostEqual(dec, 44.6352243008)
+
+    def test_load_coordinates_scientific_notation_with_propper_motion(self):
+
+        data = '7.9720694373e-05 44.6352243008 [0.00123] [0.0000432]'
+        with tempinput(data) as path:
+            coordinates = load_coordinates(path)
+            coords_list = list(coordinates)
+            self.assertEqual(len(coords_list), 1)
+            ra, dec, pm_ra, pm_dec = coords_list[0]
+            self.assertAlmostEqual(ra, 7.9720694373e-05)
+            self.assertAlmostEqual(dec, 44.6352243008)
+            self.assertAlmostEqual(pm_ra, 0.00123)
+            self.assertAlmostEqual(pm_dec, 4.32e-05)
+
     def test_load_coordinates_empty_lines_and_comments(self):
 
         # The same as test_load_coordinates(), but randomly inserting a few
