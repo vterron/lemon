@@ -39,6 +39,7 @@ import scipy.stats
 # LEMON modules
 import database
 import methods
+import util
 
 class NoStarsSelectedError(ValueError):
     """ Raised when no stars can be returned by the LEMONdBMiner """
@@ -55,15 +56,15 @@ class LEMONdBMiner(database.LEMONdB):
 
     """
 
-    @methods.memoize
+    @util.memoize
     def get_star(self, *args):
         return super(LEMONdBMiner, self).get_star(*args)
 
-    @methods.memoize
+    @util.memoize
     def get_light_curve(self, *args):
         return super(LEMONdBMiner, self).get_light_curve(*args)
 
-    @methods.memoize
+    @util.memoize
     def get_period(self, *args):
         return super(LEMONdBMiner, self).get_period(*args)
 
@@ -687,4 +688,3 @@ class LEMONdBMiner(database.LEMONdB):
                 yield star_id, zip(pfilters, star_amplitudes, cmp_stdevs)
             else:
                 yield None
-

@@ -35,9 +35,6 @@ import traceback
 import time
 import warnings
 
-# LEMON modules
-import style
-
 def memoize(f):
     """ Minimalistic memoization decorator (*args / **kwargs)
     Based on: http://code.activestate.com/recipes/577219/ """

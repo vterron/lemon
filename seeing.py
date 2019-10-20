@@ -183,7 +183,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
 
     @property
-    @methods.memoize
+    @util.memoize
     def catalog(self):
         """ Return the SExtraxtor catalog of the FITS image.
 
