@@ -64,6 +64,18 @@ import methods
 import snr
 import style
 
+def percentage_change(old, new):
+    """ Return the relative change between the old value and the new one.
+
+    Note we need to use an absolute value for V1 in the denominator regarding
+    values with V1 being a negative and V2 being positive, as well as V1 being
+    negative, and V2 being greater than V1 but still negative. """
+
+    if old < 0 and (new > 0 or old < new < 0):
+        return (new - old) / float(abs(old))
+    else:
+        return (new - old) / float(old)
+
 class Weights(numpy.ndarray):
     """ Encapsulate the weights associated with some values """
 
@@ -179,7 +191,7 @@ class Weights(numpy.ndarray):
             msg = "all coefficients were discarded ('minimum' too high?)"
             raise ValueError(msg, self)
         else:
-            return max((abs(methods.percentage_change(x, y))
+            return max((abs(percentage_change(x, y))
                             for x, y in coefficients))
 
     @classmethod

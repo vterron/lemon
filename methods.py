@@ -38,18 +38,6 @@ import warnings
 # LEMON modules
 import style
 
-def percentage_change(old, new):
-    """ Return the relative change between the old value and the new one.
-
-    Note we need to use an absolute value for V1 in the denominator regarding
-    values with V1 being a negative and V2 being positive, as well as V1 being
-    negative, and V2 being greater than V1 but still negative. """
-
-    if old < 0 and (new > 0 or old < new < 0):
-        return (new - old) / float(abs(old))
-    else:
-        return (new - old) / float(old)
-
 def show_progress(percentage):
     """ Print a progress bar strikingly similar to that of the wget command.
 
