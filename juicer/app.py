@@ -59,6 +59,7 @@ import plot
 import snr
 import simbad
 import util
+from ..util import ra_str, dec_str
 from version import __version__
 
 # Workaround for GTK+ bug 632538. Until GTK+ 2.24.19 (the PyGTK version does
@@ -604,9 +605,9 @@ class StarDetailsGUI(object):
 
         store = self.starinfo_store
         x, y, self.ra, self.dec, _, _, _, imag = self.db.get_star(star_id)
-        store.append(('Right ascension', '%s' % methods.ra_str(self.ra), True))
+        store.append(('Right ascension', '%s' % ra_str(self.ra), True))
         store.append(('Right ascension', '%.4f deg' % self.ra, True))
-        store.append(('Declination', '%s' % methods.dec_str(self.dec), True))
+        store.append(('Declination', '%s' % dec_str(self.dec), True))
         store.append(('Declination', '%.4f deg' % self.dec, True))
         store.append(('Magnitude', '%.3f' % imag, True))
         store.append(('x-coordinate', '%.2f' % x, True))
@@ -1308,9 +1309,7 @@ class LEMONJuicerGUI(object):
                     break
 
                 x, y, ra, dec, _, _, _, imag = db.get_star(star_id)
-                ra_str  = methods.ra_str(ra)
-                dec_str = methods.dec_str(dec)
-                row = [star_id, ra_str, ra, dec_str, dec, imag]
+                row = [star_id, ra_str(ra), ra, dec_str(dec), dec, imag]
 
                 for pfilter in db_pfilters:
                     # None returned if the star doesn't have this light curve
@@ -1579,4 +1578,3 @@ class LEMONJuicerGUI(object):
         if self.db is not None:
             self.handle_finding_chart(acceleratable)
         return True
-

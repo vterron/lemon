@@ -61,7 +61,7 @@ import time
 import warnings
 
 # LEMON modules
-from util import Queue
+import util
 import astromatic
 import customparser
 import database
@@ -82,7 +82,7 @@ DANNULUS_TOO_THIN_MSG = \
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = Queue()
+queue = util.Queue()
 
 def get_fwhm(img, options):
     """ Return the FWHM of the FITS image.
@@ -641,7 +641,7 @@ def main(arguments = None):
     if options.coordinates:
 
         sources_coordinates = []
-        for args in methods.load_coordinates(options.coordinates):
+        for args in util.load_coordinates(options.coordinates):
             coords = astromatic.Coordinates(*args)
             sources_coordinates.append(coords)
 
@@ -923,12 +923,12 @@ def main(arguments = None):
     # Print coordinates, in degrees and sexagesimal
     print "%sα = %11.7f" % (style.prefix, sources_img_ra) ,
     msg = " (%.02d %.02d %05.2f)"
-    args = methods.DD_to_HMS(sources_img_ra)
+    args = util.DD_to_HMS(sources_img_ra)
     print msg % args
 
     print "%sδ = %11.7f" % (style.prefix, sources_img_dec) ,
     msg = "(%+.02d %.02d %05.2f)"
-    args = methods.DD_to_DMS(sources_img_dec)
+    args = util.DD_to_DMS(sources_img_dec)
     print msg % args
 
     # If --coordinates was given, let the user know on how many celestial

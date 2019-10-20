@@ -33,6 +33,7 @@ import fitsimage
 import methods
 import qphot
 import test.test_fitsimage
+from util import load_coordinates
 
 NITERS = 100  # How many times random-data tests cases are run
 
@@ -121,7 +122,7 @@ class QPhotTest(unittest.TestCase):
             try:
                 # The coordinates written by get_coords_file(), returned as
                 # four-element tuples (ra, dec, pm_ra, pm_dec)
-                output = methods.load_coordinates(output_path)
+                output = load_coordinates(output_path)
                 for c1, c2 in zip(output, expected):
                     self.assertAlmostEqual(c1[0], c2.ra)
                     self.assertAlmostEqual(c1[1], c2.dec)

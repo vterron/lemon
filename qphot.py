@@ -45,6 +45,7 @@ import warnings
 # LEMON modules
 import fitsimage
 import methods
+import util
 
 # Tell PyRAF to skip all graphics initialization and run in terminal-only mode.
 # Otherwise we will get annoying warning messages (such as "could not open
@@ -192,7 +193,7 @@ class QPhot(list):
         self.image = fitsimage.FITSImage(img_path)
         self.coords_path = coords_path
 
-        for ra, dec, pm_ra, pm_dec in methods.load_coordinates(self.coords_path):
+        for ra, dec, pm_ra, pm_dec in util.load_coordinates(self.coords_path):
             if ra == 0 and dec == 0:
                 msg = (
                   "the right ascension and declination of one or more "
@@ -708,4 +709,3 @@ def run(img, coordinates, epoch,
             pass
 
     return img_qphot
-
