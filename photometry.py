@@ -683,7 +683,7 @@ def main(arguments = None):
     files = fitsimage.InputFITSFiles()
     img_dates = {}
 
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     for index, img_path in enumerate(input_paths):
         img = fitsimage.FITSImage(img_path)
         pfilter = img.pfilter(options.filterk)
@@ -693,7 +693,7 @@ def main(arguments = None):
         img_dates[img_path] = date
 
         percentage = (index + 1) / len(input_paths) * 100
-        methods.show_progress(percentage)
+        util.show_progress(percentage)
 
     print # progress bar doesn't include newline
 
@@ -1399,10 +1399,10 @@ def main(arguments = None):
         # the MissingFITSKeyword warning into an exception.
 
         result = pool.map_async(parallel_photometry, map_async_args())
-        methods.show_progress(0.0)
+        util.show_progress(0.0)
         while not result.ready():
             time.sleep(1)
-            methods.show_progress(queue.qsize() / len(images) * 100)
+            util.show_progress(queue.qsize() / len(images) * 100)
             # Do not update the progress bar when debugging; instead, print it
             # on a new line each time. This prevents the next logging message,
             # if any, from being printed on the same line that the bar.
@@ -1410,14 +1410,14 @@ def main(arguments = None):
                 print
 
         result.get() # reraise exceptions of the remote call, if any
-        methods.show_progress(100) # in case the queue was ready too soon
+        util.show_progress(100) # in case the queue was ready too soon
         print
 
         msg = "%sStoring photometric measurements in the database..."
         print msg % style.prefix
         sys.stdout.flush()
 
-        methods.show_progress(0)
+        util.show_progress(0)
         qphot_results = (queue.get() for x in xrange(queue.qsize()))
         for index, args in enumerate(qphot_results):
 
@@ -1525,7 +1525,7 @@ def main(arguments = None):
                         args = db_image.path, object_id
                         logging.debug(msg % args)
 
-            methods.show_progress(100 * (index + 1) / len(images))
+            util.show_progress(100 * (index + 1) / len(images))
             if logging_level < logging.WARNING:
                 print
 
@@ -1535,7 +1535,7 @@ def main(arguments = None):
             output_db.commit()
             logging.info("Database transaction commited")
 
-            methods.show_progress(100.0)
+            util.show_progress(100.0)
             print
 
     # Collect information that can be used by the query optimizer to help make

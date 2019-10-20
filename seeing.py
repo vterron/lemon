@@ -47,7 +47,7 @@ import tempfile
 import time
 
 # LEMON modules
-from util import Queue
+import util
 import astromatic
 import customparser
 import defaults
@@ -429,7 +429,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 # This Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = Queue()
+queue = util.Queue()
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
@@ -654,10 +654,10 @@ def main(arguments = None):
     map_async_args = ((path, options) for path in input_paths if os.path.isfile(path))
     result = pool.map_async(parallel_sextractor, map_async_args)
 
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     while not result.ready():
         time.sleep(1)
-        methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        util.show_progress(queue.qsize() / len(input_paths) * 100)
         # Do not update the progress bar when debugging; instead, print it
         # on a new line each time. This prevents the next logging message,
         # if any, from being printed on the same line that the bar.
@@ -665,7 +665,7 @@ def main(arguments = None):
             print
 
     result.get()      # reraise exceptions of the remote call, if any
-    methods.show_progress(100) # in case the queue was ready too soon
+    util.show_progress(100) # in case the queue was ready too soon
     print
 
     # Three sets, to keep the track of all the images on which SExtractor

@@ -63,6 +63,7 @@ import keywords
 import fitsimage
 import methods
 import style
+import util
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DIRS... OUTPUT_DIR"
@@ -211,16 +212,16 @@ def main(arguments = None):
           (style.prefix, len(files_paths))
 
     images_set = set()
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     for path_index, path in enumerate(files_paths):
         try:
             images_set.add(fitsimage.FITSImage(path))
             fraction = (path_index + 1) / len(files_paths) * 100
-            methods.show_progress(fraction)
+            util.show_progress(fraction)
         except fitsimage.NonStandardFITS:
             pass
     else:
-        methods.show_progress(100)
+        util.show_progress(100)
         print
 
     if not len(images_set):
@@ -467,4 +468,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

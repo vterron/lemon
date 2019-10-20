@@ -67,6 +67,7 @@ import fitsimage
 import keywords
 import methods
 import style
+import util
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_IMG"
@@ -187,7 +188,7 @@ def main(arguments = None):
     msg = "%sMaking sure the %d input paths are FITS images..."
     print msg % (style.prefix, len(input_paths))
 
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     for index, path in enumerate(input_paths):
         # fitsimage.FITSImage.__init__() raises fitsimage.NonStandardFITS if
         # one of the paths is not a standard-conforming FITS file.
@@ -212,7 +213,7 @@ def main(arguments = None):
             raise fitsimage.NonStandardFITS(msg % path)
 
         percentage = (index + 1) / len(input_paths) * 100
-        methods.show_progress(percentage)
+        util.show_progress(percentage)
     print # progress bar doesn't include newline
 
     # The --filter option allows the user to specify which FITS files, among
@@ -324,4 +325,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

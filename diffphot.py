@@ -56,7 +56,7 @@ import sys
 import time
 
 # LEMON modules
-from util import Queue
+import util
 import customparser
 import database
 import defaults
@@ -721,7 +721,7 @@ class StarSet(object):
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = Queue()
+queue = util.Queue()
 
 @methods.print_exception_traceback
 def parallel_light_curves(args):
@@ -962,10 +962,10 @@ def main(arguments = None):
         map_async_args = ((star, all_stars, options) for star in all_stars)
         result = pool.map_async(parallel_light_curves, map_async_args)
 
-        methods.show_progress(0.0)
+        util.show_progress(0.0)
         while not result.ready():
             time.sleep(1)
-            methods.show_progress(queue.qsize() / len(all_stars) * 100)
+            util.show_progress(queue.qsize() / len(all_stars) * 100)
             # Do not update the progress bar when debugging; instead, print it
             # on a new line each time. This prevents the next logging message,
             # if any, from being printed on the same line that the bar.
@@ -973,13 +973,13 @@ def main(arguments = None):
                 print
 
         result.get() # reraise exceptions of the remote call, if any
-        methods.show_progress(100) # in case the queue was ready too soon
+        util.show_progress(100) # in case the queue was ready too soon
         print
 
         # The multiprocessing queue contains two-element tuples,
         # mapping the ID of each star to its light curve.
         print "%sStoring the light curves in the database..." % style.prefix
-        methods.show_progress(0)
+        util.show_progress(0)
         light_curves = (queue.get() for x in xrange(queue.qsize()))
         for index, (star_id, curve) in enumerate(light_curves):
 
@@ -995,7 +995,7 @@ def main(arguments = None):
             db.add_light_curve(star_id, curve)
             logging.debug("Light curve for star %d successfully stored" % star_id)
 
-            methods.show_progress(100 * (index + 1) / len(all_stars))
+            util.show_progress(100 * (index + 1) / len(all_stars))
             if logging_level < logging.WARNING:
                 print
 
@@ -1005,7 +1005,7 @@ def main(arguments = None):
             db.commit()
             logging.info("Database transaction commited")
 
-            methods.show_progress(100.0)
+            util.show_progress(100.0)
             print
 
     print "%sUpdating statistics about tables and indexes..." % style.prefix ,

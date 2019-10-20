@@ -42,7 +42,7 @@ else:
     import subprocess
 
 # LEMON modules
-from util import Queue
+import util
 import customparser
 import defaults
 import fitsimage
@@ -65,7 +65,7 @@ ASTROMETRY_COMMAND = 'solve-field'
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = Queue()
+queue = util.Queue()
 
 class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
@@ -490,7 +490,7 @@ def main(arguments = None):
 
     while not result.ready():
         time.sleep(1)
-        methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        util.show_progress(queue.qsize() / len(input_paths) * 100)
         # Do not update the progress bar when debugging; instead, print it
         # on a new line each time. This prevents the next logging message,
         # if any, from being printed on the same line that the bar.
@@ -498,7 +498,7 @@ def main(arguments = None):
             print
 
     result.get() # reraise exceptions of the remote call, if any
-    methods.show_progress(100) # in case the queue was ready too soon
+    util.show_progress(100) # in case the queue was ready too soon
     print
 
     # Results in the process shared queue were only necessary to accurately

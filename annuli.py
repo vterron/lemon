@@ -70,6 +70,7 @@ import methods
 import mining
 import photometry
 import subprocess
+import util
 
 class NotEnoughImages(ValueError):
     pass
@@ -320,7 +321,7 @@ def main(arguments = None):
         files[pfilter].append(img)
 
         percentage = (index + 1) / len(input_paths) * 100
-        methods.show_progress(percentage)
+        util.show_progress(percentage)
 
     print # progress bar doesn't include newline
     print style.prefix
@@ -647,4 +648,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-
