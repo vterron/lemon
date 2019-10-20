@@ -26,7 +26,6 @@ import aplpy
 import gtk
 import logging
 import numpy
-import os
 import pyfits
 
 import matplotlib.figure

@@ -19,7 +19,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import astropy.wcs
-import itertools
 import operator
 import os.path
 import pyfits
@@ -29,7 +28,6 @@ import tempfile
 # LEMON modules
 from test import unittest
 import astromatic
-import fitsimage
 import platform
 import qphot
 import test.test_fitsimage

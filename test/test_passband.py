@@ -20,7 +20,6 @@
 
 from __future__ import division
 
-import functools
 import os.path
 import random
 import string

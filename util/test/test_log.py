@@ -23,14 +23,11 @@ from __future__ import division
 import StringIO
 import operator
 import os
-import random
-import time
 import warnings
 
 
 # LEMON modules
 from test import unittest
-from astromatic import Coordinates
 import util
 
 class FuncCatchllallTest(unittest.TestCase):

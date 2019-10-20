@@ -19,13 +19,8 @@
 
 from __future__ import division
 
-import StringIO
-import operator
-import os
 import Queue
-import random
 import time
-import warnings
 from Queue import Empty, Full
 
 

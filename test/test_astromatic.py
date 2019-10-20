@@ -21,7 +21,6 @@
 import copy
 import functools
 import mock
-import numpy
 import os
 import os.path
 import pyfits
@@ -35,7 +34,6 @@ from test import unittest
 import astromatic
 from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
-import fitsimage
 import util
 
 NITERS = 100

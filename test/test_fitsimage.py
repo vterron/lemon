@@ -24,7 +24,6 @@ import numpy.random
 import os
 import pyfits
 import random
-import shutil
 import stat
 import tempfile
 import warnings
