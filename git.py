@@ -30,6 +30,7 @@ import warnings
 
 # LEMON module
 import methods
+import util
 
 LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
 COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
@@ -221,6 +222,6 @@ def check_up_to_date(timeout = None):
             msg = ("Your current revision is '%s' (%s), but there is a more "
                    "recent version (%s, %s) available on GitHub. You may use "
                    "`lemon --update` to retrieve these changes.")
-            args = (current_revision, methods.utctime(last_commit_date),
-                    github_hash, methods.utctime(last_github_date))
+            args = (current_revision, util.utctime(last_commit_date),
+                    github_hash, util.utctime(last_github_date))
             warnings.warn(msg % args)

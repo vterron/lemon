@@ -17,7 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import functools
 import sys
+import time
 
 def show_progress(percentage):
     """ Print a progress bar strikingly similar to that of the wget command.
@@ -50,3 +52,44 @@ def show_progress(percentage):
     sys.stdout.write("\r" + style.prefix + percent + "%[" + bar * "=" + \
                      ">" + spaces*" " + "]")
     sys.stdout.flush()
+
+def utctime(seconds = None, suffix = True):
+    """ UTC version of time.ctime.
+
+    Convert a time expressed in seconds since the Unix epoch to a 28-character
+    string, representing Coordinated Universal Time, of the following form:
+    'Sun Jun 20 23:21:05 1993 UTC'. Fractions of a second are ignored. The last
+    part of the string, ' UTC', is omitted (and therefore a 24-character string
+    returned) if the 'suffix' argument evaluates to False. If 'seconds' is not
+    provided or None, the current time as returned by time.time() is used.
+
+    """
+
+    utc_ctime = time.asctime(time.gmtime(seconds))
+    if suffix:
+        utc_ctime += ' UTC'
+    return utc_ctime
+
+def print_exception_traceback(func):
+    """ Decorator to print the stack trace of an exception.
+
+    This decorator catches any exception raised by the decorated function,
+    prints its information to the standard output (traceback.print_exc()) and
+    re-raises it. In particular, this may be used to decorate functions called
+    through the multiprocessing module, since exceptions in spawned child
+    processes do not print stack traces.
+
+    The idea for this decorator comes from Chuan Ji's blog:
+    http://seasonofcode.com/posts/python-multiprocessing-and-exceptions.html
+
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            traceback.print_exc()
+            print
+            raise
+    return wrapper

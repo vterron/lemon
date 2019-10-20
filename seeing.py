@@ -543,7 +543,7 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_sextractor(args):
     """ Run SExtractor and compute the FWHM and elongation of a FITS image.
 
@@ -860,7 +860,7 @@ def main(arguments = None):
             output_path = os.path.join(fwhm_dir, output_filename)
             logging.debug("%s was discarded because of its FWHM" % path)
             logging.debug("%s to be copied to subdirectory %s" % (path, fwhm_dir))
-            history_msg1 = "Image discarded by LEMON on %s" % methods.utctime()
+            history_msg1 = "Image discarded by LEMON on %s" % util.utctime()
             history_msg2 = "[Discarded] FWHM = %.3f pixels, maximum allowed value = %.3f" % \
                            (fwhms[path], maximum_fwhm)
 
@@ -868,7 +868,7 @@ def main(arguments = None):
             output_path = os.path.join(elong_dir, output_filename)
             logging.debug("%s was discarded because of its elongation ratio" % path)
             logging.debug("%s to be copied to subdirectory %s" % (path, elong_dir))
-            history_msg1 = "Image discarded by LEMON on %s" % methods.utctime()
+            history_msg1 = "Image discarded by LEMON on %s" % util.utctime()
             history_msg2 = "[Discarded] Elongation = %.3f, maximum allowed value = %.3f" % \
                            (elongs[path], maximum_elong)
 

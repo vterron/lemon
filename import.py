@@ -439,7 +439,7 @@ def main(arguments = None):
         # Add some information to the FITS header...
         if not options.exact:
 
-            msg1 = "File imported by LEMON on %s" % methods.utctime()
+            msg1 = "File imported by LEMON on %s" % util.utctime()
             dest_img.add_history(msg1)
 
             # If the --uik option is given, store in this keyword the absolute

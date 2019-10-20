@@ -45,6 +45,7 @@ import astromatic
 import json_parse
 import methods
 import passband
+import util
 
 class DBStar(object):
     """ Encapsulates the instrumental photometric information for a star.
@@ -910,7 +911,7 @@ class LEMONdB(object):
             if list(self._rows):
                 msg = ("Image with Unix time %.4f (%s) and filter %s already "
                        "in database")
-                args = (unix_time, methods.utctime(unix_time), pfilter)
+                args = (unix_time, util.utctime(unix_time), pfilter)
                 raise DuplicateImageError(msg % args)
 
             # This point is only reached if DuplicateImageError was not raised
@@ -932,7 +933,7 @@ class LEMONdB(object):
         rows = list(self._rows)
         if not rows:
             msg = "%.4f (%s) and filter %s"
-            args = unix_time, methods.utctime(unix_time), pfilter
+            args = unix_time, util.utctime(unix_time), pfilter
             raise KeyError(msg % args)
         else:
             assert len(rows) == 1
@@ -953,7 +954,7 @@ class LEMONdB(object):
         rows = list(self._rows)
         if not rows:
             msg = "%.4f (%s) and filter %s"
-            args = unix_time, methods.utctime(unix_time), pfilter
+            args = unix_time, util.utctime(unix_time), pfilter
             raise KeyError(msg % args)
         else:
             assert len(rows) == 1
@@ -1120,7 +1121,7 @@ class LEMONdB(object):
 
             msg = "photometry for star ID = %d, Unix time = %4.f " \
                   "(%s) and filter %s already in database"
-            args = (star_id, unix_time, methods.utctime(unix_time), pfilter)
+            args = (star_id, unix_time, util.utctime(unix_time), pfilter)
             raise DuplicatePhotometryError(msg % args)
 
     def get_photometry(self, star_id, pfilter):
@@ -1235,7 +1236,7 @@ class LEMONdB(object):
 
             msg = "light curve point for star ID = %d, Unix time = %4.f " \
                   "(%s) and filter %s already in database"
-            args = (star_id, unix_time, methods.utctime(unix_time), pfilter)
+            args = (star_id, unix_time, util.utctime(unix_time), pfilter)
             raise DuplicateLightCurvePointError(msg % args)
 
     def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight, cstdev):

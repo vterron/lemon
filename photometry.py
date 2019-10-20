@@ -140,7 +140,7 @@ def get_fwhm(img, options):
         logging.debug(msg % args)
         return fwhm
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_photometry(args):
     """ Function argument of map_async() to do photometry in parallel.
 
@@ -196,7 +196,7 @@ def parallel_photometry(args):
                   exp_keyword = options.exptimek)
     unix_time = image.date(**kwargs)
     msg = "%s: observation date: %.2f (%s)"
-    args = (image.path, unix_time, methods.utctime(unix_time))
+    args = (image.path, unix_time, util.utctime(unix_time))
     logging.debug(msg % args)
 
     object_ = image.read_keyword(options.objectk)
@@ -757,7 +757,7 @@ def main(arguments = None):
                     print
 
                 msg = "%sWarning! Multiple images have date %s and filter %s"
-                args = style.prefix, methods.utctime(date), pfilter
+                args = style.prefix, util.utctime(date), pfilter
                 warnings.warn(msg % args)
                 del dates_counter[date][pfilter]
                 for img in images:
@@ -1213,7 +1213,7 @@ def main(arguments = None):
 
             msg1 = ("%s has the same date (%.4f, %s) and filter (%s) as the "
                     "sources image (%s)")
-            date_str = methods.utctime(unix_time)
+            date_str = util.utctime(unix_time)
             args = (img.path, unix_time, date_str, pfilter, path)
             logging.debug(msg1 % args)
 

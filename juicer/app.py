@@ -59,7 +59,7 @@ import plot
 import snr
 import simbad
 import util
-from ..util import ra_str, dec_str
+from ..util import ra_str, dec_str, utctime
 from version import __version__
 
 # Workaround for GTK+ bug 632538. Until GTK+ 2.24.19 (the PyGTK version does
@@ -372,7 +372,7 @@ class StarDetailsGUI(object):
         for unix_time, magnitude, noise in curve:
             row = []
             row.append(unix_time)
-            row.append(methods.utctime(unix_time, suffix = False))
+            row.append(utctime(unix_time, suffix = False))
             row.append(astropy.time.Time(unix_time, format = 'unix').jd)
             row.append(magnitude)
             row.append(noise)

@@ -723,7 +723,7 @@ class StarSet(object):
 # See http://stackoverflow.com/a/3217427/184363
 queue = util.Queue()
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_light_curves(args):
     """ Method argument of map_async to compute light curves in parallel.
 

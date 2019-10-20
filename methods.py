@@ -35,36 +35,6 @@ import traceback
 import time
 import warnings
 
-def memoize(f):
-    """ Minimalistic memoization decorator (*args / **kwargs)
-    Based on: http://code.activestate.com/recipes/577219/ """
-
-    cache = {}
-    @functools.wraps(f)
-    def memf(*args, **kwargs):
-        fkwargs = frozenset(kwargs.iteritems())
-        if (args, fkwargs) not in cache:
-            cache[args, fkwargs] = f(*args, **kwargs)
-        return cache[args, fkwargs]
-    return memf
-
-def utctime(seconds = None, suffix = True):
-    """ UTC version of time.ctime.
-
-    Convert a time expressed in seconds since the Unix epoch to a 28-character
-    string, representing Coordinated Universal Time, of the following form:
-    'Sun Jun 20 23:21:05 1993 UTC'. Fractions of a second are ignored. The last
-    part of the string, ' UTC', is omitted (and therefore a 24-character string
-    returned) if the 'suffix' argument evaluates to False. If 'seconds' is not
-    provided or None, the current time as returned by time.time() is used.
-
-    """
-
-    utc_ctime = time.asctime(time.gmtime(seconds))
-    if suffix:
-        utc_ctime += ' UTC'
-    return utc_ctime
-
 @contextlib.contextmanager
 def tmp_chdir(path):
     """ A context manager to temporarily change the working directory.
@@ -80,30 +50,6 @@ def tmp_chdir(path):
         yield
     finally:
         os.chdir(cwd)
-
-def print_exception_traceback(func):
-    """ Decorator to print the stack trace of an exception.
-
-    This decorator catches any exception raised by the decorated function,
-    prints its information to the standard output (traceback.print_exc()) and
-    re-raises it. In particular, this may be used to decorate functions called
-    through the multiprocessing module, since exceptions in spawned child
-    processes do not print stack traces.
-
-    The idea for this decorator comes from Chuan Ji's blog:
-    http://seasonofcode.com/posts/python-multiprocessing-and-exceptions.html
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception:
-            traceback.print_exc()
-            print
-            raise
-    return wrapper
 
 @contextlib.contextmanager
 def tempinput(data):

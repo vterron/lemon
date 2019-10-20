@@ -256,7 +256,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
         null_fd.close()
         util.clean_tmp_files(output_dir)
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_astrometry(args):
     """ Function argument of map_async() to do astrometry in parallel.
 
@@ -347,7 +347,7 @@ def parallel_astrometry(args):
 
     debug_args = path, output_img.path
     logging.debug("%s: updating header of output image (%s)" % debug_args)
-    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+    msg1 = "Astrometry done via LEMON on %s" % util.utctime()
     msg2 = "[Astrometry] WCS solution found by Astrometry.net"
     msg3 = "[Astrometry] Original image: %s" % img.path
 
