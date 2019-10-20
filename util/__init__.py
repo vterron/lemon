@@ -6,3 +6,4 @@ from .display import *
 from .io import *
 from .memoize import *
 from .context import *
+from .log import *

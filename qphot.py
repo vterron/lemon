@@ -345,7 +345,7 @@ class QPhot(list):
                       "not found)".format(self.path, exptimek))
 
             args = sys.stderr, regexp, MissingFITSKeyword
-            stderr = methods.StreamToWarningFilter(*args)
+            stderr = util.StreamToWarningFilter(*args)
 
             # Run qphot on the image and save the output to our temporary file.
             kwargs = dict(cbox = cbox, annulus = annulus, dannulus = dannulus,
@@ -659,7 +659,7 @@ def run(img, coordinates, epoch,
         logging.info("%s: Running IRAF's imexpr..." % img.path)
         pyraf.iraf.images.imexpr(expr, a = orig_img_path,
                                  output = satur_mask_path, verbose = 'yes',
-                                 Stdout = methods.LoggerWriter('debug'))
+                                 Stdout = util.LoggerWriter('debug'))
 
         assert os.path.exists(satur_mask_path)
 

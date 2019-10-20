@@ -1173,12 +1173,12 @@ def main(arguments = None):
     # gain. Therefore, we use None, which SQLite interprets as NULL.
 
     path = sources_img.path
-    pfilter = methods.func_catchall(sources_img.pfilter, options.filterk)
+    pfilter = util.func_catchall(sources_img.pfilter, options.filterk)
 
     kwargs = dict(date_keyword = options.datek,
                   time_keyword = options.timek,
                   exp_keyword = options.exptimek)
-    unix_time = methods.func_catchall(sources_img.date, **kwargs)
+    unix_time = util.func_catchall(sources_img.date, **kwargs)
 
     # In theory, sources should be detected on the result on mosaicking several
     # FITS images, in order to improve the signal-to-noise ratio and allow for
@@ -1228,13 +1228,13 @@ def main(arguments = None):
             unix_time = None
             pfilter   = None
 
-    object_ = methods.func_catchall(sources_img.read_keyword, options.objectk)
-    airmass = methods.func_catchall(sources_img.read_keyword, options.airmassk)
+    object_ = util.func_catchall(sources_img.read_keyword, options.objectk)
+    airmass = util.func_catchall(sources_img.read_keyword, options.airmassk)
     # If not given with --gaink, read it from the FITS header
     if options.gain:
         gain = options.gain
     else:
-        gain = methods.func_catchall(sources_img.read_keyword, options.gaink)
+        gain = util.func_catchall(sources_img.read_keyword, options.gaink)
 
     ra, dec = sources_img_ra, sources_img_dec
 
