@@ -17,7 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import random
+
 # LEMON modules
+from astromatic import Coordinates
 from test import unittest
 from util import load_coordinates, tempinput
 
@@ -85,7 +88,7 @@ class LoadCoordinatesTest(unittest.TestCase):
         These columns and brackets are surrounded by a random number (up to the
         value of the MAX_SEPS class attribute) or random separators (SEPS class
         attribute). The returned string, after written to disk, is expected to
-        be successfully parsed by methods.load_coorinates().
+        be successfully parsed by load_coorinates().
 
         """
 
@@ -125,14 +128,14 @@ class LoadCoordinatesTest(unittest.TestCase):
             # motions in four columns (or just two, if the proper motions are
             # not known) and inserting a random number of separators before,
             # between and after the columns and brackets. Then make sure that
-            # methods.load_coordinates() returns the same astronomical objects,
-            # in the same order and with the same coordinates that we wrote.
+            # load_coordinates() returns the same astronomical objects, in the
+            # same order and with the same coordinates that we wrote.
 
             n = random.randint(*self.NCOORDS)
             objects = random.sample(self.COORDINATES.values(), n)
             data = self.get_coords_data(objects)
-            with util.tempinput(data) as path:
-                coordinates = methods.load_coordinates(path)
+            with tempinput(data) as path:
+                coordinates = load_coordinates(path)
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
@@ -171,27 +174,27 @@ class LoadCoordinatesTest(unittest.TestCase):
 
             data = '\n'.join(lines)
 
-            with util.tempinput(data) as path:
-                coordinates = methods.load_coordinates(path)
+            with tempinput(data) as path:
+                coordinates = load_coordinates(path)
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
     def test_load_coordinates_empty_file(self):
         # If the file is empty, nothing is returned
-        with util.tempinput('') as path:
-            self.assertEqual([], list(methods.load_coordinates(path)))
+        with tempinput('') as path:
+            self.assertEqual([], list(load_coordinates(path)))
 
     def test_load_coordinates_invalid_data(self):
 
         def check_raise(data, exception, regexp):
-            """ Make sure that methods.load_coordinates() raises 'exception'
+            """ Make sure that load_coordinates() raises 'exception'
             when a file containing 'data' is parsed. 'regexp' is the regular
             expression that must be matched by the string representation of
             the raised exception"""
 
-            with util.tempinput(data) as path:
+            with tempinput(data) as path:
                 with self.assertRaisesRegexp(exception, regexp):
-                    list(methods.load_coordinates(path))
+                    list(load_coordinates(path))
 
         def get_coords():
             """ Return an element from COORDINATES with known proper motions """
