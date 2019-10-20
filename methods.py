@@ -402,21 +402,3 @@ class LoggerWriter(object):
         """
 
         pass
-
-def get_nbits():
-    """ Return the bit architecture of the Python interpreter binary. """
-
-    bits = platform.architecture()[0]
-    for n in (32, 64):
-        if str(n) in bits:
-            return n
-
-    # The Python documentation warns us that "On Mac OS X (and perhaps other
-    # platforms), executable files may be universal files containing multiple
-    # architectures. To get at the "64-bitness" of the current interpreter, it
-    # is more reliable to query the sys.maxsize attribute".
-
-    if sys.maxsize > 2**32:
-        return 64
-    else:
-        return 32 # safe guess
