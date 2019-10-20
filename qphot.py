@@ -32,6 +32,7 @@ from the user's perspective.
 """
 
 import collections
+import functools
 import itertools
 import logging
 import math
@@ -85,8 +86,29 @@ pyraf.iraf.prcacheOff()
 # of <Subprocess '/iraf/iraf/bin.linux/x_images.e -c', at
 # 7f9f3f408710>> ignored
 
-func = methods.log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
-pyraf.subproc.Subprocess.__del__ = func
+def log_uncaught_exceptions(func):
+    """ Decorator to log uncaught exceptions with level DEBUG.
+
+    This decorator catches any exception raised by the decorated function and
+    logs it with level DEBUG on the root logger. Only subclasses of Exception
+    are caught, as we do not want to log SystemExit or KeyboardInterrupt. The
+    usage of this decorator makes probably only sense when the function raising
+    the uncaught exception cannot be fixed, for example when working with a
+    third-party library.
+
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            type, value, traceback = sys.exc_info()
+            msg = "%s raised %s('%s')" % (func.__name__, type.__name__, value)
+            logging.debug(msg)
+    return wrapper
+
+pyraf.subproc.Subprocess.__del__ = log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
 
 class MissingFITSKeyword(RuntimeWarning):
     """ Warning about keywords that cannot be read from a header (non-fatal) """
