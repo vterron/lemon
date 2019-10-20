@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from .queue import Queue
+from .queue import *
 from .coords import *
 from .display import *
 from .io import *
