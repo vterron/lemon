@@ -24,8 +24,32 @@ import matplotlib
 import matplotlib.dates
 
 # LEMON modules
-import methods
 import snr
+
+def split_by_diff(iterable, delta = 3):
+    """ Split a sequence by the difference between consecutive elements.
+
+    The method returns an interator over the result of splitting the input
+    sequence, stopping each sub-sequence at the element at which its difference
+    with the next one is greater than 'delta'. In other words: the difference
+    between consecutive elements of each of the returned sublists will be
+    smaller than or equal to delta.
+
+    For example, split_by_diff([1, 2, 3, 8, 9, 15], delta = 3) returns an
+    iterator over three lists: [1, 2, 3], [8, 9] and [15]
+
+    """
+
+    differences = numpy.diff(iterable)
+    sublist_indexes = numpy.where(differences > delta)[0]
+
+    sublists = []
+    iterable = list(iterable)  # work on a copy
+    for index in reversed(sublist_indexes):
+        sublists.append(iterable[index + 1:])
+        del iterable[index + 1:]
+    sublists.append(iterable)
+    return reversed(sublists)
 
 def curve_plot(figure, curve, marker = 'o', color = '',
                airmasses = None, delta = 3600 * 3, julian = False):
@@ -145,7 +169,7 @@ def curve_plot(figure, curve, marker = 'o', color = '',
 
         ax2.set_ylabel('Airmass', rotation = 270)
         ax2.yaxis.labelpad = 17 # padding between axis and label
-        periods = methods.split_by_diff(unix_times, delta = delta)
+        periods = split_by_diff(unix_times, delta = delta)
         for period_unix_times in periods:
 
             if julian:

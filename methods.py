@@ -349,31 +349,6 @@ def which(*names):
                 result.append(path)
     return result
 
-def split_by_diff(iterable, delta = 3):
-    """ Split a sequence by the difference between consecutive elements.
-
-    The method returns an interator over the result of splitting the input
-    sequence, stopping each sub-sequence at the element at which its difference
-    with the next one is greater than 'delta'. In other words: the difference
-    between consecutive elements of each of the returned sublists will be
-    smaller than or equal to delta.
-
-    For example, split_by_diff([1, 2, 3, 8, 9, 15], delta = 3) returns an
-    iterator over three lists: [1, 2, 3], [8, 9] and [15]
-
-    """
-
-    differences = numpy.diff(iterable)
-    sublist_indexes = numpy.where(differences > delta)[0]
-
-    sublists = []
-    iterable = list(iterable)  # work on a copy
-    for index in reversed(sublist_indexes):
-        sublists.append(iterable[index + 1:])
-        del iterable[index + 1:]
-    sublists.append(iterable)
-    return reversed(sublists)
-
 def memoize(f):
     """ Minimalistic memoization decorator (*args / **kwargs)
     Based on: http://code.activestate.com/recipes/577219/ """
