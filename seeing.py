@@ -577,7 +577,7 @@ def parallel_sextractor(args):
         shutil.copy2(path, output_path)
 
         # Allow FITSeeingImage.__init__() to write to the FITS header
-        methods.owner_writable(output_path, True) # chmod u+w
+        util.owner_writable(output_path, True) # chmod u+w
 
         args = output_path, options.maximum, options.margin
         kwargs = dict(coaddk = options.coaddk)
@@ -641,7 +641,7 @@ def main(arguments = None):
     # Make sure that the output directory exists, and create it if it doesn't.
     # The subdirectories for discarded images are not yet created; we put this
     # off until we know that at least one image is indeed going to be excluded.
-    methods.determine_output_dir(output_dir)
+    util.determine_output_dir(output_dir)
     fwhm_dir = os.path.join(output_dir, options.fwhm_dir)
     elong_dir = os.path.join(output_dir, options.elong_dir)
 
@@ -698,7 +698,7 @@ def main(arguments = None):
         # terminates (instead of when our program exits, which is what we
         # need). Do it here, to make sure that whatever happens next these
         # temporary files are always deleted.
-        atexit.register(methods.clean_tmp_files, output_tmp_path)
+        atexit.register(util.clean_tmp_files, output_tmp_path)
 
         fwhms[path]  = fwhm
         elongs[path] = elong
@@ -842,10 +842,10 @@ def main(arguments = None):
     # because of its full-width at half maximum (FWHM) or elongation.
 
     if fwhm_discarded:
-        methods.determine_output_dir(fwhm_dir, quiet = True)
+        util.determine_output_dir(fwhm_dir, quiet = True)
 
     if elong_discarded:
-        methods.determine_output_dir(elong_dir, quiet = True)
+        util.determine_output_dir(elong_dir, quiet = True)
 
     # Finally, copy all the FITS images to the output directory
     processed = 0
@@ -906,7 +906,7 @@ def main(arguments = None):
             src = seeing_tmp_paths[path]
             shutil.move(src, output_path)
 
-        methods.owner_writable(output_path, True) # chmod u+w
+        util.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
         output_img = fitsimage.FITSImage(output_path)
         output_img.add_history(history_msg1)

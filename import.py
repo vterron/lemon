@@ -214,7 +214,7 @@ def main(arguments = None):
             return 1
 
     # Make sure that the output directory exists, create it otherwise
-    methods.determine_output_dir(output_dir)
+    util.determine_output_dir(output_dir)
 
     # Recursively walk down the input directories, obtaining a list of all the
     # regular files. Then, and while a progress bar is shown to let the user
@@ -432,7 +432,7 @@ def main(arguments = None):
         # The permission bits have been copied, but we need to make sure
         # that the copy of the FITS file is always writable, no matter what
         # the original permissions were. This is equivalent to `chmod u+w`
-        methods.owner_writable(dest_path, True)
+        util.owner_writable(dest_path, True)
 
         dest_img = fitsimage.FITSImage(dest_path)
 

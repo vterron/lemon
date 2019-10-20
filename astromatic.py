@@ -33,6 +33,7 @@ import subprocess
 
 # LEMON modules
 import methods
+import util
 
 CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')
 _get_file = functools.partial(os.path.join, CONFIG_FILES_DIR)
@@ -424,7 +425,7 @@ def sextractor_version():
     PATTERN = "^SExtractor version (\d\.\d{1,2}\.\d{1,2}) \(\d{4}-\d{2}-\d{2}\)$"
 
     for executable in SEXTRACTOR_COMMANDS:
-        if methods.which(executable):
+        if util.which(executable):
             break
     else:
         msg = "SExtractor not found in the current environment"
@@ -492,7 +493,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         raise TypeError("'ext' must be an integer")
 
     for executable in SEXTRACTOR_COMMANDS:
-        if methods.which(executable):
+        if util.which(executable):
             break
     else:
         msg = "SExtractor not found in the current environment"
@@ -550,4 +551,3 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         try: os.unlink(catalog_path)
         except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
-

@@ -939,7 +939,7 @@ def main(arguments = None):
     print "%sMaking a copy of the input database..." % style.prefix ,
     sys.stdout.flush()
     shutil.copy2(input_db_path, output_db_path)
-    methods.owner_writable(output_db_path, True) # chmod u+w
+    util.owner_writable(output_db_path, True) # chmod u+w
     print 'done.'
 
     db = database.LEMONdB(output_db_path);
@@ -1019,7 +1019,7 @@ def main(arguments = None):
     db.hostname = socket.gethostname()
     db.commit()
 
-    methods.owner_writable(output_db_path, False) # chmod u-w
+    util.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 

@@ -158,7 +158,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     """
 
     emsg = "'%s' not found in the current environment"
-    if not methods.which(ASTROMETRY_COMMAND):
+    if not util.which(ASTROMETRY_COMMAND):
         raise AstrometryNetNotInstalled(emsg % ASTROMETRY_COMMAND)
 
     basename = os.path.basename(path)
@@ -254,7 +254,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
         raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
         null_fd.close()
-        methods.clean_tmp_files(output_dir)
+        util.clean_tmp_files(output_dir)
 
 @methods.print_exception_traceback
 def parallel_astrometry(args):
@@ -341,7 +341,7 @@ def parallel_astrometry(args):
         logging.debug("%s: solved image saved to %s" % (path, dest_path))
     except (IOError, OSError), e:
         logging.debug("%s: can't solve image (%s)" % (path, str(e)))
-        methods.clean_tmp_files(output_path)
+        util.clean_tmp_files(output_path)
 
     output_img = fitsimage.FITSImage(dest_path)
 
@@ -478,7 +478,7 @@ def main(arguments = None):
         sys.exit(style.error_exit_message)
 
     # Make sure that the output directory exists; create it if it doesn't.
-    methods.determine_output_dir(output_dir)
+    util.determine_output_dir(output_dir)
 
     print "%sUsing a local build of Astrometry.net." % style.prefix
     msg = "%sDoing astrometry on the %d paths given as input."

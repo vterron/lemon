@@ -344,7 +344,7 @@ def main(arguments = None):
 
     kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
     phot_db_handle, phot_db_path = tempfile.mkstemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, phot_db_path)
+    atexit.register(util.clean_tmp_files, phot_db_path)
     os.close(phot_db_handle)
 
     basic_args = [sources_img_path] + input_paths + \
@@ -401,7 +401,7 @@ def main(arguments = None):
 
     kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
     diffphot_db_handle, diffphot_db_path = tempfile.mkstemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, diffphot_db_path)
+    atexit.register(util.clean_tmp_files, diffphot_db_path)
     os.close(diffphot_db_handle)
 
     diff_args = [phot_db_path,
@@ -464,7 +464,7 @@ def main(arguments = None):
         prefix = '%s_' % str(pfilter).replace(' ', '_')
         kwargs = dict(prefix = prefix, suffix = '.coordinates')
         coords_fd, coordinates_files[pfilter] = tempfile.mkstemp(**kwargs)
-        atexit.register(methods.clean_tmp_files, coordinates_files[pfilter])
+        atexit.register(util.clean_tmp_files, coordinates_files[pfilter])
 
         # LEMONdBMiner.get_star() returns a five-element tuple with the x and y
         # coordinates, right ascension, declination and instrumental magnitude
@@ -557,7 +557,7 @@ def main(arguments = None):
 
             kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
             fd, aper_phot_db_path = tempfile.mkstemp(**kwargs)
-            atexit.register(methods.clean_tmp_files, aper_phot_db_path)
+            atexit.register(util.clean_tmp_files, aper_phot_db_path)
             os.close(fd)
 
             paths = [img.path for img in files[pfilter]]
@@ -575,7 +575,7 @@ def main(arguments = None):
 
             kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
             fd, aper_diff_db_path = tempfile.mkstemp(**kwargs)
-            atexit.register(methods.clean_tmp_files, aper_diff_db_path)
+            atexit.register(util.clean_tmp_files, aper_diff_db_path)
             os.close(fd)
 
             # Reuse the arguments used earlier for diffphot.main(). We only

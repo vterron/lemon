@@ -37,6 +37,7 @@ from astromatic import Pixel, Coordinates, Star, Catalog
 import dss_images
 import fitsimage
 import methods
+import util
 
 NITERS = 100
 
@@ -554,7 +555,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # verify that it corresponds to what the --version option prints.
 
         try:
-            executable = methods.which(*astromatic.SEXTRACTOR_COMMANDS)[0]
+            executable = util.which(*astromatic.SEXTRACTOR_COMMANDS)[0]
         except IndexError:
             msg = "SExtractor not found in the current environment"
             raise astromatic.SExtractorNotInstalled(msg)
@@ -714,4 +715,3 @@ class SExtractorFunctionsTest(unittest.TestCase):
         kwargs = dict(ext = 0.0)
         with self.assertRaises(TypeError):
             astromatic.sextractor(img_path, **kwargs)
-

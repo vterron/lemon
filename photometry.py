@@ -890,7 +890,7 @@ def main(arguments = None):
     tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
     os.close(tmp_fd)
     shutil.copy2(sources_img_path, tmp_sources_img_path)
-    atexit.register(methods.clean_tmp_files, tmp_sources_img_path)
+    atexit.register(util.clean_tmp_files, tmp_sources_img_path)
 
     # Remove from the FITS header the path to the on-disk catalog, if present,
     # thus forcing SExtractor to detect sources on the image. This is necessary
@@ -1568,7 +1568,7 @@ def main(arguments = None):
     output_db.id = md5.hexdigest()
     output_db.commit()
 
-    methods.owner_writable(output_db_path, False) # chmod u-w
+    util.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 

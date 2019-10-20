@@ -275,7 +275,7 @@ def main(arguments = None):
     suffix = "_LEMON_%d_mosaic" % pid
     kwargs = dict(suffix = suffix + '_input')
     input_dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, input_dir)
+    atexit.register(util.clean_tmp_files, input_dir)
 
     for img in files:
         path = img.path
@@ -291,7 +291,7 @@ def main(arguments = None):
 
     kwargs = dict(suffix = suffix + '_output')
     output_dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, output_dir)
+    atexit.register(util.clean_tmp_files, output_dir)
     os.rmdir(output_dir)
 
     kwargs = dict(background_match = options.background_match,

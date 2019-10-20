@@ -456,12 +456,12 @@ class QPhot(list):
             # have been defined.
 
             try:
-                methods.clean_tmp_files(qphot_output)
+                util.clean_tmp_files(qphot_output)
             except NameError:
                 pass
 
             try:
-                methods.clean_tmp_files(txdump_output)
+                util.clean_tmp_files(txdump_output)
             except NameError:
                 pass
 
@@ -726,7 +726,7 @@ def run(img, coordinates, epoch,
         # exception may be raised before 'satur_mask_path' is defined.
 
         try:
-            methods.clean_tmp_files(satur_mask_path)
+            util.clean_tmp_files(satur_mask_path)
         except NameError:
             pass
 
