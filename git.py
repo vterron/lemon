@@ -47,7 +47,7 @@ def lemon_check_output(args):
     """
 
     # subprocess.check_output() new in 2.7; we need 2.6 compatibility
-    with methods.tmp_chdir(LEMON_DIR):
+    with util.tmp_chdir(LEMON_DIR):
         with tempfile.TemporaryFile() as fd:
             subprocess.check_call(args, stdout = fd)
             fd.seek(0)
@@ -91,7 +91,7 @@ def git_update():
         pass
 
     args = ['git', 'pull']
-    with methods.tmp_chdir(LEMON_DIR):
+    with util.tmp_chdir(LEMON_DIR):
         return subprocess.call(args)
 
 class FileCache(object):

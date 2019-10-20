@@ -26,6 +26,7 @@ import random
 import string
 
 # LEMON modules
+import util
 import methods
 import passband
 from test import unittest
@@ -280,7 +281,7 @@ class PassbandTest(unittest.TestCase):
         data = '\n'.join([section_header] +
                          ["%s = %s" % x for x in custom_filters])
 
-        with methods.tempinput(data) as path:
+        with util.tempinput(data) as path:
             loaded = list(passband.load_custom_filters(path))
             self.assertEqual(len(custom_filters), len(loaded))
             for input, output in zip(custom_filters, loaded):
@@ -295,18 +296,17 @@ class PassbandTest(unittest.TestCase):
 
         # Does not return anything if:
         # (1) The configuration file file does not exist
-        with methods.tempinput('') as path:
+        with util.tempinput('') as path:
             pass
         self.assertFalse(os.path.exists(path))
         assert_returns_nothing(path)
 
         # (2) Does not have the CUSTOM_SECTION section
         data = ""
-        with methods.tempinput(data) as path:
+        with util.tempinput(data) as path:
             assert_returns_nothing(path)
 
         # (3) The CUSTOM_SECTION section is empty
         data = section_header
-        with methods.tempinput(data) as path:
+        with util.tempinput(data) as path:
             assert_returns_nothing(path)
-

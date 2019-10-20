@@ -19,7 +19,7 @@
 
 # LEMON modules
 from test import unittest
-from util import load_coordinates
+from util import load_coordinates, tempinput
 
 NITERS = 100  # How many times each test case is run with random data
 
@@ -131,7 +131,7 @@ class LoadCoordinatesTest(unittest.TestCase):
             n = random.randint(*self.NCOORDS)
             objects = random.sample(self.COORDINATES.values(), n)
             data = self.get_coords_data(objects)
-            with methods.tempinput(data) as path:
+            with util.tempinput(data) as path:
                 coordinates = methods.load_coordinates(path)
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
@@ -171,14 +171,14 @@ class LoadCoordinatesTest(unittest.TestCase):
 
             data = '\n'.join(lines)
 
-            with methods.tempinput(data) as path:
+            with util.tempinput(data) as path:
                 coordinates = methods.load_coordinates(path)
                 for coords, expected in zip(coordinates, objects):
                     self.assertEqual(coords, expected)
 
     def test_load_coordinates_empty_file(self):
         # If the file is empty, nothing is returned
-        with methods.tempinput('') as path:
+        with util.tempinput('') as path:
             self.assertEqual([], list(methods.load_coordinates(path)))
 
     def test_load_coordinates_invalid_data(self):
@@ -189,7 +189,7 @@ class LoadCoordinatesTest(unittest.TestCase):
             expression that must be matched by the string representation of
             the raised exception"""
 
-            with methods.tempinput(data) as path:
+            with util.tempinput(data) as path:
                 with self.assertRaisesRegexp(exception, regexp):
                     list(methods.load_coordinates(path))
 
