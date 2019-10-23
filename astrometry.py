@@ -26,6 +26,7 @@ import multiprocessing
 import optparse
 import os
 import os.path
+import re
 import shutil
 import sys
 import tempfile
@@ -60,6 +61,7 @@ to work it is also necessary to download the index files.
 """
 
 ASTROMETRY_COMMAND = 'solve-field'
+ASTROMETRY_REQUIRED_VERSION = (0, 68)
 
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
@@ -93,6 +95,30 @@ class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
     def __str__(self):
         msg = "%s: could not solve field in less than %d seconds"
         return msg % (self.path, self.timeout)
+
+
+class AstrometryNetUpgradeRequired(Exception):
+    """ Raised if a too-old version of Astrometry.net is installed """
+    pass
+
+
+def astrometry_net_version():
+    """ Return the Astrometry.net version as a tuple, e.g. (0, 78)."""
+
+    # For example: "Revision 0.78, date Mon_Apr_22_12:25:30_2019_-0400."
+    PATTERN = "^Revision (\d\.\d{1,2}), date.*"
+
+    emsg = "{!r}' not found in the current environment"
+    if not util.which(ASTROMETRY_COMMAND):
+        raise AstrometryNetNotInstalled(emsg.format(ASTROMETRY_COMMAND))
+
+    args = [ASTROMETRY_COMMAND, '--help']
+    output = subprocess.check_output(args)
+    version = re.search(PATTERN, output, re.MULTILINE).group(1)
+
+    # From, for example, '0.78' to (0, 78)
+    return tuple(int(x) for x in version.split('.'))
+
 
 def astrometry_net(path, ra = None, dec = None, radius = 1,
                    verbosity = 0, timeout = None, options = None):
@@ -160,6 +186,12 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     if not util.which(ASTROMETRY_COMMAND):
         raise AstrometryNetNotInstalled(emsg % ASTROMETRY_COMMAND)
 
+    if astrometry_net_version() < ASTROMETRY_REQUIRED_VERSION:
+        # From, for example, (0, 68) to '0.68'
+        version_str = '.'.join(str(x) for x in ASTROMETRY_REQUIRED_VERSION)
+        msg = "Astrometry.net version {} or newer is needed".format(version_str)
+        raise AstrometryNetUpgradeRequired(msg)
+
     basename = os.path.basename(path)
     root, ext = os.path.splitext(basename)
     # Place all output files in this directory
@@ -179,14 +211,12 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     # --dir: place all output files in the specified directory.
     # --no-plots: don't create any plots of the results.
     # --new-fits: the new FITS file containing the WCS header.
-    # --no-fits2fits: don't sanitize FITS files; assume they're already valid.
     # --overwrite: overwrite output files if they already exist.
 
     args = [ASTROMETRY_COMMAND, path,
             '--dir', output_dir,
             '--no-plots',
             '--new-fits', output_path,
-            '--no-fits2fits',
             '--overwrite']
 
     # -3 / --ra <degrees or hh:mm:ss>: only search in indexes within 'radius'
