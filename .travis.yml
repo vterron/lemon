@@ -11,10 +11,6 @@ virtualenv:
   system_site_packages: true
 
 before_install:
-  # Fix "Permission denied" errors in tests involving multiprocessing
-  # http://github.com/travis-ci/travis-core/issues/187
-  - sudo rm -rf /dev/shm
-  - sudo ln -Tsf /{run,dev}/shm
   - sudo apt-get update
   - sudo apt-get install -y alien realpath
   - sudo apt-get install -y git python-pip csh realpath
