@@ -179,14 +179,12 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     # --dir: place all output files in the specified directory.
     # --no-plots: don't create any plots of the results.
     # --new-fits: the new FITS file containing the WCS header.
-    # --no-fits2fits: don't sanitize FITS files; assume they're already valid.
     # --overwrite: overwrite output files if they already exist.
 
     args = [ASTROMETRY_COMMAND, path,
             '--dir', output_dir,
             '--no-plots',
             '--new-fits', output_path,
-            '--no-fits2fits',
             '--overwrite']
 
     # -3 / --ra <degrees or hh:mm:ss>: only search in indexes within 'radius'
