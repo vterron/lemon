@@ -57,7 +57,6 @@ import plot
 import snr
 import simbad
 import util
-from ..util import ra_str, dec_str, utctime
 from version import __version__
 
 # Workaround for GTK+ bug 632538. Until GTK+ 2.24.19 (the PyGTK version does
@@ -370,7 +369,7 @@ class StarDetailsGUI(object):
         for unix_time, magnitude, noise in curve:
             row = []
             row.append(unix_time)
-            row.append(utctime(unix_time, suffix = False))
+            row.append(util.utctime(unix_time, suffix = False))
             row.append(astropy.time.Time(unix_time, format = 'unix').jd)
             row.append(magnitude)
             row.append(noise)
@@ -603,9 +602,9 @@ class StarDetailsGUI(object):
 
         store = self.starinfo_store
         x, y, self.ra, self.dec, _, _, _, imag = self.db.get_star(star_id)
-        store.append(('Right ascension', '%s' % ra_str(self.ra), True))
+        store.append(('Right ascension', '%s' % util.ra_str(self.ra), True))
         store.append(('Right ascension', '%.4f deg' % self.ra, True))
-        store.append(('Declination', '%s' % dec_str(self.dec), True))
+        store.append(('Declination', '%s' % util.dec_str(self.dec), True))
         store.append(('Declination', '%.4f deg' % self.dec, True))
         store.append(('Magnitude', '%.3f' % imag, True))
         store.append(('x-coordinate', '%.2f' % x, True))
@@ -1307,7 +1306,7 @@ class LEMONJuicerGUI(object):
                     break
 
                 x, y, ra, dec, _, _, _, imag = db.get_star(star_id)
-                row = [star_id, ra_str(ra), ra, dec_str(dec), dec, imag]
+                row = [star_id, util.ra_str(ra), ra, util.dec_str(dec), dec, imag]
 
                 for pfilter in db_pfilters:
                     # None returned if the star doesn't have this light curve

@@ -197,4 +197,3 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         # Margins on the x-axis must be set again after plotting the right
         # y-axis; otherwise, the margins we set for ax1 will be ignored.
         ax2.set_xlim(dates[0] - margin_delta, dates[-1] + margin_delta)
-

@@ -37,7 +37,6 @@ from matplotlib.backends.backend_gtkagg \
 # LEMON modules
 import glade
 import util
-from ..util import clean_tmp_files
 
 class PreferencesDialog(object):
     """ gtk.Dialog to configure the finding chart normalization parameters.
@@ -347,7 +346,7 @@ class FindingChartDialog(object):
 
         # Temporarily save to disk the FITS file used as a reference frame
         path = self.db.mosaic
-        atexit.register(clean_tmp_files, path)
+        atexit.register(util.clean_tmp_files, path)
         self.wcs = astropy.wcs.WCS(path)
         with pyfits.open(path) as hdu:
             data = hdu[0].data
