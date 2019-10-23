@@ -20,6 +20,10 @@
 import functools
 import sys
 import time
+import traceback
+
+# LEMON modules
+import style
 
 def show_progress(percentage):
     """ Print a progress bar strikingly similar to that of the wget command.

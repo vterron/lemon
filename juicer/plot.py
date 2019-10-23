@@ -22,6 +22,7 @@ import astropy.time
 import datetime
 import matplotlib
 import matplotlib.dates
+import numpy
 
 # LEMON modules
 import snr
