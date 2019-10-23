@@ -35,14 +35,11 @@ from test import unittest
 # before running the unit tests, never halfway through their execution.
 import test.dss_images
 
-TESTS_PACKAGE = 'test'
-
 if __name__ == "__main__":
 
     loader = unittest.TestLoader()
-    tests = loader.discover(TESTS_PACKAGE)
+    tests = loader.discover('.', top_level_dir='.')
     runner = unittest.runner.TextTestRunner(verbosity = 2)
     runner.failfast = True
     result = runner.run(tests)
     sys.exit(not result.wasSuccessful())
-

@@ -29,7 +29,7 @@ import time
 import warnings
 
 # LEMON module
-import methods
+import util
 
 LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
 COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
@@ -46,7 +46,7 @@ def lemon_check_output(args):
     """
 
     # subprocess.check_output() new in 2.7; we need 2.6 compatibility
-    with methods.tmp_chdir(LEMON_DIR):
+    with util.tmp_chdir(LEMON_DIR):
         with tempfile.TemporaryFile() as fd:
             subprocess.check_call(args, stdout = fd)
             fd.seek(0)
@@ -90,7 +90,7 @@ def git_update():
         pass
 
     args = ['git', 'pull']
-    with methods.tmp_chdir(LEMON_DIR):
+    with util.tmp_chdir(LEMON_DIR):
         return subprocess.call(args)
 
 class FileCache(object):
@@ -221,6 +221,6 @@ def check_up_to_date(timeout = None):
             msg = ("Your current revision is '%s' (%s), but there is a more "
                    "recent version (%s, %s) available on GitHub. You may use "
                    "`lemon --update` to retrieve these changes.")
-            args = (current_revision, methods.utctime(last_commit_date),
-                    github_hash, methods.utctime(last_github_date))
+            args = (current_revision, util.utctime(last_commit_date),
+                    github_hash, util.utctime(last_github_date))
             warnings.warn(msg % args)

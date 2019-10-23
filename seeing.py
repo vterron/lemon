@@ -47,12 +47,12 @@ import tempfile
 import time
 
 # LEMON modules
+import util
 import astromatic
 import customparser
 import defaults
 import fitsimage
 import keywords
-import methods
 import style
 
 class FITSeeingImage(fitsimage.FITSImage):
@@ -182,7 +182,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
 
     @property
-    @methods.memoize
+    @util.memoize
     def catalog(self):
         """ Return the SExtraxtor catalog of the FITS image.
 
@@ -428,7 +428,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 # This Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = util.Queue()
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
@@ -542,7 +542,7 @@ key_group.add_option('--fwhmk', action = 'store', type = 'str',
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_sextractor(args):
     """ Run SExtractor and compute the FWHM and elongation of a FITS image.
 
@@ -576,7 +576,7 @@ def parallel_sextractor(args):
         shutil.copy2(path, output_path)
 
         # Allow FITSeeingImage.__init__() to write to the FITS header
-        methods.owner_writable(output_path, True) # chmod u+w
+        util.owner_writable(output_path, True) # chmod u+w
 
         args = output_path, options.maximum, options.margin
         kwargs = dict(coaddk = options.coaddk)
@@ -640,7 +640,7 @@ def main(arguments = None):
     # Make sure that the output directory exists, and create it if it doesn't.
     # The subdirectories for discarded images are not yet created; we put this
     # off until we know that at least one image is indeed going to be excluded.
-    methods.determine_output_dir(output_dir)
+    util.determine_output_dir(output_dir)
     fwhm_dir = os.path.join(output_dir, options.fwhm_dir)
     elong_dir = os.path.join(output_dir, options.elong_dir)
 
@@ -653,10 +653,10 @@ def main(arguments = None):
     map_async_args = ((path, options) for path in input_paths if os.path.isfile(path))
     result = pool.map_async(parallel_sextractor, map_async_args)
 
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     while not result.ready():
         time.sleep(1)
-        methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        util.show_progress(queue.qsize() / len(input_paths) * 100)
         # Do not update the progress bar when debugging; instead, print it
         # on a new line each time. This prevents the next logging message,
         # if any, from being printed on the same line that the bar.
@@ -664,7 +664,7 @@ def main(arguments = None):
             print
 
     result.get()      # reraise exceptions of the remote call, if any
-    methods.show_progress(100) # in case the queue was ready too soon
+    util.show_progress(100) # in case the queue was ready too soon
     print
 
     # Three sets, to keep the track of all the images on which SExtractor
@@ -697,7 +697,7 @@ def main(arguments = None):
         # terminates (instead of when our program exits, which is what we
         # need). Do it here, to make sure that whatever happens next these
         # temporary files are always deleted.
-        atexit.register(methods.clean_tmp_files, output_tmp_path)
+        atexit.register(util.clean_tmp_files, output_tmp_path)
 
         fwhms[path]  = fwhm
         elongs[path] = elong
@@ -841,10 +841,10 @@ def main(arguments = None):
     # because of its full-width at half maximum (FWHM) or elongation.
 
     if fwhm_discarded:
-        methods.determine_output_dir(fwhm_dir, quiet = True)
+        util.determine_output_dir(fwhm_dir, quiet = True)
 
     if elong_discarded:
-        methods.determine_output_dir(elong_dir, quiet = True)
+        util.determine_output_dir(elong_dir, quiet = True)
 
     # Finally, copy all the FITS images to the output directory
     processed = 0
@@ -859,7 +859,7 @@ def main(arguments = None):
             output_path = os.path.join(fwhm_dir, output_filename)
             logging.debug("%s was discarded because of its FWHM" % path)
             logging.debug("%s to be copied to subdirectory %s" % (path, fwhm_dir))
-            history_msg1 = "Image discarded by LEMON on %s" % methods.utctime()
+            history_msg1 = "Image discarded by LEMON on %s" % util.utctime()
             history_msg2 = "[Discarded] FWHM = %.3f pixels, maximum allowed value = %.3f" % \
                            (fwhms[path], maximum_fwhm)
 
@@ -867,7 +867,7 @@ def main(arguments = None):
             output_path = os.path.join(elong_dir, output_filename)
             logging.debug("%s was discarded because of its elongation ratio" % path)
             logging.debug("%s to be copied to subdirectory %s" % (path, elong_dir))
-            history_msg1 = "Image discarded by LEMON on %s" % methods.utctime()
+            history_msg1 = "Image discarded by LEMON on %s" % util.utctime()
             history_msg2 = "[Discarded] Elongation = %.3f, maximum allowed value = %.3f" % \
                            (elongs[path], maximum_elong)
 
@@ -905,7 +905,7 @@ def main(arguments = None):
             src = seeing_tmp_paths[path]
             shutil.move(src, output_path)
 
-        methods.owner_writable(output_path, True) # chmod u+w
+        util.owner_writable(output_path, True) # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
         output_img = fitsimage.FITSImage(output_path)
         output_img.add_history(history_msg1)

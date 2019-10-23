@@ -23,7 +23,6 @@
 import multiprocessing
 
 # LEMON modules
-import passband
 import setup
 
 desc = {} # option descriptions (for optparse)

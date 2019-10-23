@@ -26,6 +26,7 @@ import multiprocessing
 import optparse
 import os
 import os.path
+import re
 import shutil
 import sys
 import tempfile
@@ -42,11 +43,11 @@ else:
     import subprocess
 
 # LEMON modules
+import util
 import customparser
 import defaults
 import fitsimage
 import keywords
-import methods
 import style
 
 description = """
@@ -60,11 +61,12 @@ to work it is also necessary to download the index files.
 """
 
 ASTROMETRY_COMMAND = 'solve-field'
+ASTROMETRY_REQUIRED_VERSION = (0, 68)
 
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = util.Queue()
 
 class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
@@ -93,6 +95,30 @@ class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
     def __str__(self):
         msg = "%s: could not solve field in less than %d seconds"
         return msg % (self.path, self.timeout)
+
+
+class AstrometryNetUpgradeRequired(Exception):
+    """ Raised if a too-old version of Astrometry.net is installed """
+    pass
+
+
+def astrometry_net_version():
+    """ Return the Astrometry.net version as a tuple, e.g. (0, 78)."""
+
+    # For example: "Revision 0.78, date Mon_Apr_22_12:25:30_2019_-0400."
+    PATTERN = "^Revision (\d\.\d{1,2}), date.*"
+
+    emsg = "{!r}' not found in the current environment"
+    if not util.which(ASTROMETRY_COMMAND):
+        raise AstrometryNetNotInstalled(emsg.format(ASTROMETRY_COMMAND))
+
+    args = [ASTROMETRY_COMMAND, '--help']
+    output = subprocess.check_output(args)
+    version = re.search(PATTERN, output, re.MULTILINE).group(1)
+
+    # From, for example, '0.78' to (0, 78)
+    return tuple(int(x) for x in version.split('.'))
+
 
 def astrometry_net(path, ra = None, dec = None, radius = 1,
                    verbosity = 0, timeout = None, options = None):
@@ -157,8 +183,14 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     """
 
     emsg = "'%s' not found in the current environment"
-    if not methods.which(ASTROMETRY_COMMAND):
+    if not util.which(ASTROMETRY_COMMAND):
         raise AstrometryNetNotInstalled(emsg % ASTROMETRY_COMMAND)
+
+    if astrometry_net_version() < ASTROMETRY_REQUIRED_VERSION:
+        # From, for example, (0, 68) to '0.68'
+        version_str = '.'.join(str(x) for x in ASTROMETRY_REQUIRED_VERSION)
+        msg = "Astrometry.net version {} or newer is needed".format(version_str)
+        raise AstrometryNetUpgradeRequired(msg)
 
     basename = os.path.basename(path)
     root, ext = os.path.splitext(basename)
@@ -179,14 +211,12 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     # --dir: place all output files in the specified directory.
     # --no-plots: don't create any plots of the results.
     # --new-fits: the new FITS file containing the WCS header.
-    # --no-fits2fits: don't sanitize FITS files; assume they're already valid.
     # --overwrite: overwrite output files if they already exist.
 
     args = [ASTROMETRY_COMMAND, path,
             '--dir', output_dir,
             '--no-plots',
             '--new-fits', output_path,
-            '--no-fits2fits',
             '--overwrite']
 
     # -3 / --ra <degrees or hh:mm:ss>: only search in indexes within 'radius'
@@ -253,9 +283,9 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
         raise AstrometryNetTimeoutExpired(path, timeout)
     finally:
         null_fd.close()
-        methods.clean_tmp_files(output_dir)
+        util.clean_tmp_files(output_dir)
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_astrometry(args):
     """ Function argument of map_async() to do astrometry in parallel.
 
@@ -340,13 +370,13 @@ def parallel_astrometry(args):
         logging.debug("%s: solved image saved to %s" % (path, dest_path))
     except (IOError, OSError), e:
         logging.debug("%s: can't solve image (%s)" % (path, str(e)))
-        methods.clean_tmp_files(output_path)
+        util.clean_tmp_files(output_path)
 
     output_img = fitsimage.FITSImage(dest_path)
 
     debug_args = path, output_img.path
     logging.debug("%s: updating header of output image (%s)" % debug_args)
-    msg1 = "Astrometry done via LEMON on %s" % methods.utctime()
+    msg1 = "Astrometry done via LEMON on %s" % util.utctime()
     msg2 = "[Astrometry] WCS solution found by Astrometry.net"
     msg3 = "[Astrometry] Original image: %s" % img.path
 
@@ -477,7 +507,7 @@ def main(arguments = None):
         sys.exit(style.error_exit_message)
 
     # Make sure that the output directory exists; create it if it doesn't.
-    methods.determine_output_dir(output_dir)
+    util.determine_output_dir(output_dir)
 
     print "%sUsing a local build of Astrometry.net." % style.prefix
     msg = "%sDoing astrometry on the %d paths given as input."
@@ -489,7 +519,7 @@ def main(arguments = None):
 
     while not result.ready():
         time.sleep(1)
-        methods.show_progress(queue.qsize() / len(input_paths) * 100)
+        util.show_progress(queue.qsize() / len(input_paths) * 100)
         # Do not update the progress bar when debugging; instead, print it
         # on a new line each time. This prevents the next logging message,
         # if any, from being printed on the same line that the bar.
@@ -497,7 +527,7 @@ def main(arguments = None):
             print
 
     result.get() # reraise exceptions of the remote call, if any
-    methods.show_progress(100) # in case the queue was ready too soon
+    util.show_progress(100) # in case the queue was ready too soon
     print
 
     # Results in the process shared queue were only necessary to accurately
@@ -509,4 +539,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -65,8 +65,8 @@ import customparser
 import defaults
 import fitsimage
 import keywords
-import methods
 import style
+import util
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_IMG"
@@ -187,7 +187,7 @@ def main(arguments = None):
     msg = "%sMaking sure the %d input paths are FITS images..."
     print msg % (style.prefix, len(input_paths))
 
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     for index, path in enumerate(input_paths):
         # fitsimage.FITSImage.__init__() raises fitsimage.NonStandardFITS if
         # one of the paths is not a standard-conforming FITS file.
@@ -212,7 +212,7 @@ def main(arguments = None):
             raise fitsimage.NonStandardFITS(msg % path)
 
         percentage = (index + 1) / len(input_paths) * 100
-        methods.show_progress(percentage)
+        util.show_progress(percentage)
     print # progress bar doesn't include newline
 
     # The --filter option allows the user to specify which FITS files, among
@@ -274,7 +274,7 @@ def main(arguments = None):
     suffix = "_LEMON_%d_mosaic" % pid
     kwargs = dict(suffix = suffix + '_input')
     input_dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, input_dir)
+    atexit.register(util.clean_tmp_files, input_dir)
 
     for img in files:
         path = img.path
@@ -290,7 +290,7 @@ def main(arguments = None):
 
     kwargs = dict(suffix = suffix + '_output')
     output_dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(methods.clean_tmp_files, output_dir)
+    atexit.register(util.clean_tmp_files, output_dir)
     os.rmdir(output_dir)
 
     kwargs = dict(background_match = options.background_match,
@@ -324,4 +324,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

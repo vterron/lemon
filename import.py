@@ -61,15 +61,34 @@ import sys
 import customparser
 import keywords
 import fitsimage
-import methods
 import style
+import util
+
+def str_split_callback(option, opt, value, parser):
+    """ opt-parse callback function to parse a list of values.
+
+    This method is intended to be used in order to parse opt-parse options that
+    contain a list of values. In other words, the received comma-separated
+    values are converted to a list, so that when the user specifies, i.e.,
+    '--groups one,two' the value returned by opt-parse is ['one', 'two'].
+    [URL] http://stackoverflow.com/questions/392041/python-optparse-list
+
+    option - the Option instance that is calling the callback.
+    opt_str - the option string seen on the command-line.
+    value - the argument to this option seen on the command-line.
+    parser - the OptionParser instance driving the whole thing.
+
+    """
+
+    setattr(parser.values, option.dest, value.split(','))
+
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DIRS... OUTPUT_DIR"
 
 parser.add_option('--object', action = 'callback', type = 'str',
                   dest = 'objectn', default = ['*'],
-                  callback = methods.str_split_callback,
+                  callback = str_split_callback,
                   help = "list of case-insensitive patterns, according to the "
                   "rules used by the Unix shell, and separated by commas, of "
                   "the object names to import. Those FITS images whose object "
@@ -194,7 +213,7 @@ def main(arguments = None):
             return 1
 
     # Make sure that the output directory exists, create it otherwise
-    methods.determine_output_dir(output_dir)
+    util.determine_output_dir(output_dir)
 
     # Recursively walk down the input directories, obtaining a list of all the
     # regular files. Then, and while a progress bar is shown to let the user
@@ -211,16 +230,16 @@ def main(arguments = None):
           (style.prefix, len(files_paths))
 
     images_set = set()
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     for path_index, path in enumerate(files_paths):
         try:
             images_set.add(fitsimage.FITSImage(path))
             fraction = (path_index + 1) / len(files_paths) * 100
-            methods.show_progress(fraction)
+            util.show_progress(fraction)
         except fitsimage.NonStandardFITS:
             pass
     else:
-        methods.show_progress(100)
+        util.show_progress(100)
         print
 
     if not len(images_set):
@@ -412,14 +431,14 @@ def main(arguments = None):
         # The permission bits have been copied, but we need to make sure
         # that the copy of the FITS file is always writable, no matter what
         # the original permissions were. This is equivalent to `chmod u+w`
-        methods.owner_writable(dest_path, True)
+        util.owner_writable(dest_path, True)
 
         dest_img = fitsimage.FITSImage(dest_path)
 
         # Add some information to the FITS header...
         if not options.exact:
 
-            msg1 = "File imported by LEMON on %s" % methods.utctime()
+            msg1 = "File imported by LEMON on %s" % util.utctime()
             dest_img.add_history(msg1)
 
             # If the --uik option is given, store in this keyword the absolute
@@ -467,4 +486,3 @@ def main(arguments = None):
 
 if __name__ == "__main__":
     sys.exit(main())
-

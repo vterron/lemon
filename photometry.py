@@ -26,11 +26,11 @@ This module does aperture photometry on all the FITS images that it receives as
 arguments. Astronomical objects are automatically detected, using SExtractor,
 on the first image (which will be referred to from now on as the 'sources
 image'), and then photometry is done for their celestial coordinates on the
-rest of the images. The output is a LEMON database, which contains the 
-instrumental magnitudes (with 25 as zero point) and signal-to-noise ratio 
-for the stars detected in the sources image. Additionally, the instrumental 
-magnitudes of the stars in the sources image is also stored in the database, 
-in order to allow us to approximately estimate how bright each object is. 
+rest of the images. The output is a LEMON database, which contains the
+instrumental magnitudes (with 25 as zero point) and signal-to-noise ratio
+for the stars detected in the sources image. Additionally, the instrumental
+magnitudes of the stars in the sources image is also stored in the database,
+in order to allow us to approximately estimate how bright each object is.
 
 By default, the sizes of the aperture and sky annulus are determined by the
 median FWHM of the images in each photometric filter, but different options
@@ -61,6 +61,7 @@ import time
 import warnings
 
 # LEMON modules
+import util
 import astromatic
 import customparser
 import database
@@ -68,7 +69,6 @@ import defaults
 import fitsimage
 import json_parse
 import keywords
-import methods
 import qphot
 import seeing
 import style
@@ -81,7 +81,7 @@ DANNULUS_TOO_THIN_MSG = \
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
-queue = methods.Queue()
+queue = util.Queue()
 
 def get_fwhm(img, options):
     """ Return the FWHM of the FITS image.
@@ -139,7 +139,7 @@ def get_fwhm(img, options):
         logging.debug(msg % args)
         return fwhm
 
-@methods.print_exception_traceback
+@util.print_exception_traceback
 def parallel_photometry(args):
     """ Function argument of map_async() to do photometry in parallel.
 
@@ -195,7 +195,7 @@ def parallel_photometry(args):
                   exp_keyword = options.exptimek)
     unix_time = image.date(**kwargs)
     msg = "%s: observation date: %.2f (%s)"
-    args = (image.path, unix_time, methods.utctime(unix_time))
+    args = (image.path, unix_time, util.utctime(unix_time))
     logging.debug(msg % args)
 
     object_ = image.read_keyword(options.objectk)
@@ -640,7 +640,7 @@ def main(arguments = None):
     if options.coordinates:
 
         sources_coordinates = []
-        for args in methods.load_coordinates(options.coordinates):
+        for args in util.load_coordinates(options.coordinates):
             coords = astromatic.Coordinates(*args)
             sources_coordinates.append(coords)
 
@@ -682,7 +682,7 @@ def main(arguments = None):
     files = fitsimage.InputFITSFiles()
     img_dates = {}
 
-    methods.show_progress(0.0)
+    util.show_progress(0.0)
     for index, img_path in enumerate(input_paths):
         img = fitsimage.FITSImage(img_path)
         pfilter = img.pfilter(options.filterk)
@@ -692,7 +692,7 @@ def main(arguments = None):
         img_dates[img_path] = date
 
         percentage = (index + 1) / len(input_paths) * 100
-        methods.show_progress(percentage)
+        util.show_progress(percentage)
 
     print # progress bar doesn't include newline
 
@@ -756,7 +756,7 @@ def main(arguments = None):
                     print
 
                 msg = "%sWarning! Multiple images have date %s and filter %s"
-                args = style.prefix, methods.utctime(date), pfilter
+                args = style.prefix, util.utctime(date), pfilter
                 warnings.warn(msg % args)
                 del dates_counter[date][pfilter]
                 for img in images:
@@ -889,7 +889,7 @@ def main(arguments = None):
     tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
     os.close(tmp_fd)
     shutil.copy2(sources_img_path, tmp_sources_img_path)
-    atexit.register(methods.clean_tmp_files, tmp_sources_img_path)
+    atexit.register(util.clean_tmp_files, tmp_sources_img_path)
 
     # Remove from the FITS header the path to the on-disk catalog, if present,
     # thus forcing SExtractor to detect sources on the image. This is necessary
@@ -922,12 +922,12 @@ def main(arguments = None):
     # Print coordinates, in degrees and sexagesimal
     print "%sα = %11.7f" % (style.prefix, sources_img_ra) ,
     msg = " (%.02d %.02d %05.2f)"
-    args = methods.DD_to_HMS(sources_img_ra)
+    args = util.DD_to_HMS(sources_img_ra)
     print msg % args
 
     print "%sδ = %11.7f" % (style.prefix, sources_img_dec) ,
     msg = "(%+.02d %.02d %05.2f)"
-    args = methods.DD_to_DMS(sources_img_dec)
+    args = util.DD_to_DMS(sources_img_dec)
     print msg % args
 
     # If --coordinates was given, let the user know on how many celestial
@@ -1172,12 +1172,12 @@ def main(arguments = None):
     # gain. Therefore, we use None, which SQLite interprets as NULL.
 
     path = sources_img.path
-    pfilter = methods.func_catchall(sources_img.pfilter, options.filterk)
+    pfilter = util.func_catchall(sources_img.pfilter, options.filterk)
 
     kwargs = dict(date_keyword = options.datek,
                   time_keyword = options.timek,
                   exp_keyword = options.exptimek)
-    unix_time = methods.func_catchall(sources_img.date, **kwargs)
+    unix_time = util.func_catchall(sources_img.date, **kwargs)
 
     # In theory, sources should be detected on the result on mosaicking several
     # FITS images, in order to improve the signal-to-noise ratio and allow for
@@ -1212,7 +1212,7 @@ def main(arguments = None):
 
             msg1 = ("%s has the same date (%.4f, %s) and filter (%s) as the "
                     "sources image (%s)")
-            date_str = methods.utctime(unix_time)
+            date_str = util.utctime(unix_time)
             args = (img.path, unix_time, date_str, pfilter, path)
             logging.debug(msg1 % args)
 
@@ -1227,13 +1227,13 @@ def main(arguments = None):
             unix_time = None
             pfilter   = None
 
-    object_ = methods.func_catchall(sources_img.read_keyword, options.objectk)
-    airmass = methods.func_catchall(sources_img.read_keyword, options.airmassk)
+    object_ = util.func_catchall(sources_img.read_keyword, options.objectk)
+    airmass = util.func_catchall(sources_img.read_keyword, options.airmassk)
     # If not given with --gaink, read it from the FITS header
     if options.gain:
         gain = options.gain
     else:
-        gain = methods.func_catchall(sources_img.read_keyword, options.gaink)
+        gain = util.func_catchall(sources_img.read_keyword, options.gaink)
 
     ra, dec = sources_img_ra, sources_img_dec
 
@@ -1398,10 +1398,10 @@ def main(arguments = None):
         # the MissingFITSKeyword warning into an exception.
 
         result = pool.map_async(parallel_photometry, map_async_args())
-        methods.show_progress(0.0)
+        util.show_progress(0.0)
         while not result.ready():
             time.sleep(1)
-            methods.show_progress(queue.qsize() / len(images) * 100)
+            util.show_progress(queue.qsize() / len(images) * 100)
             # Do not update the progress bar when debugging; instead, print it
             # on a new line each time. This prevents the next logging message,
             # if any, from being printed on the same line that the bar.
@@ -1409,14 +1409,14 @@ def main(arguments = None):
                 print
 
         result.get() # reraise exceptions of the remote call, if any
-        methods.show_progress(100) # in case the queue was ready too soon
+        util.show_progress(100) # in case the queue was ready too soon
         print
 
         msg = "%sStoring photometric measurements in the database..."
         print msg % style.prefix
         sys.stdout.flush()
 
-        methods.show_progress(0)
+        util.show_progress(0)
         qphot_results = (queue.get() for x in xrange(queue.qsize()))
         for index, args in enumerate(qphot_results):
 
@@ -1524,7 +1524,7 @@ def main(arguments = None):
                         args = db_image.path, object_id
                         logging.debug(msg % args)
 
-            methods.show_progress(100 * (index + 1) / len(images))
+            util.show_progress(100 * (index + 1) / len(images))
             if logging_level < logging.WARNING:
                 print
 
@@ -1534,7 +1534,7 @@ def main(arguments = None):
             output_db.commit()
             logging.info("Database transaction commited")
 
-            methods.show_progress(100.0)
+            util.show_progress(100.0)
             print
 
     # Collect information that can be used by the query optimizer to help make
@@ -1567,10 +1567,9 @@ def main(arguments = None):
     output_db.id = md5.hexdigest()
     output_db.commit()
 
-    methods.owner_writable(output_db_path, False) # chmod u-w
+    util.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
 
 if __name__ == "__main__":
     sys.exit(main())
-
