@@ -150,7 +150,4 @@ for module, version in [
 sextractor_version = astromatic.sextractor_version()
 sextractor_minimum = astromatic.SEXTRACTOR_REQUIRED_VERSION
 if not sextractor_version >= sextractor_minimum:
-    msg = "SExtractor >= %s is required, found %s"
-    args = (version_to_str(sextractor_minimum),
-            version_to_str(sextractor_version))
-    raise astromatic.SExtractorUpgradeRequired(msg % args)
+    raise astromatic.SExtractorUpgradeRequired()

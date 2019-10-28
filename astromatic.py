@@ -49,7 +49,12 @@ class SExtractorNotInstalled(StandardError):
 
 class SExtractorUpgradeRequired(StandardError):
     """ Raised if a too-old version of SExtractor is installed """
-    pass
+
+    def __str__(self):
+        # From, for example, (2, 8, 6) to '2.8.6'
+        return "SExtractor >= {} is required, found {}".format(
+            '.'.join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION),
+            '.'.join(str(x) for x in sextractor_version()))
 
 class SExtractorError(subprocess.CalledProcessError):
     pass
@@ -491,10 +496,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         raise SExtractorNotInstalled()
 
     if sextractor_version() < SEXTRACTOR_REQUIRED_VERSION:
-        # From, for example, (2, 8, 6) to '2.8.6'
-        version_str = '.'.join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION)
-        msg = "SExtractor version %s or newer is needed" % version_str
-        raise SExtractorUpgradeRequired(msg)
+        raise SExtractorUpgradeRequired()
 
     # If the loop did not break (and thus SExtractorNotInstalled was not
     # raised), 'executable' contains the first command that was found
