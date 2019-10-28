@@ -147,7 +147,5 @@ for module, version in [
 
 # If the minimum version is not met, raise SExtractorUpgradeRequired as
 # soon as possible, instead of waiting until we attempt to run SExtractor.
-sextractor_version = astromatic.sextractor_version()
-sextractor_minimum = astromatic.SEXTRACTOR_REQUIRED_VERSION
-if not sextractor_version >= sextractor_minimum:
+if astromatic.sextractor_version() < astromatic.SEXTRACTOR_REQUIRED_VERSION:
     raise astromatic.SExtractorUpgradeRequired()
