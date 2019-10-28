@@ -430,18 +430,11 @@ def sextractor_version():
         msg = "SExtractor not found in the current environment"
         raise SExtractorNotInstalled(msg)
 
-    try:
-        with tempfile.TemporaryFile() as fd:
-            args = [executable, '--version']
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            output = fd.readline()
-        version = re.match(PATTERN, output).group(1)
-        # From, for example, '2.8.6' to (2, 8, 6)
-        return tuple(int(x) for x in version.split('.'))
-
-    except subprocess.CalledProcessError, e:
-        raise SExtractorError(e.returncode, e.cmd)
+    args = [executable, '--version']
+    output = subprocess.check_output(args)
+    version = re.match(PATTERN, output).group(1)
+    # From, for example, '2.8.6' to (2, 8, 6)
+    return tuple(int(x) for x in version.split('.'))
 
 def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     """ Run SExtractor on the image and return the path to the output catalog.
