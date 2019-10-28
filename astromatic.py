@@ -44,7 +44,8 @@ SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 SEXTRACTOR_REQUIRED_VERSION = (2, 19, 5)
 
 class SExtractorNotInstalled(StandardError):
-    pass
+    def __str__(self):
+        return "SExtractor not found in the current environment"
 
 class SExtractorUpgradeRequired(StandardError):
     """ Raised if a too-old version of SExtractor is installed """
@@ -427,8 +428,7 @@ def sextractor_version():
         if util.which(executable):
             break
     else:
-        msg = "SExtractor not found in the current environment"
-        raise SExtractorNotInstalled(msg)
+        raise SExtractorNotInstalled()
 
     args = [executable, '--version']
     output = subprocess.check_output(args)
@@ -488,8 +488,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         if util.which(executable):
             break
     else:
-        msg = "SExtractor not found in the current environment"
-        raise SExtractorNotInstalled(msg)
+        raise SExtractorNotInstalled()
 
     if sextractor_version() < SEXTRACTOR_REQUIRED_VERSION:
         # From, for example, (2, 8, 6) to '2.8.6'
