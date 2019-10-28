@@ -546,17 +546,12 @@ class SExtractorFunctionsTest(unittest.TestCase):
         self.assertEqual((2, 19, 5), astromatic.sextractor_version())
         check_output_mock.assert_called_once()
 
-        # SExtractorNotInstalled must be raised if no SExtractor executable is
-        # detected. In order to simulate this, mock os.environ and clear the
-        # 'PATH' environment variable. In this manner, as the list of paths to
-        # directories where executables may be found is empty, SExtractor (and
-        # any other command) will appear as not installed on the system.
-
-        environment_copy = copy.deepcopy(os.environ)
-        with mock.patch.object(os, 'environ', environment_copy) as mocked:
-            mocked['PATH'] = ''
-            with self.assertRaises(astromatic.SExtractorNotInstalled):
-                astromatic.sextractor_version()
+    @mock.patch("util.which")
+    def test_sextractor_not_installed(self, which_mock):
+        which_mock.return_value = []
+        with self.assertRaises(astromatic.SExtractorNotInstalled):
+            astromatic.sextractor_version()
+        which_mock.assert_has_calls([mock.call('sextractor'), mock.call('sex')])
 
     def test_sextractor(self):
 
