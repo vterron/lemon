@@ -66,7 +66,7 @@ class Queue(multiprocessing.queues.Queue):
     """
 
     def __init__(self, *args, **kwargs):
-        super(Queue, self).__init__(*args, **kwargs)
+        super(Queue, self).__init__(*args, **kwargs, ctx=multiprocessing.get_context())
         self._size = SharedCounter(0)
 
     def put(self, *args, **kwargs):
