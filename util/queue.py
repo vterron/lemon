@@ -69,6 +69,14 @@ class Queue(multiprocessing.queues.Queue):
         super(Queue, self).__init__(*args, **kwargs, ctx=multiprocessing.get_context())
         self._size = SharedCounter(0)
 
+    # __getstate__ and __setstate__ are needed for pickling, otherwise _size won't be copied.
+    def __getstate__(self):
+        return super(Queue, self).__getstate__() + (self._size,)
+
+    def __setstate__(self, state):
+        self._size = state[-1]
+        super(Queue, self).__setstate__(state[:-1])
+
     def put(self, *args, **kwargs):
         super(Queue, self).put(*args, **kwargs)
         self._size.increment(1)
