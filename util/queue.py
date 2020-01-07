@@ -18,6 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
 import multiprocessing
 import multiprocessing.queues
 from collections import namedtuple
