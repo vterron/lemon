@@ -32,7 +32,7 @@ import tempfile
 import subprocess
 
 # LEMON modules
-import methods
+import util
 
 CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')
 _get_file = functools.partial(os.path.join, CONFIG_FILES_DIR)
@@ -44,11 +44,17 @@ SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
 SEXTRACTOR_REQUIRED_VERSION = (2, 19, 5)
 
 class SExtractorNotInstalled(StandardError):
-    pass
+    def __str__(self):
+        return "SExtractor not found in the current environment"
 
 class SExtractorUpgradeRequired(StandardError):
     """ Raised if a too-old version of SExtractor is installed """
-    pass
+
+    def __str__(self):
+        # From, for example, (2, 8, 6) to '2.8.6'
+        return "SExtractor >= {} is required, found {}".format(
+            '.'.join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION),
+            '.'.join(str(x) for x in sextractor_version()))
 
 class SExtractorError(subprocess.CalledProcessError):
     pass
@@ -424,24 +430,16 @@ def sextractor_version():
     PATTERN = "^SExtractor version (\d\.\d{1,2}\.\d{1,2}) \(\d{4}-\d{2}-\d{2}\)$"
 
     for executable in SEXTRACTOR_COMMANDS:
-        if methods.which(executable):
+        if util.which(executable):
             break
     else:
-        msg = "SExtractor not found in the current environment"
-        raise SExtractorNotInstalled(msg)
+        raise SExtractorNotInstalled()
 
-    try:
-        with tempfile.TemporaryFile() as fd:
-            args = [executable, '--version']
-            subprocess.check_call(args, stdout = fd)
-            fd.seek(0)
-            output = fd.readline()
-        version = re.match(PATTERN, output).group(1)
-        # From, for example, '2.8.6' to (2, 8, 6)
-        return tuple(int(x) for x in version.split('.'))
-
-    except subprocess.CalledProcessError, e:
-        raise SExtractorError(e.returncode, e.cmd)
+    args = [executable, '--version']
+    output = subprocess.check_output(args)
+    version = re.match(PATTERN, output).group(1)
+    # From, for example, '2.8.6' to (2, 8, 6)
+    return tuple(int(x) for x in version.split('.'))
 
 def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     """ Run SExtractor on the image and return the path to the output catalog.
@@ -492,17 +490,13 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         raise TypeError("'ext' must be an integer")
 
     for executable in SEXTRACTOR_COMMANDS:
-        if methods.which(executable):
+        if util.which(executable):
             break
     else:
-        msg = "SExtractor not found in the current environment"
-        raise SExtractorNotInstalled(msg)
+        raise SExtractorNotInstalled()
 
     if sextractor_version() < SEXTRACTOR_REQUIRED_VERSION:
-        # From, for example, (2, 8, 6) to '2.8.6'
-        version_str = '.'.join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION)
-        msg = "SExtractor version %s or newer is needed" % version_str
-        raise SExtractorUpgradeRequired(msg)
+        raise SExtractorUpgradeRequired()
 
     # If the loop did not break (and thus SExtractorNotInstalled was not
     # raised), 'executable' contains the first command that was found
@@ -550,4 +544,3 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
         try: os.unlink(catalog_path)
         except (IOError, OSError): pass
         raise SExtractorError(e.returncode, e.cmd)
-

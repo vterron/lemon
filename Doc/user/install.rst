@@ -28,8 +28,7 @@ These are the steps to install LEMON on a fresh `Debian 7`_ machine:
 #. ``echo "source ~/lemon/lemon-completion.sh" >> ~/.bashrc``
 #. ``./run_tests.py`` — optional, although recommended!
 
-Note that, starting from version 2.16, IRAF is now released `under a free software license <ftp://iraf.noao.edu/iraf/v216/v216revs.txt>`_. There is, thus, reasonable hope that it may be packaged for drop-in installation on Debian-based systems in the near future. A similar effort is apparently underway `for Astrometry.net <https://groups.google.com/forum/#!topic/astrometry/M_NL8ldcZVg>`_. Until then, please bear with us.
-
+Note that in October 2018 NOAO began the transition of IRAF to an end-of-support state. IRAF is now maintained by the `iraf-community project <https://iraf-community.github.io/>`_ on GitHub, which integrates any available patches into the source code. You can download the IRAF 2.16.1 snapshot `here <https://github.com/iraf-community/iraf/releases/tag/v2.16.1+2018.11.01>`_.
 
 .. [#] The important thing to `keep in mind <http://www.astromatic.net/forum/showthread.php?tid=587>`_ is that SExtractor does not rely on the CLAPACK_ implementation of LAPACK_ — instead, it only uses the subset of the LAPACK functions available in ATLAS_. That is the reason why, in case the ``liblapack-dev`` package is installed, you may encounter an error such as :code:`configure: error: CBLAS/LAPack library files not found at usual locations! Exiting`. If that is your case, you may need to do something like this:
 

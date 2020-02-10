@@ -19,7 +19,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import astropy.wcs
-import itertools
 import operator
 import os.path
 import pyfits
@@ -29,10 +28,10 @@ import tempfile
 # LEMON modules
 from test import unittest
 import astromatic
-import fitsimage
-import methods
+import platform
 import qphot
 import test.test_fitsimage
+from util import load_coordinates
 
 NITERS = 100  # How many times random-data tests cases are run
 
@@ -66,6 +65,23 @@ def fix_DSS_image(path):
 
     return output_path
 
+def get_nbits():
+    """ Return the bit architecture of the Python interpreter binary. """
+
+    bits = platform.architecture()[0]
+    for n in (32, 64):
+        if str(n) in bits:
+            return n
+
+    # The Python documentation warns us that "On Mac OS X (and perhaps other
+    # platforms), executable files may be universal files containing multiple
+    # architectures. To get at the "64-bitness" of the current interpreter, it
+    # is more reliable to query the sys.maxsize attribute".
+
+    if sys.maxsize > 2**32:
+        return 64
+    else:
+        return 32 # safe guess
 
 class QPhotTest(unittest.TestCase):
 
@@ -121,7 +137,7 @@ class QPhotTest(unittest.TestCase):
             try:
                 # The coordinates written by get_coords_file(), returned as
                 # four-element tuples (ra, dec, pm_ra, pm_dec)
-                output = methods.load_coordinates(output_path)
+                output = load_coordinates(output_path)
                 for c1, c2 in zip(output, expected):
                     self.assertAlmostEqual(c1[0], c2.ra)
                     self.assertAlmostEqual(c1[1], c2.dec)
@@ -168,7 +184,7 @@ class QPhotTest(unittest.TestCase):
         # architecture). See issue #56 for futher information:
         # https://github.com/vterron/lemon/issues/57
 
-        nbits = methods.get_nbits()
+        nbits = get_nbits()
         if nbits == 64:
             ngc2264_expected_output += [                             # <<>>
                 qphot.QPhotResult(878.62,  171.496, 17.623, 6266626, 3749740, 484.9941),
@@ -234,7 +250,7 @@ class QPhotTest(unittest.TestCase):
             qphot.QPhotResult(735.552, 65.18,   17.785, 6019633, 3231141, 575.0005),
             qphot.QPhotResult(734.0,   689.025, 17.639, 6075931, 3694561, 567.6364)]
 
-        nbits = methods.get_nbits()
+        nbits = get_nbits()
         if nbits == 64:
             ngc2264_expected_output += [                             # <<>>
                 qphot.QPhotResult(877.992, 171.373, 17.627, 6248653, 3737111, 484.8067)]
@@ -263,7 +279,7 @@ class QPhotTest(unittest.TestCase):
         barnard_path = "./test/test_data/fits/Barnard's_Star.fits"
         barnard = astromatic.Coordinates(269.452075, 4.693391, -0.79858, 10.32812)
 
-        nbits = methods.get_nbits()
+        nbits = get_nbits()
         if nbits == 64:
             expected_output = (   #  x        y       mag     sum     flux      stdev
                 qphot.QPhotResult(440.947, 382.595, 17.245, 8563646, 5311413, 1039.844))

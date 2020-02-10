@@ -37,3 +37,4 @@ William Schoenell, for helping debug the aforementioned bug
 Emilio Falco, for the many bugs perseveringly reported
 Hervé Bouy, for the help and advice on Astrometry.net
 Michael Hlabathe, for reporting a bug in the unit tests.
+Derek O'Keeffe, for the bug fix for load_coordinates().

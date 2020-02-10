@@ -25,9 +25,7 @@ import atexit
 import aplpy
 import gtk
 import logging
-import methods
 import numpy
-import os
 import pyfits
 
 import matplotlib.figure
@@ -348,7 +346,7 @@ class FindingChartDialog(object):
 
         # Temporarily save to disk the FITS file used as a reference frame
         path = self.db.mosaic
-        atexit.register(methods.clean_tmp_files, path)
+        atexit.register(util.clean_tmp_files, path)
         self.wcs = astropy.wcs.WCS(path)
         with pyfits.open(path) as hdu:
             data = hdu[0].data
@@ -527,4 +525,3 @@ class FindingChartDialog(object):
         """ Destroy the gtk.Dialog """
         self.preferences_dialog.destroy()
         self.dialog.destroy()
-

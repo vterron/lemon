@@ -46,8 +46,8 @@ import re
 import warnings
 
 # LEMON modules
+import util
 import keywords
-import methods
 import passband
 import style
 
@@ -552,7 +552,7 @@ class FITSImage(object):
                 logging.debug("{0}: minutes = {1} (α)".format(self.path, mm))
                 logging.debug("{0}: seconds = {1} (α)".format(self.path, ss))
 
-                ra = methods.HMS_to_DD(hh, mm, ss)
+                ra = util.HMS_to_DD(hh, mm, ss)
                 logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
                 return ra
             else:
@@ -601,7 +601,7 @@ class FITSImage(object):
                 logging.debug("{0}: minutes = {1} (δ)".format(self.path, mm))
                 logging.debug("{0}: seconds = {1} (δ)".format(self.path, ss))
 
-                dec = methods.DMS_to_DD(dd, mm, ss)
+                dec = util.DMS_to_DD(dd, mm, ss)
                 logging.debug("{0}: δ = {1:.5f}".format(self.path, dec))
                 return dec
             else:
@@ -648,7 +648,7 @@ class FITSImage(object):
         """ Returns the x, y coordinates of the central pixel of the image. """
         return list(int(round(x / 2)) for x in self.size)
 
-    @methods.memoize
+    @util.memoize
     def _get_wcs(self):
         """ Return the astropy.wcs.WCS object for the header of this image. """
 
@@ -876,4 +876,3 @@ def find_files(paths, followlinks = True, pattern = None):
                                               followlinks = followlinks,
                                               pattern = pattern)
     return files_paths
-

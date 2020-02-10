@@ -35,7 +35,6 @@ import os.path
 import random
 import re
 import sys
-import time
 import warnings
 
 import matplotlib
@@ -53,7 +52,6 @@ sys.path.append(path)
 import chart
 import config
 import glade
-import methods
 import mining
 import plot
 import snr
@@ -371,7 +369,7 @@ class StarDetailsGUI(object):
         for unix_time, magnitude, noise in curve:
             row = []
             row.append(unix_time)
-            row.append(methods.utctime(unix_time, suffix = False))
+            row.append(util.utctime(unix_time, suffix = False))
             row.append(astropy.time.Time(unix_time, format = 'unix').jd)
             row.append(magnitude)
             row.append(noise)
@@ -604,9 +602,9 @@ class StarDetailsGUI(object):
 
         store = self.starinfo_store
         x, y, self.ra, self.dec, _, _, _, imag = self.db.get_star(star_id)
-        store.append(('Right ascension', '%s' % methods.ra_str(self.ra), True))
+        store.append(('Right ascension', '%s' % util.ra_str(self.ra), True))
         store.append(('Right ascension', '%.4f deg' % self.ra, True))
-        store.append(('Declination', '%s' % methods.dec_str(self.dec), True))
+        store.append(('Declination', '%s' % util.dec_str(self.dec), True))
         store.append(('Declination', '%.4f deg' % self.dec, True))
         store.append(('Magnitude', '%.3f' % imag, True))
         store.append(('x-coordinate', '%.2f' % x, True))
@@ -1308,9 +1306,7 @@ class LEMONJuicerGUI(object):
                     break
 
                 x, y, ra, dec, _, _, _, imag = db.get_star(star_id)
-                ra_str  = methods.ra_str(ra)
-                dec_str = methods.dec_str(dec)
-                row = [star_id, ra_str, ra, dec_str, dec, imag]
+                row = [star_id, util.ra_str(ra), ra, util.dec_str(dec), dec, imag]
 
                 for pfilter in db_pfilters:
                     # None returned if the star doesn't have this light curve
@@ -1579,4 +1575,3 @@ class LEMONJuicerGUI(object):
         if self.db is not None:
             self.handle_finding_chart(acceleratable)
         return True
-
