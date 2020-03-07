@@ -6,6 +6,7 @@
 # setup.py files, not pip's fault. Serial installation is the only
 # answer here [https://github.com/pypa/pip/issues/25]
 
+absl-py>=0.9.0
 APLpy>=0.9.9
 scipy>=0.12.0
 matplotlib>=1.2.1
