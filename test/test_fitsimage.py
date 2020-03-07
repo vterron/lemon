@@ -99,6 +99,11 @@ class FITSImageTest(unittest.TestCase):
 
         """
 
+        # Ignore keywords mapping to None.
+        for k, v in keywords.items():
+            if v is None:
+                keywords.pop(k)
+
         x_size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         y_size = random.randint(cls.MIN_SIZE, cls.MAX_SIZE)
         path = cls.mkfits(x_size, y_size, **keywords)
