@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import absl.testing.parameterized as parameterized
 import datetime
 import calendar
 import numpy.random
@@ -53,7 +54,7 @@ class FITSImage(fitsimage.FITSImage):
         os.unlink(self.path)
 
 
-class FITSImageTest(unittest.TestCase):
+class FITSImageTest(parameterized.TestCase):
 
     MIN_PIXEL_VALUE = 0
     MAX_PIXEL_VALUE = 65535
@@ -348,220 +349,224 @@ class FITSImageTest(unittest.TestCase):
             with self.assertRaises(KeyError):
                 img.read_keyword('HIERARCH ' + keyword)
 
-    def test_date_and_year(self):
-
-        def strptime_utc(date_string):
-            """ Parse a string representing a UTC time according to strptime's
-            format '%Y-%m-%d %H:%M:%S.%f' and return it in seconds since the
-            Unix epoch. Note that '%s' is not a documented option to strftime()
-            as it is OS dependent, but it should work on any decent system."""
-
-            format_ = "%Y-%m-%d %H:%M:%S.%f"
-            dt = datetime.datetime.strptime(date_string, format_)
-            struct_time = dt.utctimetuple()
-            # strftime('.%f') because struct_time does not store fractions
-            return calendar.timegm(struct_time) + float(dt.strftime('.%f'))
-
-        def unstrip(str_, max_whitespaces = 5):
-            """ Return a copy of 'str' with leading and trailing whitespaces.
-            The number of whitespaces on each side is a random number in the
-            range [1, max_whitespaces] """
-
-            leading  = ' ' * random.randint(1, max_whitespaces)
-            trailing = ' ' * random.randint(1, max_whitespaces)
-            return '%s%s%s' % (leading, str_, trailing)
-
-        # (1) The ideal case: date format 'yyyy-mm-ddTHH:MM:SS.sss'
-        # Start of observation = 2009-06-12 21:12:47.238, EXPTIME = 1505
-        # 2009-06-12 21:12:47.238 + (00:25:05 / 2) =
-        # 2009-06-12 21:12:47.238 + 00:12:32.5 =
-        # 2009-06-12 21:25:19.738 UTC ~=
-        # 2009.44628104
-
-        keywords = {'DATE-OBS' : '2009-06-12T21:12:47.238',
-                    'EXPTIME' : 1505}
-        with self.random(**keywords) as img:
-            expected_date = strptime_utc("2009-06-12 21:25:19.738")
-            expected_year = 2009.44628104
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # (2) Format 'yyyy-mm-ddTHH:MM:SS', without fractions of a second
-        # Start of observation = 1998-11-29 02:53:21, EXPTIME = 1834
-        # 1998-11-29 02:53:21 + (0:30:34 / 2) =
-        # 1998-11-29 02:53:21 + 0:15:17 =
-        # 1998-11-29 03:08:38 UTC ~=
-        # 1998.90994793
-
-        keywords = {'DATE-OBS' : '1998-11-29T02:53:21',
-                    'EXPTIME' : 1834}
-        with self.random(**keywords) as img:
-            expected_date = strptime_utc("1998-11-29 03:08:38.0")
-            expected_year = 1998.90994793
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # Repeat (2) with leading and trailing whitespaces
-        keywords['DATE-OBS'] = unstrip(keywords['DATE-OBS'])
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # (3) Another one with fractions of a second, turn to a new year
-        # Start of observation = 1999-12-31 23:53:12.565, EXPTIME = 4312.56
-        # 1999-12-31 23:53:12.565 + (1:11:52.56 / 2) =
-        # 1999-12-31 23:53:12.565 + 0:35:56.28 =
-        # 2000-01-01 00:29:08.845 UTC =~
-        # 2000.00005528
-
-        keywords = {'DATE-OBS' : '1999-12-31T23:53:12.565',
-                    'EXPTIME' : 4312.56}
-        with self.random(**keywords) as img:
-            expected_date = strptime_utc("2000-01-01 00:29:08.845")
-            expected_year = 2000.00005528
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # (4) Format 'yyyy-mm-dd', HH:MM:SS.sss read from TIME-OBS
-        # Start of observation = 2003-03-28 04:23:17.87, EXPTIME = 1357.25
-        # 2003-03-28 04:23:17.87 + (0:22:37.25 / 2) =
-        # 2003-03-28 04:23:17.87 + 0:11:18.625 =
-        # 2003-03-28 04:34:36.495 UTC ~=
-        # 2003.23613889
-
-        keywords = {'DATE-OBS' : '2003-03-28',
-                    'TIME-OBS' : '04:23:17.87',
-                    'EXPTIME' : 1357.25}
-        with self.random(**keywords) as img:
-            expected_date = strptime_utc("2003-03-28 04:34:36.495")
-            expected_year = 2003.23613889
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # Repeat (4) with leading and trailing whitespaces
-        keywords['DATE-OBS'] = unstrip(keywords['DATE-OBS'])
-        keywords['TIME-OBS'] = unstrip(keywords['TIME-OBS'])
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # (5) Another 'yyyy-mm-dd', HH:MM:SS (no fractions) read from TIME-OBS
-        # Start of observation = 2011-06-13 19:04:28, EXPTIME = 2341
-        # 2011-06-13 19:04:28 + (0:39:01 / 2) =
-        # 2011-06-13 19:04:28 + 0:19:30.5 =
-        # 2011-06-13 19:23:58.5 UTC ~=
-        # 2011.44878989
-
-        keywords = {'DATE-OBS' : '2011-06-13',
-                    'TIME-OBS' : '19:04:28',
-                    'EXPTIME' : 2341}
-        with self.random(**keywords) as img:
-            expected_date = strptime_utc("2011-06-13 19:23:58.5")
-            expected_year = 2011.44878989
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
-
-        # (6) Repeat (5), but using different, non-standard keywords
-        keywords['DATE'] = keywords.pop('DATE-OBS')
-        keywords['TIME'] = keywords.pop('TIME-OBS')
-        keywords['EXPOSURE'] = keywords.pop('EXPTIME')
-        with self.random(**keywords) as img:
-            kwargs = dict(date_keyword = 'DATE',
-                          time_keyword = 'TIME',
-                          exp_keyword = 'EXPOSURE')
-            self.assertAlmostEqual(expected_date, img.date(**kwargs))
-            self.assertAlmostEqual(expected_year, img.year(**kwargs))
-
-        # (7) Format 'yy/mm/dd' (only for dates from 1900 through 1999)
-        # The year 13, when this format is used, is interpreted as 1913
-        # Start of observation = 1913-04-20 22:58:12.1, EXPTIME = 1328
-        # 1913-04-20 22:58:12.1 + (0:22:08 / 2) =
-        # 1913-04-20 22:58:12.1 + 0:11:04 =
-        # 1913-04-20 23:09:16.1 UTC ~=
-        # 1913.30127334
-
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'yyyy-mm-ddTHH:MM:SS.sss',
+            'date': '2009-06-12T21:12:47.238',
+            'time': None,
+            'exptime': 1505,
+            'want_date': 1244841919.738,  # 2009-06-12 21:25:19.738
+            'want_year': 2009.44628104,
+        },{
+            'testcase_name': 'yyyy-mm-ddTHH:MM:SS',
+            'date': '1998-11-29T02:53:21',
+            'time': None,
+            'exptime': 1834,
+            'want_date': 912308918.0,  # 1998-11-29 03:08:38.0
+            'want_year': 1998.90994793,
+        },{
+            'testcase_name': 'yyyy-mm-ddTHH:MM:SS (leading and trailing whitespaces)',
+            'date': ' 1998-11-29T02:53:21  ',
+            'time': None,
+            'exptime': 1834,
+            'want_date': 912308918.0,  # 1998-11-29 03:08:38.0
+            'want_year': 1998.90994793,
+        },{
+            'testcase_name': 'yyyy-mm-ddTHH:MM:SS.sss (midpoint falls in the following year)',
+            'date': '1999-12-31T23:53:12.565',
+            'time': None,
+            'exptime': 4312.56,
+            'want_date': 946686548.845,  # 2000-01-01 00:29:08.845
+            'want_year': 2000.00005528,
+        },{
+            'testcase_name': 'yyyy-mm-dd and HH:MM:SS.sss',
+            'date': '2003-03-28',
+            'time': '04:23:17.87',
+            'exptime': 1357.25,
+            'want_date': 1048826076.495,  # 2003-03-28 04:34:36.495
+            'want_year': 2003.23613889,
+        },{
+            'testcase_name': 'yyyy-mm-dd and HH:MM:SS.sss (leading and trailing whitespaces)',
+            'date': ' 2003-03-28  ',
+            'time': ' 04:23:17.87 ',
+            'exptime': 1357.25,
+            'want_date': 1048826076.495,  # 2003-03-28 04:34:36.495
+            'want_year': 2003.23613889,
+        },{
+            'testcase_name': 'yyyy-mm-dd_and_HH:MM:SS',
+            'date': '2011-06-13',
+            'time': '19:04:28',
+            'exptime': 2341,
+            'want_date': 1307993038.5,  # 2011-06-13 19:23:58.5
+            'want_year': 2011.44878989,
+        },{
+            'testcase_name': 'yy/mm/dd',
+            'date': '89/08/30',  # interpreted as 1989
+            'time': '01:32:22.14',
+            'exptime': 83.55,
+            'want_date': 620443983.915,  # 1989-08-30 01:33:03.915
+            'want_year': 1989.66045101,
+        },{
+            'testcase_name': 'yy/mm/dd (another example)',
+            'date': '13/04/20',  # interpreted as 1913
+            'time': '22:58:12.1',
+            'exptime': 1328,
+            'want_date': -1789260643.9,  # 1913-04-20 23:09:16.1
+            'want_year': 1913.30127334,
+        },
+    )
+    def test_date_and_year(self, date, time, exptime, want_date, want_year):
         keywords = {
-            'DATE-OBS' : '13/04/20',
-            'TIME-OBS' : '22:58:12.1',
-            'EXPTIME' : 1328}
+            'DATE-OBS': date,
+            'TIME-OBS': time,
+            'EXPTIME': exptime,
+        }
         with self.random(**keywords) as img:
-            expected_date = strptime_utc("1913-04-20 23:09:16.1")
-            expected_year = 1913.30127334
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
+            self.assertAlmostEqual(img.date(), want_date)
+            self.assertAlmostEqual(img.year(), want_year)
 
-        # (8) Another 'yy/mm/dd' format: year 89 means here 1989
-        # Start of observation = 1989-08-30 01:32:22.14, EXPTIME = 83.55
-        # 1989-08-30 01:32:22.14 + (0:01:23.55 / 2) =
-        # 1989-08-30 01:32:22.14 + 0:00:41.775 =
-        # 1989-08-30 01:33:03.915 ~=
-        # 1989.66045101
-
-        keywords =  {
-            'DATE-OBS' : '89/08/30',
-            'TIME-OBS' : '01:32:22.14',
-            'EXPTIME' : 83.55}
+    def test_date_and_year_non_standard_keywords(self):
+        # The FITS image does not use standard keywords, but date() and year()
+        # can be pointed to read the date, time and exposure duration from the
+        # right keywords.
+        keywords = {
+            'DATE': '2011-06-13',
+            'TIME': '19:04:28',
+            'EXPOSURE': 2341,
+        }
         with self.random(**keywords) as img:
-            expected_date = strptime_utc("1989-08-30 01:33:03.915")
-            expected_year = 1989.66045101
-            self.assertAlmostEqual(expected_date, img.date())
-            self.assertAlmostEqual(expected_year, img.year())
+            got_date = img.date(
+                date_keyword='DATE',
+                time_keyword='TIME',
+                exp_keyword='EXPOSURE',
+            )
+            got_year = img.year(
+                date_keyword='DATE',
+                time_keyword='TIME',
+                exp_keyword='EXPOSURE',
+            )
+            self.assertAlmostEqual(got_date, 1307993038.5)  # 2011-06-13 19:23:58.5
+            self.assertAlmostEqual(got_year, 2011.44878989)
 
-        def assertRaised(exception, keywords):
-            """ Assert that a random FITS image with the 'keywords' FITS
-            keywords raises 'exception' when both its date() and year()
-            methods are called."""
-            with self.random(**keywords) as img:
-                with self.assertRaises(exception):
-                    img.date()
-                with self.assertRaises(exception):
-                    img.year()
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Missing DATE-OBS',
+            'date': None,
+            'exptime': 1500,
+            'want': KeyError,
+        },{
+            'testcase_name': 'Missing EXPTIME',
+            'date': '1988-09-13T21:45:19',
+            'exptime': None,
+            'want': KeyError,
+        },{
+            # DATE-OBS in the 'yyyy-mm-dd' format, so the time at the start of
+            # the observation must be read from TIME-OBS (which is not found).
+            'testcase_name': 'Missing TIME-OBS',
+            'date': '1993-04-29',
+            'exptime': 1200,
+            'want': KeyError,
+        },
+    )
+    def test_date_and_year_missing_keyword(self, date, exptime, want):
+        keywords = {
+            'DATE-OBS': date,
+            'EXPTIME': exptime,
+        }
+        with self.random(**keywords) as img:
+            with self.assertRaises(want):
+                img.date()
+            with self.assertRaises(want):
+                img.year()
 
-        # Keyword DATE-OBS not found
-        keywords = {'EXPTIME' : 1500}
-        assertRaised(KeyError, keywords)
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Slashes instead of dashes',
+            'date': '1993/04/29T12:42:23',
+        },{
+            'testcase_name': "'T' surrounded by whitespaces",
+            'date': '1993-04-29 T 12:42:23',
+        },{
+            'testcase_name': "No 'T' between date and time",
+            'date': '1993-04-29 12:42:23',
+        },{
+            'testcase_name': 'Whitespaces instead of colons',
+            'date': '1993-04-29T12 42 23',
+        },{
+            'testcase_name': "Nothing after the 'T'",
+            'date': '1993-04-29T',
+        },{
+            'testcase_name': "Year missing",
+            'date': '04-29T12:42:23',
+        },{
+            'testcase_name': 'Time present but date missing',
+            'date': '12:42:23',
+        },{
+            'testcase_name': 'ctime() format',
+            'date': 'Thu Apr 29 12:42:23 1993',
+        },
+    )
+    def test_date_and_year_nonstandard_DATE_OBS(self, date):
+        keywords = {
+            'DATE-OBS': date,
+            'EXPTIME': 1800,
+        }
+        with self.random(**keywords) as img:
+            with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'DATE-OBS'):
+                img.date()
+            with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'DATE-OBS'):
+                img.year()
 
-        # Keyword EXPTIME not found
-        keywords = {'DATE-OBS' : '1988-09-13T21:45:19'}
-        assertRaised(KeyError, keywords)
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Slashes instead of colons',
+            'time': '12/42/23',
+        },{
+            'testcase_name': 'Whitespaces instead of colons',
+            'time': '12 42 23',
+        },{
+            'testcase_name': 'Seconds missing',
+            'time': '12:42',
+        },{
+            'testcase_name': "'h', 'm' and 's' instead of colons",
+            'time': '12h42m23s',
+        },{
+            'testcase_name': 'Empty',
+            'time': '',
+        },
+    )
+    def test_date_and_year_nonstandard_TIME_OBS(self, time):
+        keywords = {
+            'DATE-OBS': '1998-11-29',
+            'TIME-OBS': time,
+            'EXPTIME': 1800,
+        }
+        with self.random(**keywords) as img:
+            with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'TIME-OBS'):
+                img.date()
+            with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'TIME-OBS'):
+                img.year()
 
-        # DATE-OBS in the 'yyyy-mm-dd' format, so the time at the start of
-        # the observation must be read from TIME-OBS (which is not found)
-        keywords = {'DATE-OBS' : '1993-04-29', 'EXPTIME' : 1200}
-        assertRaised(KeyError, keywords)
-
-        # Both DATE-OBS and EXPTIME exist, but the latter does not contain a
-        # floating-point number giving the exposure time in units of seconds.
-        keywords = {'DATE-OBS' : '1988-09-13T21:45:19', 'EXPTIME' : 'unknown'}
-        assertRaised(fitsimage.NonStandardFITS, keywords)
-
-        # Several non-standard DATE-OBS formats
-        nonstandard_dates = [
-            '1993/04/29T12:42:23',      # slashes, not dashes
-            '1993-04-29 T 12:42:23',    # 'T' surrounded by whitespaces
-            '1993-04-29 12:42:23',      # no 'T' between date and time
-            '1993-04-29T12 42 23',      # whitespaces, not colons
-            '1993-04-29T',              # nothing after the 'T'
-            '04-29T12:42:23',           # year missing
-            '12:42:23',                 # time, but not date
-            'Thu Apr 29 12:42:23 1993'] # ctime() format
-
-        for wrong_date in nonstandard_dates:
-            keywords['DATE-OBS'] = wrong_date
-            assertRaised(fitsimage.NonStandardFITS, keywords)
-
-        # Several non-standard TIME-OBS formats
-        nonstandard_times = [
-            '12/42/23',  # slashes, not colons
-            '12 42 23',  # whitespaces, not colons
-            '12:42',     # seconds missing
-            '12h42m23s', # 'h', 'm' and 's' instead of colons
-            '']          # empty
-
-        keywords = {'DATE-OBS' : '1993-04-29', 'EXPTIME' : 1200}
-        for wrong_time in nonstandard_times:
-            keywords['TIME-OBS'] = wrong_time
-            assertRaised(fitsimage.NonStandardFITS, keywords)
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Not a number',
+            'exptime': 'unknown',
+        },{
+            'testcase_name': 'Empty',
+            'exptime': '',
+        },
+    )
+    def test_date_and_year_nonstandard_EXPTIME(self, exptime):
+        keywords = {
+            'DATE-OBS': '2003-03-28',
+            'TIME-OBS': '04:23:17.87',
+            'EXPTIME': exptime,
+        }
+        with self.random(**keywords) as img:
+            with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'EXPTIME'):
+                img.date()
+            with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'EXPTIME'):
+                img.year()
 
     def test_ra(self):
 
