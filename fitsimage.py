@@ -340,7 +340,7 @@ class FITSImage(object):
             exp_keyword=exp_keyword)
 
     def read_barycentric_date(self,
-            bjd_keyword='BJD_TDB',
+            bjd_keyword=keywords.bjd_keyword,
         ):
         """Returns the Barycentric Julian Date as a UTC timestamp."""
 
