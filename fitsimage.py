@@ -329,9 +329,9 @@ class FITSImage(object):
             handler.close(output_verify = 'ignore')
 
     def date(self,
-             date_keyword='DATE-OBS',
-             time_keyword='TIME-OBS',
-             exp_keyword='EXPTIME',
+             date_keyword=keywords.datek,
+             time_keyword=keywords.timek,
+             exp_keyword=keywords.exptimek,
              barycentric=False,
         ):
         """ Return the date at mid-exposure (UTC), in Unix time.
