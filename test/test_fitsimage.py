@@ -359,7 +359,7 @@ class FITSImageTest(parameterized.TestCase):
         # we see that for these coordinates, the input BJD_TDB corresponds to
         # JD UTC = 2458902.321287484, which we convert this to a UTC timestamp.
         with self.random(**keywords) as img:
-            self.assertAlmostEqual(img.read_barycentric_date(), 1582400559.23860979)
+            self.assertAlmostEqual(img.date(barycentric=True), 1582400559.23860979)
 
     @parameterized.named_parameters(
         {

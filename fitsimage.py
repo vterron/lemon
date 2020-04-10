@@ -332,14 +332,27 @@ class FITSImage(object):
              date_keyword='DATE-OBS',
              time_keyword='TIME-OBS',
              exp_keyword='EXPTIME',
+             barycentric=False,
         ):
-        """ Return the date of observation (UTC), in Unix time."""
+        """ Return the date at mid-exposure (UTC), in Unix time.
+
+        This function always returns a UTC Unix timestamp. By default, the date
+        at mid-exposure is derived using the traditional, standard FITS keywords
+        (e.g. DATE-OBS, EXPTIME). However, if 'barycentric' is set to True, the
+        value used is the Barycentric Julian Date in Barycentric Dynamical Time
+        (BJD_TDB)). This is a non-standard FITS keyword, but commonly used in
+        the exoplanet community for high-accuracy observations. For more
+        information, see http://astroutils.astronomy.ohio-state.edu/time/.
+        """
+
+        if barycentric:
+            return self._read_barycentric_date()
         return self._read_uncorrected_date(
             date_keyword=date_keyword,
             time_keyword=time_keyword,
             exp_keyword=exp_keyword)
 
-    def read_barycentric_date(self,
+    def _read_barycentric_date(self,
             bjd_keyword=keywords.bjd_keyword,
         ):
         """Returns the Barycentric Julian Date as a UTC timestamp."""
