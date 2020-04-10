@@ -580,50 +580,78 @@ class FITSImageTest(parameterized.TestCase):
             with self.assertRaisesRegexp(fitsimage.NonStandardFITS, 'EXPTIME'):
                 img.year()
 
-    def test_ra(self):
-
-        ra_kwd = 'RA'
-
-        keywords = {ra_kwd : 344.412916667}
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Decimal degrees',
+            'keyword': 'RA',
+            'ra': 344.412916667,
+            'want': 344.412916667,
+        },{
+            'testcase_name': 'Sexagesimal',
+            'keyword': 'RA',
+            'ra': '19:43:56.01',
+            'want': 295.983375,
+        },{
+            'testcase_name': 'Trailing whitespace',
+            'keyword': 'RA',
+            'ra': '17:58:17          ',
+            'want': 269.570833333,
+        },{
+            'testcase_name': 'Leading and trailing whitespace',
+            'keyword': 'RA',
+            'ra': '    00:42:30.997 ',
+            'want': 10.6291541667,
+        },{
+            'testcase_name': 'Trailing decimal separator',
+            'keyword': 'RA',
+            'ra': '13:00:01.',
+            'want': 195.004166667,
+        },
+        {
+            'testcase_name': 'Case-insensitive lookup',
+            'keyword': 'ra',
+            'ra': '00:42:30.997',
+            'want': 10.6291541667,
+        },
+    )
+    def test_ra(self, keyword, ra, want):
+        keywords = {keyword: ra}
         with self.random(**keywords) as img:
-            self.assertAlmostEqual(keywords[ra_kwd], img.ra(ra_kwd))
+            self.assertAlmostEqual(img.ra('RA'), want)
 
-        keywords = {ra_kwd.lower() : '19:43:56.01'}
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Extraneous h/m/s',
+            'ra': '00h42m30s',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'HH:MM:SS.sss' format",
+        },{
+            'testcase_name': 'Too many decimal places',
+            'ra': '00:42:30.9997',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'HH:MM:SS.sss' format",
+        },{
+            'testcase_name': 'No leading zero',
+            'ra': '3:24:57.12',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'HH:MM:SS.sss' format",
+        },{
+            'testcase_name': 'Not an actual right ascension',
+            'ra': 'N/A',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'HH:MM:SS.sss' format",
+        },{
+            'testcase_name': 'Keyword not in FITS header',
+            'ra': None,
+            'want': KeyError,
+            'regexp': "keyword 'RA' not found",
+        },
+    )
+    def test_ra_error(self, ra, want, regexp):
+        keywords = {'RA': ra}
         with self.random(**keywords) as img:
-            self.assertAlmostEqual(295.983375, img.ra(ra_kwd))
-
-        keywords = {ra_kwd : '17:58:17          '}
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(269.570833333, img.ra(ra_kwd))
-
-        keywords = {ra_kwd.lower() : '    00:42:30.997 '}
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(10.6291541667, img.ra(ra_kwd))
-
-        keywords = {ra_kwd : '13:00:01.'}
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(195.004166667, img.ra(ra_kwd))
-
-        def assertValueErrorRaised(ra_value):
-            """ Assert that a random FITS image whose right ascension is
-            'ra_value' raises ValueError when its ra() method is called. """
-
-            keywords = {ra_kwd : ra_value}
-            with self.random(**keywords) as img:
-                regexp = "not in decimal degrees or 'HH:MM:SS.sss' format"
-                with self.assertRaisesRegexp(ValueError, regexp):
-                    img.ra(ra_kwd)
-
-        # Not in decimal or dd:mm:ss[.sss] format
-        assertValueErrorRaised('00h42m30s')
-        assertValueErrorRaised('00:42:30.9997')
-        assertValueErrorRaised('3:24:57.12')
-        assertValueErrorRaised('N/A')
-
-        # 'RA' keyword not in FITS header
-        with self.assertRaises(KeyError):
-            with self.random() as img:
-                img.ra(ra_kwd)
+            with self.assertRaisesRegexp(want, regexp):
+                img.ra('RA')
 
     def test_dec(self):
 
