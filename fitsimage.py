@@ -595,8 +595,8 @@ class FITSImage(object):
                 logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
                 return ra
             else:
-                msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format"
-                raise ValueError(msg.format(self.path, ra_keyword))
+                msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format (got = {2!r})"
+                raise ValueError(msg.format(self.path, ra_keyword, ra_str))
 
     def dec(self, dec_keyword = keywords.deck):
         """ Return the declination, in decimal degrees.
@@ -644,8 +644,8 @@ class FITSImage(object):
                 logging.debug("{0}: δ = {1:.5f}".format(self.path, dec))
                 return dec
             else:
-                msg = "{0}: '{1}' not in decimal degrees or 'DD:MM:SS.sss' format"
-                raise ValueError(msg.format(self.path, dec_keyword))
+                msg = "{0}: '{1}' not in decimal degrees or 'DD:MM:SS.sss' format (got = {2!r}"
+                raise ValueError(msg.format(self.path, dec_keyword, dec_str))
 
     @property
     def prefix(self):
