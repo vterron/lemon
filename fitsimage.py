@@ -28,8 +28,10 @@ from __future__ import division
 # tasks which attempt to display graphics will fail, of course, but we are not
 # going to make use of any of them, anyway.
 
-import astropy.io
+
+import astropy.time
 import astropy.wcs
+import barycorr
 import calendar
 import collections
 import datetime
@@ -336,6 +338,16 @@ class FITSImage(object):
             date_keyword=date_keyword,
             time_keyword=time_keyword,
             exp_keyword=exp_keyword)
+
+    def read_barycentric_date(self,
+            bjd_keyword='BJD_TDB',
+        ):
+        """Returns the Barycentric Julian Date as a UTC timestamp."""
+
+        bjd_tdb = self.read_keyword(bjd_keyword)
+        jd_utc = barycorr.bjd2utc(bjd_tdb, self.ra(), self.dec())
+        t = astropy.time.Time(jd_utc, format='jd', scale='utc')
+        return t.unix
 
     def _read_uncorrected_date(self, date_keyword, time_keyword, exp_keyword):
         """ Return the date of observation (UTC), in Unix time.

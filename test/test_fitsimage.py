@@ -349,6 +349,18 @@ class FITSImageTest(parameterized.TestCase):
             with self.assertRaises(KeyError):
                 img.read_keyword('HIERARCH ' + keyword)
 
+    def test_read_barycentric_date(self):
+        keywords = {
+            'BJD_TDB': 2458902.321777873,
+            'RA': '03:47:24.00',
+            'DEC': '+24:15:19.0',
+        }
+        # From http://astroutils.astronomy.ohio-state.edu/time/bjd2utc.html,
+        # we see that for these coordinates, the input BJD_TDB corresponds to
+        # JD UTC = 2458902.321287484, which we convert this to a UTC timestamp.
+        with self.random(**keywords) as img:
+            self.assertAlmostEqual(img.read_barycentric_date(), 1582400559.23860979)
+
     @parameterized.named_parameters(
         {
             'testcase_name': 'yyyy-mm-ddTHH:MM:SS.sss',
