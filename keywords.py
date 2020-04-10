@@ -105,8 +105,8 @@ desc['coaddk'] = \
 "observations. If the keyword is missing, we assume a value of one (that " \
 "is, that the observation consisted of a single exposure) [default: %default]"
 
-bjd_keyword = 'BJD_TDB'
-desc['bjd_keyword'] = (
+bjdk = 'BJD_TDB'
+desc['bjdk'] = (
 "keyword for the barycentric JD (TDB, Barycentric Dynamical Time) at "
 "mid-exposure. Internally, LEMON stores all times as UTC Unix timestamps, so "
 "BJD_TDB is converted to JD_UTC using Jason Eastman's web applet for time "
