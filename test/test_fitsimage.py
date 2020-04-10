@@ -613,6 +613,12 @@ class FITSImageTest(parameterized.TestCase):
             'ra': '00:42:30.997',
             'want': 10.6291541667,
         },
+        {
+            'testcase_name': 'HH MM SS.ss',
+            'keyword': 'RA',
+            'ra': '03 47 24.00',
+            'want': 56.85,
+        },
     )
     def test_ra(self, keyword, ra, want):
         keywords = {keyword: ra}
@@ -685,6 +691,12 @@ class FITSImageTest(parameterized.TestCase):
             'keyword': 'dec',
             'dec': '-08:12:05.8',
             'want': -8.20161111111,
+        },
+        {
+            'testcase_name': 'DD MM SS.s',
+            'keyword': 'DEC',
+            'dec': '+24 15 19.0',
+            'want': 24.25527778,
         },
     )
     def test_dec(self, keyword, dec, want):

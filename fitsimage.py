@@ -580,7 +580,7 @@ class FITSImage(object):
             logging.debug(msg3)
 
             # HH:MM:SS[.sss]
-            regexp = '^(?P<hh>\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            regexp = '^(?P<hh>\d{2})[:\s](?P<mm>\d{2})[:\s](?P<ss>\d{2}(\.\d{0,3})?)$'
             match = re.match(regexp, ra_str.strip())
             if match:
                 hh =   int(match.group('hh'))
@@ -629,7 +629,7 @@ class FITSImage(object):
             logging.debug(msg3)
 
             # DD:MM:SS[.sss]
-            regexp = '^(?P<dd>([-+])?\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            regexp = '^(?P<dd>([-+])?\d{2})[:\s](?P<mm>\d{2})[:\s](?P<ss>\d{2}(\.\d{0,3})?)$'
             match = re.match(regexp, dec_str.strip())
             if match:
                 dd =   int(match.group('dd'))
