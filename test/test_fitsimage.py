@@ -25,6 +25,7 @@ import numpy.random
 import os
 import pyfits
 import random
+import requests_mock
 import stat
 import tempfile
 import warnings
@@ -349,7 +350,9 @@ class FITSImageTest(parameterized.TestCase):
             with self.assertRaises(KeyError):
                 img.read_keyword('HIERARCH ' + keyword)
 
-    def test_read_barycentric_date(self):
+
+    @requests_mock.Mocker()
+    def test_read_barycentric_date(self, mock):
         keywords = {
             'BJD_TDB': 2458902.321777873,
             'RA': '03:47:24.00',
@@ -357,7 +360,11 @@ class FITSImageTest(parameterized.TestCase):
         }
         # From http://astroutils.astronomy.ohio-state.edu/time/bjd2utc.html,
         # we see that for these coordinates, the input BJD_TDB corresponds to
-        # JD UTC = 2458902.321287484, which we convert this to a UTC timestamp.
+        # JD UTC = 2458902.321287484, which we convert to a UTC timestamp.
+        mock.get(
+            url='http://astroutils.astronomy.ohio-state.edu/time/convert.php?DEC=24.2552777778&FUNCTION=bjd2utc&JDS=2458902.321777873&RA=56.85&RAUNITS=degrees',
+            text='2458902.321287484')
+
         with self.random(**keywords) as img:
             self.assertAlmostEqual(img.date(barycentric=True), 1582400559.23860979)
 
