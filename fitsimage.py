@@ -333,6 +333,7 @@ class FITSImage(object):
              time_keyword=keywords.timek,
              exp_keyword=keywords.exptimek,
              barycentric=False,
+             bjd_keyword=keywords.bjdk,
         ):
         """ Return the date at mid-exposure (UTC), in Unix time.
 
@@ -346,15 +347,13 @@ class FITSImage(object):
         """
 
         if barycentric:
-            return self._read_barycentric_date()
+            return self._read_barycentric_date(bjd_keyword)
         return self._read_uncorrected_date(
             date_keyword=date_keyword,
             time_keyword=time_keyword,
             exp_keyword=exp_keyword)
 
-    def _read_barycentric_date(self,
-            bjd_keyword=keywords.bjdk,
-        ):
+    def _read_barycentric_date(self, bjd_keyword):
         """Returns the Barycentric Julian Date as a UTC timestamp."""
 
         bjd_tdb = self.read_keyword(bjd_keyword)
