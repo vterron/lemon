@@ -653,47 +653,75 @@ class FITSImageTest(parameterized.TestCase):
             with self.assertRaisesRegexp(want, regexp):
                 img.ra('RA')
 
-    def test_dec(self):
-
-        dec_kwd = 'DEC'
-
-        keywords = {dec_kwd : -52.6956605556}
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Decimal degrees',
+            'keyword': 'DEC',
+            'dec': -52.6956605556,
+            'want': -52.6956605556,
+        },{
+            'testcase_name': 'Sexagesimal',
+            'keyword': 'DEC',
+            'dec': '45:59:52.768',
+            'want': 45.9979911111,
+        },{
+            'testcase_name': 'Trailing whitespace',
+            'keyword': 'DEC',
+            'dec': '+19:10:56          ',
+            'want': 19.1822222222,
+        },{
+            'testcase_name': 'Leading and trailing whitespace',
+            'keyword': 'DEC',
+            'dec': '    -08:12:05.8  ',
+            'want': -8.20161111111,
+        },{
+            'testcase_name': 'Trailing decimal separator',
+            'keyword': 'DEC',
+            'dec': '26:25:08.',
+            'want': 26.4188888889,
+        },
+        {
+            'testcase_name': 'Case-insensitive lookup',
+            'keyword': 'dec',
+            'dec': '-08:12:05.8',
+            'want': -8.20161111111,
+        },
+    )
+    def test_dec(self, keyword, dec, want):
+        keywords = {keyword: dec}
         with self.random(**keywords) as img:
-            self.assertAlmostEqual(keywords[dec_kwd], img.dec(dec_kwd))
+            self.assertAlmostEqual(img.dec('DEC'), want)
 
-        keywords = {dec_kwd.lower() : '45:59:52.768'}
+    @parameterized.named_parameters(
+        {
+            'testcase_name': 'Extraneous +/d/m/s',
+            'dec': '+41d16m9s',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'DD:MM:SS.sss' format",
+        },{
+            'testcase_name': 'Too many decimal places',
+            'dec': '45:59:52.7685',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'DD:MM:SS.sss' format",
+        },{
+            'testcase_name': 'No leading zero',
+            'dec': '-8:12:05.8',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'DD:MM:SS.sss' format",
+        },{
+            'testcase_name': 'Not an actual declination',
+            'dec': 'N/A',
+            'want': ValueError,
+            'regexp': "not in decimal degrees or 'DD:MM:SS.sss' format",
+        },{
+            'testcase_name': 'Keyword not in FITS header',
+            'dec': None,
+            'want': KeyError,
+            'regexp': "keyword 'DEC' not found",
+        },
+    )
+    def test_dec_error(self, dec, want, regexp):
+        keywords = {'DEC': dec}
         with self.random(**keywords) as img:
-            self.assertAlmostEqual(45.9979911111, img.dec(dec_kwd))
-
-        keywords = {dec_kwd : '+19:10:56          '}
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(19.1822222222, img.dec(dec_kwd))
-
-        keywords = {dec_kwd.lower() : '    -08:12:05.8  '}
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(-8.20161111111, img.dec(dec_kwd))
-
-        keywords = {dec_kwd : '26:25:08.'}
-        with self.random(**keywords) as img:
-            self.assertAlmostEqual(26.4188888889, img.dec(dec_kwd))
-
-        def assertValueErrorRaised(dec_value):
-            """ Assert that a random FITS image whose declination is
-            'dec_value' raises ValueError when its dec() method is called."""
-
-            keywords = {dec_kwd : dec_value}
-            with self.random(**keywords) as img:
-                regexp = "not in decimal degrees or 'DD:MM:SS.sss' format"
-                with self.assertRaisesRegexp(ValueError, regexp):
-                    img.dec(dec_kwd)
-
-        # Not in decimal or dd:mm:ss[.sss] format
-        assertValueErrorRaised('+41d16m9s')
-        assertValueErrorRaised('45:59:52.7685')
-        assertValueErrorRaised('-8:12:05.8')
-        assertValueErrorRaised('N/A')
-
-        # 'DEC' keyword not in FITS header
-        with self.assertRaises(KeyError):
-            with self.random() as img:
-                img.dec(dec_kwd)
+            with self.assertRaisesRegexp(want, regexp):
+                img.dec('DEC')
