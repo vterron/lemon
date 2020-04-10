@@ -326,15 +326,30 @@ class FITSImage(object):
         finally:
             handler.close(output_verify = 'ignore')
 
-    def date(self, date_keyword = 'DATE-OBS', time_keyword = 'TIME-OBS',
-             exp_keyword = 'EXPTIME'):
+    def date(self,
+             date_keyword='DATE-OBS',
+             time_keyword='TIME-OBS',
+             exp_keyword='EXPTIME',
+        ):
+        """ Return the date of observation (UTC), in Unix time."""
+        return self._read_uncorrected_date(
+            date_keyword=date_keyword,
+            time_keyword=time_keyword,
+            exp_keyword=exp_keyword)
+
+    def _read_uncorrected_date(self, date_keyword, time_keyword, exp_keyword):
         """ Return the date of observation (UTC), in Unix time.
 
         This method returns, in seconds after the Unix epoch (the time 00:00:00
         UTC on 1 January 1970), the date at the 'midpoint' of the observation.
         This is defined as the time of the start of the exposure plus one-half
-        the exposure duration. It must be pointed out that these dates are
-        *always* interpreted as Coordinated Universal Time (UTC).
+        the exposure duration.
+
+        This function makes no assumptions or corrections for the time reference
+        frame (e.g. geocentric, heliocentric or barycentric; i.e. the different
+        geometric locations from which one could measure time, differing by the
+        light-travel time between them). It simply just returns the date found
+        in the header as a UTC timestamp.
 
         The KeyError exception is raised if any of the specified keywords
         cannot be found in the FITS header. NonStandardFITS is thrown if the
