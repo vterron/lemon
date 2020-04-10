@@ -21,6 +21,13 @@ Homepage
 
 http://lemon.readthedocs.org/
 
+Acknowledgments
+---------------
+
+LEMON uses `Eastman et al. (2010), PASP 122, pp. 935–946`__ for  Barycentric Julian Date calculations.
+
+__ http://adsabs.harvard.edu/abs/2010PASP..122..935E
+
 Acknowledging us
 ----------------
 
