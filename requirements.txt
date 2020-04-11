@@ -19,3 +19,4 @@ montage-wrapper>=0.9.7
 requests>=2.0.1
 subprocess32>=3.2.6
 requests-cache>=0.5.2
+requests-mock>=1.7.0
