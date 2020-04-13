@@ -1,4 +1,4 @@
 [submodule "barycorr"]
 	path = barycorr
-	url = git@github.com:vterron/barycorr.git
+	url = https://github.com/vterron/barycorr.git
 	branch = init
