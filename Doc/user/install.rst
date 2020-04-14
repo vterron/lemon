@@ -13,9 +13,8 @@ These are the steps to install LEMON on a fresh `Debian 7`_ machine:
 #. ``apt-get build-dep python-matplotlib python-scipy``
 #. ``apt-get install openmpi-dev``
 #. ``easy_install -U distribute``
-#. ``git clone --branch v0.3 git://github.com/vterron/lemon.git ~/lemon``
+#. ``git clone --branch v0.3 --recurse-submodules git://github.com/vterron/lemon.git ~/lemon``
 #. ``cd ~/lemon``
-#. ``git submodule add -b init git@github.com:vterron/barycorr.git``
 #. ``pip install "numpy>=1.7.1"``
 #. ``pip install -r pre-requirements.txt`` # :download:`[View] <../../pre-requirements.txt>`
 #. ``pip install -r requirements.txt`` # :download:`[View] <../../requirements.txt>`
