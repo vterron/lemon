@@ -196,6 +196,8 @@ def parallel_photometry(args):
         exp_keyword=options.exptimek,
         barycentric=options.barycentric,
         bjd_keyword=options.bjdk,
+        ra_keyword=options.rak,
+        dec_keyword=options.deck,
     )
     unix_time = image.date(**kwargs)
     msg = "%s: observation date: %.2f (%s)"
@@ -464,6 +466,14 @@ key_group.add_option('--uik', action = 'store', type = 'str',
                      dest = 'uncimgk', default = keywords.uncimgk,
                      help = keywords.desc['uncimgk'])
 
+key_group.add_option('--rak', action = 'store', type = 'str',
+                     dest = 'rak', default = keywords.rak,
+                     help = keywords.desc['rak'])
+
+key_group.add_option('--deck', action = 'store', type = 'str',
+                     dest = 'deck', default = keywords.deck,
+                     help = keywords.desc['deck'])
+
 bjd_group = optparse.OptionGroup(parser,
     "Barycentric Julian Dates [experimental]" ,
     "By default, LEMON determines the date of mid-exposure via the --datek, "
@@ -706,7 +716,9 @@ def main(arguments = None):
             time_keyword=options.timek,
             exp_keyword=options.exptimek,
             barycentric=options.barycentric,
-            bjd_keyword=options.bjdk
+            bjd_keyword=options.bjdk,
+            ra_keyword=options.rak,
+            dec_keyword=options.deck,
         )
 
     files = fitsimage.InputFITSFiles()
