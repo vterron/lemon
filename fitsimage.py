@@ -360,11 +360,21 @@ class FITSImage(object):
         """Returns the Barycentric Julian Date as a UTC timestamp."""
 
         bjd_tdb = self.read_keyword(bjd_keyword)
-        jd_utc = barycorr.bjd2utc(
-            bjd_tdb,
-            self.ra(ra_keyword=ra_keyword),
-            self.dec(dec_keyword=dec_keyword))
+        ra = self.ra(ra_keyword=ra_keyword)
+        dec = self.dec(dec_keyword=dec_keyword)
+
+        logging.debug(
+            "Converting %f (%s, α=%f, δ=%f) to JD UTC",
+            bjd_tdb, bjd_keyword, ra, dec)
+
+        jd_utc = barycorr.bjd2utc(bjd_tdb, ra, dec)
+
+        logging.debug(
+            "%f (%s, α=%f, δ=%f) = %f (JD UTC)",
+            bjd_tdb, bjd_keyword, ra, dec, jd_utc)
+
         t = astropy.time.Time(jd_utc, format='jd', scale='utc')
+        logging.debug("%f (JD UTC) = %f (UTC timestamp)", jd_utc, t.unix)
         return t.unix
 
     def _read_uncorrected_date(self, date_keyword, time_keyword, exp_keyword):
