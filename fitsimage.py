@@ -189,7 +189,9 @@ class FITSImage(object):
         if not keyword:
             raise ValueError("keyword cannot be empty")
         try:
-            return self._header[keyword.upper()]
+            value = self._header[keyword.upper()]
+            logging.debug("%s: %s = %s", self.path, keyword, value)
+            return value
         except KeyError:
             msg = "%s: keyword '%s' not found" % (self.path, keyword)
             raise KeyError(msg)
