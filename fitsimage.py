@@ -28,8 +28,10 @@ from __future__ import division
 # tasks which attempt to display graphics will fail, of course, but we are not
 # going to make use of any of them, anyway.
 
-import astropy.io
+
+import astropy.time
 import astropy.wcs
+import barycorr
 import calendar
 import collections
 import datetime
@@ -187,7 +189,9 @@ class FITSImage(object):
         if not keyword:
             raise ValueError("keyword cannot be empty")
         try:
-            return self._header[keyword.upper()]
+            value = self._header[keyword.upper()]
+            logging.debug("%s: %s = %s", self.path, keyword, value)
+            return value
         except KeyError:
             msg = "%s: keyword '%s' not found" % (self.path, keyword)
             raise KeyError(msg)
@@ -326,15 +330,66 @@ class FITSImage(object):
         finally:
             handler.close(output_verify = 'ignore')
 
-    def date(self, date_keyword = 'DATE-OBS', time_keyword = 'TIME-OBS',
-             exp_keyword = 'EXPTIME'):
+    def date(self,
+             date_keyword=keywords.datek,
+             time_keyword=keywords.timek,
+             exp_keyword=keywords.exptimek,
+             barycentric=False,
+             bjd_keyword=keywords.bjdk,
+             ra_keyword=keywords.rak,
+             dec_keyword=keywords.deck,
+        ):
+        """ Return the date at mid-exposure (UTC), in Unix time.
+
+        This function always returns a UTC Unix timestamp. By default, the date
+        at mid-exposure is derived using the traditional, standard FITS keywords
+        (e.g. DATE-OBS, EXPTIME). However, if 'barycentric' is set to True, the
+        value used is the Barycentric Julian Date in Barycentric Dynamical Time
+        (BJD_TDB)). This is a non-standard FITS keyword, but commonly used in
+        the exoplanet community for high-accuracy observations. For more
+        information, see http://astroutils.astronomy.ohio-state.edu/time/.
+        """
+
+        if barycentric:
+            return self._read_barycentric_date(
+                bjd_keyword, ra_keyword, dec_keyword)
+        return self._read_uncorrected_date(
+            date_keyword, time_keyword, exp_keyword=exp_keyword)
+
+    def _read_barycentric_date(self, bjd_keyword, ra_keyword, dec_keyword):
+        """Returns the Barycentric Julian Date as a UTC timestamp."""
+
+        bjd_tdb = self.read_keyword(bjd_keyword)
+        ra = self.ra(ra_keyword=ra_keyword)
+        dec = self.dec(dec_keyword=dec_keyword)
+
+        logging.debug(
+            "Converting %f (%s, α=%f, δ=%f) to JD UTC",
+            bjd_tdb, bjd_keyword, ra, dec)
+
+        jd_utc = barycorr.bjd2utc(bjd_tdb, ra, dec)
+
+        logging.debug(
+            "%f (%s, α=%f, δ=%f) = %f (JD UTC)",
+            bjd_tdb, bjd_keyword, ra, dec, jd_utc)
+
+        t = astropy.time.Time(jd_utc, format='jd', scale='utc')
+        logging.debug("%f (JD UTC) = %f (UTC timestamp)", jd_utc, t.unix)
+        return t.unix
+
+    def _read_uncorrected_date(self, date_keyword, time_keyword, exp_keyword):
         """ Return the date of observation (UTC), in Unix time.
 
         This method returns, in seconds after the Unix epoch (the time 00:00:00
         UTC on 1 January 1970), the date at the 'midpoint' of the observation.
         This is defined as the time of the start of the exposure plus one-half
-        the exposure duration. It must be pointed out that these dates are
-        *always* interpreted as Coordinated Universal Time (UTC).
+        the exposure duration.
+
+        This function makes no assumptions or corrections for the time reference
+        frame (e.g. geocentric, heliocentric or barycentric; i.e. the different
+        geometric locations from which one could measure time, differing by the
+        light-travel time between them). It simply just returns the date found
+        in the header as a UTC timestamp.
 
         The KeyError exception is raised if any of the specified keywords
         cannot be found in the FITS header. NonStandardFITS is thrown if the
@@ -541,7 +596,7 @@ class FITSImage(object):
             logging.debug(msg3)
 
             # HH:MM:SS[.sss]
-            regexp = '^(?P<hh>\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            regexp = '^(?P<hh>\d{2})[:\s](?P<mm>\d{2})[:\s](?P<ss>\d{2}(\.\d{0,3})?)$'
             match = re.match(regexp, ra_str.strip())
             if match:
                 hh =   int(match.group('hh'))
@@ -556,8 +611,8 @@ class FITSImage(object):
                 logging.debug("{0}: α = {1:.5f}".format(self.path, ra))
                 return ra
             else:
-                msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format"
-                raise ValueError(msg.format(self.path, ra_keyword))
+                msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format (got = {2!r})"
+                raise ValueError(msg.format(self.path, ra_keyword, ra_str))
 
     def dec(self, dec_keyword = keywords.deck):
         """ Return the declination, in decimal degrees.
@@ -590,7 +645,7 @@ class FITSImage(object):
             logging.debug(msg3)
 
             # DD:MM:SS[.sss]
-            regexp = '^(?P<dd>([-+])?\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            regexp = '^(?P<dd>([-+])?\d{2})[:\s](?P<mm>\d{2})[:\s](?P<ss>\d{2}(\.\d{0,3})?)$'
             match = re.match(regexp, dec_str.strip())
             if match:
                 dd =   int(match.group('dd'))
@@ -605,8 +660,8 @@ class FITSImage(object):
                 logging.debug("{0}: δ = {1:.5f}".format(self.path, dec))
                 return dec
             else:
-                msg = "{0}: '{1}' not in decimal degrees or 'DD:MM:SS.sss' format"
-                raise ValueError(msg.format(self.path, dec_keyword))
+                msg = "{0}: '{1}' not in decimal degrees or 'DD:MM:SS.sss' format (got = {2!r}"
+                raise ValueError(msg.format(self.path, dec_keyword, dec_str))
 
     @property
     def prefix(self):

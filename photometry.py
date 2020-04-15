@@ -190,9 +190,15 @@ def parallel_photometry(args):
     pfilter = image.pfilter(options.filterk)
     logging.debug("%s: filter = %s" % (image.path, pfilter))
 
-    kwargs = dict(date_keyword = options.datek,
-                  time_keyword = options.timek,
-                  exp_keyword = options.exptimek)
+    kwargs = dict(
+        date_keyword=options.datek,
+        time_keyword=options.timek,
+        exp_keyword=options.exptimek,
+        barycentric=options.barycentric,
+        bjd_keyword=options.bjdk,
+        ra_keyword=options.rak,
+        dec_keyword=options.deck,
+    )
     unix_time = image.date(**kwargs)
     msg = "%s: observation date: %.2f (%s)"
     args = (image.path, unix_time, util.utctime(unix_time))
@@ -460,6 +466,36 @@ key_group.add_option('--uik', action = 'store', type = 'str',
                      dest = 'uncimgk', default = keywords.uncimgk,
                      help = keywords.desc['uncimgk'])
 
+key_group.add_option('--rak', action = 'store', type = 'str',
+                     dest = 'rak', default = keywords.rak,
+                     help = keywords.desc['rak'])
+
+key_group.add_option('--deck', action = 'store', type = 'str',
+                     dest = 'deck', default = keywords.deck,
+                     help = keywords.desc['deck'])
+
+bjd_group = optparse.OptionGroup(parser,
+    "Barycentric Julian Dates [experimental]" ,
+    "By default, LEMON determines the date of mid-exposure via the --datek, "
+    "--timek and --expk keywords in the FITS header. However, high-accuracy "
+    "observations (e.g. transits of binaries or exoplanets) commonly use "
+    "Barycentric Julian Dates in Barycentric Dynamical Time (BJD_TDB). This "
+    "corrects for the amount of time it took light to travel to the changing "
+    "location of the observatory. For a brief, non-technical explanation, see "
+    "http://astroutils.astronomy.ohio-state.edu/time/bjd_explanation.html")
+
+bjd_group.add_option('--use_barycentric', action = 'store_true',
+                     dest = 'barycentric',
+                     help = "Use Barycentric Julian Dates in Barycentric "
+                     "Dynamical Time (BJD_TDB). These dates are read from "
+                     "the --bjdk FITS keyword.")
+
+bjd_group.add_option('--bjdk', action = 'store', type = 'str',
+                     dest = 'bjdk', default = keywords.bjdk,
+                     help = keywords.desc['bjdk'])
+
+parser.add_option_group(bjd_group)
+
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
@@ -675,9 +711,15 @@ def main(arguments = None):
 
     def get_date(img):
         """ Return the date() of a FITSImage object """
-        return img.date(date_keyword = options.datek,
-                        time_keyword = options.timek,
-                        exp_keyword = options.exptimek)
+        return img.date(
+            date_keyword=options.datek,
+            time_keyword=options.timek,
+            exp_keyword=options.exptimek,
+            barycentric=options.barycentric,
+            bjd_keyword=options.bjdk,
+            ra_keyword=options.rak,
+            dec_keyword=options.deck,
+        )
 
     files = fitsimage.InputFITSFiles()
     img_dates = {}
