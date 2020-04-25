@@ -28,6 +28,7 @@ script:
   - export iraf=/iraf/iraf/
   - export IRAFARCH=linux64
   - ./run_tests.py
+  - ./test/wasp10b.py
 
 notifications:
   email:
