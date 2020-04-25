@@ -27,6 +27,7 @@ before_install:
 script:
   - export iraf=/iraf/iraf/
   - export IRAFARCH=linux64
+  - export PATH=$(pwd):$PATH
   - ./run_tests.py
   - ./test/wasp10b.py
 
