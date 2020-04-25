@@ -33,3 +33,7 @@ notifications:
   email:
     on_success: change
     on_failure: change
+
+env:
+  global:
+    secure: he7Pc9wLoKddJ+FDgzyiiNrlGjeelLX16SUhCniLLev1Dsdvyy0wKL7HBEstrJjfTL2rVg2p2rR07bcC0TWXTAGxhbOIw+rddN+cZr50oWvs43Xru0kX0esErm0KmrxNpoqK7I090RmhN7BBk/uVuVpIDW4E3cKmrwCQQ7Jh3Gc=
