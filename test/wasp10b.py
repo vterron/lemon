@@ -68,7 +68,7 @@ class WASP10Test(absltest.TestCase):
         with cd(self.create_tempdir().full_path):
             download()
             # TODO(vterron): look up and set the actual gain at OSN.
-            cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --gain=1")
+            cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates=WASP10b-coordinates.txt --gain=1")
             cmd("lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB")
 
 if __name__ == "__main__":
