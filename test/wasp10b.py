@@ -60,6 +60,21 @@ def download():
     cmd("tar -xvf {}".format(zx_file))
     cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
 
+def copy_coordinates_file():
+    """Makes the coordinates .txt file available in the current directory.
+
+    The end-to-end test runs in a temporary directory, so it is necessary to
+    copy there the file with the astronomical coordinates of the objects on
+    which to do photometry. The function uses the TRAVIS_BUILD_DIR environment
+    variable, which on Travis CI contains the absolute path to the directory
+    where the repository being built has been copied on the worker:
+    https://docs.travis-ci.com/user/environment-variables/
+
+    """
+    lemon_dir = os.environ["TRAVIS_BUILD_DIR"]
+    source = os.path.join(lemon_dir, "test", "WASP10b-coordinates.txt")
+    cmd("cp -v {} .".format(source))
+
 
 class WASP10Test(absltest.TestCase):
     """End-to-end test using WASP-10b data."""
@@ -67,6 +82,8 @@ class WASP10Test(absltest.TestCase):
     def test_e2e(self):
         with cd(self.create_tempdir().full_path):
             download()
+            copy_coordinates_file()
+
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates=WASP10b-coordinates.txt --gain=1")
             cmd("lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB")
