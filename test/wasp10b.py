@@ -38,7 +38,8 @@ import sys
 
 from absl.testing import absltest
 
-CHECKSUMS_FILE="SHA1SUMS"
+CHECKSUMS_FILE = "SHA1SUMS"
+COORDINATES_FILE = "WASP10b-coordinates.txt"
 
 cmd = functools.partial(subprocess.check_call, shell=True)
 
@@ -72,7 +73,7 @@ def copy_coordinates_file():
 
     """
     lemon_dir = os.environ["TRAVIS_BUILD_DIR"]
-    source = os.path.join(lemon_dir, "test", "WASP10b-coordinates.txt")
+    source = os.path.join(lemon_dir, "test", COORDINATES_FILE)
     cmd("cp -v {} .".format(source))
 
 
@@ -85,7 +86,7 @@ class WASP10Test(absltest.TestCase):
             copy_coordinates_file()
 
             # TODO(vterron): look up and set the actual gain at OSN.
-            cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates=WASP10b-coordinates.txt --gain=1")
+            cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1".format(COORDINATES_FILE))
             cmd("lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB")
 
 if __name__ == "__main__":
