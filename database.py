@@ -1013,15 +1013,9 @@ class LEMONdB(object):
             raise DuplicateStarError(msg)
 
     def get_star(self, star_id):
-        """ Return the coordinates and magnitude of a star.
+        """Returns a StarInfo namedtuple with information about the star.
 
-        The method returns an eight-element tuple with, in this order: the x-
-        and y- coordinates of the star in the image where it was detected, its
-        right ascension and declination, astronomical epoch, proper motions in
-        right ascension and declination and, lastly, its instrumental magnitude
-        in the sources image. Raises KeyError is no star in the database has
-        this ID.
-
+        Raises KeyError is no star in the database has this ID.
         """
 
         t = (star_id, )
@@ -1029,10 +1023,9 @@ class LEMONdB(object):
                       "FROM stars "
                       "WHERE id = ?", t)
         try:
-            return self._rows.next()
+            return StarInfo(*self._rows.next())
         except StopIteration:
-            msg = "star with ID = %d not in database" % star_id
-            raise KeyError(msg)
+            raise KeyError("star with ID = {} not in database".format(star_id))
 
     def __len__(self):
         """ Return the number of stars in the database """

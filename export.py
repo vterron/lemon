@@ -56,15 +56,13 @@ if __name__ == "__main__":
         print("δ: {} ({})".format(args.dec, util.coords.dec_str(args.dec)))
 
         star_id, distance = db.star_closest_to_world_coords(args.ra, args.dec)
-        star_info = db.get_star(star_id)
-        # TODO(vterron): make get_star return a namedtuple.
-        ra, dec = star_info[2:4]
+        star = db.get_star(star_id)
 
         print()
         print("Selected star:")
         print("ID: {}".format(star_id))
-        print("α: {} ({})".format(ra, util.coords.ra_str(ra)))
-        print("δ: {} ({})".format(dec, util.coords.dec_str(dec)))
+        print("α: {} ({})".format(star.ra, util.coords.ra_str(star.ra)))
+        print("δ: {} ({})".format(star.dec, util.coords.dec_str(star.dec)))
         print("Distance to input coordinates: {} deg".format(distance))
 
         print()
