@@ -339,6 +339,19 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
     """ If more than one curve point for the same star and image is added"""
     pass
 
+
+StarInfo = collections.namedtuple("_StarInfo", [
+    "x",       # the x- and y- coordinates of the star...
+    "y",       # ... in the image where it was detected.
+    "ra",      # right ascension
+    "dec",     # declination
+    "epoch",   # astronomical epoch
+    "pm_ra",   # proper motions in right ascension...
+    "pm_dec",  # ... and declination.
+    "imag",    # instrumental magnitude in the sources image.
+    ])
+
+
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
