@@ -42,13 +42,10 @@ if __name__ == "__main__":
     parser.add_argument('dec', metavar='DEC', type=float,
                         help="Declination of the astronomical object, in "
                              "decimal degrees.")
-    parser.add_argument('filter', metavar='FILTER', type=str,
+    parser.add_argument('filter', metavar='FILTER', type=passband.Passband,
                         help="The name of the photometric filter.")
 
     args = parser.parse_args()
-
-    # TODO(vterron): create the PhotometricFilter object directly with argparse.
-    pfilter = passband.Passband(args.filter)
 
     with database.LEMONdB(args.db_path) as db:
         print("Input coordinates:")
@@ -66,10 +63,10 @@ if __name__ == "__main__":
         print("Distance to input coordinates: {} deg".format(distance))
 
         print()
-        print("Light curve in {!r} photometric filter:".format(pfilter))
-        star_phot = db.get_photometry(star_id, pfilter)
+        print("Light curve in {!r} photometric filter:".format(args.filter))
+        star_phot = db.get_photometry(star_id, args.filter)
         if star_phot is None:
-            raise ValueError("no light curve for {!r} photometric filter".format(pfilter))
+            raise ValueError("no light curve for {!r} photometric filter".format(args.filter))
 
         for index in range(len(star_phot)):
             utime = star_phot.time(index)
