@@ -10,7 +10,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-_DESCRIPTION = ("""
+_DESCRIPTION = """
 Print the light curve of an object stored in a LEMONdB.
 
 This command takes as input the right ascension and declination of an object,
@@ -18,7 +18,7 @@ and finds the one stored in the LEMONdB that's close to these coordinates. It
 then prints to standard output the (a) time, (b) differential magnitude and
 (c) signal-to-noise ratio of all the points in the light curve of the object
 in the specified photometric filter.
-""")
+"""
 
 import argparse
 import astropy.time
