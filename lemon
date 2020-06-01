@@ -33,8 +33,18 @@ import sys
 import git
 
 API_QUERY_TIMEOUT = 2 # seconds
-LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
-                  'annuli', 'photometry', 'diffphot', 'juicer', 'export']
+LEMON_COMMANDS = [
+    'import',
+    'seeing',
+    'offsets',
+    'mosaic',
+    'astrometry',
+    'annuli',
+    'photometry',
+    'diffphot',
+    'juicer',
+    'export',
+    ]
 
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
