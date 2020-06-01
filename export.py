@@ -33,7 +33,10 @@ import database
 import passband
 import util.coords
 
-if __name__ == "__main__":
+def main(arguments=None):
+
+    if arguments is None:
+        arguments = sys.argv[1:]
 
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
     parser.add_argument('db_path', metavar='LEMON_DB', type=str,
@@ -47,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument('filter', metavar='FILTER', type=passband.Passband,
                         help="The name of the photometric filter.")
 
-    args = parser.parse_args()
+    args = parser.parse_args(args=arguments)
 
     with database.LEMONdB(args.db_path) as db:
         print("Input coordinates:")
@@ -88,3 +91,6 @@ if __name__ == "__main__":
             ])
 
         print(table)
+
+if __name__ == "__main__":
+    sys.exit(main())
