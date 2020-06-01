@@ -34,16 +34,16 @@ import git
 
 API_QUERY_TIMEOUT = 2 # seconds
 LEMON_COMMANDS = [
-    'import',
-    'seeing',
-    'offsets',
-    'mosaic',
-    'astrometry',
     'annuli',
-    'photometry',
+    'astrometry',
     'diffphot',
-    'juicer',
     'export',
+    'import',
+    'juicer',
+    'mosaic',
+    'offsets',
+    'photometry',
+    'seeing',
     ]
 
 def show_help(name):
