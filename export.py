@@ -23,8 +23,10 @@ in the specified photometric filter.
 import argparse
 import astropy.time
 import os.path
+import prettytable
 import re
 import sys
+import time
 
 # LEMON modules
 import database
@@ -68,10 +70,19 @@ if __name__ == "__main__":
         if star_phot is None:
             raise ValueError("no light curve for {!r} photometric filter".format(args.filter))
 
+        table = prettytable.PrettyTable()
+        table.field_names = ["Date (UTC)", "JD", "Δ Mag", "SNR"]
+
         for index in range(len(star_phot)):
             utime = star_phot.time(index)
             jd    = astropy.time.Time(utime, format='unix').jd
             mag   = star_phot.mag(index)
             snr   = star_phot.snr(index)
-            # TODO(vterron): consider using PrettyTable.
-            print("{}\t{:.3f}\t{}".format(jd, mag, snr))
+            table.add_row([
+                time.ctime(utime),
+                jd,
+                "{:.3f}".format(mag),
+                int(round(snr))
+            ])
+
+        print(table)
