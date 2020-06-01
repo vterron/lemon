@@ -73,6 +73,7 @@ if __name__ == "__main__":
         table = prettytable.PrettyTable()
         table.field_names = ["Date (UTC)", "JD", "Δ Mag", "SNR"]
         table.align["JD"] = "l"
+        table.align["SNR"] = "r"
 
         for index in range(len(star_phot)):
             utime = star_phot.time(index)
