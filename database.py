@@ -1549,7 +1549,7 @@ class LEMONdB(object):
 
         def startswith_counter(prefix, names):
             """ Return the number of strings in 'names' starting with 'prefix' """
-            return len([x for x in names if x.startswith(prefix)])
+            return len(x for x in names if x.startswith(prefix))
 
         # Loop over the prefixes, from longest to shortest, until one common to
         # more than half of the object names (i.e., images) in the database is
