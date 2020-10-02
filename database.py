@@ -339,6 +339,19 @@ class DuplicateLightCurvePointError(sqlite3.IntegrityError):
     """ If more than one curve point for the same star and image is added"""
     pass
 
+
+StarInfo = collections.namedtuple("_StarInfo", [
+    "x",       # the x- and y- coordinates of the star...
+    "y",       # ... in the image where it was detected.
+    "ra",      # right ascension
+    "dec",     # declination
+    "epoch",   # astronomical epoch
+    "pm_ra",   # proper motions in right ascension...
+    "pm_dec",  # ... and declination.
+    "imag",    # instrumental magnitude in the sources image.
+    ])
+
+
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
@@ -359,9 +372,24 @@ class LEMONdB(object):
         self._create_tables()
         self.commit()
 
-    def __del__(self):
+    def _close(self):
         self._cursor.close()
         self.connection.close()
+
+    # TODO(vterron): migrate all uses of LEMONdB to the 'with' statement.
+    def __del__(self):
+        try:
+            self._close()
+        except sqlite3.ProgrammingError:
+            # If the object is GC'd after exiting a 'with' statement we cannot
+            # close it a second time, so fail silently.
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._close()
 
     def _execute(self, query, t = ()):
         """ Execute SQL query; returns nothing """
@@ -985,15 +1013,9 @@ class LEMONdB(object):
             raise DuplicateStarError(msg)
 
     def get_star(self, star_id):
-        """ Return the coordinates and magnitude of a star.
+        """Returns a StarInfo namedtuple with information about the star.
 
-        The method returns an eight-element tuple with, in this order: the x-
-        and y- coordinates of the star in the image where it was detected, its
-        right ascension and declination, astronomical epoch, proper motions in
-        right ascension and declination and, lastly, its instrumental magnitude
-        in the sources image. Raises KeyError is no star in the database has
-        this ID.
-
+        Raises KeyError is no star in the database has this ID.
         """
 
         t = (star_id, )
@@ -1001,10 +1023,9 @@ class LEMONdB(object):
                       "FROM stars "
                       "WHERE id = ?", t)
         try:
-            return self._rows.next()
+            return StarInfo(*self._rows.next())
         except StopIteration:
-            msg = "star with ID = %d not in database" % star_id
-            raise KeyError(msg)
+            raise KeyError("star with ID = {} not in database".format(star_id))
 
     def __len__(self):
         """ Return the number of stars in the database """

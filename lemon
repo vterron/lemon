@@ -33,8 +33,18 @@ import sys
 import git
 
 API_QUERY_TIMEOUT = 2 # seconds
-LEMON_COMMANDS = ['import', 'seeing', 'offsets', 'mosaic', 'astrometry',
-                  'annuli', 'photometry', 'diffphot', 'juicer']
+LEMON_COMMANDS = [
+    'annuli',
+    'astrometry',
+    'diffphot',
+    'export',
+    'import',
+    'juicer',
+    'mosaic',
+    'offsets',
+    'photometry',
+    'seeing',
+    ]
 
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
@@ -47,6 +57,7 @@ def show_help(name):
     print "   photometry   Perform aperture photometry"
     print "   diffphot     Generate light curves"
     print "   juicer       LEMONdB browser and variability analyzer"
+    print "   export       Print the light curve of an object"
     print
     print "The auxiliary, not-always-necessary commands are:"
     print "   import       Group the images of an observing campaign"
