@@ -69,24 +69,20 @@ def main(arguments=None):
 
         print()
         print("Light curve in {!r} photometric filter:".format(args.filter))
-        star_phot = db.get_photometry(star_id, args.filter)
-        if star_phot is None:
+        star_diff = db.get_light_curve(star_id, args.filter)
+        if star_diff is None:
             raise ValueError("no light curve for {!r} photometric filter".format(args.filter))
 
         table = prettytable.PrettyTable()
-        table.field_names = ["Date (UTC)", "JD", "Δ Mag", "SNR"]
+        table.field_names = ["JD", "Δ Mag", "SNR"]
         table.align["JD"] = "l"
         table.align["SNR"] = "r"
 
-        for index in range(len(star_phot)):
-            utime = star_phot.time(index)
-            jd    = astropy.time.Time(utime, format='unix').jd
-            mag   = star_phot.mag(index)
-            snr   = star_phot.snr(index)
+        for unix_time, magnitude, snr in star_diff:
+            jd          = astropy.time.Time(unix_time, format='unix').jd
             table.add_row([
-                time.ctime(utime),
                 jd,
-                "{:.3f}".format(mag),
+                "{:.3f}".format(magnitude),
                 int(round(snr))
             ])
 
