@@ -383,7 +383,7 @@ class StarDetailsGUI(object):
         # the user having to click on the column header), unless the user
         # has selected a diferent column or order.
         if self.curve_store.get_sort_column_id() == (None, None):
-            self.curve_store.set_sort_column_id(1, gtk.SORT_ASCENDING)
+            self.curve_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
 
     def update_reference_stars(self, curve):
         """ Update the list of reference stars """
