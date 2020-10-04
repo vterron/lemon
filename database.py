@@ -376,15 +376,6 @@ class LEMONdB(object):
         self._cursor.close()
         self.connection.close()
 
-    # TODO(vterron): migrate all uses of LEMONdB to the 'with' statement.
-    def __del__(self):
-        try:
-            self._close()
-        except sqlite3.ProgrammingError:
-            # If the object is GC'd after exiting a 'with' statement we cannot
-            # close it a second time, so fail silently.
-            pass
-
     def __enter__(self):
         return self
 

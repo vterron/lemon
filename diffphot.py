@@ -941,82 +941,82 @@ def main(arguments = None):
     util.owner_writable(output_db_path, True) # chmod u+w
     print 'done.'
 
-    db = database.LEMONdB(output_db_path);
-    nstars = len(db)
-    print "%sThere are %d stars in the database" % (style.prefix, nstars)
+    with database.LEMONdB(output_db_path) as db:
+        nstars = len(db)
+        print "%sThere are %d stars in the database" % (style.prefix, nstars)
 
-    for pfilter in sorted(db.pfilters):
+        for pfilter in sorted(db.pfilters):
 
-        print style.prefix
-        print "%sLight curves for the %s filter will now be generated." % \
-              (style.prefix, pfilter)
-        print "%sLoading photometric information..." % style.prefix ,
-        sys.stdout.flush()
-        all_stars = [db.get_photometry(star_id, pfilter) for star_id in db.star_ids]
-        print 'done.'
+            print style.prefix
+            print "%sLight curves for the %s filter will now be generated." % \
+                  (style.prefix, pfilter)
+            print "%sLoading photometric information..." % style.prefix ,
+            sys.stdout.flush()
+            all_stars = [db.get_photometry(star_id, pfilter) for star_id in db.star_ids]
+            print 'done.'
 
-        # The generation of each light curve is a task independent from the
-        # others, so we can use a pool of workers and do it in parallel.
-        pool = multiprocessing.Pool(options.ncores)
-        map_async_args = ((star, all_stars, options) for star in all_stars)
-        result = pool.map_async(parallel_light_curves, map_async_args)
+            # The generation of each light curve is a task independent from the
+            # others, so we can use a pool of workers and do it in parallel.
+            pool = multiprocessing.Pool(options.ncores)
+            map_async_args = ((star, all_stars, options) for star in all_stars)
+            result = pool.map_async(parallel_light_curves, map_async_args)
 
-        util.show_progress(0.0)
-        while not result.ready():
-            time.sleep(1)
-            util.show_progress(queue.qsize() / len(all_stars) * 100)
-            # Do not update the progress bar when debugging; instead, print it
-            # on a new line each time. This prevents the next logging message,
-            # if any, from being printed on the same line that the bar.
-            if logging_level < logging.WARNING:
-                print
+            util.show_progress(0.0)
+            while not result.ready():
+                time.sleep(1)
+                util.show_progress(queue.qsize() / len(all_stars) * 100)
+                # Do not update the progress bar when debugging; instead, print it
+                # on a new line each time. This prevents the next logging message,
+                # if any, from being printed on the same line that the bar.
+                if logging_level < logging.WARNING:
+                    print
 
-        result.get() # reraise exceptions of the remote call, if any
-        util.show_progress(100) # in case the queue was ready too soon
-        print
-
-        # The multiprocessing queue contains two-element tuples,
-        # mapping the ID of each star to its light curve.
-        print "%sStoring the light curves in the database..." % style.prefix
-        util.show_progress(0)
-        light_curves = (queue.get() for x in xrange(queue.qsize()))
-        for index, (star_id, curve) in enumerate(light_curves):
-
-            # NoneType is returned by parallel_light_curves when the light
-            # curve could not be calculated -- because it did not meet the
-            # minimum number of images or comparison stars.
-            if curve is None:
-                logging.debug("Nothing for star %d; light curve could not "
-                              "be generated" % star_id)
-                continue
-
-            logging.debug("Storing light curve for star %d in database" % star_id)
-            db.add_light_curve(star_id, curve)
-            logging.debug("Light curve for star %d successfully stored" % star_id)
-
-            util.show_progress(100 * (index + 1) / len(all_stars))
-            if logging_level < logging.WARNING:
-                print
-
-        else:
-            logging.info("Light curves for %s generated" % pfilter)
-            logging.debug("Committing database transaction")
-            db.commit()
-            logging.info("Database transaction commited")
-
-            util.show_progress(100.0)
+            result.get() # reraise exceptions of the remote call, if any
+            util.show_progress(100) # in case the queue was ready too soon
             print
 
-    print "%sUpdating statistics about tables and indexes..." % style.prefix ,
-    sys.stdout.flush()
-    db.analyze()
-    print 'done.'
+            # The multiprocessing queue contains two-element tuples,
+            # mapping the ID of each star to its light curve.
+            print "%sStoring the light curves in the database..." % style.prefix
+            util.show_progress(0)
+            light_curves = (queue.get() for x in xrange(queue.qsize()))
+            for index, (star_id, curve) in enumerate(light_curves):
 
-    # Update LEMONdB metadata
-    db.date = time.time()
-    db.author = pwd.getpwuid(os.getuid())[0]
-    db.hostname = socket.gethostname()
-    db.commit()
+                # NoneType is returned by parallel_light_curves when the light
+                # curve could not be calculated -- because it did not meet the
+                # minimum number of images or comparison stars.
+                if curve is None:
+                    logging.debug("Nothing for star %d; light curve could not "
+                                  "be generated" % star_id)
+                    continue
+
+                logging.debug("Storing light curve for star %d in database" % star_id)
+                db.add_light_curve(star_id, curve)
+                logging.debug("Light curve for star %d successfully stored" % star_id)
+
+                util.show_progress(100 * (index + 1) / len(all_stars))
+                if logging_level < logging.WARNING:
+                    print
+
+            else:
+                logging.info("Light curves for %s generated" % pfilter)
+                logging.debug("Committing database transaction")
+                db.commit()
+                logging.info("Database transaction commited")
+
+                util.show_progress(100.0)
+                print
+
+        print "%sUpdating statistics about tables and indexes..." % style.prefix ,
+        sys.stdout.flush()
+        db.analyze()
+        print 'done.'
+
+        # Update LEMONdB metadata
+        db.date = time.time()
+        db.author = pwd.getpwuid(os.getuid())[0]
+        db.hostname = socket.gethostname()
+        db.commit()
 
     util.owner_writable(output_db_path, False) # chmod u-w
     print "%sYou're done ^_^" % style.prefix
