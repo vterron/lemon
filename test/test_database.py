@@ -2390,7 +2390,7 @@ class LEMONdBTest(unittest.TestCase):
         for name, values in metaproperties.iteritems():
 
             # AttributeError is raised if the property is not set
-            with LEMONdB(":memory:") as db:
+            with LEMONdB(":memory:") as db1:
                 with self.assertRaisesRegexp(AttributeError, regexp % name):
                     getattr(db1, name)
 
@@ -2398,7 +2398,7 @@ class LEMONdBTest(unittest.TestCase):
             first_value, second_value = values
             path = make_db(name, first_value)
 
-            with LEMONdB(path) as db:
+            with LEMONdB(path) as db2:
                 self.assertEqual(getattr(db2, name), first_value)
                 setattr(db2, name, second_value)
                 self.assertEqual(getattr(db2, name), second_value)
@@ -2408,12 +2408,12 @@ class LEMONdBTest(unittest.TestCase):
             # been successfully updated in the database, but also that, when
             # we delete it, it is indeed removed from the table.
 
-            with LEMONdB(path) as db:
+            with LEMONdB(path) as db3:
                 self.assertEqual(getattr(db3, name), second_value)
                 delattr(db3, name)
                 db3.commit()
 
-            with LEMONdB(path) as db:
+            with LEMONdB(path) as db4:
                 with self.assertRaisesRegexp(AttributeError, regexp % name):
                     getattr(db4, name)
 
