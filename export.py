@@ -32,6 +32,7 @@ import time
 import database
 import passband
 import util.coords
+import util
 
 def main(arguments=None):
 
@@ -74,13 +75,14 @@ def main(arguments=None):
             raise ValueError("no light curve for {!r} photometric filter".format(args.filter))
 
         table = prettytable.PrettyTable()
-        table.field_names = ["JD", "Δ Mag", "SNR"]
+        table.field_names = ["Date (UTC)", "JD", "Δ Mag", "SNR"]
         table.align["JD"] = "l"
         table.align["SNR"] = "r"
 
         for unix_time, magnitude, snr in star_diff:
-            jd          = astropy.time.Time(unix_time, format='unix').jd
+            jd = astropy.time.Time(unix_time, format='unix').jd
             table.add_row([
+                util.utctime(unix_time, suffix=False),
                 jd,
                 "{:.3f}".format(magnitude),
                 int(round(snr))
