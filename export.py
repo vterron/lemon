@@ -52,6 +52,9 @@ def main(arguments=None):
                         help="The name of the photometric filter.")
     parser.add_argument('--decimal_places', dest='places', type=int, default=3,
                         help="Round floating-point numbers to this many decimal places.")
+    parser.add_argument('--output_file', dest='output', type=argparse.FileType('w'),
+                        default=sys.stdout,
+                        help="File to which to write the light curve data points")
 
     args = parser.parse_args(args=arguments)
 
@@ -69,9 +72,11 @@ def main(arguments=None):
         print("α: {} ({})".format(star.ra, util.coords.ra_str(star.ra)))
         print("δ: {} ({})".format(star.dec, util.coords.dec_str(star.dec)))
         print("Distance to input coordinates: {} deg".format(distance))
-
         print()
-        print("Light curve in {!r} photometric filter:".format(args.filter))
+
+        if args.output == sys.stdout:
+            print("Light curve in {!r} photometric filter:".format(args.filter))
+
         star_diff = db.get_light_curve(star_id, args.filter)
         if star_diff is None:
             raise ValueError("no light curve for {!r} photometric filter".format(args.filter))
@@ -92,7 +97,12 @@ def main(arguments=None):
                 format_float(snr),
             ])
 
-        print(table)
+        args.output.write(str(table))
+        args.output.write('\n')
+
+        if args.output != sys.stdout:
+            print("Wrote light curve in {!r} photometric filter to {!r}.".format(args.filter, args.output.name))
+
 
 if __name__ == "__main__":
     sys.exit(main())
