@@ -50,6 +50,8 @@ def main(arguments=None):
                              "decimal degrees.")
     parser.add_argument('filter', metavar='FILTER', type=passband.Passband,
                         help="The name of the photometric filter.")
+    parser.add_argument('--decimal_places', dest='places', type=int, default=3,
+                        help="Round floating-point numbers to this many decimal places.")
 
     args = parser.parse_args(args=arguments)
 
@@ -76,16 +78,18 @@ def main(arguments=None):
 
         table = prettytable.PrettyTable()
         table.field_names = ["Date (UTC)", "JD", "Δ Mag", "SNR"]
-        table.align["JD"] = "l"
-        table.align["SNR"] = "r"
+
+        def format_float(f):
+            """Returns f as a string rounded to parser.places decimal places."""
+            return "{:.{places}f}".format(f, places=args.places)
 
         for unix_time, magnitude, snr in star_diff:
             jd = astropy.time.Time(unix_time, format='unix').jd
             table.add_row([
                 util.utctime(unix_time, suffix=False),
-                jd,
-                "{:.3f}".format(magnitude),
-                int(round(snr))
+                format_float(jd),
+                format_float(magnitude),
+                format_float(snr),
             ])
 
         print(table)
