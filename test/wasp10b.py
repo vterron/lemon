@@ -50,7 +50,7 @@ EXPORTED_LIGHT_CURVE_FILE = "WASP10b-exported_curve.txt"
 cmd = functools.partial(subprocess.check_call, shell=True)
 
 # Returns the absolute path of a file in the test/ directory.
-test_path = functools.partial(os.path.join, os.environ["TRAVIS_BUILD_DIR"], 'test')
+test_path = functools.partial(os.path.join, os.environ["TRAVIS_BUILD_DIR"], "test")
 
 
 @contextlib.contextmanager
@@ -63,6 +63,7 @@ def cd(dst):
     finally:
         os.chdir(cwd)
 
+
 def download():
     """Downloads and uncompresses the WASP-10b test data."""
     url = os.environ["WASP10_URL"]
@@ -70,6 +71,7 @@ def download():
     zx_file = os.listdir(".")[0]
     cmd("tar -xvf {}".format(zx_file))
     cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
+
 
 def copy_coordinates_file():
     """Makes the coordinates .txt file available in the current directory.
@@ -87,6 +89,7 @@ def copy_coordinates_file():
 
 """A single point in the light curve of an astronomical object."""
 DataPoint = collections.namedtuple("DataPoint", "jd, mag, snr")
+
 
 def load_exported_light_curve(path):
     """Loads a light curve written to disk with `lemon export`.
@@ -107,10 +110,10 @@ def load_exported_light_curve(path):
 
     """
 
-    with open(path, 'rb') as fd:
+    with open(path, "rb") as fd:
         for line in fd:
-            line = line.decode('utf8')
-            chunks = line.lstrip('|').rstrip('|\n').split('|')
+            line = line.decode("utf8")
+            chunks = line.lstrip("|").rstrip("|\n").split("|")
             if len(chunks) != 4:
                 continue
             try:
@@ -136,12 +139,12 @@ def load_golden_file():
         DataPoint objects, one per data point in the light curve.
     """
 
-    with open(test_path(GOLDEN_LIGHT_CURVE_FILE), 'rb') as fd:
+    with open(test_path(GOLDEN_LIGHT_CURVE_FILE), "rb") as fd:
         for line in fd:
-            line = line.decode('utf8')
+            line = line.decode("utf8")
             if line.strip().startswith("#"):
                 continue
-            chunks = line.split('\t')
+            chunks = line.split("\t")
             if len(chunks) == 3:
                 yield DataPoint(*[float(x) for x in chunks])
 
@@ -155,15 +158,25 @@ class WASP10Test(absltest.TestCase):
             copy_coordinates_file()
 
             # TODO(vterron): look up and set the actual gain at OSN.
-            cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1".format(COORDINATES_FILE))
+            cmd(
+                "lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1".format(
+                    COORDINATES_FILE
+                )
+            )
             cmd("lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB")
 
             # Export the generated light curve to a text file.
-            cmd("lemon export "
+            cmd(
+                "lemon export "
                 "WASP10b-diffphot.LEMONdB {} {} {} "
                 "--decimal_places={} --output_file={}".format(
-                    WASP10_RA, WASP10_DEC, CURVE_FILTER,
-                    DECIMAL_PLACES, EXPORTED_LIGHT_CURVE_FILE))
+                    WASP10_RA,
+                    WASP10_DEC,
+                    CURVE_FILTER,
+                    DECIMAL_PLACES,
+                    EXPORTED_LIGHT_CURVE_FILE,
+                )
+            )
 
             # Now load the generated light curve and compare it to the one in the golden file.
             golden_curve = load_golden_file()
@@ -172,11 +185,12 @@ class WASP10Test(absltest.TestCase):
             # izip_longest() so that we catch regressions where fewer than the
             # expected light curve data points are generated.
             for want, got in itertools.izip_longest(golden_curve, actual_curve):
-                print("{}: ".format(want), end='')
-                self.assertAlmostEqual(want.jd,  got.jd)
+                print("{}: ".format(want), end="")
+                self.assertAlmostEqual(want.jd, got.jd)
                 self.assertAlmostEqual(want.mag, got.mag)
                 self.assertAlmostEqual(want.snr, got.snr)
-                print('OK')
+                print("OK")
+
 
 if __name__ == "__main__":
     absltest.main()
