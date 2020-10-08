@@ -42,8 +42,13 @@ from absl.testing import absltest
 
 CHECKSUMS_FILE = "SHA1SUMS"
 COORDINATES_FILE = "WASP10b-coordinates.txt"
+GOLDEN_LIGHT_CURVE_FILE = "WASP10b-golden-curve.txt"
 
 cmd = functools.partial(subprocess.check_call, shell=True)
+
+# Returns the absolute path of a file in the test/ directory.
+test_path = functools.partial(os.path.join, os.environ["TRAVIS_BUILD_DIR"], 'test')
+
 
 @contextlib.contextmanager
 def cd(dst):
@@ -74,9 +79,7 @@ def copy_coordinates_file():
     https://docs.travis-ci.com/user/environment-variables/
 
     """
-    lemon_dir = os.environ["TRAVIS_BUILD_DIR"]
-    source = os.path.join(lemon_dir, "test", COORDINATES_FILE)
-    cmd("cp -v {} .".format(source))
+    cmd("cp -v {} .".format(test_path(COORDINATES_FILE)))
 
 
 """A single point in the light curve of an astronomical object."""
@@ -112,6 +115,32 @@ def load_exported_light_curve(path):
                 yield DataPoint(*[float(x) for x in chunks[1:]])
             except ValueError as e:
                 assert "could not convert string to float" in str(e)
+
+
+def load_golden_file():
+    """Loads the golden file with the WASP-10b light curve.
+
+    This file looks like the following:
+
+    # Golden file with the light curve of a WASP-10b transit on Aug 4th 2011.
+    #
+    # Julian Date   Δ magnitude     SNR
+    2455777.367999  -0.948379       914.218013
+    2455777.369720  -0.951874       930.153940
+    [...]
+
+    Yields:
+        DataPoint objects, one per data point in the light curve.
+    """
+
+    with open(test_path(GOLDEN_LIGHT_CURVE_FILE), 'rb') as fd:
+        for line in fd:
+            line = line.decode('utf8')
+            if line.strip().startswith("#"):
+                continue
+            chunks = line.split('\t')
+            if len(chunks) == 3:
+                yield DataPoint(*[float(x) for x in chunks])
 
 
 class WASP10Test(absltest.TestCase):
