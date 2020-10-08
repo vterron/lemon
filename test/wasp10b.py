@@ -19,10 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-End-to-end integration test using 198 FITS images of WASP-10b taken at OSN
-(Sierra Nevada Observatory, Spain) on 2011-08-23. The URL of the 2.3 GiB .xz
-file is stored in the WASP10_URL environment variable, stored in Travis CI
-via https://docs.travis-ci.com/user/encryption-keys.
+See README.md.
 """
 
 from __future__ import absolute_import
