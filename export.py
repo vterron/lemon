@@ -34,28 +34,28 @@ import passband
 import util.coords
 import util
 
+parser = argparse.ArgumentParser(description=_DESCRIPTION)
+parser.add_argument('db_path', metavar='LEMON_DB', type=str,
+                    help="the LEMON database with the light curves")
+parser.add_argument('ra', metavar='<right ascension>', type=float,
+                    help="Right adcension of the astronomical object, "
+                         "in decimal degrees.")
+parser.add_argument('dec', metavar='<declination>', type=float,
+                    help="Declination of the astronomical object, in "
+                         "decimal degrees.")
+parser.add_argument('filter', metavar='<photometric filter>', type=passband.Passband,
+                    help="The name of the photometric filter.")
+parser.add_argument('--decimal_places', dest='places', type=int, default=3,
+                    help="Round floating-point numbers to this many decimal places.")
+parser.add_argument('--output_file', dest='output', type=argparse.FileType('w'),
+                    default=sys.stdout,
+                    help="File to which to write the light curve data points")
+
+
 def main(arguments=None):
 
     if arguments is None:
         arguments = sys.argv[1:]
-
-    parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument('db_path', metavar='LEMON_DB', type=str,
-                        help="the LEMON database with the light curves")
-    parser.add_argument('ra', metavar='<right ascension>', type=float,
-                        help="Right adcension of the astronomical object, "
-                             "in decimal degrees.")
-    parser.add_argument('dec', metavar='<declination>', type=float,
-                        help="Declination of the astronomical object, in "
-                             "decimal degrees.")
-    parser.add_argument('filter', metavar='<photometric filter>', type=passband.Passband,
-                        help="The name of the photometric filter.")
-    parser.add_argument('--decimal_places', dest='places', type=int, default=3,
-                        help="Round floating-point numbers to this many decimal places.")
-    parser.add_argument('--output_file', dest='output', type=argparse.FileType('w'),
-                        default=sys.stdout,
-                        help="File to which to write the light curve data points")
-
     args = parser.parse_args(args=arguments)
 
     with database.LEMONdB(args.db_path) as db:
