@@ -33,6 +33,7 @@ from __future__ import unicode_literals
 import collections
 import contextlib
 import functools
+import itertools
 import os
 import os.path
 import subprocess
@@ -42,7 +43,12 @@ from absl.testing import absltest
 
 CHECKSUMS_FILE = "SHA1SUMS"
 COORDINATES_FILE = "WASP10b-coordinates.txt"
+WASP10_RA = 348.9930
+WASP10_DEC = 31.4629
+CURVE_FILTER = "V"
+DECIMAL_PLACES = 6
 GOLDEN_LIGHT_CURVE_FILE = "WASP10b-golden-curve.txt"
+EXPORTED_LIGHT_CURVE_FILE = "WASP10b-exported_curve.txt"
 
 cmd = functools.partial(subprocess.check_call, shell=True)
 
@@ -154,6 +160,26 @@ class WASP10Test(absltest.TestCase):
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd("lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1".format(COORDINATES_FILE))
             cmd("lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB")
+
+            # Export the generated light curve to a text file.
+            cmd("lemon export "
+                "WASP10b-diffphot.LEMONdB {} {} {} "
+                "--decimal_places={} --output_file={}".format(
+                    WASP10_RA, WASP10_DEC, CURVE_FILTER,
+                    DECIMAL_PLACES, EXPORTED_LIGHT_CURVE_FILE))
+
+            # Now load the generated light curve and compare it to the one in the golden file.
+            golden_curve = load_golden_file()
+            actual_curve = load_exported_light_curve(EXPORTED_LIGHT_CURVE_FILE)
+
+            # izip_longest() so that we catch regressions where fewer than the
+            # expected light curve data points are generated.
+            for want, got in itertools.izip_longest(golden_curve, actual_curve):
+                print("{}: ".format(want), end='')
+                self.assertAlmostEqual(want.jd,  got.jd)
+                self.assertAlmostEqual(want.mag, got.mag)
+                self.assertAlmostEqual(want.snr, got.snr)
+                print('OK')
 
 if __name__ == "__main__":
     absltest.main()
