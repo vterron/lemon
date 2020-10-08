@@ -1,4 +1,5 @@
 #! /usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 # Copyright (c) 2020 Victor Terron. All rights reserved.
 #
@@ -29,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import collections
 import contextlib
 import functools
 import os
@@ -75,6 +77,41 @@ def copy_coordinates_file():
     lemon_dir = os.environ["TRAVIS_BUILD_DIR"]
     source = os.path.join(lemon_dir, "test", COORDINATES_FILE)
     cmd("cp -v {} .".format(source))
+
+
+"""A single point in the light curve of an astronomical object."""
+DataPoint = collections.namedtuple("DataPoint", "jd, mag, snr")
+
+def load_exported_light_curve(path):
+    """Loads a light curve written to disk with `lemon export`.
+
+    These files are formatted like this:
+
+    +--------------------------+----------------+-----------+------------+
+    |        Date (UTC)        |       JD       |   Δ Mag   |    SNR     |
+    +--------------------------+----------------+-----------+------------+
+    | Wed Aug  3 20:49:55 2011 | 2455777.367999 | -0.948379 | 914.218013 |
+    | Wed Aug  3 20:52:23 2011 | 2455777.369720 | -0.951874 | 930.153940 |
+    [...]
+
+    Args:
+        path: the path to the text file with the exported light curve.
+    Yields:
+        DataPoint objects, one per data point in the light curve.
+
+    """
+
+    with open(path, 'rb') as fd:
+        for line in fd:
+            line = line.decode('utf8')
+            chunks = line.lstrip('|').rstrip('|\n').split('|')
+            if len(chunks) != 4:
+                continue
+            try:
+                # Ignore the first column with the data in UTC.
+                yield DataPoint(*[float(x) for x in chunks[1:]])
+            except ValueError as e:
+                assert "could not convert string to float" in str(e)
 
 
 class WASP10Test(absltest.TestCase):
