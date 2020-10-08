@@ -2,7 +2,7 @@
 
 LEMON has [an integration test](./wasp10b.py) that generates the light curve of a [WASP-10b](https://en.wikipedia.org/wiki/WASP-10b) transit, comparing the resulting light curve to that in a [golden file](./WASP10b-golden-curve.txt). Although this test doesn't exercise the entire pipeline, it covers the two critical commands: `photometry` (to perform aperture photometry) and `diffphot` (to generate the light curves). These are the steps that the integration test follows:
 
-1. Downloads a 2.3 GiB `.xz` file with [the test data](#data).
+1. Downloads a 2.3 GiB `.xz` file with [the test data](#test-data).
    * The URL of the file is read from the `WASP10_URL` environment variable.
 1. Extracts and verifies the SHA-1 checksums of the test data.
 1. Runs `lemon photometry` on the test FITS images.
@@ -15,7 +15,7 @@ LEMON has [an integration test](./wasp10b.py) that generates the light curve of 
 
 This integration test is part of [our Travis CI configuration](../.travis.yml), and thus runs automatically for any code change.
 
-## Test data {#data}
+## Test data
 
 The FITS files used in the integration test are 182 images of a transit of [exoplanet WASP-10b](https://en.wikipedia.org/wiki/WASP-10b). These images were taken by our team with [the 1.5 telescope](https://www.osn.iaa.csic.es/en/page/15-m-telescope) at the [Sierra Nevada Observatory](https://www.osn.iaa.csic.es/en/) (Granada, Spain) on August 4th 2011. The data is compressed into a 2.3 GiB `.xz` file stored on @vterron's [NextCloud](https://nextcloud.com/) server. For this reason, the URL of the file is stored in [an encrypted environment variable](https://docs.travis-ci.com/user/environment-variables/#defining-encrypted-variables-in-travisyml), and not publicly available. Although not infallible, the goal of this approach is merely to avoid unnecesarily exposing the address of a personal NextCloud server.
 
