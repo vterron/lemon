@@ -42,13 +42,13 @@ def main(arguments=None):
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
     parser.add_argument('db_path', metavar='LEMON_DB', type=str,
                         help="the LEMON database with the light curves")
-    parser.add_argument('ra', metavar='RA', type=float,
+    parser.add_argument('ra', metavar='<right ascension>', type=float,
                         help="Right adcension of the astronomical object, "
                              "in decimal degrees.")
-    parser.add_argument('dec', metavar='DEC', type=float,
+    parser.add_argument('dec', metavar='<declination>', type=float,
                         help="Declination of the astronomical object, in "
                              "decimal degrees.")
-    parser.add_argument('filter', metavar='FILTER', type=passband.Passband,
+    parser.add_argument('filter', metavar='<photometric filter>', type=passband.Passband,
                         help="The name of the photometric filter.")
     parser.add_argument('--decimal_places', dest='places', type=int, default=3,
                         help="Round floating-point numbers to this many decimal places.")
