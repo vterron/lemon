@@ -30,13 +30,13 @@ import warnings
 from test import unittest
 import util
 
-class FuncCatchllallTest(unittest.TestCase):
 
+class FuncCatchllallTest(unittest.TestCase):
     def test_func_catchall(self):
 
         # Returns func(*args, **kwargs) ...
-        self.assertEqual(3,  util.func_catchall(operator.div, 9, 3))
-        self.assertEqual(4,  util.func_catchall(int, '4'))
+        self.assertEqual(3, util.func_catchall(operator.div, 9, 3))
+        self.assertEqual(4, util.func_catchall(int, "4"))
         self.assertEqual(-5, util.func_catchall(max, -1, -5, 4, key=abs))
 
         # ... unless the function raises an exception. In that case, it is
@@ -50,7 +50,6 @@ class FuncCatchllallTest(unittest.TestCase):
 
 
 class StreamToWarningFilterTest(unittest.TestCase):
-
     def test_filter_stream(self):
 
         # A filter that, if the 'foa', 'fooa' or 'foooa' strings are matched,
@@ -58,14 +57,14 @@ class StreamToWarningFilterTest(unittest.TestCase):
         # writes the string to the output stream (here, a StringIO)
 
         output = StringIO.StringIO()
-        expected_output = 'fo{1,3}a'
-        regexp = '(?P<msg>{0})'.format(expected_output)
+        expected_output = "fo{1,3}a"
+        regexp = "(?P<msg>{0})".format(expected_output)
         category = UserWarning
         args = output, regexp, category
         stdout_filter = util.StreamToWarningFilter(*args)
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('error')
+            warnings.filterwarnings("error")
 
             # 'fooa' matches the regexp, so issue the warning
             with self.assertRaisesRegexp(category, expected_output):
@@ -75,7 +74,6 @@ class StreamToWarningFilterTest(unittest.TestCase):
             str_ = "spam"
             stdout_filter.write(str_)
             self.assertEqual(output.getvalue(), str_)
-
 
         # A filter that, if "Warning: Keyword: EXPTIME not found" is matched,
         # issues RuntimeWarning with "EXPTIME not matched" as its message. If
@@ -89,43 +87,41 @@ class StreamToWarningFilterTest(unittest.TestCase):
         stdout_filter = util.StreamToWarningFilter(*args)
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('error')
+            warnings.filterwarnings("error")
 
             with self.assertRaisesRegexp(category, expected_output):
                 str_ = "Warning: Keyword: EXPTIME not found"
                 stdout_filter.write(str_)
 
-            str_ = str_.replace('EXPTIME', 'OBJECT')
+            str_ = str_.replace("EXPTIME", "OBJECT")
             stdout_filter.write(str_)
             self.assertEqual(output.getvalue(), str_)
-
 
         # The example mentioned in the class docstring
 
         output = StringIO.StringIO()
-        expected_output = '2.19.5'
-        regexp = 'v(?P<msg>(\d\.?)+)'
+        expected_output = "2.19.5"
+        regexp = "v(?P<msg>(\d\.?)+)"
         category = UserWarning
         args = output, regexp, category
         stdout_filter = util.StreamToWarningFilter(*args)
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('error')
+            warnings.filterwarnings("error")
 
             with self.assertRaisesRegexp(category, expected_output):
-                stdout_filter.write('v2.19.5')
+                stdout_filter.write("v2.19.5")
 
             str_ = "Nobody expects the Spanish inquisition"
             stdout_filter.write(str_)
             self.assertEqual(output.getvalue(), str_)
-
 
         # The regular expression does not include the mandatory 'msg' named
         # group, so IndexError is raised when the string is matched, as the
         # StreamToWarningFilter class tries to refer to a non-existent group.
 
         output = StringIO.StringIO()
-        regexp = 'spam'
+        regexp = "spam"
         args = output, regexp, UserWarning
         stdout_filter = util.StreamToWarningFilter(*args)
 
@@ -134,7 +130,7 @@ class StreamToWarningFilterTest(unittest.TestCase):
 
     def test_filter_close(self):
 
-        fd = open(os.devnull, 'wt')
+        fd = open(os.devnull, "wt")
         regexp = "Keyword (?P<msg>EXPTIME) not found"
         args = fd, regexp, RuntimeWarning
         devnull_filter = util.StreamToWarningFilter(*args)

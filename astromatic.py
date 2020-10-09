@@ -34,18 +34,20 @@ import subprocess
 # LEMON modules
 import util
 
-CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), 'sextractor/')
+CONFIG_FILES_DIR = os.path.join(os.path.dirname(__file__), "sextractor/")
 _get_file = functools.partial(os.path.join, CONFIG_FILES_DIR)
-SEXTRACTOR_CONFIG  = _get_file('sextractor.sex')
-SEXTRACTOR_PARAMS  = _get_file('sextractor.param')
-SEXTRACTOR_FILTER  = _get_file('sextractor.conv')
-SEXTRACTOR_STARNNW = _get_file('sextractor.nnw')
-SEXTRACTOR_COMMANDS = 'sextractor', 'sex' # may be any of these
+SEXTRACTOR_CONFIG = _get_file("sextractor.sex")
+SEXTRACTOR_PARAMS = _get_file("sextractor.param")
+SEXTRACTOR_FILTER = _get_file("sextractor.conv")
+SEXTRACTOR_STARNNW = _get_file("sextractor.nnw")
+SEXTRACTOR_COMMANDS = "sextractor", "sex"  # may be any of these
 SEXTRACTOR_REQUIRED_VERSION = (2, 19, 5)
+
 
 class SExtractorNotInstalled(StandardError):
     def __str__(self):
         return "SExtractor not found in the current environment"
+
 
 class SExtractorUpgradeRequired(StandardError):
     """ Raised if a too-old version of SExtractor is installed """
@@ -53,17 +55,21 @@ class SExtractorUpgradeRequired(StandardError):
     def __str__(self):
         # From, for example, (2, 8, 6) to '2.8.6'
         return "SExtractor >= {} is required, found {}".format(
-            '.'.join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION),
-            '.'.join(str(x) for x in sextractor_version()))
+            ".".join(str(x) for x in SEXTRACTOR_REQUIRED_VERSION),
+            ".".join(str(x) for x in sextractor_version()),
+        )
+
 
 class SExtractorError(subprocess.CalledProcessError):
     pass
 
-"""A pair of immutable x- and y-coordinates."""
-Pixel = collections.namedtuple('Pixel', "x y")
 
-class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
-    """ The immutable celestial coordinates of an astronomical object.
+"""A pair of immutable x- and y-coordinates."""
+Pixel = collections.namedtuple("Pixel", "x y")
+
+
+class Coordinates(collections.namedtuple("Coordinates", "ra dec pm_ra pm_dec")):
+    """The immutable celestial coordinates of an astronomical object.
 
     The first two positional arguments, 'ra' and 'dec', are the right ascension
     and declination of the astronomical object, in decimal degrees. 'pm_ra' and
@@ -71,7 +77,7 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
 
     """
 
-    def __new__(cls, ra, dec, pm_ra = 0, pm_dec = 0):
+    def __new__(cls, ra, dec, pm_ra=0, pm_dec=0):
         """ Make 'pm_ra' and 'pm_dec' optional keyword arguments. """
 
         # Seen here: https://stackoverflow.com/a/16721002/184363
@@ -81,13 +87,14 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
         """The angular distance, in degrees, between two Coordinates."""
 
         make_coord = functools.partial(
-            astropy.coordinates.SkyCoord, unit=astropy.units.deg)
+            astropy.coordinates.SkyCoord, unit=astropy.units.deg
+        )
         c1 = make_coord(ra=self.ra, dec=self.dec)
         c2 = make_coord(ra=another.ra, dec=another.dec)
         return c1.separation(c2).deg
 
-    def get_exact_coordinates(self, year, epoch = 2000):
-        """ Determine exact positions by applying proper motion correction.
+    def get_exact_coordinates(self, year, epoch=2000):
+        """Determine exact positions by applying proper motion correction.
 
         Take into account the proper motion of the astronomical object to
         calculate its exact coordinates in a given date: the difference in
@@ -107,18 +114,22 @@ class Coordinates(collections.namedtuple('Coordinates', "ra dec pm_ra pm_dec")):
 
         """
 
-        elapsed = year - epoch;
-        ra  = self.ra  + (self.pm_ra  * elapsed) / 3600
+        elapsed = year - epoch
+        ra = self.ra + (self.pm_ra * elapsed) / 3600
         dec = self.dec + (self.pm_dec * elapsed) / 3600
         return self.__class__(ra, dec, None, None)
 
 
-class Star(collections.namedtuple('_Star', "img_coords, sky_coords, area, "
-           "mag, saturated, snr, fwhm, elongation")):
+class Star(
+    collections.namedtuple(
+        "_Star",
+        "img_coords, sky_coords, area, " "mag, saturated, snr, fwhm, elongation",
+    )
+):
     """ An immutable class with a source detected by SExtractor. """
 
     def __new__(cls, x, y, alpha, delta, area, mag, satur, snr, fwhm, elong):
-        """ Customize the creation of a Star instance: encapsulate the (x, y)
+        """Customize the creation of a Star instance: encapsulate the (x, y)
         and (alpha, delta) as Pixel objects and pass them as the first two
         arguments of the named tuple. The other arguments are not modified.
 
@@ -167,7 +178,7 @@ class Catalog(tuple):
 
     @staticmethod
     def _find_column(contents, parameter):
-        """ Return the index of a SExtractor paramater in the catalog.
+        """Return the index of a SExtractor paramater in the catalog.
 
         The method takes as inputs the contents of a SExtractor catalog and the
         name of a parameter (such as 'X_IMAGE' or 'FLUX_MAX') and returns the
@@ -201,7 +212,7 @@ class Catalog(tuple):
         # indexes, as they are one-based.
 
         for line in contents:
-            if line[0].startswith('#'):
+            if line[0].startswith("#"):
                 param_name = line[2]
                 if param_name.upper() == parameter.upper():
                     param_index = int(line[1]) - 1
@@ -212,7 +223,7 @@ class Catalog(tuple):
 
     @staticmethod
     def flag_saturated(flag_value):
-        """ Test the value of FLAGS and determine if the object has saturated.
+        """Test the value of FLAGS and determine if the object has saturated.
 
         The method receives the value of the internal flag computed for a star
         and returns True if the decimal value of the flag indicates that at
@@ -252,11 +263,11 @@ class Catalog(tuple):
         if not 0 <= flag_value <= 255:
             msg = "flag value out of range [0, 255]"
             raise ValueError(msg)
-        return flag_value & 1<<2 != 0
+        return flag_value & 1 << 2 != 0
 
     @classmethod
     def _load_stars(cls, path):
-        """ Load a SExtractor catalog into memory.
+        """Load a SExtractor catalog into memory.
 
         The method parses a SExtractor catalog and returns a generator of Star
         objects, once for each detected object. It is mandatory, or ValueError
@@ -280,26 +291,26 @@ class Catalog(tuple):
 
         """
 
-        with open(path, 'rt') as fd:
+        with open(path, "rt") as fd:
             contents = [line.split() for line in fd]
 
         get_index = functools.partial(cls._find_column, contents)
-        x_index = get_index('X_IMAGE')
-        y_index = get_index('Y_IMAGE')
-        alpha_index = get_index('ALPHA_SKY')
-        delta_index = get_index('DELTA_SKY')
-        area_index = get_index('ISOAREAF_IMAGE')
-        mag_index = get_index('MAG_AUTO')
-        flux_index = get_index('FLUX_ISO')
-        fluxerr_index = get_index('FLUXERR_ISO')
-        flux_radius_index = get_index('FLUX_RADIUS')
-        flags_index = get_index('FLAGS')
-        elong_index = get_index('ELONGATION')
+        x_index = get_index("X_IMAGE")
+        y_index = get_index("Y_IMAGE")
+        alpha_index = get_index("ALPHA_SKY")
+        delta_index = get_index("DELTA_SKY")
+        area_index = get_index("ISOAREAF_IMAGE")
+        mag_index = get_index("MAG_AUTO")
+        flux_index = get_index("FLUX_ISO")
+        fluxerr_index = get_index("FLUXERR_ISO")
+        flux_radius_index = get_index("FLUX_RADIUS")
+        flags_index = get_index("FLAGS")
+        elong_index = get_index("ELONGATION")
 
         for line in contents:
-            if not line[0].startswith('#'): # ignore comments
+            if not line[0].startswith("#"):  # ignore comments
 
-                def get_param(index, type_ = float):
+                def get_param(index, type_=float):
                     """ Get the index-th element of 'line', cast to 'type_'"""
                     return type_(line[index])
 
@@ -307,20 +318,19 @@ class Catalog(tuple):
                 y = get_param(y_index)
                 alpha = get_param(alpha_index)
                 delta = get_param(delta_index)
-                area = get_param(area_index, type_ = int)
+                area = get_param(area_index, type_=int)
                 mag = get_param(mag_index)
                 flux = get_param(flux_index)
                 fluxerr = get_param(fluxerr_index)
                 flux_radius = get_param(flux_radius_index)
-                flags = get_param(flags_index, type_ = int)
+                flags = get_param(flags_index, type_=int)
                 elongation = get_param(elong_index)
 
                 saturated = Catalog.flag_saturated(flags)
                 snr = flux / fluxerr
                 fwhm = flux_radius * 2
 
-                args = (x, y, alpha, delta, area, mag, saturated, snr,
-                        fwhm, elongation)
+                args = (x, y, alpha, delta, area, mag, saturated, snr, fwhm, elongation)
 
                 yield Star(*args)
 
@@ -337,7 +347,7 @@ class Catalog(tuple):
 
     @classmethod
     def from_sequence(cls, *stars):
-        """ Create a Catalog from a sequence of Stars.
+        """Create a Catalog from a sequence of Stars.
 
         Return a Catalog that is not the result of loading a SExtractor catalog
         into memory, but that encapsulates a series of Star objects. Note that,
@@ -350,17 +360,17 @@ class Catalog(tuple):
         return super(Catalog, cls).__new__(cls, stars)
 
     def get_sky_coordinates(self):
-         """ Return a list with the celestial coordinates of the stars.
+        """Return a list with the celestial coordinates of the stars.
 
-         Return the right ascension and declination of each astronomical source
-         in the SExtractor catalog, as a list of Coordinates objects.
+        Return the right ascension and declination of each astronomical source
+        in the SExtractor catalog, as a list of Coordinates objects.
 
-         """
-         return [star.sky_coords for star in self]
+        """
+        return [star.sky_coords for star in self]
 
 
-def sextractor_md5sum(options = None):
-    """ Return the MD5 hash of the SExtractor configuration.
+def sextractor_md5sum(options=None):
+    """Return the MD5 hash of the SExtractor configuration.
 
     This method returns the MD5 hash of the concatenation of the four
     configuration files (.sex, .param, .conv and .nnw) used by SExtractor, as
@@ -393,12 +403,16 @@ def sextractor_md5sum(options = None):
 
     """
 
-    sex_files = (SEXTRACTOR_CONFIG, SEXTRACTOR_PARAMS,
-                 SEXTRACTOR_FILTER, SEXTRACTOR_STARNNW)
+    sex_files = (
+        SEXTRACTOR_CONFIG,
+        SEXTRACTOR_PARAMS,
+        SEXTRACTOR_FILTER,
+        SEXTRACTOR_STARNNW,
+    )
 
     md5 = hashlib.md5()
     for path in sex_files:
-        with open(path, 'rt') as fd:
+        with open(path, "rt") as fd:
             for line in fd:
                 md5.update(line)
 
@@ -416,8 +430,9 @@ def sextractor_md5sum(options = None):
 
     return md5.hexdigest()
 
+
 def sextractor_version():
-    """ Return the SExtractor version as a tuple.
+    """Return the SExtractor version as a tuple.
 
     Run SExtractor with the --version option as its sole argument, capture the
     standard output and parse it. The version number of SExtractor is returned
@@ -435,14 +450,15 @@ def sextractor_version():
     else:
         raise SExtractorNotInstalled()
 
-    args = [executable, '--version']
+    args = [executable, "--version"]
     output = subprocess.check_output(args)
     version = re.match(PATTERN, output).group(1)
     # From, for example, '2.8.6' to (2, 8, 6)
-    return tuple(int(x) for x in version.split('.'))
+    return tuple(int(x) for x in version.split("."))
 
-def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
-    """ Run SExtractor on the image and return the path to the output catalog.
+
+def sextractor(path, ext=0, options=None, stdout=None, stderr=None):
+    """Run SExtractor on the image and return the path to the output catalog.
 
     This function runs SExtractor on 'path', using the configuration files
     defined in the module-level variables SEXTRACTOR_CONFIG, SEXTRACTOR_PARAMS,
@@ -502,8 +518,7 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     # raised), 'executable' contains the first command that was found
 
     root, _ = os.path.splitext(os.path.basename(path))
-    catalog_fd, catalog_path = \
-        tempfile.mkstemp(prefix = '%s_' % root, suffix = '.cat')
+    catalog_fd, catalog_path = tempfile.mkstemp(prefix="%s_" % root, suffix=".cat")
     os.close(catalog_fd)
 
     # Raise IOError if any of the configuration files is nonexistent or not
@@ -512,8 +527,12 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
     # the internal defaults. As of version 2.8.6, only -PARAMETERS_NAME and
     # -FILTER_NAME, if unreadable, cause the execution of SExtractor to fail.
 
-    for config_file in (SEXTRACTOR_CONFIG, SEXTRACTOR_PARAMS,
-                        SEXTRACTOR_FILTER, SEXTRACTOR_STARNNW):
+    for config_file in (
+        SEXTRACTOR_CONFIG,
+        SEXTRACTOR_PARAMS,
+        SEXTRACTOR_FILTER,
+        SEXTRACTOR_STARNNW,
+    ):
 
         if not os.path.exists(config_file):
             msg = "configuration file %s not found"
@@ -522,25 +541,35 @@ def sextractor(path, ext = 0, options = None, stdout = None, stderr = None):
             msg = "configuration file %s cannot be read"
             raise IOError(msg % config_file)
 
-    args = [executable, path + '[%d]' % ext,
-            '-c', SEXTRACTOR_CONFIG,
-            '-PARAMETERS_NAME', SEXTRACTOR_PARAMS,
-            '-FILTER_NAME', SEXTRACTOR_FILTER,
-            '-STARNNW_NAME', SEXTRACTOR_STARNNW,
-            '-CATALOG_NAME', catalog_path]
+    args = [
+        executable,
+        path + "[%d]" % ext,
+        "-c",
+        SEXTRACTOR_CONFIG,
+        "-PARAMETERS_NAME",
+        SEXTRACTOR_PARAMS,
+        "-FILTER_NAME",
+        SEXTRACTOR_FILTER,
+        "-STARNNW_NAME",
+        SEXTRACTOR_STARNNW,
+        "-CATALOG_NAME",
+        catalog_path,
+    ]
 
     if options:
         try:
             for key, value in options.iteritems():
-                args += ['-%s' % key, value]
+                args += ["-%s" % key, value]
         except AttributeError:
             msg = "'options' must be a dictionary"
             raise TypeError(msg)
 
     try:
-        subprocess.check_call(args, stdout = stdout, stderr = stderr)
+        subprocess.check_call(args, stdout=stdout, stderr=stderr)
         return catalog_path
     except subprocess.CalledProcessError, e:
-        try: os.unlink(catalog_path)
-        except (IOError, OSError): pass
+        try:
+            os.unlink(catalog_path)
+        except (IOError, OSError):
+            pass
         raise SExtractorError(e.returncode, e.cmd)

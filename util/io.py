@@ -26,8 +26,9 @@ import stat
 # LEMON modules
 import style
 
-def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
-    """ Ensure that the specified directory does exist.
+
+def determine_output_dir(output_directory, dir_suffix=None, quiet=False):
+    """Ensure that the specified directory does exist.
 
     The method receives the intented output directory and guarantees that it
     can be used. If None was specified, it creates a temporary directory
@@ -49,12 +50,14 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
         if not quiet:
             print "%sNo output directory was specified." % style.prefix
         if dir_suffix is not None:
-            temporary_directory = tempfile.mkdtemp(suffix = dir_suffix)
+            temporary_directory = tempfile.mkdtemp(suffix=dir_suffix)
         else:
             temporary_directory = tempfile.mkdtemp()
         if not quiet:
-            print "%sImages will be saved to temporary directory %s" % \
-                  (style.prefix, temporary_directory)
+            print "%sImages will be saved to temporary directory %s" % (
+                style.prefix,
+                temporary_directory,
+            )
         return temporary_directory
 
     # If the path to the output directory was specified, check that it exists
@@ -64,26 +67,35 @@ def determine_output_dir(output_directory, dir_suffix = None, quiet = False):
             try:
                 os.makedirs(output_directory)
             except OSError:
-                msg = "The output directory '%s' could not be created. " \
-                      "Is the directory writable?" % output_directory
+                msg = (
+                    "The output directory '%s' could not be created. "
+                    "Is the directory writable?" % output_directory
+                )
                 raise IOError(msg)
 
             if not quiet:
-                print "%sThe output directory '%s' did not exist, so it " \
-                      "had to be created." % (style.prefix, output_directory)
+                print "%sThe output directory '%s' did not exist, so it " "had to be created." % (
+                    style.prefix,
+                    output_directory,
+                )
         else:
             if not os.path.isdir(output_directory):
                 raise IOError("%s is not a directory" % output_directory)
             if not os.access(output_directory, os.W_OK):
-                raise IOError("The output directory '" + output_directory + "' is not writable.")
+                raise IOError(
+                    "The output directory '" + output_directory + "' is not writable."
+                )
             if not quiet:
-                print "%sImages will be saved to directory '%s'" % \
-                      (style.prefix, output_directory)
+                print "%sImages will be saved to directory '%s'" % (
+                    style.prefix,
+                    output_directory,
+                )
 
         return output_directory
 
+
 def owner_writable(path, add):
-    """ Make the file owner writeable or unwriteable.
+    """Make the file owner writeable or unwriteable.
 
     The method either adds or removes write permission for the file's owner,
     depending on the value of the 'add' parameter. In other words, if 'add' is
@@ -106,14 +118,15 @@ def owner_writable(path, add):
     mode = stat.S_IMODE(os.stat(path)[stat.ST_MODE])
 
     if add:
-        mode |= stat.S_IWUSR    # bitwise (inclusive) OR
+        mode |= stat.S_IWUSR  # bitwise (inclusive) OR
     else:
-        mode ^= stat.S_IWUSR    # bitwise XOR (exclusive OR)
+        mode ^= stat.S_IWUSR  # bitwise XOR (exclusive OR)
 
     os.chmod(path, mode)
 
+
 def which(*names):
-    """ Search PATH for executable files with the given names.
+    """Search PATH for executable files with the given names.
 
     Replicate the functionality of Unix 'which', returning a list of the full
     paths to the executables that would be executed in the current environment
@@ -128,15 +141,16 @@ def which(*names):
     """
 
     result = []
-    for directory in os.environ.get('PATH', '').split(os.pathsep):
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
         for name in names:
             path = os.path.join(directory, name)
             if os.access(path, os.X_OK) and os.path.isfile(path):
                 result.append(path)
     return result
 
+
 def clean_tmp_files(*paths):
-    """ Try to remove multiple temporary files and directories.
+    """Try to remove multiple temporary files and directories.
 
     Loop over the provided positional arguments, calling os.unlink() on files
     and shutil.rmtree() on directories. Errors never raise an exception, but
@@ -172,7 +186,7 @@ def clean_tmp_files(*paths):
                 logging.debug(msg % args)
 
             try:
-                kwargs = dict(ignore_errors = False, onerror = log_error)
+                kwargs = dict(ignore_errors=False, onerror=log_error)
                 shutil.rmtree(path, **kwargs)
 
             finally:

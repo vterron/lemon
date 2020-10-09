@@ -36,16 +36,19 @@ import sys
 # LEMON module
 import astromatic
 
+
 def version_to_str(version):
     """ From (0, 2, 4) to '0.2.4' for example """
-    return '.'.join(str(x) for x in version)
+    return ".".join(str(x) for x in version)
+
 
 def str_to_version(version):
     """ From '0.2.4' to (0, 2, 4), for example """
-    return tuple(int(x) for x in version.split('.'))
+    return tuple(int(x) for x in version.split("."))
+
 
 class RequireModuleVersionHook(object):
-    """ An import hook to enforce minimum versions of Python modules.
+    """An import hook to enforce minimum versions of Python modules.
 
     This class implements both the module finder (find_module) and loader
     (load_module). It can be installed in sys.meta_path to intercept every
@@ -55,7 +58,7 @@ class RequireModuleVersionHook(object):
     """
 
     def __init__(self, fullname, min_version, vfunc):
-        """ Instantiation method for the RequireModuleVersionHook class.
+        """Instantiation method for the RequireModuleVersionHook class.
 
         The 'fullname' parameter is the a fully qualified name of the module
         that we want to import, such as 'pyfits' or 'scipy'. 'min_version' is a
@@ -71,7 +74,7 @@ class RequireModuleVersionHook(object):
         self.vfunc = vfunc
 
     def find_module(self, fullname, path=None):
-        """ The module finder.
+        """The module finder.
 
         Receive the fully qualified name of the module to be imported, along
         with, optionally, the path where it is supposed to be found. Return
@@ -86,7 +89,7 @@ class RequireModuleVersionHook(object):
         return None
 
     def load_module(self, fullname):
-        """ The module loader.
+        """The module loader.
 
         Receive the fully qualified name of the module that we want to import.
         Then, import the module, call vfunc() to get its version as a tuple of
@@ -106,9 +109,7 @@ class RequireModuleVersionHook(object):
         version = self.vfunc(module)
         if not version >= self.min_version:
             msg = "%s >= %s is required, found %s"
-            args = (fullname,
-                    version_to_str(self.min_version),
-                    version_to_str(version))
+            args = (fullname, version_to_str(self.min_version), version_to_str(version))
             raise ImportError(msg % args)
         else:
             sys.modules[fullname] = module
@@ -129,21 +130,23 @@ def get__version__(module):
         version = match.group(0)
         return str_to_version(version)
 
+
 # For each module whose minimum version has been defined in requirements.txt,
 # create an import hook and add it to sys.meta_path, which is searched before
 # any implicit default finders or sys.path.
 
 for module, version in [
-  ('numpy', (1, 7, 1)),
-  ('aplpy', (0, 9, 9)),
-  ('scipy', (0, 12, 0)),
-  ('matplotlib', (1, 2, 1)),
-  ('mock', (1, 0, 1)),
-  ('pyfits', (3, 1, 2)),
-  ('pyraf', (2, 1, 1)),
-  ('uncertainties', (2, 4, 1))]:
-      hook = RequireModuleVersionHook(module, version, get__version__)
-      sys.meta_path.append(hook)
+    ("numpy", (1, 7, 1)),
+    ("aplpy", (0, 9, 9)),
+    ("scipy", (0, 12, 0)),
+    ("matplotlib", (1, 2, 1)),
+    ("mock", (1, 0, 1)),
+    ("pyfits", (3, 1, 2)),
+    ("pyraf", (2, 1, 1)),
+    ("uncertainties", (2, 4, 1)),
+]:
+    hook = RequireModuleVersionHook(module, version, get__version__)
+    sys.meta_path.append(hook)
 
 # If the minimum version is not met, raise SExtractorUpgradeRequired as
 # soon as possible, instead of waiting until we attempt to run SExtractor.

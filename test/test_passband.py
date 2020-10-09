@@ -28,20 +28,33 @@ import string
 import util
 import passband
 from test import unittest
-from passband import Passband, NonRecognizedPassband, InvalidPassbandLetter, \
-                     JOHNSON, COUSINS, HARRIS, GUNN, SDSS, TWOMASS, STROMGREN, \
-                     HALPHA, UNKNOWN, CUSTOM
+from passband import (
+    Passband,
+    NonRecognizedPassband,
+    InvalidPassbandLetter,
+    JOHNSON,
+    COUSINS,
+    HARRIS,
+    GUNN,
+    SDSS,
+    TWOMASS,
+    STROMGREN,
+    HALPHA,
+    UNKNOWN,
+    CUSTOM,
+)
 
-NITERS  = 100     # How many times each test case is run with random data
+NITERS = 100  # How many times each test case is run with random data
 NPASSBANDS = 100  # Number of elements for sequences of random Passbands
+
 
 class PassbandTest(unittest.TestCase):
 
-    TEST_DATA_DIR = './test/test_data/filters'
+    TEST_DATA_DIR = "./test/test_data/filters"
 
     @classmethod
     def get_data_path(cls, system):
-        """ Return the path to the test data file for a photometric system.
+        """Return the path to the test data file for a photometric system.
 
         The data files are located in the TEST_DATA_DIR directory, and their
         filename matches the name of the photometric system (e.g., 'Johnson').
@@ -54,7 +67,7 @@ class PassbandTest(unittest.TestCase):
 
     @staticmethod
     def read_filter_data_file(path):
-        """ Read the contents of a file in the ./test_data/filters directory.
+        """Read the contents of a file in the ./test_data/filters directory.
 
         Loop over the lines of the file, each one of them expected to contain a
         two-element tuple which is eval()'uated and yielded. The first element
@@ -64,20 +77,20 @@ class PassbandTest(unittest.TestCase):
 
         """
 
-        with open(path, 'r') as fd:
+        with open(path, "r") as fd:
 
             for line in fd:
                 line = line.strip()
 
                 # Ignore empty and comment lines
-                if not line or line[0] == '#':
+                if not line or line[0] == "#":
                     continue
 
                 name, letter = eval(line)
                 yield name, letter
 
     def _test_photometric_system(self, system):
-        """ Test that Passband parses a photometric system correctly.
+        """Test that Passband parses a photometric system correctly.
 
         'system' must be the formal name of the photometric system, adequately
         capitalized, such as 'Johnson' or 'Cousins'. The Passband class must
@@ -110,12 +123,14 @@ class PassbandTest(unittest.TestCase):
         # filter cannot be identified and NonRecognizedPassband is raised.
         # For example, if more than one letter is given.
 
-        two_letters = ''.join(random.sample(valid_letters, 2))
-        values = dict(system = system, letter = two_letters)
-        patterns = ("%(system)s",              # e.g., "Johnson"
-                    "%(letter)s %(system)s",   # e.g., "BV Johnson"
-                    "%(system)s %(letter)s",   # e.g., "Johnson BV"
-                    "%(letter)s (%(system)s)") # e.g., "BV (Johnson)"
+        two_letters = "".join(random.sample(valid_letters, 2))
+        values = dict(system=system, letter=two_letters)
+        patterns = (
+            "%(system)s",  # e.g., "Johnson"
+            "%(letter)s %(system)s",  # e.g., "BV Johnson"
+            "%(system)s %(letter)s",  # e.g., "Johnson BV"
+            "%(letter)s (%(system)s)",
+        )  # e.g., "BV (Johnson)"
 
         for pattern in patterns:
             name = pattern % values
@@ -189,10 +204,9 @@ class PassbandTest(unittest.TestCase):
     def test_repr(self):
         for _ in xrange(NITERS):
             pfilter = Passband.random()
-            self.assertEqual(pfilter, eval(`pfilter`))
+            self.assertEqual(pfilter, eval(` pfilter `))
 
     def test_cmp(self):
-
         def assert_max(index, *names):
             """ Make sure that Passband(names[index]) is the largest item """
             pfilters = [Passband(x) for x in names]
@@ -216,13 +230,13 @@ class PassbandTest(unittest.TestCase):
             pfilters.sort()
 
             for index in xrange(0, len(pfilters) - 1):
-                first  = pfilters[index]
+                first = pfilters[index]
                 second = pfilters[index + 1]
                 ncustoms = sum(1 for p in [first, second] if p.system == CUSTOM)
                 nhalphas = sum(1 for p in [first, second] if p.system == HALPHA)
 
                 if not nhalphas and not ncustoms:
-                    first_index  = letter_index(first.letter)
+                    first_index = letter_index(first.letter)
                     second_index = letter_index(second.letter)
                     self.assertTrue(first_index <= second_index)
                     # If letters are equal, sort lexicographically by the system
@@ -231,7 +245,7 @@ class PassbandTest(unittest.TestCase):
 
                 # Custom filters are smaller than others system
                 elif ncustoms == 1:
-                    first.system  == CUSTOM
+                    first.system == CUSTOM
                     second.system != CUSTOM
 
                 elif ncustoms == 2:
@@ -240,7 +254,7 @@ class PassbandTest(unittest.TestCase):
 
                 # H-alpha filters are greater than other systems
                 elif nhalphas == 1:
-                    first.system  != HALPHA
+                    first.system != HALPHA
                     second.system == HALPHA
 
                 else:
@@ -250,7 +264,7 @@ class PassbandTest(unittest.TestCase):
     def test_hash(self):
         for _ in xrange(NITERS):
             pfilter = Passband.random()
-            self.assertEqual(hash(pfilter), hash(eval(`pfilter`)))
+            self.assertEqual(hash(pfilter), hash(eval(` pfilter `)))
             self.assertNotEqual(hash(pfilter), hash(pfilter.different()))
 
     def test_random(self):
@@ -260,7 +274,9 @@ class PassbandTest(unittest.TestCase):
             self.assertTrue(pfilter.system in Passband.ALL_SYSTEMS)
             # Neither custom nor H-alpha filters have letter
             if pfilter.system not in [CUSTOM, HALPHA]:
-                self.assertTrue(pfilter.letter in Passband.SYSTEM_LETTERS[pfilter.system])
+                self.assertTrue(
+                    pfilter.letter in Passband.SYSTEM_LETTERS[pfilter.system]
+                )
 
     def test_different(self):
         for _ in xrange(NITERS):
@@ -276,8 +292,7 @@ class PassbandTest(unittest.TestCase):
         custom2 = "NO", "Blank Filter"
         custom_filters = [custom1, custom2]
 
-        data = '\n'.join([section_header] +
-                         ["%s = %s" % x for x in custom_filters])
+        data = "\n".join([section_header] + ["%s = %s" % x for x in custom_filters])
 
         with util.tempinput(data) as path:
             loaded = list(passband.load_custom_filters(path))
@@ -288,13 +303,13 @@ class PassbandTest(unittest.TestCase):
                 self.assertEqual(input[1], output[1])
 
         def assert_returns_nothing(path):
-            """ Assert that Passband.load_custom_filters() does not return
+            """Assert that Passband.load_custom_filters() does not return
             anything when the 'path' configuration file is parsed"""
             self.assertEqual([], list(passband.load_custom_filters(path)))
 
         # Does not return anything if:
         # (1) The configuration file file does not exist
-        with util.tempinput('') as path:
+        with util.tempinput("") as path:
             pass
         self.assertFalse(os.path.exists(path))
         assert_returns_nothing(path)

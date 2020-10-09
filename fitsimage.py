@@ -55,21 +55,26 @@ import style
 # the keyword name does not start with 'HIERARCH' and is greater than eight
 # characters or contains spaces. This solution is taken from:
 # https://github.com/geminiutil/geminiutil/commit/9aa46fd9cd3
-warnings.filterwarnings('ignore', message=".+ a HIERARCH card will be created.")
+warnings.filterwarnings("ignore", message=".+ a HIERARCH card will be created.")
+
 
 class NonStandardFITS(IOError):
     """ Raised when a non-standard file is attempted to be opened."""
+
     pass
+
 
 class NoWCSInformationError(ValueError):
     """ Raised if WCS information is not found in a FITS header. """
+
     pass
+
 
 class FITSImage(object):
     """ Encapsulates a FITS image located in the filesystem. """
 
     def __init__(self, path):
-        """ Instantiation method for the FITSImage class.
+        """Instantiation method for the FITSImage class.
 
         A copy of the header of the FITS file is kept in memory for fast access
         to its keywords. IOError is raised if 'path' does not exist or is not
@@ -107,7 +112,7 @@ class FITSImage(object):
             # would not be able to set the output verification of close() to
             # 'ignore'. Thus, the default option, 'exception', which raises
             # an exception if any FITS standard is violated, would be used.
-            handler = pyfits.open(self.path, mode = 'readonly')
+            handler = pyfits.open(self.path, mode="readonly")
             try:
 
                 # This is kind of an ugly hack to make sure that all PyFITS
@@ -122,7 +127,7 @@ class FITSImage(object):
 
                 try:
                     type_ = pyfits.info(self.path, output=False)[0][2]
-                    if type_ == 'NonstandardHDU':
+                    if type_ == "NonstandardHDU":
                         # 'SIMPLE' exists but does not equal 'T'
                         msg = "%s: value of 'SIMPLE' keyword is not 'T'"
                         raise NonStandardFITS(msg % self.path)
@@ -144,7 +149,7 @@ class FITSImage(object):
                 self.size = handler[0].data.shape[::-1]
                 self._header = handler[0].header
             finally:
-                handler.close(output_verify = 'ignore')
+                handler.close(output_verify="ignore")
 
         # PyFITS raises IOError if we do not have permission to open the file,
         # if we attempt to open a non-FITS file, and also if we open one whose
@@ -167,7 +172,7 @@ class FITSImage(object):
         return "%s(%r)" % (self.__class__.__name__, self.path)
 
     def read_keyword(self, keyword):
-        """ Read a keyword from the header of the FITS image.
+        """Read a keyword from the header of the FITS image.
 
         Note that, although always upper-case in the FITS header, keywords are
         here case-insensitive, for user's convenience. TypeError is raised if
@@ -192,8 +197,8 @@ class FITSImage(object):
             msg = "%s: keyword '%s' not found" % (self.path, keyword)
             raise KeyError(msg)
 
-    def update_keyword(self, keyword, value, comment = None):
-        """ Updates the value of a FITS keyword, adding it if it does not exist.
+    def update_keyword(self, keyword, value, comment=None):
+        """Updates the value of a FITS keyword, adding it if it does not exist.
 
         The method updates the value of a keyword in the FITS header, replacing
         it with the specified value or simply adding it in case if does not yet
@@ -212,11 +217,13 @@ class FITSImage(object):
         """
 
         if len(keyword) > 8:
-            msg = "%s: keyword '%s' is longer than eight characters or " \
-                  "contains spaces; a HIERARCH card will be created"
+            msg = (
+                "%s: keyword '%s' is longer than eight characters or "
+                "contains spaces; a HIERARCH card will be created"
+            )
             logging.debug(msg % (self.path, keyword))
 
-        handler = pyfits.open(self.path, mode = 'update')
+        handler = pyfits.open(self.path, mode="update")
         msg = "%s: file opened to update '%s' keyword" % (self.path, keyword)
         logging.debug(msg)
 
@@ -226,7 +233,7 @@ class FITSImage(object):
             # Ignore the 'card is too long, comment is truncated' warning
             # printed by PyRAF in case, well, the comment is too long.
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
+                warnings.simplefilter("ignore")
                 header[keyword] = (value, comment)
                 args = self.path, keyword, value
                 msg = "%s: keyword '%s' updated to '%s'" % args
@@ -248,12 +255,14 @@ class FITSImage(object):
             pattern = "The keyword .*? with its value is too long"
             if re.match(pattern, str(e)):
                 assert len(keyword) > 8
-                msg = ("%s: keyword '%s' could not be updated (\"%s\"). Note "
-                       "that PyFITS does not support CONTINUE for HIERARCH. "
-                       "In other words: if your keyword has more than eight "
-                       "characters or contains spaces, the total length of "
-                       "the keyword with its value cannot be longer than %d "
-                       "characters.")
+                msg = (
+                    "%s: keyword '%s' could not be updated (\"%s\"). Note "
+                    "that PyFITS does not support CONTINUE for HIERARCH. "
+                    "In other words: if your keyword has more than eight "
+                    "characters or contains spaces, the total length of "
+                    "the keyword with its value cannot be longer than %d "
+                    "characters."
+                )
                 args = self.path, keyword, str(e), pyfits.Card.length
                 logging.warning(msg % args)
                 raise ValueError(msg % args)
@@ -271,12 +280,12 @@ class FITSImage(object):
             raise
 
         finally:
-            handler.close(output_verify = 'ignore')
+            handler.close(output_verify="ignore")
             msg = "%s: file closed" % self.path
             logging.debug(msg)
 
     def delete_keyword(self, keyword):
-        """ Delete a keyword from the header of the FITS image.
+        """Delete a keyword from the header of the FITS image.
 
         The method removes from the header of the image the specified keyword.
         Unlike read_keyword(), no exception is raised if the keyword is not
@@ -284,7 +293,7 @@ class FITSImage(object):
 
         """
 
-        handler = pyfits.open(self.path, mode = 'update')
+        handler = pyfits.open(self.path, mode="update")
         try:
             header = handler[0].header
             try:
@@ -305,10 +314,10 @@ class FITSImage(object):
             except KeyError:
                 pass
         finally:
-            handler.close(output_verify = 'ignore')
+            handler.close(output_verify="ignore")
 
     def add_history(self, history):
-        """ Add another record to the history of the FITS image.
+        """Add another record to the history of the FITS image.
 
         The 'HISTORY' keyword shall have, according to the FITS Standard, no
         associated value; columns 9-80 may contain any ASCII text. The text
@@ -319,16 +328,17 @@ class FITSImage(object):
 
         """
 
-        handler = pyfits.open(self.path, mode = 'update')
+        handler = pyfits.open(self.path, mode="update")
         try:
             header = handler[0].header
             header.add_history(history)
         finally:
-            handler.close(output_verify = 'ignore')
+            handler.close(output_verify="ignore")
 
-    def date(self, date_keyword = 'DATE-OBS', time_keyword = 'TIME-OBS',
-             exp_keyword = 'EXPTIME'):
-        """ Return the date of observation (UTC), in Unix time.
+    def date(
+        self, date_keyword="DATE-OBS", time_keyword="TIME-OBS", exp_keyword="EXPTIME"
+    ):
+        """Return the date of observation (UTC), in Unix time.
 
         This method returns, in seconds after the Unix epoch (the time 00:00:00
         UTC on 1 January 1970), the date at the 'midpoint' of the observation.
@@ -371,28 +381,28 @@ class FITSImage(object):
         start_date_str = self.read_keyword(date_keyword).strip()
 
         # Time format string, needed by strptime()
-        format_str = '%Y-%m-%dT%H:%M:%S'
+        format_str = "%Y-%m-%dT%H:%M:%S"
 
         # There are two formats which only store the date, without the time:
         # 'yy/dd/dd' (deprecated, may be used only for dates 1900-1999) and
         # 'yyyy-mm-dd' (new, Y2K-compliant format).
-        old_date_regexp = '\d{2}/\d{2}/\d{2}'
-        date_regexp = '\d{4}-\d{2}-\d{2}' # 'yyyy-mm-dd'
+        old_date_regexp = "\d{2}/\d{2}/\d{2}"
+        date_regexp = "\d{4}-\d{2}-\d{2}"  # 'yyyy-mm-dd'
 
         # 'HH:MM:SS[.sss]': the time format. Note that we allow up to four
         # decimals in the seconds [.ssss], instead of three. This is not
         # standard, but used anyway in the header of O2K CAHA FITS images.
-        time_regexp = '\d{2}:\d{2}:\d{2}(?P<secs_fraction>\.\d{0,4})?'
+        time_regexp = "\d{2}:\d{2}:\d{2}(?P<secs_fraction>\.\d{0,4})?"
 
         # 'yyyy-mm-ddTHH:MM:SS[.sss]: the format that ideally we would always
         # come across. It contains both the date and time at the start of the
         # observation, so there is no need to read a second keyword (TIME-OBS,
         # for example) to extract the time.
-        complete_regexp = '%sT%s' % (date_regexp, time_regexp)
+        complete_regexp = "%sT%s" % (date_regexp, time_regexp)
         match = re.match(complete_regexp, start_date_str)
         if match:
-            if match.group('secs_fraction'):
-                format_str += '.%f'
+            if match.group("secs_fraction"):
+                format_str += ".%f"
 
         # Non-ideal scenario: 'date_keyword' (e.g., DATE-OBS) does not include
         # the time, so we need to read it from a second keyword, 'time_keyword'
@@ -402,7 +412,7 @@ class FITSImage(object):
 
             # Must be either 'yy/mm/dd' or 'yyyy-mm-dd'
             args = old_date_regexp, date_regexp
-            regexp = '^((?P<old>%s)|(?P<new>%s))$' % args
+            regexp = "^((?P<old>%s)|(?P<new>%s))$" % args
             match = re.match(regexp, start_date_str)
 
             if match:
@@ -411,31 +421,35 @@ class FITSImage(object):
                 # that, according to the standard, dates using the old format
                 # may be used only for years [1900, 1999]. Therefore, a date
                 # such as '02/04/21' *will* be interpreted as '1902/04/21'.
-                if match.group('old'):
-                    start_date_str = '19' + start_date_str.replace('/', '-')
+                if match.group("old"):
+                    start_date_str = "19" + start_date_str.replace("/", "-")
 
                 # At this point the format of the date must be 'yyyy-mm-dd'
-                assert re.match('^%s$' % date_regexp, start_date_str)
+                assert re.match("^%s$" % date_regexp, start_date_str)
 
                 # Read the time from its keyword. Does it follow the standard?
                 start_time_str = self.read_keyword(time_keyword).strip()
-                regexp = '^%s$' % time_regexp
+                regexp = "^%s$" % time_regexp
                 time_match = re.match(regexp, start_time_str)
 
                 if not time_match:
                     args = time_keyword, start_time_str
-                    msg = ("'%s' keyword (%s) does not follow the FITS "
-                           "standard: 'HH:MM:SS[.sss]'")
+                    msg = (
+                        "'%s' keyword (%s) does not follow the FITS "
+                        "standard: 'HH:MM:SS[.sss]'"
+                    )
                     raise NonStandardFITS(msg % args)
 
-                start_date_str += 'T%s' % start_time_str
-                if time_match.group('secs_fraction'):
-                    format_str += '.%f'
+                start_date_str += "T%s" % start_time_str
+                if time_match.group("secs_fraction"):
+                    format_str += ".%f"
 
             else:
                 args = date_keyword, start_date_str
-                msg = ("'%s' keyword (%s) does not follow the FITS standard: "
-                       "yyyy-mm-dd[THH:MM:SS[.sss]] or yy/dd/mm (deprecated)")
+                msg = (
+                    "'%s' keyword (%s) does not follow the FITS standard: "
+                    "yyyy-mm-dd[THH:MM:SS[.sss]] or yy/dd/mm (deprecated)"
+                )
                 raise NonStandardFITS(msg % args)
 
         start_date = datetime.datetime.strptime(start_date_str, format_str)
@@ -444,7 +458,7 @@ class FITSImage(object):
             # Divide the duration of the exposure, in seconds, by two
             exposure_time = self.read_keyword(exp_keyword)
             half_exp_time = float(exposure_time) / 2
-        except KeyError:    # if the keyword is not found
+        except KeyError:  # if the keyword is not found
             raise
         except ValueError:  # if the casting to float fails
             args = exp_keyword, exposure_time
@@ -454,13 +468,13 @@ class FITSImage(object):
         # strftime('.%f') is needed because struct_time does not store
         # fractions of second: we need to add it after the conversion from
         # datetime to seconds [http://stackoverflow.com/a/698279/184363]
-        seconds_fraction = float(start_date.strftime('.%f'))
+        seconds_fraction = float(start_date.strftime(".%f"))
         start_struct_time = start_date.utctimetuple()
         start_date = calendar.timegm(start_struct_time) + seconds_fraction
         return start_date + half_exp_time
 
     def year(self, **kwargs):
-        """ Return the date of observation (UTC) as a fractional year.
+        """Return the date of observation (UTC) as a fractional year.
 
         Run FITSImage.date() and convert the returned timestamp to a fractional
         year. The start of the year is at time t0, while the end of the year is
@@ -482,16 +496,16 @@ class FITSImage(object):
         date = datetime.datetime.utcfromtimestamp(timestamp)
 
         year = date.year
-        t0 = datetime.datetime(year = year,     month = 1, day = 1)
-        t1 = datetime.datetime(year = year + 1, month = 1, day = 1)
+        t0 = datetime.datetime(year=year, month=1, day=1)
+        t1 = datetime.datetime(year=year + 1, month=1, day=1)
 
-        year_elapsed  = since_epoch(date) - since_epoch(t0)
-        year_duration = since_epoch(t1)   - since_epoch(t0)
+        year_elapsed = since_epoch(date) - since_epoch(t0)
+        year_duration = since_epoch(t1) - since_epoch(t0)
         fraction = year_elapsed / year_duration
         return year + fraction
 
     def pfilter(self, keyword):
-        """ Return the photometric filter of the image as a Passband instance.
+        """Return the photometric filter of the image as a Passband instance.
 
         Read the 'keyword' keyword from the header of the FITS image and
         encapsulate it as a passband.Passband object. For user's convenience,
@@ -507,11 +521,11 @@ class FITSImage(object):
             pfilter_str = self.read_keyword(keyword)
             return passband.Passband(pfilter_str)
         except passband.NonRecognizedPassband:
-            kwargs = dict(path = self.path, keyword = keyword)
+            kwargs = dict(path=self.path, keyword=keyword)
             raise passband.NonRecognizedPassband(pfilter_str, **kwargs)
 
-    def ra(self, ra_keyword = keywords.rak):
-        """ Return the right ascension, in decimal degrees.
+    def ra(self, ra_keyword=keywords.rak):
+        """Return the right ascension, in decimal degrees.
 
         Return the value in decimal degrees of the 'ra_keyword' FITS keyword.
         The right ascension must be expressed either as a floating point number
@@ -541,14 +555,14 @@ class FITSImage(object):
             logging.debug(msg3)
 
             # HH:MM:SS[.sss]
-            regexp = '^(?P<hh>\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            regexp = "^(?P<hh>\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$"
             match = re.match(regexp, ra_str.strip())
             if match:
-                hh =   int(match.group('hh'))
-                mm =   int(match.group('mm'))
-                ss = float(match.group('ss'))
+                hh = int(match.group("hh"))
+                mm = int(match.group("mm"))
+                ss = float(match.group("ss"))
 
-                logging.debug(  "{0}: hours = {1} (α)".format(self.path, hh))
+                logging.debug("{0}: hours = {1} (α)".format(self.path, hh))
                 logging.debug("{0}: minutes = {1} (α)".format(self.path, mm))
                 logging.debug("{0}: seconds = {1} (α)".format(self.path, ss))
 
@@ -559,8 +573,8 @@ class FITSImage(object):
                 msg = "{0}: '{1}' not in decimal degrees or 'HH:MM:SS.sss' format"
                 raise ValueError(msg.format(self.path, ra_keyword))
 
-    def dec(self, dec_keyword = keywords.deck):
-        """ Return the declination, in decimal degrees.
+    def dec(self, dec_keyword=keywords.deck):
+        """Return the declination, in decimal degrees.
 
         Return the value in decimal degrees of the 'dec_keyword' FITS keyword.
         The declination must be expressed either as a floating point number
@@ -590,12 +604,12 @@ class FITSImage(object):
             logging.debug(msg3)
 
             # DD:MM:SS[.sss]
-            regexp = '^(?P<dd>([-+])?\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$'
+            regexp = "^(?P<dd>([-+])?\d{2}):(?P<mm>\d{2}):(?P<ss>\d{2}(\.\d{0,3})?)$"
             match = re.match(regexp, dec_str.strip())
             if match:
-                dd =   int(match.group('dd'))
-                mm =   int(match.group('mm'))
-                ss = float(match.group('ss'))
+                dd = int(match.group("dd"))
+                mm = int(match.group("mm"))
+                ss = float(match.group("ss"))
 
                 logging.debug("{0}: degrees = {1} (δ)".format(self.path, dd))
                 logging.debug("{0}: minutes = {1} (δ)".format(self.path, mm))
@@ -610,7 +624,7 @@ class FITSImage(object):
 
     @property
     def prefix(self):
-        """ Extract the leftmost non-numeric substring of the image base name.
+        """Extract the leftmost non-numeric substring of the image base name.
 
         The method returns the leftmost substring, entirely composed of
         non-numeric characters, that can be found in the extension-stripped
@@ -621,13 +635,13 @@ class FITSImage(object):
 
         """
 
-        str_char = ''
+        str_char = ""
         basename = os.path.basename(self.path)
         root = os.path.splitext(basename)[0]
         for character in root:
             try:
                 int(character)
-                return str_char # stop as soon as an integer is found
+                return str_char  # stop as soon as an integer is found
             except ValueError:
                 # Raised because the character is not an integer
                 str_char += character
@@ -665,7 +679,7 @@ class FITSImage(object):
             return astropy.wcs.WCS(header)
 
     def pix2world(self, x, y):
-        """ Transform pixel coordinates to world coordinates.
+        """Transform pixel coordinates to world coordinates.
 
         Return a two-element tuple with the right ascension and declination to
         which the specified x- and y-coordinates correspond in the FITS image.
@@ -690,16 +704,18 @@ class FITSImage(object):
         # will return the same coordinates as the FITSImage.center attribute.
 
         if (ra, dec) == coords:
-            msg = ("{0}: the header of the FITS image does not seem to "
-                   "contain WCS information. You may want to make sure that "
-                   "the image has been solved astrometrically, for example "
-                   "with the 'astrometry' LEMON command.".format(self.path))
+            msg = (
+                "{0}: the header of the FITS image does not seem to "
+                "contain WCS information. You may want to make sure that "
+                "the image has been solved astrometrically, for example "
+                "with the 'astrometry' LEMON command.".format(self.path)
+            )
             raise NoWCSInformationError(msg)
 
         return ra, dec
 
     def center_wcs(self):
-        """ Return the world coordinates of the central pixel of the image.
+        """Return the world coordinates of the central pixel of the image.
 
         Transform the pixel coordinates of the center of the image to world
         coordinates. Return a two-element tuple with the right ascension and
@@ -731,8 +747,8 @@ class FITSImage(object):
         except NoWCSInformationError:
             return False
 
-    def saturation(self, maximum, coaddk = keywords.coaddk):
-        """ Return the effective saturation level, in ADUs.
+    def saturation(self, maximum, coaddk=keywords.coaddk):
+        """Return the effective saturation level, in ADUs.
 
         Return the number of ADUs at which saturation arises. This is the
         result of multiplying 'maximum', the saturation level of a single
@@ -786,14 +802,14 @@ class FITSImage(object):
         """ Return the hexadecimal SHA-1 checksum of the FITS image """
 
         sha1 = hashlib.sha1()
-        with open(self.path, 'rb') as fd:
+        with open(self.path, "rb") as fd:
             for line in fd:
                 sha1.update(line)
             return sha1.hexdigest()
 
 
 class InputFITSFiles(collections.defaultdict):
-    """ Map each photometric filter to a list of FITS files.
+    """Map each photometric filter to a list of FITS files.
 
     A convenience class to simplify the manipulation of a series of FITS
     images: it is a defaultdict, mapping each photometric filter to a list of
@@ -815,7 +831,7 @@ class InputFITSFiles(collections.defaultdict):
         return sum(len(pfilter) for pfilter in self.itervalues())
 
     def remove(self, img):
-        """ Remove all occurrences of the FITS file, in any filter.
+        """Remove all occurrences of the FITS file, in any filter.
 
         Loop over the different photometric filters and remove, from each
         associated list of FITS files, all occurrences of 'img'. Returns the
@@ -836,8 +852,8 @@ class InputFITSFiles(collections.defaultdict):
         return discarded
 
 
-def find_files(paths, followlinks = True, pattern = None):
-    """ Find all the regular files that can be found in the given paths.
+def find_files(paths, followlinks=True, pattern=None):
+    """Find all the regular files that can be found in the given paths.
 
     The method receives a variable number of paths and returns a list with all
     the existing regular files that were found at these locations. If a path
@@ -867,12 +883,12 @@ def find_files(paths, followlinks = True, pattern = None):
                 files_paths.append(path)
 
         elif os.path.isdir(path):
-            tree = os.walk(path, followlinks = followlinks)
+            tree = os.walk(path, followlinks=followlinks)
             for dirpath, dirnames, filenames in tree:
                 dirnames.sort()
                 for basename in sorted(filenames):
                     abs_path = os.path.join(dirpath, basename)
-                    files_paths += find_files([abs_path],
-                                              followlinks = followlinks,
-                                              pattern = pattern)
+                    files_paths += find_files(
+                        [abs_path], followlinks=followlinks, pattern=pattern
+                    )
     return files_paths

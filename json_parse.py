@@ -26,10 +26,12 @@ import operator
 # LEMON modules
 import passband
 
-typename = 'CandidateAnnuli'
+typename = "CandidateAnnuli"
 field_names = "aperture, annulus, dannulus, stdev"
+
+
 class CandidateAnnuli(collections.namedtuple(typename, field_names)):
-    """ Encapsulate the quality of a set of photometric parameters.
+    """Encapsulate the quality of a set of photometric parameters.
 
     How do we determine how good a set of parameters for aperture photometry
     is? In order to compare them, we need to identify the most constant stars
@@ -54,7 +56,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
 
     @staticmethod
     def dump(annuli, path):
-        """ Save a series of CadidateAnnuli objects to a JSON file.
+        """Save a series of CadidateAnnuli objects to a JSON file.
 
         Serialize 'annuli' to a JSON file. It must be a dictionary which maps
         each photometric filter (a Passband object) to a sequence of the
@@ -71,19 +73,19 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
         for values in data.itervalues():
             for index in xrange(len(values)):
                 values[index] = values[index]._asdict()
-            values.sort(key=operator.itemgetter('stdev'))
+            values.sort(key=operator.itemgetter("stdev"))
 
         # Use strings, not Passband objects, as keys
         for pfilter in data.keys():
             data[str(pfilter)] = data.pop(pfilter)
 
-        with open(path, 'wt') as fd:
+        with open(path, "wt") as fd:
             kwargs = dict(indent=2, sort_keys=True)
             json.dump(data, fd, **kwargs)
 
     @classmethod
     def load(cls, path):
-        """ Load a series of CandidateAnnuli objects from a JSON file.
+        """Load a series of CandidateAnnuli objects from a JSON file.
 
         Deserialize a JSON file created with CandidateAnnuli.dump(), returning
         a dictionary which maps each photometric filter (a Passband object) to
@@ -94,7 +96,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
 
         """
 
-        with open(path, 'rt') as fd:
+        with open(path, "rt") as fd:
             data = json.load(fd)
 
         # Convert the dictionaries back to namedtuples, and then sort them by
@@ -102,7 +104,7 @@ class CandidateAnnuli(collections.namedtuple(typename, field_names)):
         for values in data.itervalues():
             for index in xrange(len(values)):
                 values[index] = cls(**values[index])
-            values.sort(key=operator.attrgetter('stdev'))
+            values.sort(key=operator.attrgetter("stdev"))
 
         # Use Passband objects as keys
         for pfilter in data.keys():

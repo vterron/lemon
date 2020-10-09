@@ -54,7 +54,7 @@ import util
 # Any tasks which attempt to display graphics will fail, of course, but we are
 # not going to make use of any of them, anyway.
 
-os.environ['PYRAF_NO_DISPLAY'] = '1'
+os.environ["PYRAF_NO_DISPLAY"] = "1"
 
 # When PyRAF is imported, it creates, unless it already exists, a pyraf/
 # directory for cache in the current working directory. It also complains that
@@ -85,8 +85,9 @@ pyraf.iraf.prcacheOff()
 # of <Subprocess '/iraf/iraf/bin.linux/x_images.e -c', at
 # 7f9f3f408710>> ignored
 
+
 def log_uncaught_exceptions(func):
-    """ Decorator to log uncaught exceptions with level DEBUG.
+    """Decorator to log uncaught exceptions with level DEBUG.
 
     This decorator catches any exception raised by the decorated function and
     logs it with level DEBUG on the root logger. Only subclasses of Exception
@@ -105,18 +106,27 @@ def log_uncaught_exceptions(func):
             type, value, traceback = sys.exc_info()
             msg = "%s raised %s('%s')" % (func.__name__, type.__name__, value)
             logging.debug(msg)
+
     return wrapper
 
-pyraf.subproc.Subprocess.__del__ = log_uncaught_exceptions(pyraf.subproc.Subprocess.__del__)
+
+pyraf.subproc.Subprocess.__del__ = log_uncaught_exceptions(
+    pyraf.subproc.Subprocess.__del__
+)
+
 
 class MissingFITSKeyword(RuntimeWarning):
     """ Warning about keywords that cannot be read from a header (non-fatal) """
+
     pass
 
-typename = 'QPhotResult'
+
+typename = "QPhotResult"
 field_names = "x, y, mag, sum, flux, stdev"
+
+
 class QPhotResult(collections.namedtuple(typename, field_names)):
-    """ Encapsulate the photometry of an astronomical object. In other words,
+    """Encapsulate the photometry of an astronomical object. In other words,
     each one of the lines that for each object are output by IRAF's qphot are
     parsed and saved as an object of this class.
 
@@ -130,7 +140,7 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
     """
 
     def snr(self, gain):
-        """ Return the signal-to-noise ratio of the photometric measurement.
+        """Return the signal-to-noise ratio of the photometric measurement.
 
         The method returns the S/N, a quantitative measurement of the accuracy
         with which the object was observed. The signal-to-noise ratio tells us
@@ -183,7 +193,7 @@ class QPhotResult(collections.namedtuple(typename, field_names)):
 
 
 class QPhot(list):
-    """ The photometry of an image, as returned by IRAF's qphot.
+    """The photometry of an image, as returned by IRAF's qphot.
 
     This class stores the result of the photometry done by IRAF's qphot (quick
     aperture photometer) on an image. A QPhotResult object is created for each
@@ -196,7 +206,7 @@ class QPhot(list):
     """
 
     def __init__(self, img_path, coords_path):
-        """ Instantiation method for the QPhot class.
+        """Instantiation method for the QPhot class.
 
         img_path - path to the FITS image on which to do photometry.
         coords_path - path to the text file with the celestial coordinates
@@ -217,23 +227,26 @@ class QPhot(list):
         for ra, dec, pm_ra, pm_dec in util.load_coordinates(self.coords_path):
             if ra == 0 and dec == 0:
                 msg = (
-                  "the right ascension and declination of one or more "
-                  "astronomical objects in '%s' is zero. This is a very bad "
-                  "sign: these are the celestial coordinates that SExtractor "
-                  "uses for sources detected on a FITS image that has not been "
-                  "calibrated astrometrically (may that be your case?), and "
-                  "without that it is impossible to do photometry on the "
-                  "desired coordinates" % self.coords_path)
+                    "the right ascension and declination of one or more "
+                    "astronomical objects in '%s' is zero. This is a very bad "
+                    "sign: these are the celestial coordinates that SExtractor "
+                    "uses for sources detected on a FITS image that has not been "
+                    "calibrated astrometrically (may that be your case?), and "
+                    "without that it is impossible to do photometry on the "
+                    "desired coordinates" % self.coords_path
+                )
                 # Emit warning only once
                 warnings.warn(msg)
                 break
 
             if pm_ra is not None or pm_dec is not None:
-                msg = ("at least one object in the '%s' file lists its proper "
-                       "motions. This is not allowed. The coordinates must be "
-                       "written to the file already adjusted for their proper "
-                       "motions, as this class cannot apply any correction" %
-                       self.coords_path)
+                msg = (
+                    "at least one object in the '%s' file lists its proper "
+                    "motions. This is not allowed. The coordinates must be "
+                    "written to the file already adjusted for their proper "
+                    "motions, as this class cannot apply any correction"
+                    % self.coords_path
+                )
                 raise ValueError(msg)
 
     @property
@@ -245,8 +258,8 @@ class QPhot(list):
         """ Remove all the photometric measurements. """
         del self[:]
 
-    def run(self, annulus, dannulus, aperture, exptimek, cbox = 0):
-        """ Run IRAF's qphot on the FITS image.
+    def run(self, annulus, dannulus, aperture, exptimek, cbox=0):
+        """Run IRAF's qphot on the FITS image.
 
         This method is a wrapper, equivalent to (1) running 'qphot' on a FITS
         image and (2) using 'txdump' in order to extract some fields from the
@@ -319,16 +332,16 @@ class QPhot(list):
 
         """
 
-        self.clear() # empty object
+        self.clear()  # empty object
 
         try:
             # Temporary file to which the APPHOT text database produced by
             # qphot will be saved. Even if empty, it must be deleted before
             # calling qphot. Otherwise, an error message, stating that the
             # operation "would overwrite existing file", will be thrown.
-            output_fd, qphot_output = \
-                tempfile.mkstemp(prefix = os.path.basename(self.path),
-                                 suffix = '.qphot_output', text = True)
+            output_fd, qphot_output = tempfile.mkstemp(
+                prefix=os.path.basename(self.path), suffix=".qphot_output", text=True
+            )
             os.close(output_fd)
             os.unlink(qphot_output)
 
@@ -340,18 +353,26 @@ class QPhot(list):
             # captured and issued as a MissingFITSkeyword warning instead.
 
             # Note the two whitespaces before 'Keyword'
-            regexp = ("Warning: Image (?P<msg>{0}  Keyword: {1} "
-                      "not found)".format(self.path, exptimek))
+            regexp = "Warning: Image (?P<msg>{0}  Keyword: {1} " "not found)".format(
+                self.path, exptimek
+            )
 
             args = sys.stderr, regexp, MissingFITSKeyword
             stderr = util.StreamToWarningFilter(*args)
 
             # Run qphot on the image and save the output to our temporary file.
-            kwargs = dict(cbox = cbox, annulus = annulus, dannulus = dannulus,
-                          aperture = aperture, coords = self.coords_path,
-                          output = qphot_output, exposure = exptimek,
-                          wcsin = 'world', interactive = 'no',
-                          Stderr = stderr)
+            kwargs = dict(
+                cbox=cbox,
+                annulus=annulus,
+                dannulus=dannulus,
+                aperture=aperture,
+                coords=self.coords_path,
+                output=qphot_output,
+                exposure=exptimek,
+                wcsin="world",
+                interactive="no",
+                Stderr=stderr,
+            )
 
             apphot.qphot(self.path, **kwargs)
 
@@ -362,9 +383,9 @@ class QPhot(list):
             # the path of another temporary file to which to save them. Even
             # if empty, we need to delete the temporary file created by
             # mkstemp(), as IRAF will not overwrite it.
-            txdump_fd, txdump_output = \
-                tempfile.mkstemp(prefix = os.path.basename(self.path),
-                                 suffix ='.qphot_txdump', text = True)
+            txdump_fd, txdump_output = tempfile.mkstemp(
+                prefix=os.path.basename(self.path), suffix=".qphot_txdump", text=True
+            )
             os.close(txdump_fd)
             os.unlink(txdump_output)
 
@@ -372,13 +393,17 @@ class QPhot(list):
             # work with unicode, if we happen to come across it: PyRAF requires
             # that redirection be to a file handle or string.
 
-            txdump_fields = ['xcenter', 'ycenter', 'mag', 'sum', 'flux', 'stdev']
-            pyraf.iraf.txdump(qphot_output, fields = ','.join(txdump_fields),
-                              Stdout = str(txdump_output), expr = 'yes')
+            txdump_fields = ["xcenter", "ycenter", "mag", "sum", "flux", "stdev"]
+            pyraf.iraf.txdump(
+                qphot_output,
+                fields=",".join(txdump_fields),
+                Stdout=str(txdump_output),
+                expr="yes",
+            )
 
             # Now open the output file again and parse the output of txdump,
             # creating a QPhotResult object for each record.
-            with open(txdump_output, 'rt') as txdump_fd:
+            with open(txdump_output, "rt") as txdump_fd:
                 for line in txdump_fd:
 
                     fields = line.split()
@@ -393,7 +418,7 @@ class QPhot(list):
 
                     try:
                         xcenter_str = fields[0]
-                        xcenter     = float(xcenter_str)
+                        xcenter = float(xcenter_str)
                         msg = "%s: xcenter = %.8f" % (self.path, xcenter)
                         logging.debug(msg)
                     except ValueError, e:
@@ -405,7 +430,7 @@ class QPhot(list):
 
                     try:
                         ycenter_str = fields[1]
-                        ycenter     = float(ycenter_str)
+                        ycenter = float(ycenter_str)
                         msg = "%s: ycenter = %.8f" % (self.path, ycenter)
                         logging.debug(msg)
                     except ValueError, e:
@@ -417,11 +442,11 @@ class QPhot(list):
 
                     try:
                         mag_str = fields[2]
-                        mag     = float(mag_str)
+                        mag = float(mag_str)
                         msg = "%s: mag = %.5f" % (self.path, mag)
                         logging.debug(msg)
                     except ValueError:  # float("INDEF")
-                        assert mag_str == 'INDEF'
+                        assert mag_str == "INDEF"
                         msg = "%s: mag = None ('INDEF')" % self.path
                         logging.debug(msg)
                         mag = None
@@ -440,7 +465,7 @@ class QPhot(list):
                         msg = "%s: stdev = %.5f" % (self.path, stdev)
                         logging.debug(msg)
                     except ValueError:  # float("INDEF")
-                        assert stdev_str == 'INDEF'
+                        assert stdev_str == "INDEF"
                         msg = "%s: stdev = None ('INDEF')" % self.path
                         logging.debug(msg)
                         stdev = None
@@ -468,7 +493,7 @@ class QPhot(list):
 
 
 def get_coords_file(coordinates, year, epoch):
-    """ Return a coordinates file with the exact positions of the objects.
+    """Return a coordinates file with the exact positions of the objects.
 
     Loop over 'coordinates', an iterable of astromatic.Coordinates objects, and
     apply proper motion correction, obtaining their exact positions for a given
@@ -485,12 +510,10 @@ def get_coords_file(coordinates, year, epoch):
 
     """
 
-    kwargs = dict(prefix = '%f_' % year,
-                  suffix = '_J%d.coords' % epoch,
-                  text = True)
+    kwargs = dict(prefix="%f_" % year, suffix="_J%d.coords" % epoch, text=True)
 
     fd, path = tempfile.mkstemp(**kwargs)
-    fmt = '\t'.join(['%.10f', '%.10f\n'])
+    fmt = "\t".join(["%.10f", "%.10f\n"])
 
     for coord in coordinates:
 
@@ -501,22 +524,33 @@ def get_coords_file(coordinates, year, epoch):
         # not the other!
 
         if None in (coord.pm_ra, coord.pm_dec):
-            assert coord.pm_ra  is None
+            assert coord.pm_ra is None
             assert coord.pm_dec is None
 
         if coord.pm_ra or coord.pm_dec:
-            coord = coord.get_exact_coordinates(year, epoch = epoch)
+            coord = coord.get_exact_coordinates(year, epoch=epoch)
 
         os.write(fd, fmt % coord[:2])
 
     os.close(fd)
     return path
 
-def run(img, coordinates, epoch,
-        aperture, annulus, dannulus, maximum,
-        datek, timek, exptimek, uncimgk,
-        cbox = 0):
-    """ Do photometry on a FITS image.
+
+def run(
+    img,
+    coordinates,
+    epoch,
+    aperture,
+    annulus,
+    dannulus,
+    maximum,
+    datek,
+    timek,
+    exptimek,
+    uncimgk,
+    cbox=0,
+):
+    """Do photometry on a FITS image.
 
     This convenience function does photometry on a FITSImage object, applying
     proper-motion correction to a series of astronomical objects and measuring
@@ -575,9 +609,7 @@ def run(img, coordinates, epoch,
 
     """
 
-    kwargs = dict(date_keyword = datek,
-                  time_keyword = timek,
-                  exp_keyword = exptimek)
+    kwargs = dict(date_keyword=datek, time_keyword=timek, exp_keyword=exptimek)
 
     # The date of observation is only actually needed when we need to apply
     # proper motion corrections. Therefore, don't call FITSImage.year() unless
@@ -600,10 +632,13 @@ def run(img, coordinates, epoch,
                 regexp = "keyword '(?P<keyword>.*?)' not found"
                 match = re.search(regexp, str(e))
                 assert match is not None
-                msg = ("{0}: keyword '{1}' not found. It is needed in order "
-                       "to be able to apply proper-motion correction, as one "
-                       "or more astronomical objects have known proper motions"
-                       .format(img.path, match.group('keyword')))
+                msg = (
+                    "{0}: keyword '{1}' not found. It is needed in order "
+                    "to be able to apply proper-motion correction, as one "
+                    "or more astronomical objects have known proper motions".format(
+                        img.path, match.group("keyword")
+                    )
+                )
                 raise KeyError(msg)
 
         else:
@@ -639,8 +674,7 @@ def run(img, coordinates, epoch,
         # Temporary file to which the saturation mask is saved
         basename = os.path.basename(orig_img_path)
         mkstemp_prefix = "%s_satur_mask_%d_ADUS_" % (basename, maximum)
-        kwargs = dict(prefix = mkstemp_prefix,
-                      suffix = '.fits', text = True)
+        kwargs = dict(prefix=mkstemp_prefix, suffix=".fits", text=True)
         mask_fd, satur_mask_path = tempfile.mkstemp(**kwargs)
         os.close(mask_fd)
 
@@ -656,9 +690,13 @@ def run(img, coordinates, epoch,
         logging.debug("%s: imexpr = '%s'" % (img.path, expr))
         logging.debug("%s: a = %s" % (img.path, orig_img_path))
         logging.info("%s: Running IRAF's imexpr..." % img.path)
-        pyraf.iraf.images.imexpr(expr, a = orig_img_path,
-                                 output = satur_mask_path, verbose = 'yes',
-                                 Stdout = util.LoggerWriter('debug'))
+        pyraf.iraf.images.imexpr(
+            expr,
+            a=orig_img_path,
+            output=satur_mask_path,
+            verbose="yes",
+            Stdout=util.LoggerWriter("debug"),
+        )
 
         assert os.path.exists(satur_mask_path)
 
@@ -681,9 +719,7 @@ def run(img, coordinates, epoch,
         if cbox:
 
             root, _ = os.path.splitext(os.path.basename(img.path))
-            kwargs = dict(prefix = root + '_',
-                          suffix = '_satur.coords',
-                          text = True)
+            kwargs = dict(prefix=root + "_", suffix="_satur.coords", text=True)
 
             os.unlink(coords_path)
             fd, coords_path = tempfile.mkstemp(**kwargs)
@@ -718,7 +754,7 @@ def run(img, coordinates, epoch,
                     assert object_phot.y == object_mask.y
 
             if object_mask.flux > 0:
-                object_phot = object_phot._replace(mag = float('infinity'))
+                object_phot = object_phot._replace(mag=float("infinity"))
     finally:
 
         # Remove saturation mask. The try-except is necessary because an

@@ -1,5 +1,5 @@
 #! /usr/bin/env python2
-#encoding:UTF-8
+# encoding:UTF-8
 
 # Copyright (c) 2012 Victor Terron. All rights reserved.
 # Institute of Astrophysics of Andalusia, IAA-CSIC
@@ -60,7 +60,7 @@ to work it is also necessary to download the index files.
 
 """
 
-ASTROMETRY_COMMAND = 'solve-field'
+ASTROMETRY_COMMAND = "solve-field"
 ASTROMETRY_REQUIRED_VERSION = (0, 68)
 
 # The Queue is global -- this works, but note that we could have
@@ -68,15 +68,19 @@ ASTROMETRY_REQUIRED_VERSION = (0, 68)
 # See http://stackoverflow.com/a/3217427/184363
 queue = util.Queue()
 
+
 class AstrometryNetNotInstalled(StandardError):
     """ Raised if Astrometry.net is not installed on the system """
+
     pass
+
 
 class AstrometryNetError(subprocess.CalledProcessError):
     """ Raised if the execution of Astrometry.net fails """
 
     def __str__(self):
         return "Command: " + " ".join(self.cmd)
+
 
 class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
     """ Raised if Astrometry.net could not solve the field """
@@ -86,6 +90,7 @@ class AstrometryNetUnsolvedField(subprocess.CalledProcessError):
 
     def __str__(self):
         return "%s: could not solve field" % self.path
+
 
 class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
     """ Raised if the Astrometry.net timeout was reached """
@@ -101,6 +106,7 @@ class AstrometryNetTimeoutExpired(AstrometryNetUnsolvedField):
 
 class AstrometryNetUpgradeRequired(Exception):
     """ Raised if a too-old version of Astrometry.net is installed """
+
     pass
 
 
@@ -114,17 +120,18 @@ def astrometry_net_version():
     if not util.which(ASTROMETRY_COMMAND):
         raise AstrometryNetNotInstalled(emsg.format(ASTROMETRY_COMMAND))
 
-    args = [ASTROMETRY_COMMAND, '--help']
+    args = [ASTROMETRY_COMMAND, "--help"]
     output = subprocess.check_output(args)
     version = re.search(PATTERN, output, re.MULTILINE).group(1)
 
     # From, for example, '0.78' to (0, 78)
-    return tuple(int(x) for x in version.split('.'))
+    return tuple(int(x) for x in version.split("."))
 
 
-def astrometry_net(path, ra = None, dec = None, radius = 1,
-                   verbosity = 0, timeout = None, options = None):
-    """ Do astrometry on a FITS image using Astrometry.net.
+def astrometry_net(
+    path, ra=None, dec=None, radius=1, verbosity=0, timeout=None, options=None
+):
+    """Do astrometry on a FITS image using Astrometry.net.
 
     Use a local build of the amazing Astrometry.net software [1] in order to
     compute the astrometric solution of a FITS image. This software has many,
@@ -190,36 +197,41 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
 
     if astrometry_net_version() < ASTROMETRY_REQUIRED_VERSION:
         # From, for example, (0, 68) to '0.68'
-        version_str = '.'.join(str(x) for x in ASTROMETRY_REQUIRED_VERSION)
+        version_str = ".".join(str(x) for x in ASTROMETRY_REQUIRED_VERSION)
         msg = "Astrometry.net version {} or newer is needed".format(version_str)
         raise AstrometryNetUpgradeRequired(msg)
 
     basename = os.path.basename(path)
     root, ext = os.path.splitext(basename)
     # Place all output files in this directory
-    kwargs = dict(prefix = root + '_', suffix = '_astrometry.net')
+    kwargs = dict(prefix=root + "_", suffix="_astrometry.net")
     output_dir = tempfile.mkdtemp(**kwargs)
 
     # Path to the temporary FITS file containing the WCS header
-    kwargs = dict(prefix = '%s_astrometry_' % root, suffix = ext)
+    kwargs = dict(prefix="%s_astrometry_" % root, suffix=ext)
     with tempfile.NamedTemporaryFile(**kwargs) as fd:
         output_path = fd.name
 
     # If the field solved, Astrometry.net creates a <base>.solved output file
     # that contains (binary) 1. That is: if this file does not exist, we know
     # that an astrometric solution could not be found.
-    solved_file = os.path.join(output_dir, root + '.solved')
+    solved_file = os.path.join(output_dir, root + ".solved")
 
     # --dir: place all output files in the specified directory.
     # --no-plots: don't create any plots of the results.
     # --new-fits: the new FITS file containing the WCS header.
     # --overwrite: overwrite output files if they already exist.
 
-    args = [ASTROMETRY_COMMAND, path,
-            '--dir', output_dir,
-            '--no-plots',
-            '--new-fits', output_path,
-            '--overwrite']
+    args = [
+        ASTROMETRY_COMMAND,
+        path,
+        "--dir",
+        output_dir,
+        "--no-plots",
+        "--new-fits",
+        output_path,
+        "--overwrite",
+    ]
 
     # -3 / --ra <degrees or hh:mm:ss>: only search in indexes within 'radius'
     # of the field center given by 'ra' and 'dec'
@@ -229,13 +241,13 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     # field center given by ('ra', 'dec')
 
     if ra is not None:
-        args += ['--ra', '%f' % ra]
+        args += ["--ra", "%f" % ra]
 
     if dec is not None:
-        args += ['--dec', '%f' % dec]
+        args += ["--dec", "%f" % dec]
 
     if radius is not None:
-        args += ['--radius', '%f' % radius]
+        args += ["--radius", "%f" % radius]
 
     # -v / --verbose: be more chatty -- repeat for even more verboseness. A
     # value of 'verbosity' equal to zero means that both the standard output
@@ -243,7 +255,7 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
     # that, we send 'verbosity' minus one -v flags to Astrometry.net.
 
     if verbosity > 1:
-        args.append('-%s' % ('v' * (verbosity - 1)))
+        args.append("-%s" % ("v" * (verbosity - 1)))
 
     # If additional options for solve-field have been specified, append them to
     # the argument list. All options are assumed to take an argument, except if
@@ -260,17 +272,17 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
                 args += [opt, str(value)]
 
     # Needed when 'verbosity' is 0
-    null_fd = open(os.devnull, 'w')
+    null_fd = open(os.devnull, "w")
 
     try:
-        kwargs = dict(timeout = timeout)
+        kwargs = dict(timeout=timeout)
         if not verbosity:
-            kwargs['stdout'] = kwargs['stderr'] = null_fd
+            kwargs["stdout"] = kwargs["stderr"] = null_fd
 
         subprocess.check_call(args, **kwargs)
 
         # .solved file must exist and contain a binary one
-        with open(solved_file, 'rb') as fd:
+        with open(solved_file, "rb") as fd:
             if ord(fd.read()) != 1:
                 raise AstrometryNetUnsolvedField(path)
 
@@ -287,9 +299,10 @@ def astrometry_net(path, ra = None, dec = None, radius = 1,
         null_fd.close()
         util.clean_tmp_files(output_dir)
 
+
 @util.print_exception_traceback
 def parallel_astrometry(args):
-    """ Function argument of map_async() to do astrometry in parallel.
+    """Function argument of map_async() to do astrometry in parallel.
 
     This will be the first argument passed to multiprocessing.Pool.map_async(),
     which chops the iterable into a number of chunks that are submitted to the
@@ -332,7 +345,7 @@ def parallel_astrometry(args):
     else:
 
         try:
-            ra  = img.ra (options.rak)
+            ra = img.ra(options.rak)
             dec = img.dec(options.deck)
         except (ValueError, KeyError), e:
             msg = "%s: %s" % (img.path, str(e))
@@ -343,12 +356,14 @@ def parallel_astrometry(args):
             msg = "%s: using α = δ = None"
             logging.debug(msg % img.path)
 
-    kwargs = dict(ra = ra,
-                  dec = dec,
-                  radius = options.radius,
-                  verbosity = options.verbose,
-                  timeout = options.timeout,
-                  options = options.solve_field_options)
+    kwargs = dict(
+        ra=ra,
+        dec=dec,
+        radius=options.radius,
+        verbosity=options.verbose,
+        timeout=options.timeout,
+        options=options.solve_field_options,
+    )
 
     try:
         output_path = astrometry_net(img.path, **kwargs)
@@ -395,75 +410,119 @@ def parallel_astrometry(args):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
 
-parser.add_option('--radius', action = 'store', type = 'float',
-                  dest = 'radius', default = 1,
-                  help = "only search in indexes within this number of "
-                  "degrees of the field center, whose coordinates are read "
-                  "from the FITS header of each image (see --rak and --deck). "
-                  "In case these keywords cannot be read or contain invalid "
-                  "values, the image is solved blindly, as if the --blind "
-                  "option had been used. [default: %default]")
+parser.add_option(
+    "--radius",
+    action="store",
+    type="float",
+    dest="radius",
+    default=1,
+    help="only search in indexes within this number of "
+    "degrees of the field center, whose coordinates are read "
+    "from the FITS header of each image (see --rak and --deck). "
+    "In case these keywords cannot be read or contain invalid "
+    "values, the image is solved blindly, as if the --blind "
+    "option had been used. [default: %default]",
+)
 
-parser.add_option('--blind', action = 'store_true', dest = 'blind',
-                  help = "ignore --radius, --rak and --deck and solve the "
-                  "images blindly. A necessity in case the FITS headers of "
-                  "your data have no information about the telescope "
-                  "pointing, or when they do but it is deemed to be "
-                  "entirely unreliable")
+parser.add_option(
+    "--blind",
+    action="store_true",
+    dest="blind",
+    help="ignore --radius, --rak and --deck and solve the "
+    "images blindly. A necessity in case the FITS headers of "
+    "your data have no information about the telescope "
+    "pointing, or when they do but it is deemed to be "
+    "entirely unreliable",
+)
 
-parser.add_option('--timeout', action = 'store', type = 'int',
-                  dest = 'timeout', default = 600,
-                  help = "the maximum number of seconds that may be spent "
-                  "attempting to find the astrometric solution of a FITS "
-                  "image. If this time limit is exceeded, we give up and no "
-                  "solution for the image is saved to the output directory. "
-                  "Note, however, that Astrometry.net's backend configuration "
-                  "file (astrometry.cfg) puts a limit on the CPU time that is "
-                  "spent on an image: this option can reduce this value but "
-                  "not increase it. [default: %default]")
+parser.add_option(
+    "--timeout",
+    action="store",
+    type="int",
+    dest="timeout",
+    default=600,
+    help="the maximum number of seconds that may be spent "
+    "attempting to find the astrometric solution of a FITS "
+    "image. If this time limit is exceeded, we give up and no "
+    "solution for the image is saved to the output directory. "
+    "Note, however, that Astrometry.net's backend configuration "
+    "file (astrometry.cfg) puts a limit on the CPU time that is "
+    "spent on an image: this option can reduce this value but "
+    "not increase it. [default: %default]",
+)
 
-parser.add_option('--suffix', action = 'store', type = 'str',
-                  dest = 'suffix', default = 'a',
-                  help = "string to be appended to output images, before "
-                  "the file extension, of course [default: %default]")
+parser.add_option(
+    "--suffix",
+    action="store",
+    type="str",
+    dest="suffix",
+    default="a",
+    help="string to be appended to output images, before "
+    "the file extension, of course [default: %default]",
+)
 
-parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = defaults.ncores,
-                  help = defaults.desc['ncores'])
+parser.add_option(
+    "--cores",
+    action="store",
+    type="int",
+    dest="ncores",
+    default=defaults.ncores,
+    help=defaults.desc["ncores"],
+)
 
-parser.add_option('-o', action = 'callback', type = 'str',
-                  dest = 'solve_field_options', default = {},
-                  callback = customparser.additional_options_callback,
-                  help = "additional options to pass to Astrometry.net's "
-                  "solve-field. If the option and the corresponding value, "
-                  "if any, contain any whitespace they must be enclosed in "
-                  "quotes. For example: -o=--invert, -o '--downsample 2', "
-                  "-o --sigma=3. This option may be used multiple times.")
+parser.add_option(
+    "-o",
+    action="callback",
+    type="str",
+    dest="solve_field_options",
+    default={},
+    callback=customparser.additional_options_callback,
+    help="additional options to pass to Astrometry.net's "
+    "solve-field. If the option and the corresponding value, "
+    "if any, contain any whitespace they must be enclosed in "
+    "quotes. For example: -o=--invert, -o '--downsample 2', "
+    "-o --sigma=3. This option may be used multiple times.",
+)
 
-parser.add_option('-v', '--verbose', action = 'count',
-                  dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'] + " By default, the "
-                  "standard output and error of Astrometry.net are ignored. "
-                  "The first -v flag is necessary to be able to see them; the "
-                  "rest are passed down to Astrometry.net, causing it to be "
-                  "increasingly chattier as more -v flags are given.")
+parser.add_option(
+    "-v",
+    "--verbose",
+    action="count",
+    dest="verbose",
+    default=defaults.verbosity,
+    help=defaults.desc["verbosity"] + " By default, the "
+    "standard output and error of Astrometry.net are ignored. "
+    "The first -v flag is necessary to be able to see them; the "
+    "rest are passed down to Astrometry.net, causing it to be "
+    "increasingly chattier as more -v flags are given.",
+)
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
+key_group = optparse.OptionGroup(parser, "FITS Keywords", keywords.group_description)
 
-key_group.add_option('--rak', action = 'store', type = 'str',
-                     dest = 'rak', default = keywords.rak,
-                     help = keywords.desc['rak'])
+key_group.add_option(
+    "--rak",
+    action="store",
+    type="str",
+    dest="rak",
+    default=keywords.rak,
+    help=keywords.desc["rak"],
+)
 
-key_group.add_option('--deck', action = 'store', type = 'str',
-                     dest = 'deck', default = keywords.deck,
-                     help = keywords.desc['deck'])
+key_group.add_option(
+    "--deck",
+    action="store",
+    type="str",
+    dest="deck",
+    default=keywords.deck,
+    help=keywords.desc["deck"],
+)
 
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -480,8 +539,8 @@ def main(arguments = None):
     """
 
     if arguments is None:
-        arguments = sys.argv[1:] # ignore argv[0], the script name
-    (options, args) = parser.parse_args(args = arguments)
+        arguments = sys.argv[1:]  # ignore argv[0], the script name
+    (options, args) = parser.parse_args(args=arguments)
 
     # Adjust the logger level to WARNING, INFO or DEBUG, depending on the
     # given number of -v options (none, one or two or more, respectively)
@@ -490,14 +549,14 @@ def main(arguments = None):
         logging_level = logging.INFO
     elif options.verbose >= 2:
         logging_level = logging.DEBUG
-    logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
+    logging.basicConfig(format=style.LOG_FORMAT, level=logging_level)
 
     # Print the help and abort the execution if there are not two positional
     # arguments left after parsing the options, as the user must specify at
     # least one (only one?) input FITS file and the output directory
     if len(args) < 2:
         parser.print_help()
-        return 2     # 2 is generally used for command line syntax errors
+        return 2  # 2 is generally used for command line syntax errors
     else:
         input_paths = args[:-1]
         output_dir = args[-1]
@@ -528,8 +587,8 @@ def main(arguments = None):
         if logging_level < logging.WARNING:
             print
 
-    result.get() # reraise exceptions of the remote call, if any
-    util.show_progress(100) # in case the queue was ready too soon
+    result.get()  # reraise exceptions of the remote call, if any
+    util.show_progress(100)  # in case the queue was ready too soon
     print
 
     # Results in the process shared queue were only necessary to accurately
@@ -538,6 +597,7 @@ def main(arguments = None):
 
     print "%sYou're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

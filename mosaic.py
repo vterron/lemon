@@ -71,59 +71,88 @@ import util
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_IMG"
 
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output image if it already exists")
+parser.add_option(
+    "--overwrite",
+    action="store_true",
+    dest="overwrite",
+    help="overwrite output image if it already exists",
+)
 
-parser.add_option('--background-match', action = 'store_true',
-                  dest = 'background_match',
-                  help = "include a background-matching step, thus removing "
-                  "any discrepancies in brightness or background. Note that, "
-                  "although an amazing feature of Montage, this makes the "
-                  "assembling of the images take remarkably longer.")
+parser.add_option(
+    "--background-match",
+    action="store_true",
+    dest="background_match",
+    help="include a background-matching step, thus removing "
+    "any discrepancies in brightness or background. Note that, "
+    "although an amazing feature of Montage, this makes the "
+    "assembling of the images take remarkably longer.",
+)
 
-parser.add_option('--no-reprojection', action = 'store_false',
-                  dest = 'reproject', default = True,
-                  help = "do not reproject the mosaic so that North is up.")
+parser.add_option(
+    "--no-reprojection",
+    action="store_false",
+    dest="reproject",
+    default=True,
+    help="do not reproject the mosaic so that North is up.",
+)
 
-parser.add_option('--combine', action = 'store',
-                  dest = 'combine', default = 'mean',
-                  help = "how FITS images are combined - this should be one "
-                  "of 'mean', 'median', or 'count'. For more details on how "
-                  "Montage performs co-addition, see [4] [default: %default]")
+parser.add_option(
+    "--combine",
+    action="store",
+    dest="combine",
+    default="mean",
+    help="how FITS images are combined - this should be one "
+    "of 'mean', 'median', or 'count'. For more details on how "
+    "Montage performs co-addition, see [4] [default: %default]",
+)
 
-parser.add_option('--filter', action = 'store', type = 'passband',
-                  dest = 'filter', default = None,
-                  help = "do not combine all the FITS files given as input, "
-                  "but only those taken in this photometric filter. " + \
-                  defaults.desc['filter'])
+parser.add_option(
+    "--filter",
+    action="store",
+    type="passband",
+    dest="filter",
+    default=None,
+    help="do not combine all the FITS files given as input, "
+    "but only those taken in this photometric filter. " + defaults.desc["filter"],
+)
 
-parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = multiprocessing.cpu_count(),
-                  help = "the number of MPI (Message Passing Interface) "
-                  "processes to use with the Montage commands that support "
-                  "parallelization. Note that this requires that the MPI "
-                  "versions of the Montage commands be installed, which is "
-                  "not the case by default. This option defaults to the "
-                  "number of CPUs in the system, which are automatically "
-                  "detected [default: %default]")
+parser.add_option(
+    "--cores",
+    action="store",
+    type="int",
+    dest="ncores",
+    default=multiprocessing.cpu_count(),
+    help="the number of MPI (Message Passing Interface) "
+    "processes to use with the Montage commands that support "
+    "parallelization. Note that this requires that the MPI "
+    "versions of the Montage commands be installed, which is "
+    "not the case by default. This option defaults to the "
+    "number of CPUs in the system, which are automatically "
+    "detected [default: %default]",
+)
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
+key_group = optparse.OptionGroup(parser, "FITS Keywords", keywords.group_description)
 
-key_group.add_option('--filterk', action = 'store', type = 'str',
-                     dest = 'filterk', default = keywords.filterk,
-                     help = "keyword for the name of the filter of the "
-                     "observation. This keyword is not necessary (and, "
-                     "therefore, its value irrelevant) if the --filter "
-                     "option is not used, since it is only in that "
-                     "scenario that we have to read the filter from "
-                     "the header of each FITS image [default: %default]")
+key_group.add_option(
+    "--filterk",
+    action="store",
+    type="str",
+    dest="filterk",
+    default=keywords.filterk,
+    help="keyword for the name of the filter of the "
+    "observation. This keyword is not necessary (and, "
+    "therefore, its value irrelevant) if the --filter "
+    "option is not used, since it is only in that "
+    "scenario that we have to read the filter from "
+    "the header of each FITS image [default: %default]",
+)
 
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -140,15 +169,15 @@ def main(arguments = None):
     """
 
     if arguments is None:
-        arguments = sys.argv[1:] # ignore argv[0], the script name
-    (options, args) = parser.parse_args(args = arguments)
+        arguments = sys.argv[1:]  # ignore argv[0], the script name
+    (options, args) = parser.parse_args(args=arguments)
 
     # Print the help and abort the execution if there are fewer than three
     # positional arguments left, as the user must specify at least two FITS
     # images and the output mosaic into which they are assembled.
     if len(args) < 3:
         parser.print_help()
-        return 2 # used for command line syntax errors
+        return 2  # used for command line syntax errors
     else:
         assert len(args) >= 3
         input_paths = set(args[:-1])
@@ -177,7 +206,8 @@ def main(arguments = None):
             "{0}Warning: --background-match is incompatible with --cores > 1.",
             "{0}Setting the --cores option to a value of one.",
             "{0}This is a workaround for a known bug in montage-wrapper:",
-            "{0}https://github.com/astropy/montage-wrapper/issues/18"):
+            "{0}https://github.com/astropy/montage-wrapper/issues/18",
+        ):
             print msg.format(style.prefix)
         print
 
@@ -213,7 +243,7 @@ def main(arguments = None):
 
         percentage = (index + 1) / len(input_paths) * 100
         util.show_progress(percentage)
-    print # progress bar doesn't include newline
+    print  # progress bar doesn't include newline
 
     # The --filter option allows the user to specify which FITS files, among
     # all those received as input, must be combined: only those images taken
@@ -229,7 +259,7 @@ def main(arguments = None):
             print msg % (style.prefix, pfilter, len(images), percentage)
 
         msg = "%sIgnoring images not taken in the '%s' photometric filter..."
-        print msg % (style.prefix, options.filter) ,
+        print msg % (style.prefix, options.filter),
         sys.stdout.flush()
 
         discarded = 0
@@ -246,7 +276,7 @@ def main(arguments = None):
             return 1
 
         else:
-            print 'done.'
+            print "done."
             msg = "%s%d images taken in the '%s' filter, %d were discarded."
             print msg % (style.prefix, len(files), options.filter, discarded)
 
@@ -272,7 +302,7 @@ def main(arguments = None):
 
     pid = os.getpid()
     suffix = "_LEMON_%d_mosaic" % pid
-    kwargs = dict(suffix = suffix + '_input')
+    kwargs = dict(suffix=suffix + "_input")
     input_dir = tempfile.mkdtemp(**kwargs)
     atexit.register(util.clean_tmp_files, input_dir)
 
@@ -288,39 +318,41 @@ def main(arguments = None):
     # Delete it before calling mosaic(), as otherwise it will raise IOError
     # ("Output directory already exists").
 
-    kwargs = dict(suffix = suffix + '_output')
+    kwargs = dict(suffix=suffix + "_output")
     output_dir = tempfile.mkdtemp(**kwargs)
     atexit.register(util.clean_tmp_files, output_dir)
     os.rmdir(output_dir)
 
-    kwargs = dict(background_match = options.background_match,
-                  combine = options.combine,
-                  bitpix=-64,
-                  )
+    kwargs = dict(
+        background_match=options.background_match,
+        combine=options.combine,
+        bitpix=-64,
+    )
 
     if options.ncores > 1:
-        kwargs['mpi'] = True              # use MPI whenever possible
-        kwargs['n_proc'] = options.ncores # number of MPI processes
+        kwargs["mpi"] = True  # use MPI whenever possible
+        kwargs["n_proc"] = options.ncores  # number of MPI processes
     montage.mosaic(input_dir, output_dir, **kwargs)
 
     # montage.mosaic() writes several files to the output directory, but we are
     # only interested in one of them: 'mosaic.fits', the mosaic FITS image.
 
-    MOSAIC_OUTPUT = 'mosaic.fits'
+    MOSAIC_OUTPUT = "mosaic.fits"
     src = os.path.join(output_dir, MOSAIC_OUTPUT)
 
     if options.reproject:
-        print "%sReproject mosaic to point North..." % style.prefix ,
+        print "%sReproject mosaic to point North..." % style.prefix,
         sys.stdout.flush()
-        kwargs = dict(north_aligned = True, silent_cleanup = True)
+        kwargs = dict(north_aligned=True, silent_cleanup=True)
         montage.reproject(src, output_path, **kwargs)
-        print 'done.'
+        print "done."
     else:
         # No reprojection, move mosaic to the output path
         shutil.move(src, output_path)
 
     print "%sYou're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

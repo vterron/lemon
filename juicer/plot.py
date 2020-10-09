@@ -27,8 +27,9 @@ import numpy
 # LEMON modules
 import snr
 
-def split_by_diff(iterable, delta = 3):
-    """ Split a sequence by the difference between consecutive elements.
+
+def split_by_diff(iterable, delta=3):
+    """Split a sequence by the difference between consecutive elements.
 
     The method returns an interator over the result of splitting the input
     sequence, stopping each sub-sequence at the element at which its difference
@@ -47,14 +48,16 @@ def split_by_diff(iterable, delta = 3):
     sublists = []
     iterable = list(iterable)  # work on a copy
     for index in reversed(sublist_indexes):
-        sublists.append(iterable[index + 1:])
-        del iterable[index + 1:]
+        sublists.append(iterable[index + 1 :])
+        del iterable[index + 1 :]
     sublists.append(iterable)
     return reversed(sublists)
 
-def curve_plot(figure, curve, marker = 'o', color = '',
-               airmasses = None, delta = 3600 * 3, julian = False):
-    """ Plot the light curve as a subplot of the matplotlib Figure.
+
+def curve_plot(
+    figure, curve, marker="o", color="", airmasses=None, delta=3600 * 3, julian=False
+):
+    """Plot the light curve as a subplot of the matplotlib Figure.
 
     The method removes from 'figure' all the existing axes and adds a new one,
     plotting the differential magnitudes as a function of time, and including
@@ -98,7 +101,7 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     # By default, convert the Unix timestamps to datetime objects, but use
     # Julian days in case the 'julian' keyword argument evaluates to True.
     if julian:
-        dates = astropy.time.Time(unix_times, format = 'unix').jd
+        dates = astropy.time.Time(unix_times, format="unix").jd
     else:
         dates = [datetime.datetime.utcfromtimestamp(x) for x in unix_times]
 
@@ -112,9 +115,15 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         positive_errors.append(max_error)
 
     ax1 = figure.add_subplot(111)
-    ax1.errorbar(dates, magnitudes, color = color, marker = marker,
-                 fmt = 's', yerr = (negative_errors, positive_errors))
-    ax1.set_ylabel(r"$\Delta$ magnitude") # mathtext
+    ax1.errorbar(
+        dates,
+        magnitudes,
+        color=color,
+        marker=marker,
+        fmt="s",
+        yerr=(negative_errors, positive_errors),
+    )
+    ax1.set_ylabel(r"$\Delta$ magnitude")  # mathtext
     ax1.grid(True)
 
     # Use 5% of the height of the plot as the upper and bottom margin of the
@@ -128,14 +137,14 @@ def curve_plot(figure, curve, marker = 'o', color = '',
 
     # We also want a similar margin on the x-axis; the dates of the
     # observations should not touch the border of the plot either.
-    elapsed_seconds = (unix_times[-1] - unix_times[0])
+    elapsed_seconds = unix_times[-1] - unix_times[0]
     margin_seconds = elapsed_seconds * 0.05
 
     if julian:
-        kwargs = dict(format = 'sec')
+        kwargs = dict(format="sec")
         margin_delta = astropy.time.TimeDelta(margin_seconds, **kwargs).jd
     else:
-        margin_delta = datetime.timedelta(seconds = margin_seconds)
+        margin_delta = datetime.timedelta(seconds=margin_seconds)
 
     ax1.set_xlim(dates[0] - margin_delta, dates[-1] + margin_delta)
 
@@ -152,8 +161,8 @@ def curve_plot(figure, curve, marker = 'o', color = '',
     # matplotlib version 1.0.0. This only applies, of course, when we use
     # datetime objects.
 
-    if not julian and matplotlib.__version__ >= '1.0.0':
-        xticks_locator = matplotlib.dates.AutoDateLocator(maxticks = 8)
+    if not julian and matplotlib.__version__ >= "1.0.0":
+        xticks_locator = matplotlib.dates.AutoDateLocator(maxticks=8)
         xticks_formatter = matplotlib.dates.AutoDateFormatter(xticks_locator)
         ax1.xaxis.set_major_locator(xticks_locator)
         ax1.xaxis.set_major_formatter(xticks_formatter)
@@ -164,26 +173,25 @@ def curve_plot(figure, curve, marker = 'o', color = '',
         ax2 = ax1.twinx()
         ax2.fmt_xdata = xdata_formatter
 
-        if not julian and matplotlib.__version__ >= '1.0.0':
+        if not julian and matplotlib.__version__ >= "1.0.0":
             ax2.xaxis.set_major_locator(xticks_locator)
             ax2.xaxis.set_major_formatter(xticks_formatter)
 
-        ax2.set_ylabel('Airmass', rotation = 270)
-        ax2.yaxis.labelpad = 17 # padding between axis and label
-        periods = split_by_diff(unix_times, delta = delta)
+        ax2.set_ylabel("Airmass", rotation=270)
+        ax2.yaxis.labelpad = 17  # padding between axis and label
+        periods = split_by_diff(unix_times, delta=delta)
         for period_unix_times in periods:
 
             if julian:
                 utimes = period_unix_times
-                kwargs = dict(format = 'unix')
+                kwargs = dict(format="unix")
                 period_dates = astropy.time.Time(utimes, **kwargs).jd
             else:
                 func = datetime.datetime.utcfromtimestamp
                 period_dates = [func(x) for x in period_unix_times]
 
             period_airmasses = [airmasses[x] for x in period_unix_times]
-            ax2.plot(period_dates, period_airmasses,
-                     color = color, linestyle = '--')
+            ax2.plot(period_dates, period_airmasses, color=color, linestyle="--")
 
         # Let the airmasses have a little margin too. We cannot find the
         # maximum and minimum values directly among the keys of the dictionary

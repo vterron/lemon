@@ -55,8 +55,9 @@ import fitsimage
 import keywords
 import style
 
+
 class FITSeeingImage(fitsimage.FITSImage):
-    """ High-level interface to the SExtractor catalog of each FITS image.
+    """High-level interface to the SExtractor catalog of each FITS image.
 
     As running SExtractor on an image is a CPU-expensive operation, in the
     order of seconds, this class uses the local filesystem as a cache, so that
@@ -68,8 +69,8 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     """
 
-    def __init__(self, path, maximum, margin, coaddk = keywords.coaddk):
-        """ Instantiation method for the FITSeeingImage class.
+    def __init__(self, path, maximum, margin, coaddk=keywords.coaddk):
+        """Instantiation method for the FITSeeingImage class.
 
         The path to the SExtractor catalog is read from the FITS header: if the
         keyword is not found, or if it is present but refers to a non-existent
@@ -99,9 +100,9 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         # Compute the MD5 hash of the SExtractor configuration files and this
         # saturation level, which overrides the definition of SATUR_LEVEL.
-        satur_level = self.saturation(maximum, coaddk = coaddk)
-        options = dict(SATUR_LEVEL = str(satur_level))
-        sex_md5sum = astromatic.sextractor_md5sum(options = options)
+        satur_level = self.saturation(maximum, coaddk=coaddk)
+        options = dict(SATUR_LEVEL=str(satur_level))
+        sex_md5sum = astromatic.sextractor_md5sum(options=options)
         msg = "%s: SExtractor MD5 hash: %s" % (self.path, sex_md5sum)
         logging.debug(msg)
 
@@ -153,17 +154,19 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         except (KeyError, IOError, ValueError):
 
-            msg = ("%s: could not reuse an existing, on-disk cached catalog; "
-                   "SExtractor must be run") % self.path
+            msg = (
+                "%s: could not reuse an existing, on-disk cached catalog; "
+                "SExtractor must be run"
+            ) % self.path
             logging.debug(msg)
 
-             # Redirect standard and error outputs to null device
-            with open(os.devnull, 'wt') as fd:
+            # Redirect standard and error outputs to null device
+            with open(os.devnull, "wt") as fd:
                 logging.info("%s: running SExtractor" % self.path)
 
-                self.catalog_path = \
-                    astromatic.sextractor(self.path, options = options,
-                                          stdout = fd, stderr = fd)
+                self.catalog_path = astromatic.sextractor(
+                    self.path, options=options, stdout=fd, stderr=fd
+                )
 
                 logging.debug("%s: SExtractor OK" % self.path)
 
@@ -180,11 +183,10 @@ class FITSeeingImage(fitsimage.FITSImage):
                 except (IOError, ValueError):
                     pass
 
-
     @property
     @util.memoize
     def catalog(self):
-        """ Return the SExtraxtor catalog of the FITS image.
+        """Return the SExtraxtor catalog of the FITS image.
 
         The method returns the SExtractor catalog of the FITS image (a
         astromatic.Catalog instance), excluding from it those stars that are
@@ -206,20 +208,24 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         self._ignored_sources = 0
         catalog = astromatic.Catalog(self.catalog_path)
-        logging.info("Removing from the catalog objects too close to the "
-                     "edges of %s" % self.path)
+        logging.info(
+            "Removing from the catalog objects too close to the "
+            "edges of %s" % self.path
+        )
         logging.debug("Margin width: %d pixels" % self.margin)
         logging.debug("Image size: (%d, %d)" % self.size)
 
         non_discarded = []
         for star in catalog:
             logger_msg = "Star at %.3f, %.3f " % (star.x, star.y)
-            if star.x < self.margin or \
-               star.x > (self.x_size - self.margin) or \
-               star.y < self.margin or \
-               star.y > (self.y_size - self.margin):
-                   logging.debug(logger_msg + "ignored -- too close to edges")
-                   self._ignored_sources += 1
+            if (
+                star.x < self.margin
+                or star.x > (self.x_size - self.margin)
+                or star.y < self.margin
+                or star.y > (self.y_size - self.margin)
+            ):
+                logging.debug(logger_msg + "ignored -- too close to edges")
+                self._ignored_sources += 1
             else:
                 non_discarded.append(star)
                 logging.debug(logger_msg + "OK -- inside of margins")
@@ -240,7 +246,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     @property
     def ignored(self):
-        """ Return the number of SExtractor detections ignored because they
+        """Return the number of SExtractor detections ignored because they
         were too close to the image edges"""
         try:
             return self._ignored_sources
@@ -253,18 +259,18 @@ class FITSeeingImage(fitsimage.FITSImage):
 
     @property
     def total(self):
-        """ Return the total number of detections in the SExtractor catalog,
+        """Return the total number of detections in the SExtractor catalog,
         ignored or not"""
         return len(self) + self.ignored
 
     def __getitem__(self, key):
-        """ Return the key-th star detected by SExtractor in the image --
+        """Return the key-th star detected by SExtractor in the image --
         obviously, ignored stars (too close to the edges) are not considered"""
         return self.catalog[key]
 
     @property
     def coordinates(self):
-        """ Return a list with the celestial coordinates of the stars.
+        """Return a list with the celestial coordinates of the stars.
 
         This method returns a list containing a Coordinates object for each
         astronomical source that was detected by SExtractor and not ignored
@@ -274,7 +280,7 @@ class FITSeeingImage(fitsimage.FITSImage):
         return self.catalog.get_sky_coordinates()
 
     def snr_percentile(self, per):
-        """ Return the score at the given percentile of the SNR of the stars.
+        """Return the score at the given percentile of the SNR of the stars.
 
         This methods answers the question of what is the lowest SNR among a
         given fraction of the stars with the best signal-to-noise ratio. Those
@@ -296,13 +302,15 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         snrs = [star.snr for star in self if not star.saturated]
         if not snrs:
-            raise ValueError("no stars available to compute the percentile SNR of '%s'" % self.path)
+            raise ValueError(
+                "no stars available to compute the percentile SNR of '%s'" % self.path
+            )
 
         # If empty, scoteatpercentile would raise IndexError
         return scipy.stats.scoreatpercentile(snrs, per)
 
-    def fwhm(self, per = 50, mode = 'median'):
-        """ Return the median (or mean) FWHM of the stars in the image.
+    def fwhm(self, per=50, mode="median"):
+        """Return the median (or mean) FWHM of the stars in the image.
 
         The method returns the median (or mean) of the full width at half
         maximum of the stars detected by SExtractor in the image. Those stars
@@ -338,7 +346,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         """
 
-        if mode not in ('median', 'mean'):
+        if mode not in ("median", "mean"):
             raise ValueError("'mode' must be 'median' or 'mean'")
 
         # Find the signal-to-noise ratio of the image at the 'per' percentile.
@@ -358,14 +366,14 @@ class FITSeeingImage(fitsimage.FITSImage):
             # Exception needed, NumPy would return NaN for an empty list
             raise ValueError("no stars available to compute the FWHM")
 
-        if mode == 'median':
+        if mode == "median":
             return numpy.median(fwhms)
         else:
-            assert mode == 'mean'
+            assert mode == "mean"
             return numpy.mean(fwhms)
 
-    def elongation(self, per = 50, mode = 'median'):
-        """ Return the median (or mean) elongation of the stars in the image.
+    def elongation(self, per=50, mode="median"):
+        """Return the median (or mean) elongation of the stars in the image.
 
         The method returns the median (or mean) of the elongation of the stars
         detected by SEXtractor in the image. Those stars whose ADU counts are
@@ -401,7 +409,7 @@ class FITSeeingImage(fitsimage.FITSImage):
 
         """
 
-        if mode not in ('median', 'mean'):
+        if mode not in ("median", "mean"):
             raise ValueError("'mode' must be 'median' or 'mean'")
 
         # Find the signal-to-noise ratio of the image at the 'per' percentile.
@@ -419,11 +427,12 @@ class FITSeeingImage(fitsimage.FITSImage):
             # Exception needed, NumPy would return NaN for an empty list
             raise ValueError("no stars available to compute the elongation")
 
-        if mode == 'median':
+        if mode == "median":
             return numpy.median(elongations)
         else:
-            assert mode == 'mean'
+            assert mode == "mean"
             return numpy.mean(elongations)
+
 
 # This Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
@@ -432,119 +441,200 @@ queue = util.Queue()
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_IMGS... OUTPUT_DIR"
-parser.add_option('--filename', action = 'store', type = 'str',
-                  dest = 'bseeingfn', default = 'best_seeing.fits',
-                  help = "filename with which the FITS image with the best "
-                  "full width at half-maximum (FWHM) will be saved to "
-                  "OUTPUT_DIR. If set to an empty string (''), the image "
-                  "will retain its original filename, although --suffix will "
-                  "still be appended (in other words, it is treated as all "
-                  "the other images) [default: %default]")
+parser.add_option(
+    "--filename",
+    action="store",
+    type="str",
+    dest="bseeingfn",
+    default="best_seeing.fits",
+    help="filename with which the FITS image with the best "
+    "full width at half-maximum (FWHM) will be saved to "
+    "OUTPUT_DIR. If set to an empty string (''), the image "
+    "will retain its original filename, although --suffix will "
+    "still be appended (in other words, it is treated as all "
+    "the other images) [default: %default]",
+)
 
-parser.add_option('--maximum', action = 'store', type = 'int',
-                  dest = 'maximum', default = defaults.maximum,
-                  help = defaults.desc['maximum'])
+parser.add_option(
+    "--maximum",
+    action="store",
+    type="int",
+    dest="maximum",
+    default=defaults.maximum,
+    help=defaults.desc["maximum"],
+)
 
-parser.add_option('--margin', action = 'store', type = 'int',
-                  dest = 'margin', default = defaults.margin,
-                  help = defaults.desc['margin'])
+parser.add_option(
+    "--margin",
+    action="store",
+    type="int",
+    dest="margin",
+    default=defaults.margin,
+    help=defaults.desc["margin"],
+)
 
-parser.add_option('--snr-percentile', action = 'store', type = 'float',
-                  dest = 'per', default = defaults.snr_percentile,
-                  help = defaults.desc['snr_percentile'])
+parser.add_option(
+    "--snr-percentile",
+    action="store",
+    type="float",
+    dest="per",
+    default=defaults.snr_percentile,
+    help=defaults.desc["snr_percentile"],
+)
 
-parser.add_option('--mean', action = 'store_true', dest = 'mean',
-                  help = defaults.desc['mean'])
+parser.add_option(
+    "--mean", action="store_true", dest="mean", help=defaults.desc["mean"]
+)
 
-parser.add_option('--sources-percentile', action = 'store', type = 'float',
-                  dest = 'stars_per', default = 75.0,
-                  help = "the best-seeing image is identified by finding the "
-                  "one with the best (lowest) FWHM among the non-discarded "
-                  "images whose number of detected sources is at this "
-                  "percentile. Taking directly the image with the best FWHM "
-                  "could not work as we need the image to also be one of the "
-                  "most populated [default: %default]")
+parser.add_option(
+    "--sources-percentile",
+    action="store",
+    type="float",
+    dest="stars_per",
+    default=75.0,
+    help="the best-seeing image is identified by finding the "
+    "one with the best (lowest) FWHM among the non-discarded "
+    "images whose number of detected sources is at this "
+    "percentile. Taking directly the image with the best FWHM "
+    "could not work as we need the image to also be one of the "
+    "most populated [default: %default]",
+)
 
-parser.add_option('--suffix', action = 'store', type = 'str',
-                  dest = 'suffix', default = 's',
-                  help = "string to be appended to output images, before "
-                  "the file extension, of course [default: %default]")
+parser.add_option(
+    "--suffix",
+    action="store",
+    type="str",
+    dest="suffix",
+    default="s",
+    help="string to be appended to output images, before "
+    "the file extension, of course [default: %default]",
+)
 
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite any output file if it already exists")
+parser.add_option(
+    "--overwrite",
+    action="store_true",
+    dest="overwrite",
+    help="overwrite any output file if it already exists",
+)
 
-parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = defaults.ncores,
-                  help = defaults.desc['ncores'])
+parser.add_option(
+    "--cores",
+    action="store",
+    type="int",
+    dest="ncores",
+    default=defaults.ncores,
+    help=defaults.desc["ncores"],
+)
 
-parser.add_option('-v', '--verbose', action = 'count',
-                  dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'])
+parser.add_option(
+    "-v",
+    "--verbose",
+    action="count",
+    dest="verbose",
+    default=defaults.verbosity,
+    help=defaults.desc["verbosity"],
+)
 
-fwhm_group = optparse.OptionGroup(parser, "Full width at half maximum",
-             "After SExtractor is run on the FITS files, the FWHM of each "
-             "image is computed by taking the median or mean of the stars "
-             "which center is not too close to the margins see --mean and "
-             "--margin options) and fitting a Gaussian distribution to the "
-             "values. Those images whose FWHM exceed the specified number "
-             "of standard deviations of the mean (mu + n x sigma) are "
-             "discarded")
+fwhm_group = optparse.OptionGroup(
+    parser,
+    "Full width at half maximum",
+    "After SExtractor is run on the FITS files, the FWHM of each "
+    "image is computed by taking the median or mean of the stars "
+    "which center is not too close to the margins see --mean and "
+    "--margin options) and fitting a Gaussian distribution to the "
+    "values. Those images whose FWHM exceed the specified number "
+    "of standard deviations of the mean (mu + n x sigma) are "
+    "discarded",
+)
 
-fwhm_group.add_option('--fsigma', action = 'store', type = 'float',
-                      dest = 'fwhm_sigma', default = 3.0,
-                      help = "the maximum number of standard deviations of "
-                      "the mean; gives the maximum FWHM allowed for images "
-                      "[default: %default]")
+fwhm_group.add_option(
+    "--fsigma",
+    action="store",
+    type="float",
+    dest="fwhm_sigma",
+    default=3.0,
+    help="the maximum number of standard deviations of "
+    "the mean; gives the maximum FWHM allowed for images "
+    "[default: %default]",
+)
 
-fwhm_group.add_option('--fwhm_dir', action = 'store', type = 'str',
-                      dest = 'fwhm_dir', default = 'fwhm_discarded',
-                      help = "subdirectory where automatically discarded "
-                      "images because of their FWHM will be saved in "
-                      "OUTPUT_DIR [default: %default]")
+fwhm_group.add_option(
+    "--fwhm_dir",
+    action="store",
+    type="str",
+    dest="fwhm_dir",
+    default="fwhm_discarded",
+    help="subdirectory where automatically discarded "
+    "images because of their FWHM will be saved in "
+    "OUTPUT_DIR [default: %default]",
+)
 parser.add_option_group(fwhm_group)
 
-elong_group = optparse.OptionGroup(parser, "Elongation",
-              "After images with a bad (excessively large) FWHM are "
-              "discarded, those elongated are identified and excluded by "
-              "using the same approach. The elongation of a star, given by "
-              "SExtractor, is defined as A/B, where A and B are its "
-              "semi-major and semi-minor axis lengths, respectively. More "
-              "precisely, A and B represent the maximum and minimum spatial "
-              "rms of the object profile along any direction. Elongated "
-              "images are usually caused by intermittent problems with the "
-              "telescope tracking.")
+elong_group = optparse.OptionGroup(
+    parser,
+    "Elongation",
+    "After images with a bad (excessively large) FWHM are "
+    "discarded, those elongated are identified and excluded by "
+    "using the same approach. The elongation of a star, given by "
+    "SExtractor, is defined as A/B, where A and B are its "
+    "semi-major and semi-minor axis lengths, respectively. More "
+    "precisely, A and B represent the maximum and minimum spatial "
+    "rms of the object profile along any direction. Elongated "
+    "images are usually caused by intermittent problems with the "
+    "telescope tracking.",
+)
 
-elong_group.add_option('--esigma', action = 'store', type = 'float',
-                       dest = 'elong_sigma', default = 3.0,
-                       help = "the maximum number of standard deviations of "
-                       "the mean; gives the maximum elongation allowed for "
-                       "images [default: %default]")
+elong_group.add_option(
+    "--esigma",
+    action="store",
+    type="float",
+    dest="elong_sigma",
+    default=3.0,
+    help="the maximum number of standard deviations of "
+    "the mean; gives the maximum elongation allowed for "
+    "images [default: %default]",
+)
 
-elong_group.add_option('--elong_dir', action = 'store', type = 'str',
-                       dest = 'elong_dir', default = 'elong_discarded',
-                       help = "subdirectory where automatically discarded "
-                       "images because of their elongation will be saved in "
-                       "OUTPUT_DIR [default: %default]")
+elong_group.add_option(
+    "--elong_dir",
+    action="store",
+    type="str",
+    dest="elong_dir",
+    default="elong_discarded",
+    help="subdirectory where automatically discarded "
+    "images because of their elongation will be saved in "
+    "OUTPUT_DIR [default: %default]",
+)
 parser.add_option_group(elong_group)
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
+key_group = optparse.OptionGroup(parser, "FITS Keywords", keywords.group_description)
 
-key_group.add_option('--coaddk', action = 'store', type = 'str',
-                     dest = 'coaddk', default = keywords.coaddk,
-                     help = keywords.desc['coaddk'])
+key_group.add_option(
+    "--coaddk",
+    action="store",
+    type="str",
+    dest="coaddk",
+    default=keywords.coaddk,
+    help=keywords.desc["coaddk"],
+)
 
-key_group.add_option('--fwhmk', action = 'store', type = 'str',
-                     dest = 'fwhmk', default = keywords.fwhmk,
-                     help = "keyword to which to write the estimated FWHM "
-                     "of of the image. This value is needed by subsequent "
-                     "modules of the pipeline [default: %default]")
+key_group.add_option(
+    "--fwhmk",
+    action="store",
+    type="str",
+    dest="fwhmk",
+    default=keywords.fwhmk,
+    help="keyword to which to write the estimated FWHM "
+    "of of the image. This value is needed by subsequent "
+    "modules of the pipeline [default: %default]",
+)
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
+
 @util.print_exception_traceback
 def parallel_sextractor(args):
-    """ Run SExtractor and compute the FWHM and elongation of a FITS image.
+    """Run SExtractor and compute the FWHM and elongation of a FITS image.
 
     This method is intended to be used with a multiprocessing' pool of workers.
     It receives a two-element tuple, the path of an image and the 'instance'
@@ -562,28 +652,27 @@ def parallel_sextractor(args):
     """
 
     path, options = args
-    mode = options.mean and 'mean' or 'median'
+    mode = options.mean and "mean" or "median"
 
     try:
 
         # FITSeeingImage.__init__() writes to the header of the FITS image the
         # path to the SExtractor catalog and the MD5 hash of the configuration
         # files. Work on a copy of the input image so as not to modify it.
-        kwargs = dict(prefix = '%s_' % os.path.basename(path),
-                      suffix = '.fits')
+        kwargs = dict(prefix="%s_" % os.path.basename(path), suffix=".fits")
         fd, output_path = tempfile.mkstemp(**kwargs)
         os.close(fd)
         shutil.copy2(path, output_path)
 
         # Allow FITSeeingImage.__init__() to write to the FITS header
-        util.owner_writable(output_path, True) # chmod u+w
+        util.owner_writable(output_path, True)  # chmod u+w
 
         args = output_path, options.maximum, options.margin
-        kwargs = dict(coaddk = options.coaddk)
+        kwargs = dict(coaddk=options.coaddk)
         image = FITSeeingImage(*args, **kwargs)
-        fwhm = image.fwhm(per = options.per, mode = mode)
+        fwhm = image.fwhm(per=options.per, mode=mode)
         logging.debug("%s: FWHM = %.3f" % (path, fwhm))
-        elong = image.elongation(per = options.per, mode = mode)
+        elong = image.elongation(per=options.per, mode=mode)
         logging.debug("%s: Elongation = %.3f" % (path, elong))
         nstars = len(image)
         logging.debug("%s: %d sources detected" % (path, nstars))
@@ -597,8 +686,9 @@ def parallel_sextractor(args):
     except ValueError, e:
         logging.info("%s ignored (%s)" % (path, str(e)))
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -615,8 +705,8 @@ def main(arguments = None):
     """
 
     if arguments is None:
-        arguments = sys.argv[1:] # ignore argv[0], the script name
-    (options, args) = parser.parse_args(args = arguments)
+        arguments = sys.argv[1:]  # ignore argv[0], the script name
+    (options, args) = parser.parse_args(args=arguments)
 
     # Adjust the logger level to WARNING, INFO or DEBUG, depending on the
     # given number of -v options (none, one or two or more, respectively)
@@ -625,14 +715,14 @@ def main(arguments = None):
         logging_level = logging.INFO
     elif options.verbose >= 2:
         logging_level = logging.DEBUG
-    logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
+    logging.basicConfig(format=style.LOG_FORMAT, level=logging_level)
 
     # Print the help and abort the execution if there are not two positional
     # arguments left after parsing the options, as the user must specify at
     # least one (only one?) input FITS file and the output directory
     if len(args) < 2:
         parser.print_help()
-        return 2     # 2 is generally used for command line syntax errors
+        return 2  # 2 is generally used for command line syntax errors
     else:
         input_paths = args[:-1]
         output_dir = args[-1]
@@ -644,8 +734,10 @@ def main(arguments = None):
     fwhm_dir = os.path.join(output_dir, options.fwhm_dir)
     elong_dir = os.path.join(output_dir, options.elong_dir)
 
-    print "%s%d paths given as input, on which sources will be detected." % \
-          (style.prefix, len(input_paths))
+    print "%s%d paths given as input, on which sources will be detected." % (
+        style.prefix,
+        len(input_paths),
+    )
     print "%sRunning SExtractor on all the FITS images..." % style.prefix
 
     # Use a pool of workers and run SExtractor on the images in parallel!
@@ -663,8 +755,8 @@ def main(arguments = None):
         if logging_level < logging.WARNING:
             print
 
-    result.get()      # reraise exceptions of the remote call, if any
-    util.show_progress(100) # in case the queue was ready too soon
+    result.get()  # reraise exceptions of the remote call, if any
+    util.show_progress(100)  # in case the queue was ready too soon
     print
 
     # Three sets, to keep the track of all the images on which SExtractor
@@ -683,7 +775,7 @@ def main(arguments = None):
     # number of sources detected by SExtractor) from the multiprocessing' queue
     # and store the values in three independent dictionaries; these provide
     # fast access, with O(1) lookup, to the data.
-    fwhms  = {}
+    fwhms = {}
     elongs = {}
     nstars = {}
 
@@ -699,7 +791,7 @@ def main(arguments = None):
         # temporary files are always deleted.
         atexit.register(util.clean_tmp_files, output_tmp_path)
 
-        fwhms[path]  = fwhm
+        fwhms[path] = fwhm
         elongs[path] = elong
         nstars[path] = stars
 
@@ -713,28 +805,36 @@ def main(arguments = None):
     # be Gaussian distributed) and define the maximum allowed value as that
     # which exceeds the specified number of standard deviations of the mean.
 
-    print "%sFitting a Gaussian distribution to the FWHMs..." % style.prefix ,
+    print "%sFitting a Gaussian distribution to the FWHMs..." % style.prefix,
     sys.stdout.flush()
     logging.debug("Fitting a Gaussian distribution to the %d FWHMs" % len(fwhms))
     mu, sigma = scipy.stats.norm.fit(fwhms.values())
     logging.debug("FWHMs mean = %.3f" % mu)
     logging.debug("FWHMs sigma = %.3f" % sigma)
-    print 'done.'
+    print "done."
     sys.stdout.flush()
 
     print "%sFWHMs mean = %.3f, sigma = %.3f pixels" % (style.prefix, mu, sigma)
     maximum_fwhm = mu + (options.fwhm_sigma * sigma)
-    logging.debug("Maximum allowed FWHM = %.3f + %.1f x %.3f = %.3f pixels" % \
-                 (mu, options.fwhm_sigma, sigma, maximum_fwhm))
-    print "%sDiscarding images with a FWHM > %.3f + %.1f x %.3f = %.3f pixels..." % \
-          (style.prefix, mu, options.fwhm_sigma, sigma, maximum_fwhm)
+    logging.debug(
+        "Maximum allowed FWHM = %.3f + %.1f x %.3f = %.3f pixels"
+        % (mu, options.fwhm_sigma, sigma, maximum_fwhm)
+    )
+    print "%sDiscarding images with a FWHM > %.3f + %.1f x %.3f = %.3f pixels..." % (
+        style.prefix,
+        mu,
+        options.fwhm_sigma,
+        sigma,
+        maximum_fwhm,
+    )
 
     # Exclude images by adding them to the FWHM-discarded set
     for path, fwhm in sorted(fwhms.iteritems()):
         if fwhm > maximum_fwhm:
             fwhm_discarded.add(path)
-            logging.debug("%s discarded (FWHM = %.3f > %.3f" % \
-                         (path, fwhm, maximum_fwhm))
+            logging.debug(
+                "%s discarded (FWHM = %.3f > %.3f" % (path, fwhm, maximum_fwhm)
+            )
             print "%s%s discarded (FWHM = %.3f)" % (style.prefix, path, fwhm)
 
     logging.info("Images discarded by FWHM: %d" % len(fwhm_discarded))
@@ -743,28 +843,38 @@ def main(arguments = None):
     else:
         discarded_fraction = len(fwhm_discarded) / len(all_images) * 100
         nleft = len(all_images) - len(fwhm_discarded)  # non-discarded images
-        print "%s%d FITS images (%.2f %%) discarded, %d remain" % \
-              (style.prefix,  len(fwhm_discarded), discarded_fraction, nleft)
-
+        print "%s%d FITS images (%.2f %%) discarded, %d remain" % (
+            style.prefix,
+            len(fwhm_discarded),
+            discarded_fraction,
+            nleft,
+        )
 
     # Repeat the same approach, now with the elongation ratios. Images already
     # discarded because of their FWHM are not even considered -- why discard
     # them twice? They can simply be ignored.
 
-    print "%sFitting a Gaussian distribution to the elongations..." % style.prefix ,
+    print "%sFitting a Gaussian distribution to the elongations..." % style.prefix,
     sys.stdout.flush()
     mu, sigma = scipy.stats.norm.fit(elongs.values())
     logging.debug("Elongations mean = %.3f" % mu)
     logging.debug("Elongations sigma = %.3f" % sigma)
-    print 'done.'
+    print "done."
     sys.stdout.flush()
 
     print "%sElongation mean = %.3f, sigma = %.3f pixels" % (style.prefix, mu, sigma)
     maximum_elong = mu + (options.elong_sigma * sigma)
-    logging.debug("Maximum allowed elongation = %.3f + %.1f x %.3f = %.3f pixels" % \
-                 (mu, options.elong_sigma, sigma, maximum_elong))
-    print "%sDiscarding images with an elongation > %.3f + %.1f x %.3f = %.3f ..." % \
-          (style.prefix, mu, options.elong_sigma, sigma, maximum_elong)
+    logging.debug(
+        "Maximum allowed elongation = %.3f + %.1f x %.3f = %.3f pixels"
+        % (mu, options.elong_sigma, sigma, maximum_elong)
+    )
+    print "%sDiscarding images with an elongation > %.3f + %.1f x %.3f = %.3f ..." % (
+        style.prefix,
+        mu,
+        options.elong_sigma,
+        sigma,
+        maximum_elong,
+    )
 
     for path, elong in sorted(elongs.iteritems()):
         # Ignore FWHM-discarded images
@@ -773,8 +883,9 @@ def main(arguments = None):
             continue
         elif elong > maximum_elong:
             elong_discarded.add(path)
-            logging.debug("%s discarded (elongation = %.3f > %.3f" % \
-                         (path, fwhm, maximum_elong))
+            logging.debug(
+                "%s discarded (elongation = %.3f > %.3f" % (path, fwhm, maximum_elong)
+            )
             print "%s%s discarded (elongation = %.3f)" % (style.prefix, path, elong)
 
     logging.info("Images discarded by elongation: %d" % len(elong_discarded))
@@ -784,9 +895,12 @@ def main(arguments = None):
         initial_size = len(all_images) - len(fwhm_discarded)
         discarded_fraction = len(elong_discarded) / initial_size * 100
         nleft = initial_size - len(elong_discarded)
-        print "%s%d FITS images (%.2f %%) discarded, %d remain" % \
-              (style.prefix,  len(elong_discarded), discarded_fraction, nleft)
-
+        print "%s%d FITS images (%.2f %%) discarded, %d remain" % (
+            style.prefix,
+            len(elong_discarded),
+            discarded_fraction,
+            nleft,
+        )
 
     # Finally, take the images whose number of stars is at the 'stars_per'
     # percentile and select the one with the best FWHM. This will be our
@@ -794,57 +908,71 @@ def main(arguments = None):
     # the image with the best FWHM may not work as we need the best-seeomg
     # image to also be one of the most populated.
 
-    print "%sIdentifying the images whose number of detected sources it at " \
-          "the %.2f percentile..." % (style.prefix, options.stars_per) ,
+    print "%sIdentifying the images whose number of detected sources it at " "the %.2f percentile..." % (
+        style.prefix,
+        options.stars_per,
+    ),
     sys.stdout.flush()
     # Ignore discarded images, for whatever reason
-    logging.debug("Finding the %.2f percentile of the number of stars " \
-                 "detected by SExtractor"  % options.stars_per)
+    logging.debug(
+        "Finding the %.2f percentile of the number of stars "
+        "detected by SExtractor" % options.stars_per
+    )
     for path in fwhm_discarded.union(elong_discarded):
         del nstars[path]
-        reason = 'FWHM' if path in fwhm_discarded else 'elongation'
+        reason = "FWHM" if path in fwhm_discarded else "elongation"
         logging.debug("%s ignored (was discarded by %s)" % (path, reason))
     min_nstars = scipy.stats.scoreatpercentile(nstars.values(), options.stars_per)
-    print 'done.'
+    print "done."
 
-    print "%sNumber of stars at percentile = %d, taking the images with at " \
-          "least this number of sources..." % (style.prefix, min_nstars) ,
+    print "%sNumber of stars at percentile = %d, taking the images with at " "least this number of sources..." % (
+        style.prefix,
+        min_nstars,
+    ),
     sys.stdout.flush()
-    most_populated_images = [path
-                             for path, stars in nstars.iteritems()
-                             if stars >= min_nstars]
+    most_populated_images = [
+        path for path, stars in nstars.iteritems() if stars >= min_nstars
+    ]
 
-    logging.debug("There are %s images with a number of stars at the %.2f " \
-                 "percentile" % (len(most_populated_images), options.stars_per))
+    logging.debug(
+        "There are %s images with a number of stars at the %.2f "
+        "percentile" % (len(most_populated_images), options.stars_per)
+    )
     logging.debug("Identifying the image with the lowest FWHM")
-    print 'done.'
+    print "done."
 
-    print "%sFinally, finding the image with the lowest FWHM among these " \
-          "%d images..." % (style.prefix, len(most_populated_images)),
+    print "%sFinally, finding the image with the lowest FWHM among these " "%d images..." % (
+        style.prefix,
+        len(most_populated_images),
+    ),
     sys.stdout.flush()
 
     # Find the image with the best seeing (lowest FWHM)
-    best_seeing = min(most_populated_images, key = lambda path: fwhms[path])
+    best_seeing = min(most_populated_images, key=lambda path: fwhms[path])
     logging.debug("Best-seeing image: %s" % path)
     logging.debug("Best-seeing image FWHM = %.3f" % fwhms[best_seeing])
     logging.debug("Best-seeing image elongation = %.3f" % elongs[best_seeing])
     logging.debug("Best-seeing image sources = %d" % nstars[best_seeing])
     assert best_seeing not in fwhm_discarded
     assert best_seeing not in elong_discarded
-    print 'done.'
+    print "done."
 
-    print "%sBest-seeing image = %s, with %d sources and a FWHM of %.3f pixels" % \
-          (style.prefix, best_seeing, nstars[best_seeing], fwhms[best_seeing])
+    print "%sBest-seeing image = %s, with %d sources and a FWHM of %.3f pixels" % (
+        style.prefix,
+        best_seeing,
+        nstars[best_seeing],
+        fwhms[best_seeing],
+    )
 
     # The subdirectories are created only if at least one image is going to be
     # discarded. We do not want empty directories in case no image is discarded
     # because of its full-width at half maximum (FWHM) or elongation.
 
     if fwhm_discarded:
-        util.determine_output_dir(fwhm_dir, quiet = True)
+        util.determine_output_dir(fwhm_dir, quiet=True)
 
     if elong_discarded:
-        util.determine_output_dir(elong_dir, quiet = True)
+        util.determine_output_dir(elong_dir, quiet=True)
 
     # Finally, copy all the FITS images to the output directory
     processed = 0
@@ -852,24 +980,30 @@ def main(arguments = None):
         # Add the suffix to the basename of the FITS image
         root, ext = os.path.splitext(os.path.basename(path))
         output_filename = root + options.suffix + ext
-        logging.debug("Basename '%s' + '%s' becomes '%s'" % \
-                     (path, options.suffix, output_filename))
+        logging.debug(
+            "Basename '%s' + '%s' becomes '%s'"
+            % (path, options.suffix, output_filename)
+        )
 
         if path in fwhm_discarded:
             output_path = os.path.join(fwhm_dir, output_filename)
             logging.debug("%s was discarded because of its FWHM" % path)
             logging.debug("%s to be copied to subdirectory %s" % (path, fwhm_dir))
             history_msg1 = "Image discarded by LEMON on %s" % util.utctime()
-            history_msg2 = "[Discarded] FWHM = %.3f pixels, maximum allowed value = %.3f" % \
-                           (fwhms[path], maximum_fwhm)
+            history_msg2 = (
+                "[Discarded] FWHM = %.3f pixels, maximum allowed value = %.3f"
+                % (fwhms[path], maximum_fwhm)
+            )
 
         elif path in elong_discarded:
             output_path = os.path.join(elong_dir, output_filename)
             logging.debug("%s was discarded because of its elongation ratio" % path)
             logging.debug("%s to be copied to subdirectory %s" % (path, elong_dir))
             history_msg1 = "Image discarded by LEMON on %s" % util.utctime()
-            history_msg2 = "[Discarded] Elongation = %.3f, maximum allowed value = %.3f" % \
-                           (elongs[path], maximum_elong)
+            history_msg2 = (
+                "[Discarded] Elongation = %.3f, maximum allowed value = %.3f"
+                % (elongs[path], maximum_elong)
+            )
 
         elif path == best_seeing:
 
@@ -881,11 +1015,15 @@ def main(arguments = None):
 
             output_path = os.path.join(output_dir, filename)
             logging.debug("%s is the best-seeing image" % path)
-            logging.debug("%s to be copied to directory %s with name %s" % \
-                         (path, output_dir, options.bseeingfn))
+            logging.debug(
+                "%s to be copied to directory %s with name %s"
+                % (path, output_dir, options.bseeingfn)
+            )
             history_msg1 = "Image identified by LEMON as the 'best-seeing' one"
-            history_msg2 = "FWHM = %.3f | Elongation = %.3f | Sources: %d (at %.2f percentile)" % \
-                           (fwhms[path], elongs[path], nstars[path], options.stars_per)
+            history_msg2 = (
+                "FWHM = %.3f | Elongation = %.3f | Sources: %d (at %.2f percentile)"
+                % (fwhms[path], elongs[path], nstars[path], options.stars_per)
+            )
 
         else:
             output_path = os.path.join(output_dir, output_filename)
@@ -894,8 +1032,10 @@ def main(arguments = None):
             history_msg2 = "Image elongation = %.3f" % elongs[path]
 
         if os.path.exists(output_path) and not options.overwrite:
-            msg = ("%sError. Output FITS file '%s' already exists. "
-                   "You need to use --overwrite.")
+            msg = (
+                "%sError. Output FITS file '%s' already exists. "
+                "You need to use --overwrite."
+            )
             args = style.prefix, output_path
             print msg % args
             print style.error_exit_message
@@ -905,7 +1045,7 @@ def main(arguments = None):
             src = seeing_tmp_paths[path]
             shutil.move(src, output_path)
 
-        util.owner_writable(output_path, True) # chmod u+w
+        util.owner_writable(output_path, True)  # chmod u+w
         logging.debug("%s copied to %s" % (path, output_path))
         output_img = fitsimage.FITSImage(output_path)
         output_img.add_history(history_msg1)
@@ -914,15 +1054,20 @@ def main(arguments = None):
 
         # Copy the FWHM to the FITS header, for future reference
         comment = "Margin = %d, SNR percentile = %.3f" % (options.margin, options.per)
-        output_img.update_keyword(options.fwhmk, fwhms[path], comment = comment)
+        output_img.update_keyword(options.fwhmk, fwhms[path], comment=comment)
         logging.debug("%s: FITS header updated (%s keyword)" % (path, options.fwhmk))
 
         print "%sFITS image %s saved to %s" % (style.prefix, path, output_path)
         processed += 1
 
-    print "%sA total of %d images was saved to directory '%s'." % (style.prefix, processed, output_dir)
+    print "%sA total of %d images was saved to directory '%s'." % (
+        style.prefix,
+        processed,
+        output_dir,
+    )
     print "%sWe're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

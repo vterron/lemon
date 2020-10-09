@@ -39,11 +39,12 @@ import os.path
 import sys
 import urllib
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), './test_data')
-IMAGES_DIR = os.path.join(DATA_DIR, 'fits')
+DATA_DIR = os.path.join(os.path.dirname(__file__), "./test_data")
+IMAGES_DIR = os.path.join(DATA_DIR, "fits")
+
 
 def get_dss_image(path, ra, dec):
-    """ Download an image from the STScI Digitized Sky Survey.
+    """Download an image from the STScI Digitized Sky Survey.
 
     This method uses the DSS CGI script to automatically download a FITS image
     from the STScI Digitized Sky Survey, copying it to 'path'. The version of
@@ -63,7 +64,7 @@ def get_dss_image(path, ra, dec):
     """
 
     base_url = "http://archive.stsci.edu/cgi-bin/dss_search?"
-    parameters = dict(v = 'poss2ukstu_ir', ra = ra, dec = dec)
+    parameters = dict(v="poss2ukstu_ir", ra=ra, dec=dec)
     url = base_url + urllib.urlencode(parameters)
 
     # For example, "Downloading test/test_data/fits/IC_5146.fits: 87 %"
@@ -73,42 +74,49 @@ def get_dss_image(path, ra, dec):
 
     def update_status(count, block_size, total_size):
         percent = int(count * block_size / total_size * 100)
-        sys.stdout.write('\r' + status(percent))
+        sys.stdout.write("\r" + status(percent))
         sys.stdout.flush()
 
     try:
         urllib.urlcleanup()
-        urllib.urlretrieve(url, filename = path, reporthook = update_status)
+        urllib.urlretrieve(url, filename=path, reporthook=update_status)
     except:
-        try: os.unlink(path)
-        except: pass
+        try:
+            os.unlink(path)
+        except:
+            pass
         raise
     finally:
         print
 
+
 # Map each object to its right ascension and declination
-TEST_OBJECTS = {'IC 5070' : (312.75, 44.37),
-                'IC 5146' : (328.35, 47.267),
-                'Messier 92': (259.281, 43.136),
-                'NGC 2264' : (100.242, 9.895),
-                'RMC 136' : (98.67, 4.03),
-                'Serpens' : (277.454, 1.247),
-                'Orion' : (83.822, -5.391),
-                'Trapezium' : (83.819, -5.387),
-                'Trumpler 37' : (324.536, 57.447),
-                "Barnard's Star" : (269.452, 4.693)}
+TEST_OBJECTS = {
+    "IC 5070": (312.75, 44.37),
+    "IC 5146": (328.35, 47.267),
+    "Messier 92": (259.281, 43.136),
+    "NGC 2264": (100.242, 9.895),
+    "RMC 136": (98.67, 4.03),
+    "Serpens": (277.454, 1.247),
+    "Orion": (83.822, -5.391),
+    "Trapezium": (83.819, -5.387),
+    "Trumpler 37": (324.536, 57.447),
+    "Barnard's Star": (269.452, 4.693),
+}
+
 
 def get_image_path(name):
-    """ Determine the local path to which to download the image of an object.
+    """Determine the local path to which to download the image of an object.
 
     The base name of the image is that of the astronomical object, but with any
     whitespace characters replaced with underscores and the '.fits' extension.
     The directory where all the images are downloaded is IMAGES_DIR.
 
     """
-    basename = '%s.fits' % re.sub('\s+', '_', name)
+    basename = "%s.fits" % re.sub("\s+", "_", name)
     path = os.path.join(IMAGES_DIR, basename)
     return os.path.normpath(path)
+
 
 if not os.path.exists(IMAGES_DIR):
     os.makedirs(IMAGES_DIR)
@@ -120,4 +128,3 @@ for name, (ra, dec) in sorted(TEST_OBJECTS.items()):
     if not os.path.exists(path):
         get_dss_image(path, ra, dec)
     TEST_IMAGES.add(path)
-

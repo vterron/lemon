@@ -21,15 +21,15 @@
 import ConfigParser
 import os.path
 
-CONFIG_FILENAME = '.juicerc'
-CONFIG_PATH = os.path.expanduser('~/%s' % CONFIG_FILENAME)
+CONFIG_FILENAME = ".juicerc"
+CONFIG_PATH = os.path.expanduser("~/%s" % CONFIG_FILENAME)
 
-VIEW_SECTION = 'view'
-VIEW_SEXAGESIMAL = 'sexagesimal'
-VIEW_DECIMAL = 'decimal'
-PLOT_AIRMASSES = 'airmasses'
-PLOT_JULIAN = 'julian_dates'
-PLOT_MIN_SNR = 'snr_threshold'
+VIEW_SECTION = "view"
+VIEW_SEXAGESIMAL = "sexagesimal"
+VIEW_DECIMAL = "decimal"
+PLOT_AIRMASSES = "airmasses"
+PLOT_JULIAN = "julian_dates"
+PLOT_MIN_SNR = "snr_threshold"
 
 DEFAULT_VIEW_SEXAGESIMAL = True
 DEFAULT_VIEW_DECIMAL = False
@@ -41,62 +41,67 @@ DEFAULT_PLOT_MIN_SNR = 100
 # abbreviations ('g'), full names ('green'), hexadecimal strings ('#008000') or
 # a string encoding float on the 0-1 range ('0.75') for gray shades.
 
-COLOR_SECTION = 'colors'
+COLOR_SECTION = "colors"
 DEFAULT_COLORS = dict(
-  U = 'violet',
-  B = 'blue',
-  V = 'green',
-  R = '#ff4246', # light red
-  I = '#e81818', # dark red
-  Z = 'cyan',
-  Y = 'brown',
-  J = 'yellow',
-  H = 'pink',
-  KS = 'orange',
-  K = 'orange',
-  L = '0.75', # light gray
-  M = '0.50' ) # dark gray
+    U="violet",
+    B="blue",
+    V="green",
+    R="#ff4246",  # light red
+    I="#e81818",  # dark red
+    Z="cyan",
+    Y="brown",
+    J="yellow",
+    H="pink",
+    KS="orange",
+    K="orange",
+    L="0.75",  # light gray
+    M="0.50",
+)  # dark gray
 
 # The options for how light curves are dumped to plain-text files
-CURVEDUMP_SECTION = 'curve-export'
+CURVEDUMP_SECTION = "curve-export"
 DEFAULT_CURVEDUMP_OPTS = dict(
-  dump_date_text = 1,
-  dump_date_julian = 1,
-  dump_date_seconds = 1,
-  dump_magnitude = 1,
-  dump_snr = 1,
-  dump_max_merr = 1,
-  dump_min_merr = 1,
-  dump_instrumental_magnitude = 1,
-  dump_instrumental_snr = 1,
-  decimal_places = 8)
+    dump_date_text=1,
+    dump_date_julian=1,
+    dump_date_seconds=1,
+    dump_magnitude=1,
+    dump_snr=1,
+    dump_max_merr=1,
+    dump_min_merr=1,
+    dump_instrumental_magnitude=1,
+    dump_instrumental_snr=1,
+    decimal_places=8,
+)
+
 
 class Configuration(ConfigParser.SafeConfigParser):
-    """ Just a quite simple wrapper to automatically have the configuration
-    file loaded at instantiation and written to disk with the update method """
+    """Just a quite simple wrapper to automatically have the configuration
+    file loaded at instantiation and written to disk with the update method"""
 
-    DEFAULT_CONFIG = '\n'.join(
-    ["[%s]" % VIEW_SECTION,
-     "%s = %d" % (VIEW_SEXAGESIMAL, DEFAULT_VIEW_SEXAGESIMAL),
-     "%s = %d" % (VIEW_DECIMAL, DEFAULT_VIEW_DECIMAL),
-     "%s = %d" % (PLOT_AIRMASSES, DEFAULT_PLOT_AIRMASSES),
-     "%s = %d" % (PLOT_JULIAN, DEFAULT_PLOT_JULIAN),
-     "%s = %d" % (PLOT_MIN_SNR, DEFAULT_PLOT_MIN_SNR),
-     '',
-     "[%s]" % COLOR_SECTION] +
-    ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()] +
-    ['',
-     "[%s]" % CURVEDUMP_SECTION] +
-    ["%s = %s" % (k, v) for k, v in DEFAULT_CURVEDUMP_OPTS.iteritems()])
+    DEFAULT_CONFIG = "\n".join(
+        [
+            "[%s]" % VIEW_SECTION,
+            "%s = %d" % (VIEW_SEXAGESIMAL, DEFAULT_VIEW_SEXAGESIMAL),
+            "%s = %d" % (VIEW_DECIMAL, DEFAULT_VIEW_DECIMAL),
+            "%s = %d" % (PLOT_AIRMASSES, DEFAULT_PLOT_AIRMASSES),
+            "%s = %d" % (PLOT_JULIAN, DEFAULT_PLOT_JULIAN),
+            "%s = %d" % (PLOT_MIN_SNR, DEFAULT_PLOT_MIN_SNR),
+            "",
+            "[%s]" % COLOR_SECTION,
+        ]
+        + ["%s = %s" % (k, v) for k, v in DEFAULT_COLORS.iteritems()]
+        + ["", "[%s]" % CURVEDUMP_SECTION]
+        + ["%s = %s" % (k, v) for k, v in DEFAULT_CURVEDUMP_OPTS.iteritems()]
+    )
 
-    def __init__(self, path, update = True):
-        """ Parse a configuration file, creating and populating it with
-        the default options in case 'path' does not exist """
+    def __init__(self, path, update=True):
+        """Parse a configuration file, creating and populating it with
+        the default options in case 'path' does not exist"""
 
         ConfigParser.SafeConfigParser.__init__(self)
 
         if not os.path.exists(path):
-            with open(path, 'wt') as fd:
+            with open(path, "wt") as fd:
                 fd.write(self.DEFAULT_CONFIG)
 
         self.read([path])
@@ -108,7 +113,7 @@ class Configuration(ConfigParser.SafeConfigParser):
 
     def update(self):
         """ Write to disk the configuration file """
-        with open(self.path, 'wt') as fd:
+        with open(self.path, "wt") as fd:
             self.write(fd)
 
     # SafeConfigParser is an old-style class (does not support properties)
@@ -127,4 +132,3 @@ class Configuration(ConfigParser.SafeConfigParser):
     def dumpset(self, option, value):
         """ Set 'option' to 'value' in the curves export section """
         self.set(CURVEDUMP_SECTION, option, str(value))
-

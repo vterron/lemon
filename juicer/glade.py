@@ -21,15 +21,15 @@
 import functools
 import os.path
 
-GLADE_DIR = os.path.join(os.path.dirname(__file__), './gui/')
+GLADE_DIR = os.path.join(os.path.dirname(__file__), "./gui/")
 get = functools.partial(os.path.join, GLADE_DIR)
 
-GUI_MAIN  = get('main.glade')
-GUI_ABOUT = get('about.glade')
-GUI_OVERVIEW = get('overview.glade')
-LOADING_DIALOG = get('loading-dialog.glade')
-STAR_DETAILS = get('star-details.glade')
-SNR_THRESHOLD_DIALOG = get('snr-threshold-dialog.glade')
-EXPORT_CURVE_DIALOG = get('curve-dump-dialog.glade')
-FINDING_CHART_DIALOG = get('finding-chart-dialog.glade')
-CHART_PREFERENCES_DIALOG = get('chart-preferences-dialog.glade')
+GUI_MAIN = get("main.glade")
+GUI_ABOUT = get("about.glade")
+GUI_OVERVIEW = get("overview.glade")
+LOADING_DIALOG = get("loading-dialog.glade")
+STAR_DETAILS = get("star-details.glade")
+SNR_THRESHOLD_DIALOG = get("snr-threshold-dialog.glade")
+EXPORT_CURVE_DIALOG = get("curve-dump-dialog.glade")
+FINDING_CHART_DIALOG = get("finding-chart-dialog.glade")
+CHART_PREFERENCES_DIALOG = get("chart-preferences-dialog.glade")

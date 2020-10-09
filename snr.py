@@ -25,8 +25,9 @@ import math
 import operator
 import numpy
 
+
 def snr_to_error(snr):
-    """ Signal-to-noise ratio to error in magnitudes conversion.
+    """Signal-to-noise ratio to error in magnitudes conversion.
 
     The method computes the error in magnitudes to which a determined SNR is
     equivalent. This is achieved by comparing the mean number of counts, c, to
@@ -52,8 +53,9 @@ def snr_to_error(snr):
     operators = (operator.add, operator.sub)
     return tuple([-2.5 * numpy.log10(f(1, 1 / snr)) for f in operators])
 
+
 def error_to_snr(error):
-    """ Error in magnitudes to signal-to-noise ratio conversion.
+    """Error in magnitudes to signal-to-noise ratio conversion.
 
     If we find the value of Δm for a given SNR, we can also obtain the
     signal-to-noise ration to which a determined error in magnitudes is
@@ -79,8 +81,9 @@ def error_to_snr(error):
 
     return (1 if error < 0 else -1) / (math.pow(10, error / -2.5) - 1)
 
+
 def difference_error(*errors):
-    """ Return the absolute error of the difference of a series of errors.
+    """Return the absolute error of the difference of a series of errors.
 
     The error of a combination (addition / subtraction) of *independent* errors
     is given by their addition in quadrature. A pessimistic approach could
@@ -104,8 +107,9 @@ def difference_error(*errors):
 
     return math.sqrt(sum(e ** 2 for e in errors))
 
+
 def difference_snr(*snrs):
-    """ Return the SNR of the difference of a series of SNRs.
+    """Return the SNR of the difference of a series of SNRs.
 
     The method returns the signal-to-noise ratio of the difference of a series
     of signal-to-noise ratios. This is internally done by converting the SNRs
@@ -129,8 +133,9 @@ def difference_snr(*snrs):
     error = difference_error(*errors)
     return error_to_snr(error)
 
-def mean_error(errors, weights = None):
-    """ Return the absolute error of the arithmetic mean of errors.
+
+def mean_error(errors, weights=None):
+    """Return the absolute error of the arithmetic mean of errors.
 
     If we have a series of independent values (for example, instrumental
     magnitudes) and their corresponding uncertainty (the error in magnitudes),
@@ -168,10 +173,11 @@ def mean_error(errors, weights = None):
     else:
         # Normalize the values so that they sum up to one
         weights = [w / math.fsum(weights) for w in weights]
-    return math.sqrt(math.fsum(((w  ** 2) * (e ** 2) for e, w in zip(errors, weights))))
+    return math.sqrt(math.fsum(((w ** 2) * (e ** 2) for e, w in zip(errors, weights))))
 
-def mean_snr(snrs, weights = None):
-    """ Return the SNR of the arithmetic mean of a series of SNSRs.
+
+def mean_snr(snrs, weights=None):
+    """Return the SNR of the arithmetic mean of a series of SNSRs.
 
     The method returns the signal-to-noise ratio of the arithmetic or weighted
     mean of a series of signal-to-noise ratios. This is internally done by
@@ -195,8 +201,9 @@ def mean_snr(snrs, weights = None):
 
     errors = [snr_to_error(s)[1] for s in snrs]
     assert all(e >= 0 for e in errors)
-    error = mean_error(errors, weights = weights)
+    error = mean_error(errors, weights=weights)
     return error_to_snr(error)
+
 
 if __name__ == "__main__":
     pass

@@ -23,7 +23,8 @@ from __future__ import division
 from __future__ import with_statement
 
 import pygtk
-pygtk.require ('2.0')
+
+pygtk.require("2.0")
 import gtk
 
 import astropy.time
@@ -39,10 +40,10 @@ import warnings
 
 import matplotlib
 import matplotlib.figure
-from matplotlib.backends.backend_gtkagg \
-     import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_gtkagg \
-     import NavigationToolbar2GTKAgg as NavigationToolbar
+from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
+from matplotlib.backends.backend_gtkagg import (
+    NavigationToolbar2GTKAgg as NavigationToolbar,
+)
 
 # http://stackoverflow.com/a/1054293/184363
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -84,19 +85,19 @@ settings.props.gtk_button_images = True
 # instead of showing a zero, nothing is displayed.
 UNKNOWN_VALUE = 0
 
+
 class ExportCurveDialog(object):
-    """ Encapsulates a dialog window that allows the user to select which
+    """Encapsulates a dialog window that allows the user to select which
     attributes of a light curve (such as the time of observation in Unix
     seconds, or the signal-to-noise ratio, or the error in magnitudes) are
-    dumped to a text file, selected using a gtk.FileChooserDialog """
+    dumped to a text file, selected using a gtk.FileChooserDialog"""
 
     def get(self, name):
         """ Access a widget in the interface """
         return self.builder.get_object(name)
 
-    def __init__(self, parent_window, builder, config, id_, pfilter, db,
-                 curve_store):
-        """ Instantiation method for the ExportCurveDialog class.
+    def __init__(self, parent_window, builder, config, id_, pfilter, db, curve_store):
+        """Instantiation method for the ExportCurveDialog class.
 
         The 'parent_window' parameter must be the transient parent of the
         dialog, while 'builder' and 'config' are the gtk.GtkBuilder and
@@ -124,7 +125,7 @@ class ExportCurveDialog(object):
         self.db = db
         self.store = curve_store
 
-        self.dialog = self.get('export-curve-dialog')
+        self.dialog = self.get("export-curve-dialog")
         self.dialog.set_resizable(False)
         self.dialog.set_title("Export to text file")
         self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
@@ -133,64 +134,68 @@ class ExportCurveDialog(object):
         self.dialog.set_transient_for(self.parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
-        text = \
-        "Please select the attributes of the light curve of <b>star %d</b> " \
-        "in <b>filter %s</b> that will be saved to disk. The tab character, " \
-        "'\\t', will be used as separator." % (self.id, self.pfilter)
-        self.get('dialog-description').set_label(text)
+        text = (
+            "Please select the attributes of the light curve of <b>star %d</b> "
+            "in <b>filter %s</b> that will be saved to disk. The tab character, "
+            "'\\t', will be used as separator." % (self.id, self.pfilter)
+        )
+        self.get("dialog-description").set_label(text)
 
-        self.date_str_checkbox = self.get('date-str-checkbox')
-        self.date_julian_checkbox = self.get('date-julian-checkbox')
-        self.date_secs_checkbox = self.get('date-secs-checkbox')
-        self.mags_checkbox = self.get('mags-checkbox')
-        self.snr_checkbox = self.get('snr-checkbox')
-        self.merr_pos_checkbox = self.get('merr-pos-checkbox')
-        self.merr_neg_checkbox = self.get('merr-neg-checkbox')
-        self.inst_mags_checkbox = self.get('inst-mags-checkbox')
-        self.inst_snr_checkbox = self.get('inst-snr-checkbox')
-        self.spinbutton = self.get('ndecimals-spinbutton')
+        self.date_str_checkbox = self.get("date-str-checkbox")
+        self.date_julian_checkbox = self.get("date-julian-checkbox")
+        self.date_secs_checkbox = self.get("date-secs-checkbox")
+        self.mags_checkbox = self.get("mags-checkbox")
+        self.snr_checkbox = self.get("snr-checkbox")
+        self.merr_pos_checkbox = self.get("merr-pos-checkbox")
+        self.merr_neg_checkbox = self.get("merr-neg-checkbox")
+        self.inst_mags_checkbox = self.get("inst-mags-checkbox")
+        self.inst_snr_checkbox = self.get("inst-snr-checkbox")
+        self.spinbutton = self.get("ndecimals-spinbutton")
         self.update()
 
         # Handlers that update the options in the configuration file every time
         # that the value of a widget (either check or spin button) is modified
-        def save_widget_update(option, func = 'get_active'):
-            """ Return the function that, when called, updates 'option' in the
+        def save_widget_update(option, func="get_active"):
+            """Return the function that, when called, updates 'option' in the
             curve export section of the configuration file. 'func' is the
-            method used to get the value of the widget, cast to integer """
+            method used to get the value of the widget, cast to integer"""
 
             def handler(widget):
                 self.config.dumpset(option, int(getattr(widget, func)()))
+
             return handler
 
         f = save_widget_update
-        self.date_str_checkbox.connect('toggled', f('dump_date_text'))
-        self.date_julian_checkbox.connect('toggled', f('dump_date_julian'))
-        self.date_secs_checkbox.connect('toggled', f('dump_date_seconds'))
-        self.mags_checkbox.connect('toggled', f('dump_magnitude'))
-        self.snr_checkbox.connect('toggled', f('dump_snr'))
-        self.merr_pos_checkbox.connect('toggled', f('dump_max_merr'))
-        self.merr_neg_checkbox.connect('toggled', f('dump_min_merr'))
-        self.inst_mags_checkbox.connect('toggled', f('dump_instrumental_magnitude'))
-        self.inst_snr_checkbox.connect('toggled', f('dump_instrumental_snr'))
-        self.spinbutton.connect('output', f('decimal_places', 'get_value'))
+        self.date_str_checkbox.connect("toggled", f("dump_date_text"))
+        self.date_julian_checkbox.connect("toggled", f("dump_date_julian"))
+        self.date_secs_checkbox.connect("toggled", f("dump_date_seconds"))
+        self.mags_checkbox.connect("toggled", f("dump_magnitude"))
+        self.snr_checkbox.connect("toggled", f("dump_snr"))
+        self.merr_pos_checkbox.connect("toggled", f("dump_max_merr"))
+        self.merr_neg_checkbox.connect("toggled", f("dump_min_merr"))
+        self.inst_mags_checkbox.connect("toggled", f("dump_instrumental_magnitude"))
+        self.inst_snr_checkbox.connect("toggled", f("dump_instrumental_snr"))
+        self.spinbutton.connect("output", f("decimal_places", "get_value"))
 
     def update(self):
         """ Update the buttons to the values given in the configuration file """
 
         config = self.config
-        self.date_str_checkbox.set_active(config.dumpint('dump_date_text'))
-        self.date_julian_checkbox.set_active(config.dumpint('dump_date_julian'))
-        self.date_secs_checkbox.set_active(config.dumpint('dump_date_seconds'))
-        self.mags_checkbox.set_active(config.dumpint('dump_magnitude'))
-        self.snr_checkbox.set_active(config.dumpint('dump_snr'))
-        self.merr_pos_checkbox.set_active(config.dumpint('dump_max_merr'))
-        self.merr_neg_checkbox.set_active(config.dumpint('dump_min_merr'))
-        self.inst_mags_checkbox.set_active(config.dumpint('dump_instrumental_magnitude'))
-        self.inst_snr_checkbox.set_active(config.dumpint('dump_instrumental_snr'))
-        self.spinbutton.set_value(config.dumpint('decimal_places'))
+        self.date_str_checkbox.set_active(config.dumpint("dump_date_text"))
+        self.date_julian_checkbox.set_active(config.dumpint("dump_date_julian"))
+        self.date_secs_checkbox.set_active(config.dumpint("dump_date_seconds"))
+        self.mags_checkbox.set_active(config.dumpint("dump_magnitude"))
+        self.snr_checkbox.set_active(config.dumpint("dump_snr"))
+        self.merr_pos_checkbox.set_active(config.dumpint("dump_max_merr"))
+        self.merr_neg_checkbox.set_active(config.dumpint("dump_min_merr"))
+        self.inst_mags_checkbox.set_active(
+            config.dumpint("dump_instrumental_magnitude")
+        )
+        self.inst_snr_checkbox.set_active(config.dumpint("dump_instrumental_snr"))
+        self.spinbutton.set_value(config.dumpint("decimal_places"))
 
-    def dump(self, path, separator = '\t'):
-        """ Save a light curve to the plain text file 'path'.
+    def dump(self, path, separator="\t"):
+        """Save a light curve to the plain text file 'path'.
 
         Iterate over the gtk.ListStore and save a textual representation of its
         rows to 'path', truncating the file if it already exists. The rows are
@@ -207,19 +212,18 @@ class ExportCurveDialog(object):
         def parse_float(value):
             """ Cast value to str; use exactly 'decimals' decimal digits """
             ndecimals = int(self.spinbutton.get_value())
-            return '%.*f' % (ndecimals, value)
+            return "%.*f" % (ndecimals, value)
 
         # A dictionary mapping each Unix time to a two-element namedtuple with
         # the instrumental magnitude of the star and the SNR of the measurement.
-        if self.inst_mags_checkbox.get_active() or \
-           self.inst_snr_checkbox.get_active():
+        if self.inst_mags_checkbox.get_active() or self.inst_snr_checkbox.get_active():
             args = (self.id, self.pfilter)
             instrumental = self.db.get_instrumental_magnitudes(*args)
 
-        with open(path, 'wt') as fd:
+        with open(path, "wt") as fd:
 
             # First element of each row is the date of observation (Unix)
-            for row in sorted(self.store, key = operator.itemgetter(0)):
+            for row in sorted(self.store, key=operator.itemgetter(0)):
                 unix_time = row[0]
 
                 values = []
@@ -245,10 +249,10 @@ class ExportCurveDialog(object):
                     snr = instrumental[unix_time].snr
                     values.append(parse_float(snr))
 
-                fd.write('%s\n' % separator.join(values))
+                fd.write("%s\n" % separator.join(values))
 
     def run(self):
-        """ Run the dialog window in a recursive loop.
+        """Run the dialog window in a recursive loop.
 
         This method shows the dialog window and allows the user to select,
         using checkboxes, which attributes of the light curve of the star will
@@ -260,11 +264,17 @@ class ExportCurveDialog(object):
         response = self.dialog.run()
         if response == gtk.RESPONSE_OK:
 
-            kwargs = dict(title = "Export light curve to...",
-                          parent = self.parent_window,
-                          action = gtk.FILE_CHOOSER_ACTION_SAVE,
-                          buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+            kwargs = dict(
+                title="Export light curve to...",
+                parent=self.parent_window,
+                action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                buttons=(
+                    gtk.STOCK_CANCEL,
+                    gtk.RESPONSE_CANCEL,
+                    gtk.STOCK_SAVE,
+                    gtk.RESPONSE_OK,
+                ),
+            )
 
             with util.destroying(gtk.FileChooserDialog(**kwargs)) as chooser:
 
@@ -272,9 +282,9 @@ class ExportCurveDialog(object):
                 chooser.set_do_overwrite_confirmation(True)
 
                 # Suggest a name for the plain text file
-                field = re.sub(r'\s', '_', self.db.field_name.lower())
+                field = re.sub(r"\s", "_", self.db.field_name.lower())
                 args = field, self.id, self.pfilter
-                filename = '%s_star_%d_curve_%s' % args
+                filename = "%s_star_%d_curve_%s" % args
                 chooser.set_current_name(filename)
                 response = chooser.run()
 
@@ -287,16 +297,18 @@ class ExportCurveDialog(object):
 class StarDetailsGUI(object):
     """ A tabs of the notebook with all the details of a star """
 
-    SNR_THRESHOLD_ERROR_MSG = \
-    "No points have a signal-to-noise ratio above the current threshold\n " \
-    "(to modify it, go to View → Plots → SNR threshold)"
+    SNR_THRESHOLD_ERROR_MSG = (
+        "No points have a signal-to-noise ratio above the current threshold\n "
+        "(to modify it, go to View → Plots → SNR threshold)"
+    )
 
-    NO_CURVE_IN_ANY_FILTER_ERROR_MSG = \
-    "The light curve of the astronomical object has not been generated\n" \
-    "in any photometric filter, so there is nothing to be displayed here."
+    NO_CURVE_IN_ANY_FILTER_ERROR_MSG = (
+        "The light curve of the astronomical object has not been generated\n"
+        "in any photometric filter, so there is nothing to be displayed here."
+    )
 
     def set_canvas(self, visible):
-        """ Make rows in the 'matplotlib-container' VBox visible/invisible.
+        """Make rows in the 'matplotlib-container' VBox visible/invisible.
 
         Adjust the visibility of the three rows in the vertical box: if
         'visible' is True, the first two rows (canvas and navigation toolbar)
@@ -344,20 +356,25 @@ class StarDetailsGUI(object):
             try:
                 color = self.config.color(curve.pfilter.letter)
             except ConfigParser.NoOptionError:
-                cycle = matplotlib.rcParams['axes.color_cycle']
+                cycle = matplotlib.rcParams["axes.color_cycle"]
                 color = random.choice(cycle)
-                msg = ("cannot find a color specified for photometric filter "
-                       "'{0}', so we will use a random one instead: {1}. This "
-                       "probably means that it is a user-defined filter. If "
-                       "that is the case, you may want to add its color to "
-                       "the [colors] section of the configuration file.".
-                       format(curve.pfilter, color))
+                msg = (
+                    "cannot find a color specified for photometric filter "
+                    "'{0}', so we will use a random one instead: {1}. This "
+                    "probably means that it is a user-defined filter. If "
+                    "that is the case, you may want to add its color to "
+                    "the [colors] section of the configuration file.".format(
+                        curve.pfilter, color
+                    )
+                )
                 warnings.warn(msg)
 
-            kwargs = dict(airmasses = airmasses,
-                          julian = show_julian_dates,
-                          delta = 3 * 3600,
-                          color = color)
+            kwargs = dict(
+                airmasses=airmasses,
+                julian=show_julian_dates,
+                delta=3 * 3600,
+                color=color,
+            )
 
             plot.curve_plot(self.figure, curve, **kwargs)
             self.figure.canvas.draw()
@@ -369,8 +386,8 @@ class StarDetailsGUI(object):
         for unix_time, magnitude, noise in curve:
             row = []
             row.append(unix_time)
-            row.append(util.utctime(unix_time, suffix = False))
-            row.append(astropy.time.Time(unix_time, format = 'unix').jd)
+            row.append(util.utctime(unix_time, suffix=False))
+            row.append(astropy.time.Time(unix_time, format="unix").jd)
             row.append(magnitude)
             row.append(noise)
             # Returns two errors in mags, positive and negative
@@ -406,7 +423,7 @@ class StarDetailsGUI(object):
         self.update_curve(curve, *args)
 
     def update_file_selector_name(self):
-        """ Update the name suggested by the 'Save' button FileChooserDialog.
+        """Update the name suggested by the 'Save' button FileChooserDialog.
 
         When the 'Save' button on the matplotlib navigation toolbar is clicked,
         the gtk.FileChooserDialog suggests as filename the value returned by
@@ -424,7 +441,7 @@ class StarDetailsGUI(object):
         """
 
         args = self.db.field_name, self.id, self.shown
-        filename = '%s_star_%d_curve_%s' % args
+        filename = "%s_star_%d_curve_%s" % args
         self.canvas.get_window_title = lambda: filename
 
     def show_pfilter(self, button, event, pfilter):
@@ -449,12 +466,12 @@ class StarDetailsGUI(object):
         self.update_file_selector_name()
 
     def handle_toggle_view_sexagesimal(self, *args):
-        button = self._builder.get_object('radio-view-sexagesimal')
+        button = self._builder.get_object("radio-view-sexagesimal")
         for index in self.sex_indexes:
             self.starinfo_store[index][-1] = button.get_active()
 
     def handle_toggle_view_decimal(self, *args):
-        button = self._builder.get_object('radio-view-decimal')
+        button = self._builder.get_object("radio-view-decimal")
         for index in self.dec_indexes:
             self.starinfo_store[index][-1] = button.get_active()
 
@@ -466,8 +483,8 @@ class StarDetailsGUI(object):
         """ Return the state (active or not) of the Julian dates checkbox """
         return self.julian_dates_checkbox.get_active()
 
-    def __init__(self, parent, star_id, init_pfilter = None):
-        """ Instantiate a notebook page with all the star data.
+    def __init__(self, parent, star_id, init_pfilter=None):
+        """Instantiate a notebook page with all the star data.
 
         Keyword arguments:
         init_pfilter - the photometric filter in which to display the data for
@@ -483,7 +500,7 @@ class StarDetailsGUI(object):
         self.db = parent.db
 
         self._builder.add_from_file(glade.STAR_DETAILS)
-        self.vbox = self._builder.get_object('star-details')
+        self.vbox = self._builder.get_object("star-details")
         # Also store the ID of the star in the VBox object; so that we can
         # later loop over the tabs of the notebook and determine to which
         # star each tabs corresponds.
@@ -496,18 +513,18 @@ class StarDetailsGUI(object):
         # (after making invisible the other two rows) when there is no light
         # curve to plot because all the points are below the SNR threshold.
 
-        matplotlib_container = self._builder.get_object('matplotlib-container')
-        self.image_box = self._builder.get_object('image-container-box')
+        matplotlib_container = self._builder.get_object("matplotlib-container")
+        self.image_box = self._builder.get_object("image-container-box")
         self.figure = matplotlib.figure.Figure()
         self.canvas = FigureCanvas(self.figure)
         self.image_box.pack_start(self.canvas)
 
-        self.navigation_box = self._builder.get_object('navigation-toolbar-box')
+        self.navigation_box = self._builder.get_object("navigation-toolbar-box")
         navig = NavigationToolbar(self.canvas, self.image_box.get_window())
 
         self.navigation_box.pack_start(navig)
         matplotlib_container.show_all()
-        self.error_msg = self._builder.get_object('error-messages-label')
+        self.error_msg = self._builder.get_object("error-messages-label")
         self.error_msg.set_visible(False)
 
         # Button to open the Finding Chart and mark this star on it. Render a
@@ -516,14 +533,14 @@ class StarDetailsGUI(object):
         # directly, as suggested by Christian Reis in the PyGTK FAQ.
         # http://faq.pygtk.org/index.py?req=show&file=faq09.005.htp
 
-        arg = 'view-star-in-finding-chart-button'
+        arg = "view-star-in-finding-chart-button"
         self.view_in_chart_button = self._builder.get_object(arg)
         alignment = self.view_in_chart_button.get_children()[0]
         hbox = alignment.get_children()[0]
         image, label = hbox.get_children()
-        label.set_text('View in Finding Chart')
+        label.set_text("View in Finding Chart")
 
-        args = 'clicked', self.handle_view_star_in_chart
+        args = "clicked", self.handle_view_star_in_chart
         self.view_in_chart_button.connect(*args)
 
         # GTKTreeView used to display the list of points of the curve; dates
@@ -532,13 +549,13 @@ class StarDetailsGUI(object):
         # date strings are not a floating-point numbers and thus cannot be
         # sorted by themselves, so we use the Unix time (the first column).
 
-        attrs = ('Date', 'Date', 'JD', 'Δ Mag', 'SNR', 'merr (+)', 'merr (-)')
+        attrs = ("Date", "Date", "JD", "Δ Mag", "SNR", "merr (+)", "merr (-)")
         column_types = float, str, float, float, float, float, float
         self.curve_store = gtk.ListStore(*column_types)
-        self.curve_view = self._builder.get_object('curve-points-view')
+        self.curve_view = self._builder.get_object("curve-points-view")
         for index, title in enumerate(attrs):
             render = gtk.CellRendererText()
-            column = gtk.TreeViewColumn(title, render, text = index)
+            column = gtk.TreeViewColumn(title, render, text=index)
             column.props.resizable = False
             # Date strings are sorted by the Unix time
             column.set_sort_column_id(0 if index == 1 else index)
@@ -553,10 +570,10 @@ class StarDetailsGUI(object):
         # GTKTreeView used to display the reference stars and their weight,
         # instrumental magnitude and the standard deviation of their curve
         self.refstars_store = gtk.ListStore(int, float, float, float)
-        self.refstars_view = self._builder.get_object('refstars-view')
-        for index, title in enumerate(('Star', 'Weight', 'Mag', 'Stdev')):
+        self.refstars_view = self._builder.get_object("refstars-view")
+        for index, title in enumerate(("Star", "Weight", "Mag", "Stdev")):
             render = gtk.CellRendererText()
-            column = gtk.TreeViewColumn(title, render, text = index)
+            column = gtk.TreeViewColumn(title, render, text=index)
             column.props.resizable = False
             column.set_sort_column_id(index)
             self.refstars_view.append_column(column)
@@ -572,26 +589,26 @@ class StarDetailsGUI(object):
 
                 def render_imag(column, cell, model, iter):
                     """ Render the cell with three decimal places """
-                    orig_str = cell.get_property('text')
-                    new_str = '%.3f' % float(orig_str)
-                    cell.set_property('text', new_str)
+                    orig_str = cell.get_property("text")
+                    new_str = "%.3f" % float(orig_str)
+                    cell.set_property("text", new_str)
 
                 # http://faq.pygtk.org/index.py?req=show&file=faq13.024.htp
                 column.set_cell_data_func(render, render_imag)
-                assert title == 'Mag'
+                assert title == "Mag"
 
         self.refstars_view.set_model(self.refstars_store)
-        self.refstars_view.pfilter = None # the filter being currently shown
-        self.refstars_view.connect('row-activated', parent.handle_row_activated)
+        self.refstars_view.pfilter = None  # the filter being currently shown
+        self.refstars_view.connect("row-activated", parent.handle_row_activated)
 
         # GTKTreeView which displays the information for the star
         self.starinfo_store = gtk.ListStore(str, str, bool)
-        self.starinfo_view = self._builder.get_object('star-info-view')
+        self.starinfo_view = self._builder.get_object("star-info-view")
         self.starinfo_view.set_headers_visible(False)
         # Column titles not visible; used only for internal reference
-        for index, title in enumerate(('Attribute', 'Value', 'Visible')):
+        for index, title in enumerate(("Attribute", "Value", "Visible")):
             render = gtk.CellRendererText()
-            column = gtk.TreeViewColumn(title, render, text = index)
+            column = gtk.TreeViewColumn(title, render, text=index)
             column.props.resizable = False
 
             # The third column is only used to determine whether the row
@@ -602,13 +619,13 @@ class StarDetailsGUI(object):
 
         store = self.starinfo_store
         x, y, self.ra, self.dec, _, _, _, imag = self.db.get_star(star_id)
-        store.append(('Right ascension', '%s' % util.ra_str(self.ra), True))
-        store.append(('Right ascension', '%.4f deg' % self.ra, True))
-        store.append(('Declination', '%s' % util.dec_str(self.dec), True))
-        store.append(('Declination', '%.4f deg' % self.dec, True))
-        store.append(('Magnitude', '%.3f' % imag, True))
-        store.append(('x-coordinate', '%.2f' % x, True))
-        store.append(('y-coordinate', '%.2f' % y, True))
+        store.append(("Right ascension", "%s" % util.ra_str(self.ra), True))
+        store.append(("Right ascension", "%.4f deg" % self.ra, True))
+        store.append(("Declination", "%s" % util.dec_str(self.dec), True))
+        store.append(("Declination", "%.4f deg" % self.dec, True))
+        store.append(("Magnitude", "%.3f" % imag, True))
+        store.append(("x-coordinate", "%.2f" % x, True))
+        store.append(("y-coordinate", "%.2f" % y, True))
 
         # Two rows (sexagesimal and decimal) are used for the coordinates, but
         # only one will be shown at a given time. To hide some of the rows of a
@@ -640,10 +657,10 @@ class StarDetailsGUI(object):
 
         # Show sexagesimal, decimal coordinates or both, depending on
         # what is selected in the View - Coordinates submenu
-        args = 'toggled', self.handle_toggle_view_sexagesimal
-        self._builder.get_object('radio-view-sexagesimal').connect(*args)
-        args = 'toggled', self.handle_toggle_view_decimal
-        self._builder.get_object('radio-view-decimal').connect(*args)
+        args = "toggled", self.handle_toggle_view_sexagesimal
+        self._builder.get_object("radio-view-sexagesimal").connect(*args)
+        args = "toggled", self.handle_toggle_view_decimal
+        self._builder.get_object("radio-view-decimal").connect(*args)
         self.handle_toggle_view_sexagesimal()
         self.handle_toggle_view_decimal()
 
@@ -651,21 +668,21 @@ class StarDetailsGUI(object):
         self.id = star_id
 
         self.buttons = {}  # map each non-empty pfilter to its button
-        self.HButtonBox = self._builder.get_object('filter-buttons')
+        self.HButtonBox = self._builder.get_object("filter-buttons")
         group = None
         for index, pfilter in enumerate(self.db.pfilters):
-            button = gtk.RadioButton(group, label = str(pfilter))
+            button = gtk.RadioButton(group, label=str(pfilter))
             if not index:
                 group = button
 
             # Make the radio button look like a normal button
-            button.set_mode(draw_indicator = False)
+            button.set_mode(draw_indicator=False)
 
             # Disable the button if there is no curve in this filter
             if not self.db.get_light_curve(star_id, pfilter):
                 button.set_sensitive(False)
             else:
-                button.connect('button-press-event', self.show_pfilter, pfilter)
+                button.connect("button-press-event", self.show_pfilter, pfilter)
                 self.buttons[pfilter] = button
 
             self.HButtonBox.pack_end(button)
@@ -673,21 +690,21 @@ class StarDetailsGUI(object):
 
         # The checkbox to enable/disable airmasses in the plots, located in
         # the View submenu and shared by all the StarDetailsGUI instances
-        self.airmasses_checkbox = self._builder.get_object('plot-airmasses-checkbox')
-        args = 'toggled', self.redraw_light_curve
+        self.airmasses_checkbox = self._builder.get_object("plot-airmasses-checkbox")
+        args = "toggled", self.redraw_light_curve
         self.airmasses_checkbox.connect(*args)
 
         # The checkbox to alternate between strings representing the date and
         # time (for example, 'Jan 02 2012' or '08:15:31', depending on the date
         # range) and Julian dates (JD) such as 2456877.9660300924.
-        object_name = 'plot-julian-dates-checkbox'
+        object_name = "plot-julian-dates-checkbox"
         self.julian_dates_checkbox = self._builder.get_object(object_name)
-        args = 'toggled', self.redraw_light_curve
+        args = "toggled", self.redraw_light_curve
         self.julian_dates_checkbox.connect(*args)
 
         # The button to export the light curve to a text file
-        self.export_button = self._builder.get_object('save-curve-points-button')
-        args = 'clicked', self.save_light_curve_points
+        self.export_button = self._builder.get_object("save-curve-points-button")
+        args = "clicked", self.save_light_curve_points
         self.export_button.connect(*args)
 
         # Activate the button of the first filter for which there is data
@@ -700,7 +717,7 @@ class StarDetailsGUI(object):
 
             self.buttons[init_pfilter].set_active(True)
             event = gtk.gdk.Event(gtk.gdk.NOTHING)
-            self.buttons[init_pfilter].emit('button-press-event', event)
+            self.buttons[init_pfilter].emit("button-press-event", event)
             self.shown = init_pfilter
 
         else:
@@ -715,14 +732,14 @@ class StarDetailsGUI(object):
         # Button to look up the star in the SIMBAD astronomical database.
         # Render a stock button, STOCK_INFO, but use a different label.
 
-        arg = 'look-up-star-in-simbad-button'
+        arg = "look-up-star-in-simbad-button"
         self.look_up_in_simbad_button = self._builder.get_object(arg)
         alignment = self.look_up_in_simbad_button.get_children()[0]
         hbox = alignment.get_children()[0]
         image, label = hbox.get_children()
         label.set_text("Look up in SIMBAD")
 
-        args = 'clicked', self.handle_look_up_in_simbad
+        args = "clicked", self.handle_look_up_in_simbad
         self.look_up_in_simbad_button.connect(*args)
 
         # The column with the Julian Dates is only visible when the View ->
@@ -733,20 +750,27 @@ class StarDetailsGUI(object):
         # does not yet exist.
 
         julian_column = self.curve_view.get_column(2)
-        assert julian_column.get_title() == 'JD'
+        assert julian_column.get_title() == "JD"
         visible = self.julian_dates_visible()
         julian_column.set_visible(visible)
 
     def save_light_curve_points(self, widget):
         """ Dump the points of the light curve to a plain text file """
 
-        args = (self.parent._main_window, self._builder, self.config,
-                self.id, self.shown, self.db, self.curve_store)
+        args = (
+            self.parent._main_window,
+            self._builder,
+            self.config,
+            self.id,
+            self.shown,
+            self.db,
+            self.curve_store,
+        )
         dialog = ExportCurveDialog(*args)
         dialog.run()
 
     def handle_view_star_in_chart(self, widget):
-        """ Show the Finding Chart window and mark the star on it.
+        """Show the Finding Chart window and mark the star on it.
 
         This is the callback function for the 'View in Finding Chart' button
         (button_press_event). It shows the finding chart gtk.Dialog, if it's
@@ -755,11 +779,11 @@ class StarDetailsGUI(object):
         """
 
         main_window = self.parent
-        main_window.handle_finding_chart(self, set_visibility = True)
+        main_window.handle_finding_chart(self, set_visibility=True)
         main_window.finding_chart_dialog.mark_star(self.id)
 
     def handle_look_up_in_simbad(self, widget):
-        """ Look up the star in the SIMBAD database.
+        """Look up the star in the SIMBAD database.
 
         This is the callback function for the 'Look up in SIMBAD' button
         (button_press_event). It submits a coordinate-query to the SIMBAD
@@ -780,7 +804,7 @@ class SNRThresholdDialog(object):
         self.builder.add_from_file(glade.SNR_THRESHOLD_DIALOG)
         self.config = config
 
-        self.dialog = self.builder.get_object('snr-treshold-dialog')
+        self.dialog = self.builder.get_object("snr-treshold-dialog")
         self.dialog.set_resizable(False)
         self.dialog.set_title("Mininum SNR in plots")
         self.dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
@@ -790,11 +814,11 @@ class SNRThresholdDialog(object):
         self.dialog.set_transient_for(parent_window)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 
-        self.spinbutton = self.builder.get_object('snr-threshold-spinbutton')
+        self.spinbutton = self.builder.get_object("snr-threshold-spinbutton")
         self.spinbutton.set_value(self.config.get_minimum_snr())
 
     def run(self):
-        """ Run the dialog window in a recursive loop.
+        """Run the dialog window in a recursive loop.
 
         This method shows the dialog window and allows the user to select,
         using a spin button, the minimum SNR to be used in plots. If the value
@@ -831,8 +855,8 @@ class LEMONJuicerGUI(object):
     TABS_LABEL = "Star %d"
 
     get_abspath = functools.partial(os.path.join, os.path.dirname(__file__))
-    LEMON_ICON = get_abspath('./gui/img/lemon.png')
-    COMPASS_ICON = get_abspath('./gui/img/compass.png')
+    LEMON_ICON = get_abspath("./gui/img/lemon.png")
+    COMPASS_ICON = get_abspath("./gui/img/compass.png")
 
     def _add_custom_stock_icons(self):
         """ Register our own stock icon names """
@@ -840,11 +864,11 @@ class LEMONJuicerGUI(object):
         factory = gtk.IconFactory()
         pixbuf = gtk.gdk.pixbuf_new_from_file(self.COMPASS_ICON)
         iconset = gtk.IconSet(pixbuf)
-        factory.add('Compass', iconset)
+        factory.add("Compass", iconset)
         factory.add_default()
 
-    def __init__(self, db_path = None):
-        """ Initialize a LEMONJuicerGUI object.
+    def __init__(self, db_path=None):
+        """Initialize a LEMONJuicerGUI object.
 
         Keyword arguments:
         db_path - LEMONdB to open when Juicer starts.
@@ -862,17 +886,17 @@ class LEMONJuicerGUI(object):
         # decimal or both) are persistent.
         self.config = config.Configuration(config.CONFIG_PATH)
 
-        self._main_window = builder.get_object('main-window')
-        self._notebook    = builder.get_object('main-notebook')
-        self._box_toolbar = builder.get_object('box-toolbar')
-        self._status_bar  = builder.get_object('status-bar')
-        self.close_button = builder.get_object('close-button')
-        self.close_menu_item = builder.get_object('close-menu-item')
+        self._main_window = builder.get_object("main-window")
+        self._notebook = builder.get_object("main-notebook")
+        self._box_toolbar = builder.get_object("box-toolbar")
+        self._status_bar = builder.get_object("status-bar")
+        self.close_button = builder.get_object("close-button")
+        self.close_menu_item = builder.get_object("close-menu-item")
 
         self._add_custom_stock_icons()
-        self.finding_chart_menuitem = builder.get_object('finding-chart-item')
-        self.finding_chart_button = builder.get_object('finding-chart-button')
-        self.finding_chart_button.set_stock_id('Compass')
+        self.finding_chart_menuitem = builder.get_object("finding-chart-item")
+        self.finding_chart_button = builder.get_object("finding-chart-button")
+        self.finding_chart_button.set_stock_id("Compass")
         self.finding_chart_menuitem.set_sensitive(False)
         self.finding_chart_button.set_sensitive(False)
 
@@ -886,7 +910,7 @@ class LEMONJuicerGUI(object):
         # the state of the gtk.ToggleToolButton with set_active(), but there
         # is no way to get the signal handler IDs if they are connected by
         # Gtk.Builder. [http://stackoverflow.com/a/11803778/184363]
-        args = 'toggled', self.handle_finding_chart
+        args = "toggled", self.handle_finding_chart
         self.chart_handler_id = self.finding_chart_button.connect(*args)
 
         # The dialog window with the finding chart is kept in memory, hidden
@@ -902,20 +926,23 @@ class LEMONJuicerGUI(object):
         self._main_window.add_accel_group(self.global_accelators)
 
         # Connect <Ctrl>F to LEMONJuicerGUI.chart_callback()
-        key, modifier = gtk.accelerator_parse('<Control>F')
+        key, modifier = gtk.accelerator_parse("<Control>F")
         args = key, modifier, gtk.ACCEL_VISIBLE, self.chart_callback
         self.global_accelators.connect_group(*args)
 
         # Connect <Ctrl>V to LEMONJuicerGUI.handle_view_in_chart_accelerator()
-        key, modifier = gtk.accelerator_parse('<Control>V')
-        args = (key, modifier, gtk.ACCEL_VISIBLE,
-                self.handle_view_in_chart_accelerator)
+        key, modifier = gtk.accelerator_parse("<Control>V")
+        args = (key, modifier, gtk.ACCEL_VISIBLE, self.handle_view_in_chart_accelerator)
         self.global_accelators.connect_group(*args)
 
         # Use <Ctrl>S to look up the astronomical object in SIMBAD
-        key, modifier = gtk.accelerator_parse('<Control>S')
-        args = (key, modifier, gtk.ACCEL_VISIBLE,
-                self.handle_look_up_in_simbad_accelerator)
+        key, modifier = gtk.accelerator_parse("<Control>S")
+        args = (
+            key,
+            modifier,
+            gtk.ACCEL_VISIBLE,
+            self.handle_look_up_in_simbad_accelerator,
+        )
         self.global_accelators.connect_group(*args)
 
         self._main_window.set_size_request(*self.MIN_SIZE)
@@ -938,23 +965,23 @@ class LEMONJuicerGUI(object):
         args = self.config.getboolean, config.VIEW_SECTION
         get_view_booloption = functools.partial(*args)
 
-        checkbox = builder.get_object('radio-view-sexagesimal')
+        checkbox = builder.get_object("radio-view-sexagesimal")
         checkbox.set_active(get_view_booloption(config.VIEW_SEXAGESIMAL))
 
-        checkbox = builder.get_object('radio-view-decimal')
+        checkbox = builder.get_object("radio-view-decimal")
         checkbox.set_active(get_view_booloption(config.VIEW_DECIMAL))
 
-        checkbox = builder.get_object('plot-airmasses-checkbox')
+        checkbox = builder.get_object("plot-airmasses-checkbox")
         checkbox.set_active(get_view_booloption(config.PLOT_AIRMASSES))
 
-        checkbox = builder.get_object('plot-julian-dates-checkbox')
+        checkbox = builder.get_object("plot-julian-dates-checkbox")
         checkbox.set_active(get_view_booloption(config.PLOT_JULIAN))
 
         if db_path:
             self.open_db(db_path)
 
     def _activate_StarDetailsGUI_button(self, name):
-        """ Activate a button of the current StarDetailsGUI.
+        """Activate a button of the current StarDetailsGUI.
 
         If the current page in the gtk.Notebook corresponds to a StarDetailsGUI
         instance (that is, all pages except for the first one, with index zero,
@@ -970,33 +997,33 @@ class LEMONJuicerGUI(object):
             getattr(star_details, name).activate()
 
     def handle_view_in_chart_accelerator(self, *args):
-        """ Show the star in the Finding Chart.
+        """Show the star in the Finding Chart.
 
         Activate the 'Show in Finding Chart' button of the star in the current
         StarDetailsGUI.
 
         """
 
-        name = 'view_in_chart_button'
+        name = "view_in_chart_button"
         self._activate_StarDetailsGUI_button(name)
 
     def handle_look_up_in_simbad_accelerator(self, *args):
-        """ Look up the star in the SIMBAD database, using the default browser.
+        """Look up the star in the SIMBAD database, using the default browser.
 
         Activate the 'Look up in SIMBAD' button of the star in the current
         StarDetailsGUI.
 
         """
 
-        name = 'look_up_in_simbad_button'
+        name = "look_up_in_simbad_button"
         self._activate_StarDetailsGUI_button(name)
 
     def save_widget_state(self, widget, section, option):
-        """ Update the specified section and option of the configuration file
-        with the state of the gtk.Widget: 1 if its active and 0 otherwise """
+        """Update the specified section and option of the configuration file
+        with the state of the gtk.Widget: 1 if its active and 0 otherwise"""
 
         active = widget.get_active()
-        value = '1' if active else '0'
+        value = "1" if active else "0"
         self.config.set(section, option, value)
 
     # Airmasses and Julian dates (JDs) are not plotted here (that is done in
@@ -1041,12 +1068,15 @@ class LEMONJuicerGUI(object):
             # Warn the user that all open tabs, if any, will be lost
             if self._notebook.get_n_pages() > 1:
                 title = "Are you done with this database?"
-                msg = ("If you close the LEMONdB all the open tabs will "
-                       "also be closed. Do you really want to proceed?")
+                msg = (
+                    "If you close the LEMONdB all the open tabs will "
+                    "also be closed. Do you really want to proceed?"
+                )
 
                 args = self._main_window, title, msg
-                kwargs = dict(msg_type = gtk.MESSAGE_QUESTION,
-                              buttons = gtk.BUTTONS_OK_CANCEL)
+                kwargs = dict(
+                    msg_type=gtk.MESSAGE_QUESTION, buttons=gtk.BUTTONS_OK_CANCEL
+                )
                 response = util.show_message_dialog(*args, **kwargs)
                 really_close = response == gtk.RESPONSE_OK
 
@@ -1090,25 +1120,25 @@ class LEMONJuicerGUI(object):
 
     def handle_show_about(self, obj):
         self._builder.add_from_file(glade.GUI_ABOUT)
-        about = self._builder.get_object('about-dialog')
+        about = self._builder.get_object("about-dialog")
         about.set_transient_for(self._main_window)
 
         # Replace 'YYYY' in copyright notice with the current year
         copyright = about.get_copyright()
         now = datetime.datetime.now()
-        copyright = copyright.replace('YYYY', str(now.year))
+        copyright = copyright.replace("YYYY", str(now.year))
         about.set_copyright(copyright)
 
         # Replace 'x.x.x' with the current version
         version_str = about.get_version()
-        assert version_str == 'x.x.x'
+        assert version_str == "x.x.x"
         about.set_version(__version__)
 
         about.run()
         about.destroy()
 
     def handle_toggle_view_sexagesimal(self, *args):
-        button = self._builder.get_object('radio-view-sexagesimal')
+        button = self._builder.get_object("radio-view-sexagesimal")
         active = button.get_active()
 
         # Update the configuration file with the new value of the option (not
@@ -1117,14 +1147,14 @@ class LEMONJuicerGUI(object):
         self.config.set(*args)
 
         try:
-            self.view.get_column( self.ra_sex_index).set_visible(active)
+            self.view.get_column(self.ra_sex_index).set_visible(active)
             self.view.get_column(self.dec_sex_index).set_visible(active)
         # Raised if no LEMONdB has yet been loaded
         except AttributeError:
             pass
 
     def handle_toggle_view_decimal(self, *args):
-        button = self._builder.get_object('radio-view-decimal')
+        button = self._builder.get_object("radio-view-decimal")
         active = button.get_active()
 
         # Update the configuration file with the new value of the option
@@ -1132,24 +1162,30 @@ class LEMONJuicerGUI(object):
         self.config.set(*args)
 
         try:
-            self.view.get_column( self.ra_dec_index).set_visible(active)
+            self.view.get_column(self.ra_dec_index).set_visible(active)
             self.view.get_column(self.dec_dec_index).set_visible(active)
         except AttributeError:
             pass
 
     def handle_open(self, window):
-        kwargs = dict(title = None,
-                      action = gtk.FILE_CHOOSER_ACTION_OPEN,
-                      buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        kwargs = dict(
+            title=None,
+            action=gtk.FILE_CHOOSER_ACTION_OPEN,
+            buttons=(
+                gtk.STOCK_CANCEL,
+                gtk.RESPONSE_CANCEL,
+                gtk.STOCK_OPEN,
+                gtk.RESPONSE_OK,
+            ),
+        )
 
         with util.destroying(gtk.FileChooserDialog(**kwargs)) as dialog:
 
             # Only LEMON databases (.LEMONdB extension) are displayed by the
             # gtk.FileChooserDialog.
 
-            db_extension = '.LEMONdB'
-            db_pattern = '*' + db_extension
+            db_extension = ".LEMONdB"
+            db_pattern = "*" + db_extension
 
             # Return the function that can be used to filter files with the
             # gtk.FileFilter.add_custom method. 'filter_info' is a 4-element
@@ -1158,7 +1194,9 @@ class LEMONJuicerGUI(object):
             def ends_with(extension):
                 def func(filter_info):
                     return filter_info[0].lower().endswith(extension.lower())
+
                 return func
+
             db_filter = ends_with(db_extension)
 
             filt = gtk.FileFilter()
@@ -1186,12 +1224,13 @@ class LEMONJuicerGUI(object):
         # the current one will be closed, unless the operation is aborted.
         if self.db is not None:
             title = "Are you done with this database?"
-            msg = ("Unfortunately, data analysis must be done on one LEMONdB "
-                   "at a time, so opening a new one will close all your "
-                   "current tabs. Do you really want to proceed?")
+            msg = (
+                "Unfortunately, data analysis must be done on one LEMONdB "
+                "at a time, so opening a new one will close all your "
+                "current tabs. Do you really want to proceed?"
+            )
             args = self._main_window, title, msg
-            kwargs = dict(msg_type = gtk.MESSAGE_QUESTION,
-                          buttons = gtk.BUTTONS_OK_CANCEL)
+            kwargs = dict(msg_type=gtk.MESSAGE_QUESTION, buttons=gtk.BUTTONS_OK_CANCEL)
             response = util.show_message_dialog(*args, **kwargs)
 
             # If the user presses OK, close all the tabs of the notebook.
@@ -1202,22 +1241,24 @@ class LEMONJuicerGUI(object):
                 return
 
         self._builder.add_from_file(glade.GUI_OVERVIEW)
-        overview = self._builder.get_object('database-overview')
-        self.view = self._builder.get_object('table-view')
-        self.view.connect('row-activated', self.handle_row_activated)
+        overview = self._builder.get_object("database-overview")
+        self.view = self._builder.get_object("table-view")
+        self.view.connect("row-activated", self.handle_row_activated)
 
         # Display a dialog with a progress bar which is updated as all the
         # stars are loaded into memory, as this may take a while. A 'Cancel'
         # button allows the process to be interrupted at any time.
         self._builder.add_from_file(glade.LOADING_DIALOG)
-        dialog = self._builder.get_object('loading-dialog')
+        dialog = self._builder.get_object("loading-dialog")
         dialog.set_transient_for(self._main_window)
-        progressbar = self._builder.get_object('loading-progressbar')
+        progressbar = self._builder.get_object("loading-progressbar")
 
         self._aborted = False
+
         def cancel(*args):
             self._aborted = True
-        dialog.connect('response', cancel)
+
+        dialog.connect("response", cancel)
         dialog.show()
 
         try:
@@ -1231,15 +1272,15 @@ class LEMONJuicerGUI(object):
             # Coordinates, but the decimal coordinates are always needed, as
             # sexagesimal ones are sorted by them, not lexicographically.
 
-            star_attrs = ['ID', 'α', 'α', 'δ', 'δ', 'm']
+            star_attrs = ["ID", "α", "α", "δ", "δ", "m"]
 
-            assert star_attrs.count('ID') == 1
-            assert star_attrs.count('α') == 2
-            assert star_attrs.count('δ') == 2
-            self.id_index = star_attrs.index('ID')
-            self.ra_sex_index = star_attrs.index('α')
+            assert star_attrs.count("ID") == 1
+            assert star_attrs.count("α") == 2
+            assert star_attrs.count("δ") == 2
+            self.id_index = star_attrs.index("ID")
+            self.ra_sex_index = star_attrs.index("α")
             self.ra_dec_index = self.ra_sex_index + 1
-            self.dec_sex_index = star_attrs.index('δ')
+            self.dec_sex_index = star_attrs.index("δ")
             self.dec_dec_index = self.dec_sex_index + 1
 
             # Two additional columns for each photometric filter, with (a) the
@@ -1270,7 +1311,7 @@ class LEMONJuicerGUI(object):
 
                 # 'text': column from which the text of the column is taken
                 # 'visible': column which determines the visibility of the cell
-                kwargs = dict(text = index)
+                kwargs = dict(text=index)
 
                 # Determine the column by which this column is sorted
                 if index == self.ra_sex_index:
@@ -1283,7 +1324,7 @@ class LEMONJuicerGUI(object):
                 # curve could be generated, evaluates to True.
                 elif index in self.stdevs_indexes:
                     sort_index = index
-                    kwargs['visible'] = index + 1
+                    kwargs["visible"] = index + 1
 
                 else:
                     sort_index = index
@@ -1376,8 +1417,8 @@ class LEMONJuicerGUI(object):
         finally:
             dialog.destroy()
 
-    def add_star_page(self, star_id, pfilter = None):
-        """ Append a page with the star whose ID is 'star_id'.
+    def add_star_page(self, star_id, pfilter=None):
+        """Append a page with the star whose ID is 'star_id'.
         Returns the StarDetailsGUI instance which encapsulates all the
         information of the star.
 
@@ -1388,7 +1429,7 @@ class LEMONJuicerGUI(object):
 
         """
 
-        details = StarDetailsGUI(self, star_id, init_pfilter = pfilter)
+        details = StarDetailsGUI(self, star_id, init_pfilter=pfilter)
 
         tab_label = gtk.Label(self.TABS_LABEL % star_id)
         tab_label.set_width_chars(self.tabs_length)
@@ -1399,8 +1440,8 @@ class LEMONJuicerGUI(object):
         return details
 
     def get_star_index(self, star_id):
-        """ Return the page in the notebook with the star whose ID is 'star_id'.
-        Returns -1 if none of the pages of the notebook contains that star """
+        """Return the page in the notebook with the star whose ID is 'star_id'.
+        Returns -1 if none of the pages of the notebook contains that star"""
 
         for index, page in enumerate(self._notebook):
             try:
@@ -1412,8 +1453,8 @@ class LEMONJuicerGUI(object):
         else:
             return -1
 
-    def switch_to_tab(self, star_id, pfilter = None):
-        """ Switch to the page with the star whose ID is 'star_id'.
+    def switch_to_tab(self, star_id, pfilter=None):
+        """Switch to the page with the star whose ID is 'star_id'.
 
         Keyword arguments:
         pfilter - after switching to the page of the star, switch also to this
@@ -1434,7 +1475,7 @@ class LEMONJuicerGUI(object):
             msg = "star %d is not being shown" % star_id
             raise ValueError(msg)
 
-    def view_star(self, star_id, view = None):
+    def view_star(self, star_id, view=None):
         """ Open the details of the star, or switch to them if already open. """
 
         # If we clicked on the star not in the main window (with all the stars
@@ -1446,14 +1487,14 @@ class LEMONJuicerGUI(object):
             pfilter = None
 
         if star_id in self.open_stars.iterkeys():
-            self.switch_to_tab(star_id, pfilter = pfilter)
+            self.switch_to_tab(star_id, pfilter=pfilter)
 
         else:
-            details = self.add_star_page(star_id, pfilter = pfilter)
+            details = self.add_star_page(star_id, pfilter=pfilter)
             self.open_stars[star_id] = details
 
-    def handle_row_activated(self, view, row, column, id_index = 0):
-        """ Handler for when the user double-clicks on a star.
+    def handle_row_activated(self, view, row, column, id_index=0):
+        """Handler for when the user double-clicks on a star.
 
         Keyword arguments:
         id_index - the column of the model to which the view is associated
@@ -1481,18 +1522,18 @@ class LEMONJuicerGUI(object):
                 details.redraw_light_curve(None)
 
     def change_JDs_visibility(self, widget):
-        """ Set the visibility of the column with Julian dates in all the
+        """Set the visibility of the column with Julian dates in all the
         StarDetailsGUI objects, depending on the state (active or not) of
-        the View -> Plots -> 'Julian dates' checkbox. """
+        the View -> Plots -> 'Julian dates' checkbox."""
 
         for details in self.open_stars.itervalues():
             julian_column = details.curve_view.get_column(2)
-            assert julian_column.get_title() == 'JD'
+            assert julian_column.get_title() == "JD"
             visible = widget.get_active()
             julian_column.set_visible(visible)
 
-    def handle_finding_chart(self, widget, set_visibility = None):
-        """ Display the reference frame in a new dialog.
+    def handle_finding_chart(self, widget, set_visibility=None):
+        """Display the reference frame in a new dialog.
 
         Create a gtk.Dialog() the first time this method is called and show()
         it. Subsequent calls to this method will alternate between hide()'ing
@@ -1543,7 +1584,7 @@ class LEMONJuicerGUI(object):
             hide()
 
     def set_finding_chart_button_active(self, active):
-        """ Update state of 'Finding Chart' button without emitting a signal.
+        """Update state of 'Finding Chart' button without emitting a signal.
 
         The 'Finding Chart' button is a gtk.ToggleToolButton, but its status
         can change from other events than just clicking it: (a) the item with
@@ -1560,7 +1601,7 @@ class LEMONJuicerGUI(object):
         self.finding_chart_button.handler_unblock(self.chart_handler_id)
 
     def chart_callback(self, accel_group, acceleratable, keyval, modifier):
-        """ Callback function for the <Ctrl>F accelerator.
+        """Callback function for the <Ctrl>F accelerator.
 
         This method calls LEMONJuicerGUI.handle_finding_chart(), but only if a
         LEMONdB is open (otherwise, there is no chart to show and, in the same

@@ -32,11 +32,12 @@ import warnings
 import util
 
 LEMON_DIR = os.path.dirname(os.path.abspath(__file__))
-COMMITS_URL = 'https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1'
-GITHUB_CACHE_FILE = os.path.join(LEMON_DIR, '.last-github-commit-cache.json')
+COMMITS_URL = "https://api.github.com/repos/vterron/lemon/commits?page=1&per_page=1"
+GITHUB_CACHE_FILE = os.path.join(LEMON_DIR, ".last-github-commit-cache.json")
+
 
 def lemon_check_output(args):
-    """ Run a command in the LEMON directory and return its output.
+    """Run a command in the LEMON directory and return its output.
 
     This convenience function chdirs to the LEMON directory, runs a command
     with arguments and returns its output as a string with leading and trailing
@@ -48,12 +49,13 @@ def lemon_check_output(args):
     # subprocess.check_output() new in 2.7; we need 2.6 compatibility
     with util.tmp_chdir(LEMON_DIR):
         with tempfile.TemporaryFile() as fd:
-            subprocess.check_call(args, stdout = fd)
+            subprocess.check_call(args, stdout=fd)
             fd.seek(0)
             return fd.readline().strip()
 
+
 def get_git_revision():
-    """ Return a human-readable revision number of the LEMON Git repository.
+    """Return a human-readable revision number of the LEMON Git repository.
 
     Return the output of git-describe, the command that returns an identifier
     which tells us how far (number of commits) off a tag we are and the hash of
@@ -65,16 +67,18 @@ def get_git_revision():
     # --long: always output the long format even when it matches a tag
     # --dirty: describe the working tree; append '-dirty' if necessary
     # --tags: use any tag found in refs/tags namespace
-    args = ['git', 'describe', '--long', '--dirty', '--tags']
+    args = ["git", "describe", "--long", "--dirty", "--tags"]
     return lemon_check_output(args)
+
 
 def get_last_commit_date():
     """ Return the author date of the last commit, as a Unix timestamp. """
 
     # -<n>: number of commits to show
     # %at: author date, UNIX timestamp
-    args = ['git', 'log', '-1', '--format=%at']
+    args = ["git", "log", "-1", "--format=%at"]
     return float(lemon_check_output(args))
+
 
 def git_update():
     """ Merge upstream changes into the local repository with `git pull` """
@@ -89,12 +93,13 @@ def git_update():
     except OSError:
         pass
 
-    args = ['git', 'pull']
+    args = ["git", "pull"]
     with util.tmp_chdir(LEMON_DIR):
         return subprocess.call(args)
 
+
 class FileCache(object):
-    """ Interface to cache data to disk.
+    """Interface to cache data to disk.
 
     This class allows to easily write and read data from a JSON file, via
     its set() and get() methods. The file is opened and closed every time an
@@ -106,8 +111,8 @@ class FileCache(object):
     def __init__(self, path):
         self.path = path
 
-    def up_to_date(self, max_hours = 1):
-        """ Determine whether the cache file has expired.
+    def up_to_date(self, max_hours=1):
+        """Determine whether the cache file has expired.
 
         Return True if the cache file was last modified less than 'max_hours'
         ago; and False otherwise. If the file does not exist, returns False
@@ -126,17 +131,18 @@ class FileCache(object):
     def get(self):
         """ Return the contents of the JSON cache file """
 
-        with open(self.path, 'rt') as fd:
+        with open(self.path, "rt") as fd:
             return json.load(fd)
 
     def set(self, *args):
         """ Write the received arguments to the JSON cache file """
 
-        with open(self.path, 'wt') as fd:
+        with open(self.path, "wt") as fd:
             json.dump(args, fd)
 
+
 def github_cache(func):
-    """ Decorator to avoid unnecessarily querying the GitHub API too much.
+    """Decorator to avoid unnecessarily querying the GitHub API too much.
 
     This decorator uses the GITHUB_CACHE_FILE file to cache the values returned
     by the decorated function. If the cache file was last modified less than
@@ -153,16 +159,19 @@ def github_cache(func):
     """
 
     cache = FileCache(GITHUB_CACHE_FILE)
+
     @functools.wraps(func)
     def cachedf(*args, **kwargs):
-        if not cache.up_to_date(max_hours = 1):
+        if not cache.up_to_date(max_hours=1):
             cache.set(*func(*args, **kwargs))
         return cache.get()
+
     return cachedf
 
+
 @github_cache
-def get_last_github_commit(timeout = None):
-    """ Return the short SHA1 of the last commit pushed to GitHub.
+def get_last_github_commit(timeout=None):
+    """Return the short SHA1 of the last commit pushed to GitHub.
 
     Use the GitHub API to get the SHA1 hash of the last commit pushed to the
     LEMON repository, and then obtain its short version with `git rev-parse`.
@@ -181,12 +190,12 @@ def get_last_github_commit(timeout = None):
     # the User-Agent header value. This allows us to contact you if there are
     # problems. [https://developer.github.com/v3/#user-agent-required]
 
-    headers = {'User-Agent': 'vterron'}
-    kwargs = dict(headers = headers, timeout = timeout)
+    headers = {"User-Agent": "vterron"}
+    kwargs = dict(headers=headers, timeout=timeout)
     r = requests.get(COMMITS_URL, **kwargs)
     last_commit = r.json()[0]
-    hash_ = last_commit['sha']
-    date_str = last_commit['commit']['author']['date']
+    hash_ = last_commit["sha"]
+    date_str = last_commit["commit"]["author"]["date"]
 
     # Timestamps are returned in ISO 8601 format: "YYYY-MM-DDTHH:MM:SSZ", where
     # Z is the zone designator for the zero UTC offset (that is, the time is in
@@ -196,12 +205,13 @@ def get_last_github_commit(timeout = None):
     date_struct = time.strptime(date_str, fmt)
     date_ = calendar.timegm(date_struct)
 
-    args = ['git', 'rev-parse', '--short', hash_]
+    args = ["git", "rev-parse", "--short", hash_]
     short_hash = lemon_check_output(args)
     return short_hash, date_
 
-def check_up_to_date(timeout = None):
-    """ Issue a warning if there are unmerged changes on GitHub.
+
+def check_up_to_date(timeout=None):
+    """Issue a warning if there are unmerged changes on GitHub.
 
     Compare the SHA1 hash of the last commit in the local LEMON Git repository
     with that pushed to GitHub. If they differ *and* the GitHub commit is more
@@ -213,14 +223,20 @@ def check_up_to_date(timeout = None):
 
     """
 
-    current_revision  = get_git_revision()
-    github_hash, last_github_date = get_last_github_commit(timeout = timeout)
+    current_revision = get_git_revision()
+    github_hash, last_github_date = get_last_github_commit(timeout=timeout)
     if github_hash not in current_revision:
         last_commit_date = get_last_commit_date()
         if last_commit_date < last_github_date:
-            msg = ("Your current revision is '%s' (%s), but there is a more "
-                   "recent version (%s, %s) available on GitHub. You may use "
-                   "`lemon --update` to retrieve these changes.")
-            args = (current_revision, util.utctime(last_commit_date),
-                    github_hash, util.utctime(last_github_date))
+            msg = (
+                "Your current revision is '%s' (%s), but there is a more "
+                "recent version (%s, %s) available on GitHub. You may use "
+                "`lemon --update` to retrieve these changes."
+            )
+            args = (
+                current_revision,
+                util.utctime(last_commit_date),
+                github_hash,
+                util.utctime(last_github_date),
+            )
             warnings.warn(msg % args)

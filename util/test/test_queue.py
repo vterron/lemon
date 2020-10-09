@@ -30,7 +30,6 @@ from util import Queue
 
 
 class QueueTest(unittest.TestCase):
-
     def shortDescription(self):
         """Don't use the first line of the test method's docstring."""
         pass

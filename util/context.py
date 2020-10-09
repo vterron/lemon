@@ -21,9 +21,10 @@ import contextlib
 import os
 import tempfile
 
+
 @contextlib.contextmanager
 def tmp_chdir(path):
-    """ A context manager to temporarily change the working directory.
+    """A context manager to temporarily change the working directory.
 
     This is a rather simple context manager to change the current working
     directory within a with statement, restoring the original one upon exit.
@@ -37,9 +38,10 @@ def tmp_chdir(path):
     finally:
         os.chdir(cwd)
 
+
 @contextlib.contextmanager
 def tempinput(data):
-    """ A context manager to work with StringIO-like temporary files.
+    """A context manager to work with StringIO-like temporary files.
 
     The open() built-in command only takes filenames, so we cannot feed to it a
     StringIO. This context manager writes 'data' to a temporary file, ensuring

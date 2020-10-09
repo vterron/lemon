@@ -40,13 +40,15 @@ import scipy.stats
 import database
 import util
 
+
 class NoStarsSelectedError(ValueError):
     """ Raised when no stars can be returned by the LEMONdBMiner """
+
     pass
 
 
 class LEMONdBMiner(database.LEMONdB):
-    """ Interface to identify potentially interesting stars in a LEMONdB.
+    """Interface to identify potentially interesting stars in a LEMONdB.
 
     Databases accessed through this class are expected to be read-only, and
     thus methods expensive (whether in I/O or CPU) in the parent class are
@@ -68,9 +70,15 @@ class LEMONdBMiner(database.LEMONdB):
         return super(LEMONdBMiner, self).get_period(*args)
 
     @staticmethod
-    def _ascii_table(headers, table_rows, sort_index = 1, descending = True,
-                    ndecimals = 8, dates_columns = None):
-        """ Format data as an ASCII table.
+    def _ascii_table(
+        headers,
+        table_rows,
+        sort_index=1,
+        descending=True,
+        ndecimals=8,
+        dates_columns=None,
+    ):
+        """Format data as an ASCII table.
 
         Returns a string with the data in 'table_rows' formatted as an ASCII
         table, sorted by the values of the sort_index-th column. 'table_rows'
@@ -106,8 +114,7 @@ class LEMONdBMiner(database.LEMONdB):
 
         # Sort the table by the specified column
         if sort_index is not None:
-            table_rows.sort(key = operator.itemgetter(sort_index),
-                            reverse = descending)
+            table_rows.sort(key=operator.itemgetter(sort_index), reverse=descending)
 
         # Give format to all the data in the table as a string, as (1) a date,
         # (2) a real number with the specified number of decimals or (3) by
@@ -116,7 +123,7 @@ class LEMONdBMiner(database.LEMONdB):
         # table and the second to the column.
 
         table_data = collections.defaultdict(dict)
-        table_data[0][0] = '' # top-left 'corner' of table left empty
+        table_data[0][0] = ""  # top-left 'corner' of table left empty
 
         # Populate the table with the headers...
         for column_index in range(len(headers)):
@@ -127,11 +134,11 @@ class LEMONdBMiner(database.LEMONdB):
             table_data[row_index + 1][0] = str(row_index)
             for column_index, value in enumerate(row):
                 if value is None:
-                    table_cell = ''
+                    table_cell = ""
                 elif column_index in dates_columns:
-                    table_cell = str(datetime.timedelta(seconds = value))
+                    table_cell = str(datetime.timedelta(seconds=value))
                 elif isinstance(value, float):
-                    table_cell = '%.*f' % (ndecimals, value)
+                    table_cell = "%.*f" % (ndecimals, value)
                 else:
                     table_cell = str(value)
                 table_data[row_index + 1][column_index + 1] = table_cell
@@ -146,36 +153,39 @@ class LEMONdBMiner(database.LEMONdB):
         widths = {}
         data_widths = {}
         for column_index in table_data[0].iterkeys():
-            column_values = (table_data[row][column_index]
-                             for row in table_data.iterkeys())
-            column_lengths = [len(str(x))
-                              for x in column_values if x is not None]
+            column_values = (
+                table_data[row][column_index] for row in table_data.iterkeys()
+            )
+            column_lengths = [len(str(x)) for x in column_values if x is not None]
             # The maximum width is increased by two, so that no value in the
             # table touches the vertical cell borders (the '|' characters)
             widths[column_index] = max(column_lengths) + 2
-            data_widths[column_index] = max(column_lengths[1:]) # only the data
-
+            data_widths[column_index] = max(column_lengths[1:])  # only the data
 
         # Finally, populate the ASCII table with the headers...
         header_values = table_data[0].itervalues()
-        header_str = '|'.join([x.center(widths[index])
-                               for index, x in enumerate(header_values)])
-        output = header_str + '\n' + '-' * len(header_str) + '\n'
+        header_str = "|".join(
+            [x.center(widths[index]) for index, x in enumerate(header_values)]
+        )
+        output = header_str + "\n" + "-" * len(header_str) + "\n"
 
         # ... and with the rest of the data
         for row_index in sorted(table_data.iterkeys()):
             if not row_index:  # headers (index == 0) already formatted
                 continue
             row_values = table_data[row_index].values()
-            output += row_values[0].ljust(data_widths[0]).center(widths[0]) + '|'
-            output += '|'.join(x.rjust(data_widths[index]).center(widths[index])
-                                for index, x in enumerate(row_values) if index)
-            output += '\n'
+            output += row_values[0].ljust(data_widths[0]).center(widths[0]) + "|"
+            output += "|".join(
+                x.rjust(data_widths[index]).center(widths[index])
+                for index, x in enumerate(row_values)
+                if index
+            )
+            output += "\n"
 
         return output
 
-    def sort_by_period_similarity(self, minimum = 2, normalization = 'max'):
-        """ Sort the stars by their period similarity.
+    def sort_by_period_similarity(self, minimum=2, normalization="max"):
+        """Sort the stars by their period similarity.
 
         This method sorts the stars in a LEMONdB by the similarity between
         their periods in the different photometric filters in which they were
@@ -207,11 +217,11 @@ class LEMONdBMiner(database.LEMONdB):
         if minimum < 2:
             raise ValueError("a minimum of at least two periods is needed")
 
-        if normalization == 'max':
+        if normalization == "max":
             norm_func = numpy.max
-        elif normalization == 'mean':
+        elif normalization == "mean":
             norm_func = numpy.average
-        elif normalization == 'median':
+        elif normalization == "median":
             norm_func = numpy.median
         else:
             raise ValueError("unrecognized normalization method")
@@ -223,18 +233,17 @@ class LEMONdBMiner(database.LEMONdB):
                 continue
 
             normalized_periods = star_periods / norm_func(star_periods)
-            periods_stdev = float(numpy.std(normalized_periods, dtype = self.dtype))
+            periods_stdev = float(numpy.std(normalized_periods, dtype=self.dtype))
             periods_stdevs.append((star_id, periods_stdev))
 
         if not periods_stdevs:
             msg = "no stars with at least %d known periods"
             raise NoStarsSelectedError(msg % minimum)
 
-        return sorted(periods_stdevs, key = operator.itemgetter(1))
+        return sorted(periods_stdevs, key=operator.itemgetter(1))
 
-    def period_similarity(self, how_many, minimum = 2,
-                          normalization = 'max', ndecimals = 8):
-        """ Return an ASCII table with the stars with the most similar periods.
+    def period_similarity(self, how_many, minimum=2, normalization="max", ndecimals=8):
+        """Return an ASCII table with the stars with the most similar periods.
 
         This is a wrapper around the LEMONdBMiner.sort_by_period_similarity and
         LEMONdBMiner._ascii_table methods, to avoid having to invoke them
@@ -262,9 +271,9 @@ class LEMONdBMiner(database.LEMONdB):
         """
 
         # The 'how_many' stars with the most similar normalized periods
-        most_similar = \
-            self.sort_by_period_similarity(normalization = normalization,
-                                           minimum = minimum)[:how_many]
+        most_similar = self.sort_by_period_similarity(
+            normalization=normalization, minimum=minimum
+        )[:how_many]
         header = []
         header.append("Star")
         header.append("Stdev. Norm.")
@@ -287,13 +296,17 @@ class LEMONdBMiner(database.LEMONdB):
                 column.append(period_secs)
             table_columns.append(column)
 
-        return LEMONdBMiner._ascii_table(header, table_columns, sort_index = 1,
-                                        descending = False, ndecimals = ndecimals,
-                                        dates_columns = (2, 3, 4))
+        return LEMONdBMiner._ascii_table(
+            header,
+            table_columns,
+            sort_index=1,
+            descending=False,
+            ndecimals=ndecimals,
+            dates_columns=(2, 3, 4),
+        )
 
-    def match_bands(self, star_id, first_pfilter, second_pfilter,
-                    delta = 3600 * 1.5):
-        """ Return the paired magnitudes from two light curves of the star.
+    def match_bands(self, star_id, first_pfilter, second_pfilter, delta=3600 * 1.5):
+        """Return the paired magnitudes from two light curves of the star.
 
         The method takes the light curves of a star in two photometric filters
         and 'matches' each point of the first curve to the closest point in
@@ -315,11 +328,10 @@ class LEMONdBMiner(database.LEMONdB):
             matches = []
             for point1 in phot1_points:
                 # Raises ValueError for empty sequences
-                closest = min(phot2_points,
-                              key = lambda x: abs(point1[0] - x[0]))
+                closest = min(phot2_points, key=lambda x: abs(point1[0] - x[0]))
 
                 # Second element of the tuple (index = 1) is the magnitude
-                if abs(point1[0] - closest[0]) < delta: # we have a match!
+                if abs(point1[0] - closest[0]) < delta:  # we have a match!
                     matches.append((point1[1], closest[1]))
 
             return matches
@@ -327,9 +339,10 @@ class LEMONdBMiner(database.LEMONdB):
         except (TypeError, ValueError):
             return None
 
-    def star_correlation(self, star_id, first_pfilter, second_pfilter,
-                         min_matches = 10, delta = 3600 * 1.5):
-        """ Return the correlation between two photometric filters of a star.
+    def star_correlation(
+        self, star_id, first_pfilter, second_pfilter, min_matches=10, delta=3600 * 1.5
+    ):
+        """Return the correlation between two photometric filters of a star.
 
         Take the output of LEMONdBMiner.match_bands, which pairs the magnitudes
         from two light curves of the star, and compute the least-squares
@@ -344,8 +357,7 @@ class LEMONdBMiner(database.LEMONdB):
 
         """
 
-        matches = self.match_bands(star_id, first_pfilter, second_pfilter,
-                                   delta = delta)
+        matches = self.match_bands(star_id, first_pfilter, second_pfilter, delta=delta)
 
         if not matches:  # either None or empty
             return None
@@ -353,13 +365,15 @@ class LEMONdBMiner(database.LEMONdB):
             return None
 
         match_x, match_y = zip(*matches)
-        slope, intercept, r_value, p_value, std_err = \
-            scipy.stats.linregress(match_x, match_y)
+        slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(
+            match_x, match_y
+        )
         return star_id, slope, r_value, len(matches)
 
-    def band_correlation(self, how_many, sort_index = 0, delta = 3600 * 1.5,
-                         min_matches = 10, ndecimals = 8):
-        """ Return an ASCII table with the most correlated stars.
+    def band_correlation(
+        self, how_many, sort_index=0, delta=3600 * 1.5, min_matches=10, ndecimals=8
+    ):
+        """Return an ASCII table with the most correlated stars.
 
         The method takes the combinations of two elements out of all the
         photometric filters in the database and, for each one, computes the
@@ -389,8 +403,8 @@ class LEMONdBMiner(database.LEMONdB):
         main_combination = pfilter_combinations[sort_index]
         main_correlation = []
 
-        for star_id in self. star_ids:
-            kwargs = {'min_matches' : min_matches, 'delta' : delta}
+        for star_id in self.star_ids:
+            kwargs = {"min_matches": min_matches, "delta": delta}
             star_corr = self.star_correlation(star_id, *main_combination, **kwargs)
             if star_corr:
                 main_correlation.append(star_corr)
@@ -403,7 +417,7 @@ class LEMONdBMiner(database.LEMONdB):
         # filters, decreasing order, and take the best 'how-many' stars. The
         # correlation coefficient is the third element of the tuples, while
         # the ID of each star is the first one (indexes 2 and 0, respectively)
-        main_correlation.sort(key = operator.itemgetter(2), reverse = True)
+        main_correlation.sort(key=operator.itemgetter(2), reverse=True)
         most_correlated = main_correlation[:how_many]
         most_correlated_ids = [x[0] for x in most_correlated]
 
@@ -419,12 +433,15 @@ class LEMONdBMiner(database.LEMONdB):
         # these 'how_many', most correlated stars that we have just identified.
         for index, secondary_combination in enumerate(pfilter_combinations):
             if index == sort_index:
-                continue # correlations already calculated!
+                continue  # correlations already calculated!
 
             for star_id in most_correlated_ids:
-                star_corr = self.star_correlation(star_id, *secondary_combination,
-                                                  min_matches = min_matches,
-                                                  delta = delta)
+                star_corr = self.star_correlation(
+                    star_id,
+                    *secondary_combination,
+                    min_matches=min_matches,
+                    delta=delta
+                )
                 if star_corr:
                     r_value, nmatches = star_corr[-2:]
                 else:
@@ -436,11 +453,11 @@ class LEMONdBMiner(database.LEMONdB):
         # information in a list of lists, properly sorted, and create the
         # ASCII table which displays all the data.
         header = []
-        header.append('Star')
+        header.append("Star")
         for first_pfilter, second_pfilter in pfilter_combinations:
-            pfilters_str = '%s-%s' % (first_pfilter.letter, second_pfilter.letter)
+            pfilters_str = "%s-%s" % (first_pfilter.letter, second_pfilter.letter)
             header.append("r-value %s" % pfilters_str)
-            header.append('Matches')
+            header.append("Matches")
 
         table_columns = []
         for star_id in most_correlated_ids:
@@ -451,12 +468,13 @@ class LEMONdBMiner(database.LEMONdB):
                 column.append(nmatches)
             table_columns.append(column)
 
-        return LEMONdBMiner._ascii_table(header, table_columns, sort_index = None,
-                                         descending = True, ndecimals = ndecimals)
+        return LEMONdBMiner._ascii_table(
+            header, table_columns, sort_index=None, descending=True, ndecimals=ndecimals
+        )
 
     @staticmethod
-    def dump(path, data, decimals = 8):
-        """ Dump a sequence of floating point numbers to a text file.
+    def dump(path, data, decimals=8):
+        """Dump a sequence of floating point numbers to a text file.
 
         The method iterates over 'data', each one of whose elements must be a
         sequence of floating point numbers, and saves them to the 'path' text
@@ -469,13 +487,14 @@ class LEMONdBMiner(database.LEMONdB):
 
         """
 
-        with open(path, 'wt') as fd:
+        with open(path, "wt") as fd:
             for row in data:
-                fd.write('\t'.join(('%.*f' % (decimals, column)
-                                    for column in row)) + '\n')
+                fd.write(
+                    "\t".join(("%.*f" % (decimals, column) for column in row)) + "\n"
+                )
 
-    def sort_by_curve_stdev(self, pfilter, minimum = 10):
-        """ Sort the stars by the standard deviation of their light curves.
+    def sort_by_curve_stdev(self, pfilter, minimum=10):
+        """Sort the stars by the standard deviation of their light curves.
 
         Take the light curves of the stars in a photometric filter and compute
         the standard deviation of their points. Returns a list of two-element
@@ -500,11 +519,10 @@ class LEMONdBMiner(database.LEMONdB):
         if not curves_stdevs:
             msg = "no light curves with at least %d points in %s"
             raise NoStarsSelectedError(msg % (minimum, pfilter))
-        return sorted(curves_stdevs, key = operator.itemgetter(1))
+        return sorted(curves_stdevs, key=operator.itemgetter(1))
 
-    def curve_stdev(self, how_many, sort_index = 0,
-                    minimum = 10, ndecimals = 8):
-        """ Return an ASCII table with the most constant stars.
+    def curve_stdev(self, how_many, sort_index=0, minimum=10, ndecimals=8):
+        """Return an ASCII table with the most constant stars.
 
         The method computes the standard deviation of the light curve of each
         star in all the photometric filters and takes the 'how_many' stars for
@@ -525,8 +543,9 @@ class LEMONdBMiner(database.LEMONdB):
         # best 'how-many' stars. The first element of each tuple is the ID of
         # the star; the second is the standard deviation of its light curve.
         main_pfilter = self.pfilters[sort_index]
-        most_similar = \
-            self.sort_by_curve_stdev(main_pfilter, minimum = minimum)[:how_many]
+        most_similar = self.sort_by_curve_stdev(main_pfilter, minimum=minimum)[
+            :how_many
+        ]
         most_similar_ids = [x[0] for x in most_similar]
 
         # A two-level dictionary, mapping the photometric filter (first level)
@@ -541,7 +560,7 @@ class LEMONdBMiner(database.LEMONdB):
         # stars that we have just identified.
         for index, pfilter in enumerate(self.pfilters):
             if index == sort_index:
-                continue # stdevs already calculated!
+                continue  # stdevs already calculated!
 
             for star_id in most_similar_ids:
                 star_curve = self.get_light_curve(star_id, pfilter)
@@ -552,7 +571,7 @@ class LEMONdBMiner(database.LEMONdB):
                     stdevs[pfilter][star_id] = star_curve.stdev
 
         header = []
-        header.append('Star')
+        header.append("Star")
         for pfilter in self.pfilters:
             header.append("%s Stdev" % pfilter)
 
@@ -565,15 +584,25 @@ class LEMONdBMiner(database.LEMONdB):
             table_columns.append(column)
 
         # sort_index + 1 because the first column contains the star IDs
-        return LEMONdBMiner._ascii_table(header, table_columns,
-                                         sort_index = sort_index + 1,
-                                         descending = False,
-                                         ndecimals = ndecimals)
+        return LEMONdBMiner._ascii_table(
+            header,
+            table_columns,
+            sort_index=sort_index + 1,
+            descending=False,
+            ndecimals=ndecimals,
+        )
 
-    def amplitudes_by_wavelength(self, increasing, npoints, use_median,
-                                 exclude_noisy, noisy_nstdevs,
-                                 noisy_use_median, noisy_min_ratio):
-        """ Find those stars with amplitudes sorted by wavelength.
+    def amplitudes_by_wavelength(
+        self,
+        increasing,
+        npoints,
+        use_median,
+        exclude_noisy,
+        noisy_nstdevs,
+        noisy_use_median,
+        noisy_min_ratio,
+    ):
+        """Find those stars with amplitudes sorted by wavelength.
 
         The method returns a generator that iterates through each star of the
         database and determines whether the amplitudes of its light curves
@@ -620,8 +649,8 @@ class LEMONdBMiner(database.LEMONdB):
 
         """
 
-        pfilters = sorted(self.pfilters, reverse = not increasing)
-        kwargs = dict(npoints = npoints, median = use_median)
+        pfilters = sorted(self.pfilters, reverse=not increasing)
+        kwargs = dict(npoints=npoints, median=use_median)
 
         for star_id in self.star_ids:
 

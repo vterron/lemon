@@ -20,8 +20,9 @@
 
 import webbrowser
 
+
 def coordinate_query(ra, dec):
-    """ Look up an astronomical object in the SIMBAD database.
+    """Look up an astronomical object in the SIMBAD database.
 
     Submit a coordinate-query to the SIMBAD database, using the given right
     ascension and declination (ICRS, J2000, 2000.0). Display it using the
@@ -29,8 +30,9 @@ def coordinate_query(ra, dec):
 
     """
 
-    SIMBAD_URL = "http://simbad.u-strasbg.fr/simbad/sim-basic?" \
-                 "Ident={0}+{1}&submit=SIMBAD+search"
+    SIMBAD_URL = (
+        "http://simbad.u-strasbg.fr/simbad/sim-basic?"
+        "Ident={0}+{1}&submit=SIMBAD+search"
+    )
     url = SIMBAD_URL.format(ra, dec)
     webbrowser.open(url)
-

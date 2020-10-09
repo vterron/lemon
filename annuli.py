@@ -71,8 +71,10 @@ import photometry
 import subprocess
 import util
 
+
 class NotEnoughImages(ValueError):
     pass
+
 
 class NotEnoughConstantStars(ValueError):
     pass
@@ -81,167 +83,224 @@ class NotEnoughConstantStars(ValueError):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_JSON_FILE"
 
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output JSON file if it already exists")
+parser.add_option(
+    "--overwrite",
+    action="store_true",
+    dest="overwrite",
+    help="overwrite output JSON file if it already exists",
+)
 
-parser.add_option(photometry.parser.get_option('--margin'))
-parser.add_option(photometry.parser.get_option('--gain'))
-parser.add_option(photometry.parser.get_option('--cores'))
-parser.add_option(photometry.parser.get_option('--verbose'))
+parser.add_option(photometry.parser.get_option("--margin"))
+parser.add_option(photometry.parser.get_option("--gain"))
+parser.add_option(photometry.parser.get_option("--cores"))
+parser.add_option(photometry.parser.get_option("--verbose"))
 
-qphot_group = optparse.OptionGroup(parser, "Initial Photometry",
-              "In what may seem sort of a recursive problem, we need to do an "
-              "initial (aperture) photometry in order to detect all the stars "
-              "in the field and determine which among them are most constant. "
-              "The value of the photometry parameters (aperture and sky "
-              "annuli) are defined in terms of the *median* FWHM of the "
-              "images in each band.\n\n"
+qphot_group = optparse.OptionGroup(
+    parser,
+    "Initial Photometry",
+    "In what may seem sort of a recursive problem, we need to do an "
+    "initial (aperture) photometry in order to detect all the stars "
+    "in the field and determine which among them are most constant. "
+    "The value of the photometry parameters (aperture and sky "
+    "annuli) are defined in terms of the *median* FWHM of the "
+    "images in each band.\n\n"
+    "And yes, we are aware that all this means that the search for "
+    "the optimal photometric aperture parameters is dependent upon "
+    "an initial photometry whose parameters have to be, even in "
+    "terms of the FWHM, initially specified. Kind of paradoxical, "
+    "we know.",
+)
 
-              "And yes, we are aware that all this means that the search for "
-              "the optimal photometric aperture parameters is dependent upon "
-              "an initial photometry whose parameters have to be, even in "
-              "terms of the FWHM, initially specified. Kind of paradoxical, "
-              "we know.")
+qphot_group.add_option(photometry.parser.get_option("--aperture"))
+qphot_group.add_option(photometry.parser.get_option("--annulus"))
+qphot_group.add_option(photometry.parser.get_option("--dannulus"))
 
-qphot_group.add_option(photometry.parser.get_option('--aperture'))
-qphot_group.add_option(photometry.parser.get_option('--annulus'))
-qphot_group.add_option(photometry.parser.get_option('--dannulus'))
-
-qphot_group.add_option('--min-sky', action = 'store',
-                       type = 'float', dest = 'min',
-                       default = photometry.parser.defaults['min'],
-                       help ="the minimum width of the sky annulus, in "
-                       "pixels, regardless of the value derived from the "
-                       "FWHM. This option is intended to prevent small FWHMs "
-                       "from resulting in too thin an sky annulus, and "
-                       "applies to both the initial photometry and "
-                       "subsequent explorations of the search space "
-                       "[default = %default]")
+qphot_group.add_option(
+    "--min-sky",
+    action="store",
+    type="float",
+    dest="min",
+    default=photometry.parser.defaults["min"],
+    help="the minimum width of the sky annulus, in "
+    "pixels, regardless of the value derived from the "
+    "FWHM. This option is intended to prevent small FWHMs "
+    "from resulting in too thin an sky annulus, and "
+    "applies to both the initial photometry and "
+    "subsequent explorations of the search space "
+    "[default = %default]",
+)
 
 parser.add_option_group(qphot_group)
 
-stats_group = optparse.OptionGroup(parser, "Comparison stars",
-              "Ideally, two candidate apertures would be compared by means "
-              "of evaluating the light curves of all the stars: the premise "
-              "here is that, the better the photometric parameters happen to "
-              "be, the most stable the light curve of the constant stars "
-              "will be. However, doing photometry and generating the light "
-              "curves for each star and aperture would be extremely "
-              "impractical for large data sets, as it is quite often our "
-              "case. Therefore, our approach is to compare the light curves "
-              "of only a subset of the stars: those that are the most "
-              "constant. Furthermore, and in order to allow for rare "
-              "anomalies in the light curve of some stars, not all of these "
-              "light curves are used; instead, they are evaluated as a whole "
-              "by taking the median of the standard deviation of the most "
-              "stable among them. Note that this means that the stars whose "
-              "light curves are used to compute the median are not "
-              "necessarily always the same.")
+stats_group = optparse.OptionGroup(
+    parser,
+    "Comparison stars",
+    "Ideally, two candidate apertures would be compared by means "
+    "of evaluating the light curves of all the stars: the premise "
+    "here is that, the better the photometric parameters happen to "
+    "be, the most stable the light curve of the constant stars "
+    "will be. However, doing photometry and generating the light "
+    "curves for each star and aperture would be extremely "
+    "impractical for large data sets, as it is quite often our "
+    "case. Therefore, our approach is to compare the light curves "
+    "of only a subset of the stars: those that are the most "
+    "constant. Furthermore, and in order to allow for rare "
+    "anomalies in the light curve of some stars, not all of these "
+    "light curves are used; instead, they are evaluated as a whole "
+    "by taking the median of the standard deviation of the most "
+    "stable among them. Note that this means that the stars whose "
+    "light curves are used to compute the median are not "
+    "necessarily always the same.",
+)
 
-stats_group.add_option('--constant', action = 'store', type = 'float',
-                       dest = 'nconstant', default = 20,
-                       help = "the number of stars used in order to "
-                       "compare each set of photometric parameters. For "
-                       "each of these stars, its light curve will be "
-                       "generated using all the other as comparison "
-                       "(-n option at diffphot.py) [default: %default]")
+stats_group.add_option(
+    "--constant",
+    action="store",
+    type="float",
+    dest="nconstant",
+    default=20,
+    help="the number of stars used in order to "
+    "compare each set of photometric parameters. For "
+    "each of these stars, its light curve will be "
+    "generated using all the other as comparison "
+    "(-n option at diffphot.py) [default: %default]",
+)
 
-stats_group.add_option('--minimum-constant', action = 'store', type = int,
-                       dest = 'pminimum', default = 5,
-                       help = "the minimum number of constant stars which "
-                       "must have had their light curves for the percentile "
-                       "of the standard deviations to be calculated. This "
-                       "option is intended to prevent a nonrepresentative "
-                       "value (for example, a single light curve would "
-                       "result in a standard deviation of zero) from being "
-                       "returned if most light curves cannot be calculated "
-                       "with a certain set of photometric paramaters. If "
-                       "less than this number of light curves are computed, "
-                       "the parameters are ignored. [default: %default]")
+stats_group.add_option(
+    "--minimum-constant",
+    action="store",
+    type=int,
+    dest="pminimum",
+    default=5,
+    help="the minimum number of constant stars which "
+    "must have had their light curves for the percentile "
+    "of the standard deviations to be calculated. This "
+    "option is intended to prevent a nonrepresentative "
+    "value (for example, a single light curve would "
+    "result in a standard deviation of zero) from being "
+    "returned if most light curves cannot be calculated "
+    "with a certain set of photometric paramaters. If "
+    "less than this number of light curves are computed, "
+    "the parameters are ignored. [default: %default]",
+)
 parser.add_option_group(stats_group)
 
-search_group = optparse.OptionGroup(parser, "Search space",
-               "The number of apertures that will be evaluated is determined "
-               "by the median FWHM of the images in each photometric filter, "
-               "from which the lower and upper bounds of the candidate "
-               "apertures are derived. The sky annulus, however, remains the "
-               "same for all the candidate apertures that are evaluated.")
+search_group = optparse.OptionGroup(
+    parser,
+    "Search space",
+    "The number of apertures that will be evaluated is determined "
+    "by the median FWHM of the images in each photometric filter, "
+    "from which the lower and upper bounds of the candidate "
+    "apertures are derived. The sky annulus, however, remains the "
+    "same for all the candidate apertures that are evaluated.",
+)
 
-search_group.add_option('--lower', action = 'store', type = 'float',
-                        dest = 'lower', default = 0.5,
-                        help = "the lower bound of the range of aperture "
-                        "annuli that will be evaluated, in number of times "
-                        "the median FWHM [default = %default]")
+search_group.add_option(
+    "--lower",
+    action="store",
+    type="float",
+    dest="lower",
+    default=0.5,
+    help="the lower bound of the range of aperture "
+    "annuli that will be evaluated, in number of times "
+    "the median FWHM [default = %default]",
+)
 
-search_group.add_option('--upper', action = 'store', type = 'float',
-                        dest = 'upper', default = 4.5,
-                        help = "the upper bound of the range of aperture "
-                        "annuli that will be evaluated, in number of times "
-                        "the median FWHM [default = %default]")
+search_group.add_option(
+    "--upper",
+    action="store",
+    type="float",
+    dest="upper",
+    default=4.5,
+    help="the upper bound of the range of aperture "
+    "annuli that will be evaluated, in number of times "
+    "the median FWHM [default = %default]",
+)
 
-search_group.add_option('--step', action = 'store', type = 'float',
-                        dest = 'step', default = 1,
-                        help = "the number of pixels by which the candidate "
-                        "apertures in the range [lower x FWHM, upper x FWHM] "
-                        "will be incremented each time [default = %default]")
+search_group.add_option(
+    "--step",
+    action="store",
+    type="float",
+    dest="step",
+    default=1,
+    help="the number of pixels by which the candidate "
+    "apertures in the range [lower x FWHM, upper x FWHM] "
+    "will be incremented each time [default = %default]",
+)
 
-search_group.add_option('--sky', action = 'store', type = 'float',
-                        dest = 'sky', default = 4.6,
-                        help = "the inner radius of the sky annulus, in "
-                        "number of times the median FWHM. Note that the "
-                        "sky annulus remains the same for all the "
-                        "evaluated apertures. [default = %default]")
+search_group.add_option(
+    "--sky",
+    action="store",
+    type="float",
+    dest="sky",
+    default=4.6,
+    help="the inner radius of the sky annulus, in "
+    "number of times the median FWHM. Note that the "
+    "sky annulus remains the same for all the "
+    "evaluated apertures. [default = %default]",
+)
 
-search_group.add_option('--width', action = 'store', type = 'float',
-                        dest = 'width', default = 1.0,
-                        help = "the width of the sky annulus, in number of "
-                        "times each candidate aperture. Note that the sky "
-                        "annulus remains the same for all the evaluated "
-                        "apertures. [default = %default]")
+search_group.add_option(
+    "--width",
+    action="store",
+    type="float",
+    dest="width",
+    default=1.0,
+    help="the width of the sky annulus, in number of "
+    "times each candidate aperture. Note that the sky "
+    "annulus remains the same for all the evaluated "
+    "apertures. [default = %default]",
+)
 
-search_group.add_option(photometry.parser.get_option('--snr-percentile'))
-search_group.add_option(photometry.parser.get_option('--mean'))
+search_group.add_option(photometry.parser.get_option("--snr-percentile"))
+search_group.add_option(photometry.parser.get_option("--mean"))
 parser.add_option_group(search_group)
 
-const_group = optparse.OptionGroup(parser, "Stars eligibility",
-              "Apart from a stable light curve, a star must not have "
-              "saturated in any of the images if it is to be eligible as a "
-              "constant star. Note that this means that the candidates to "
-              "constant stars are those that are below the saturation level "
-              "for all the images")
-const_group.add_option(photometry.parser.get_option('--maximum'))
+const_group = optparse.OptionGroup(
+    parser,
+    "Stars eligibility",
+    "Apart from a stable light curve, a star must not have "
+    "saturated in any of the images if it is to be eligible as a "
+    "constant star. Note that this means that the candidates to "
+    "constant stars are those that are below the saturation level "
+    "for all the images",
+)
+const_group.add_option(photometry.parser.get_option("--maximum"))
 parser.add_option_group(const_group)
 
-diffphot_group = optparse.OptionGroup(parser, "Differential Photometry",
-                 "These options, the same that can be found in the "
-                 "diffphot.py, determine how light curves are generated.")
+diffphot_group = optparse.OptionGroup(
+    parser,
+    "Differential Photometry",
+    "These options, the same that can be found in the "
+    "diffphot.py, determine how light curves are generated.",
+)
 
-diffphot_group.add_option(diffphot.parser.get_option('--minimum-images'))
-diffphot_group.add_option(diffphot.parser.get_option('--minimum-stars'))
-diffphot_group.add_option(diffphot.parser.get_option('--pct'))
-diffphot_group.add_option(diffphot.parser.get_option('--weights-threshold'))
-diffphot_group.add_option(diffphot.parser.get_option('--max-iters'))
-diffphot_group.add_option(diffphot.parser.get_option('--worst-fraction'))
+diffphot_group.add_option(diffphot.parser.get_option("--minimum-images"))
+diffphot_group.add_option(diffphot.parser.get_option("--minimum-stars"))
+diffphot_group.add_option(diffphot.parser.get_option("--pct"))
+diffphot_group.add_option(diffphot.parser.get_option("--weights-threshold"))
+diffphot_group.add_option(diffphot.parser.get_option("--max-iters"))
+diffphot_group.add_option(diffphot.parser.get_option("--worst-fraction"))
 parser.add_option_group(diffphot_group)
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
+key_group = optparse.OptionGroup(parser, "FITS Keywords", keywords.group_description)
 
-key_group.add_option(photometry.parser.get_option('--objectk'))
-key_group.add_option(photometry.parser.get_option('--filterk'))
-key_group.add_option(photometry.parser.get_option('--datek'))
-key_group.add_option(photometry.parser.get_option('--timek'))
-key_group.add_option(photometry.parser.get_option('--expk'))
-key_group.add_option(photometry.parser.get_option('--coaddk'))
-key_group.add_option(photometry.parser.get_option('--gaink'))
-key_group.add_option(photometry.parser.get_option('--fwhmk'))
-key_group.add_option(photometry.parser.get_option('--airmk'))
-key_group.add_option(photometry.parser.get_option('--uik'))
+key_group.add_option(photometry.parser.get_option("--objectk"))
+key_group.add_option(photometry.parser.get_option("--filterk"))
+key_group.add_option(photometry.parser.get_option("--datek"))
+key_group.add_option(photometry.parser.get_option("--timek"))
+key_group.add_option(photometry.parser.get_option("--expk"))
+key_group.add_option(photometry.parser.get_option("--coaddk"))
+key_group.add_option(photometry.parser.get_option("--gaink"))
+key_group.add_option(photometry.parser.get_option("--fwhmk"))
+key_group.add_option(photometry.parser.get_option("--airmk"))
+key_group.add_option(photometry.parser.get_option("--uik"))
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
+
 def check_run(function, *args):
-    """ Run the function and raise CalledProcessError for non-zero retcodes.
+    """Run the function and raise CalledProcessError for non-zero retcodes.
 
     This is a very simple convenience function to feed a function with some
     data, check the returned value and raise subprocess.CalledProcressError in
@@ -253,11 +312,12 @@ def check_run(function, *args):
 
     retcode = function(*args)
     if retcode:
-        cmd = '%s%s' % (function.__name__, args)
+        cmd = "%s%s" % (function.__name__, args)
         raise subprocess.CalledProcessError(retcode, cmd)
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -275,7 +335,7 @@ def main(arguments = None):
 
     if arguments is None:
         arguments = sys.argv[1:]  # ignore argv[0], the script name
-    (options, args) = parser.parse_args(args = arguments)
+    (options, args) = parser.parse_args(args=arguments)
 
     # Adjust the logger level to WARNING, INFO or DEBUG, depending on the
     # given number of -v options (none, one or two or more, respectively)
@@ -284,14 +344,14 @@ def main(arguments = None):
         logging_level = logging.INFO
     elif options.verbose >= 2:
         logging_level = logging.DEBUG
-    logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
+    logging.basicConfig(format=style.LOG_FORMAT, level=logging_level)
 
     # Print the help and abort the execution if there are not two positional
     # arguments left after parsing the options, as the user must specify at
     # least one (only one?) input FITS file and the output JSON file.
     if len(args) < 2:
         parser.print_help()
-        return 2     # 2 is generally used for command line syntax errors
+        return 2  # 2 is generally used for command line syntax errors
     else:
         sources_img_path = args[0]
         input_paths = list(set(args[1:-1]))
@@ -322,7 +382,7 @@ def main(arguments = None):
         percentage = (index + 1) / len(input_paths) * 100
         util.show_progress(percentage)
 
-    print # progress bar doesn't include newline
+    print  # progress bar doesn't include newline
     print style.prefix
 
     # To begin with, we need to identify the most constant stars, something for
@@ -341,27 +401,41 @@ def main(arguments = None):
     # and its absolute pathname. Thus, we need to close the file right after
     # creating it, and tell the photometry module to overwrite (-w) it.
 
-    kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
+    kwargs = dict(prefix="photometry_", suffix=".LEMONdB")
     phot_db_handle, phot_db_path = tempfile.mkstemp(**kwargs)
     atexit.register(util.clean_tmp_files, phot_db_path)
     os.close(phot_db_handle)
 
-    basic_args = [sources_img_path] + input_paths + \
-                 [phot_db_path, '--overwrite']
+    basic_args = [sources_img_path] + input_paths + [phot_db_path, "--overwrite"]
 
-    phot_args = ['--maximum', options.maximum,
-                 '--margin', options.margin,
-                 '--cores', options.ncores,
-                 '--min-sky', options.min,
-                 '--objectk', options.objectk,
-                 '--filterk', options.filterk,
-                 '--datek', options.datek,
-                 '--timek', options.timek,
-                 '--expk', options.exptimek,
-                 '--coaddk', options.coaddk,
-                 '--gaink', options.gaink,
-                 '--fwhmk', options.fwhmk,
-                 '--airmk', options.airmassk]
+    phot_args = [
+        "--maximum",
+        options.maximum,
+        "--margin",
+        options.margin,
+        "--cores",
+        options.ncores,
+        "--min-sky",
+        options.min,
+        "--objectk",
+        options.objectk,
+        "--filterk",
+        options.filterk,
+        "--datek",
+        options.datek,
+        "--timek",
+        options.timek,
+        "--expk",
+        options.exptimek,
+        "--coaddk",
+        options.coaddk,
+        "--gaink",
+        options.gaink,
+        "--fwhmk",
+        options.fwhmk,
+        "--airmk",
+        options.airmassk,
+    ]
 
     # The --gain and --uik options default to None, so add them to the list of
     # arguments only if they were given. Otherwise, (a) --gaink would be given
@@ -370,17 +444,22 @@ def main(arguments = None):
     # as the name of the keyword storing the path to the uncalibrated image.
 
     if options.gain:
-        phot_args += ['--gain', options.gain]
+        phot_args += ["--gain", options.gain]
 
     if options.uncimgk:
-        phot_args += ['--uncimgk', options.uncimgk]
+        phot_args += ["--uncimgk", options.uncimgk]
 
     # Pass as many '-v' options as we have received here
-    [phot_args.append('-v') for x in xrange(options.verbose)]
+    [phot_args.append("-v") for x in xrange(options.verbose)]
 
-    extra_args = ['--aperture', options.aperture,
-                  '--annulus', options.annulus,
-                  '--dannulus', options.dannulus]
+    extra_args = [
+        "--aperture",
+        options.aperture,
+        "--annulus",
+        options.annulus,
+        "--dannulus",
+        options.dannulus,
+    ]
 
     # Non-zero return codes raise subprocess.CalledProcessError
     args = basic_args + phot_args + extra_args
@@ -398,23 +477,35 @@ def main(arguments = None):
     print msg % style.prefix
     print style.prefix
 
-    kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
+    kwargs = dict(prefix="diffphot_", suffix=".LEMONdB")
     diffphot_db_handle, diffphot_db_path = tempfile.mkstemp(**kwargs)
     atexit.register(util.clean_tmp_files, diffphot_db_path)
     os.close(diffphot_db_handle)
 
-    diff_args = [phot_db_path,
-                 '--output', diffphot_db_path, '--overwrite',
-                 '--cores', options.ncores,
-                 '--minimum-images', options.min_images,
-                 '--stars', options.nconstant,
-                 '--minimum-stars', options.min_cstars,
-                 '--pct', options.pct,
-                 '--weights-threshold', options.wminimum,
-                 '--max-iters', options.max_iters,
-                 '--worst-fraction', options.worst_fraction]
+    diff_args = [
+        phot_db_path,
+        "--output",
+        diffphot_db_path,
+        "--overwrite",
+        "--cores",
+        options.ncores,
+        "--minimum-images",
+        options.min_images,
+        "--stars",
+        options.nconstant,
+        "--minimum-stars",
+        options.min_cstars,
+        "--pct",
+        options.pct,
+        "--weights-threshold",
+        options.wminimum,
+        "--max-iters",
+        options.max_iters,
+        "--worst-fraction",
+        options.worst_fraction,
+    ]
 
-    [diff_args.append('-v') for x in xrange(options.verbose)]
+    [diff_args.append("-v") for x in xrange(options.verbose)]
 
     check_run(diffphot.main, [str(a) for a in diff_args])
     print style.prefix
@@ -438,20 +529,22 @@ def main(arguments = None):
 
         msg = "%sIdentifying the %d most constant stars for the %s filter..."
         args = style.prefix, options.nconstant, pfilter
-        print msg % args ,
+        print msg % args,
         sys.stdout.flush()
 
-        kwargs = dict(minimum = options.min_images)
+        kwargs = dict(minimum=options.min_images)
         stars_stdevs = miner.sort_by_curve_stdev(pfilter, **kwargs)
-        cstars = stars_stdevs[:options.nconstant]
+        cstars = stars_stdevs[: options.nconstant]
 
         if len(cstars) < options.pminimum:
-            msg = ("fewer than %d stars identified as constant in the "
-                   "initial photometry for the %s filter")
+            msg = (
+                "fewer than %d stars identified as constant in the "
+                "initial photometry for the %s filter"
+            )
             args = options.pminimum, pfilter
             raise NotEnoughConstantStars(msg % args)
         else:
-            print 'done.'
+            print "done."
 
         if len(cstars) < options.nconstant:
             msg = "%sBut only %d stars were available. Using them all, anyway."
@@ -460,8 +553,8 @@ def main(arguments = None):
         # Replacing whitespaces with underscores is easier than having to quote
         # the path to the --coordinates file if the name of the filter contains
         # them (otherwise, optparse would only see up to the first whitespace).
-        prefix = '%s_' % str(pfilter).replace(' ', '_')
-        kwargs = dict(prefix = prefix, suffix = '.coordinates')
+        prefix = "%s_" % str(pfilter).replace(" ", "_")
+        kwargs = dict(prefix=prefix, suffix=".coordinates")
         coords_fd, coordinates_files[pfilter] = tempfile.mkstemp(**kwargs)
         atexit.register(util.clean_tmp_files, coordinates_files[pfilter])
 
@@ -499,7 +592,7 @@ def main(arguments = None):
         # range of apertures that we need to evaluate for this filter.
 
         msg = "%sCalculating the median FWHM for this filter..."
-        print msg % style.prefix ,
+        print msg % style.prefix,
 
         pfilter_fwhms = []
         for img in files[pfilter]:
@@ -508,13 +601,13 @@ def main(arguments = None):
             pfilter_fwhms.append(img_fwhm)
 
         fwhm = numpy.median(pfilter_fwhms)
-        print ' done.'
+        print " done."
 
         # FWHM to range of pixels conversion
         min_aperture = fwhm * options.lower
         max_aperture = fwhm * options.upper
-        annulus      = fwhm * options.sky
-        dannulus     = fwhm * options.width
+        annulus = fwhm * options.sky
+        dannulus = fwhm * options.width
 
         # The dimensions of the sky annulus remain fixed, while the
         # aperture is in the range [lower * FWHM, upper FWHM], with
@@ -532,8 +625,13 @@ def main(arguments = None):
         print msg % (style.prefix, options.step)
 
         msg = "%sAperture radius, actual maximum = %.3f + %d x %.2f = %.3f pixels"
-        args = (style.prefix, min_aperture, len(filter_apertures),
-                options.step, max(filter_apertures))
+        args = (
+            style.prefix,
+            min_aperture,
+            len(filter_apertures),
+            options.step,
+            max(filter_apertures),
+        )
         print msg % args
 
         msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
@@ -542,8 +640,12 @@ def main(arguments = None):
         print msg % (style.prefix, fwhm, options.width, dannulus)
 
         msg = "%s%d different apertures in the range [%.2f, %.2f] to be evaluated:"
-        args = (style.prefix, len(filter_apertures),
-                filter_apertures[0], filter_apertures[-1])
+        args = (
+            style.prefix,
+            len(filter_apertures),
+            filter_apertures[0],
+            filter_apertures[-1],
+        )
         print msg % args
 
         # For each candidate aperture, and only with the images taken in
@@ -554,25 +656,31 @@ def main(arguments = None):
 
             print style.prefix
 
-            kwargs = dict(prefix = 'photometry_', suffix = '.LEMONdB')
+            kwargs = dict(prefix="photometry_", suffix=".LEMONdB")
             fd, aper_phot_db_path = tempfile.mkstemp(**kwargs)
             atexit.register(util.clean_tmp_files, aper_phot_db_path)
             os.close(fd)
 
             paths = [img.path for img in files[pfilter]]
-            basic_args = [sources_img_path] + paths + \
-                         [aper_phot_db_path, '--overwrite']
+            basic_args = [sources_img_path] + paths + [aper_phot_db_path, "--overwrite"]
 
-            extra_args = ['--filter', str(pfilter),
-                          '--coordinates', coords_path,
-                          '--aperture-pix', aperture,
-                          '--annulus-pix', annulus,
-                          '--dannulus-pix', dannulus]
+            extra_args = [
+                "--filter",
+                str(pfilter),
+                "--coordinates",
+                coords_path,
+                "--aperture-pix",
+                aperture,
+                "--annulus-pix",
+                annulus,
+                "--dannulus-pix",
+                dannulus,
+            ]
 
             args = basic_args + phot_args + extra_args
             check_run(photometry.main, [str(a) for a in args])
 
-            kwargs = dict(prefix = 'diffphot_', suffix = '.LEMONdB')
+            kwargs = dict(prefix="diffphot_", suffix=".LEMONdB")
             fd, aper_diff_db_path = tempfile.mkstemp(**kwargs)
             atexit.register(util.clean_tmp_files, aper_diff_db_path)
             os.close(fd)
@@ -587,7 +695,7 @@ def main(arguments = None):
             miner = mining.LEMONdBMiner(aper_diff_db_path)
 
             try:
-                kwargs = dict(minimum = options.min_images)
+                kwargs = dict(minimum=options.min_images)
                 cstars = miner.sort_by_curve_stdev(pfilter, **kwargs)
             except mining.NoStarsSelectedError:
                 # There are no light curves with at least options.min_images points.
@@ -603,9 +711,11 @@ def main(arguments = None):
             assert len(cstars) <= options.nconstant
 
             if len(cstars) < options.pminimum:
-                msg = ("%sJust %d constant stars, fewer than the allowed "
-                       "minimum of %d, had their light curves calculated "
-                       "for this aperture. Ignoring it...")
+                msg = (
+                    "%sJust %d constant stars, fewer than the allowed "
+                    "minimum of %d, had their light curves calculated "
+                    "for this aperture. Ignoring it..."
+                )
                 args = style.prefix, len(cstars), options.pminimum
                 print style.prefix
                 continue
@@ -629,7 +739,7 @@ def main(arguments = None):
 
         # Let the user know of the best 'annuli', that is, the one for
         # which the standard deviation of the constant stars is minimal
-        kwargs = dict(key = operator.attrgetter('stdev'))
+        kwargs = dict(key=operator.attrgetter("stdev"))
         best_candidate = min(evaluated_annuli[pfilter], **kwargs)
 
         msg = "%sBest aperture found at %.3f pixels with stdev = %.4f"
@@ -638,12 +748,13 @@ def main(arguments = None):
 
     print style.prefix
     msg = "%sSaving the evaluated apertures to the '%s' JSON file ..."
-    print msg % (style.prefix, output_json_path) ,
+    print msg % (style.prefix, output_json_path),
     json_parse.CandidateAnnuli.dump(evaluated_annuli, output_json_path)
-    print ' done.'
+    print " done."
 
     print "%sYou're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

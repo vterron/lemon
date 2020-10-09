@@ -48,21 +48,22 @@ import string
 # LEMON module
 from setup import CONFIG_PATH
 
-JOHNSON = 'Johnson'
-COUSINS = 'Cousins'
-HARRIS = 'Harris'
-GUNN = 'Gunn'
-SDSS = 'SDSS'
-TWOMASS = '2MASS'
-STROMGREN = 'Strömgren'
-HALPHA = 'Halpha'
-UNKNOWN = 'Unknown'
-CUSTOM = 'Custom'
+JOHNSON = "Johnson"
+COUSINS = "Cousins"
+HARRIS = "Harris"
+GUNN = "Gunn"
+SDSS = "SDSS"
+TWOMASS = "2MASS"
+STROMGREN = "Strömgren"
+HALPHA = "Halpha"
+UNKNOWN = "Unknown"
+CUSTOM = "Custom"
 
-CUSTOM_SECTION = 'custom_filters'
+CUSTOM_SECTION = "custom_filters"
 
-def load_custom_filters(path = CONFIG_PATH):
-    """ Load the name and description of the user custom photometric filters.
+
+def load_custom_filters(path=CONFIG_PATH):
+    """Load the name and description of the user custom photometric filters.
 
     Parse a ConfigParser configuration file, CONFIG_PATH by default, and return
     a generator that yields two-element tuples, (option, value), for each of
@@ -83,37 +84,43 @@ def load_custom_filters(path = CONFIG_PATH):
         for item in parser.items(CUSTOM_SECTION):
             yield item
 
+
 # The case-insensitive regular expression that the name of a filter must match
 # in order to consider that it belongs to each photometric system. For example,
 # 'rGunn' can be identified as a filter of the Gunn photometric system because
 # re.search(REGEXPS[GUNN], 'rGunn', re.IGNORECASE) produces a match.
 
-REGEXPS = {JOHNSON : 'Johnson|John',
-           HARRIS : 'Harris|Har',
-           COUSINS : 'Cousins?|Cous?',
-           GUNN : 'Gunn|Gun',
-           SDSS : "SDSS|'|prime|Sloan",
-           TWOMASS : '2MASS|2M',
-           STROMGREN : 'Strömgren|Stromgren|Stroemgren|Stro',
-           HALPHA : 'H(a(lpha)?)?\d{4}'}
+REGEXPS = {
+    JOHNSON: "Johnson|John",
+    HARRIS: "Harris|Har",
+    COUSINS: "Cousins?|Cous?",
+    GUNN: "Gunn|Gun",
+    SDSS: "SDSS|'|prime|Sloan",
+    TWOMASS: "2MASS|2M",
+    STROMGREN: "Strömgren|Stromgren|Stroemgren|Stro",
+    HALPHA: "H(a(lpha)?)?\d{4}",
+}
 
 # Map each custom filter to its description. For example:
 # {'REROS': 'R (EROS-2 survey)', 'NO': 'Blank Filter'}
 CUSTOM_FILTERS = dict(load_custom_filters())
 
+
 class NonRecognizedPassband(ValueError):
     """ Raised when the photometric filter cannot be identified """
 
-    ERROR_NOTE = ("If this is a legitimate filter name, and you think LEMON "
-                  "should be able to recognize it, please let us know at "
-                  "[http://github.com/vterron/lemon/issues]. In the meantime, "
-                  "you can define your own filters in the {} file, as options "
-                  "of the [{}] section. For an example, see "
-                  "[https://github.com/vterron/lemon/issues/14#issuecomment-"
-                  "43504285").format(CONFIG_PATH, CUSTOM_SECTION)
+    ERROR_NOTE = (
+        "If this is a legitimate filter name, and you think LEMON "
+        "should be able to recognize it, please let us know at "
+        "[http://github.com/vterron/lemon/issues]. In the meantime, "
+        "you can define your own filters in the {} file, as options "
+        "of the [{}] section. For an example, see "
+        "[https://github.com/vterron/lemon/issues/14#issuecomment-"
+        "43504285"
+    ).format(CONFIG_PATH, CUSTOM_SECTION)
 
-    def __init__(self, name, path = None, keyword = None):
-        """ Instantiation method for the NonRecognizedPassband class.
+    def __init__(self, name, path=None, keyword=None):
+        """Instantiation method for the NonRecognizedPassband class.
 
         The 'name' argument is the name of the filter whose photometric system
         could not be identified. If applicable, the path to the FITS image and
@@ -128,7 +135,7 @@ class NonRecognizedPassband(ValueError):
         self.keyword = keyword
 
     def __str__(self):
-        """ Return the error message of the NonRecognizedPassband exception.
+        """Return the error message of the NonRecognizedPassband exception.
 
         If the the FITS image and keyword the unrecognized photometric filter
         was read from have been given, they are also included in the message.
@@ -145,15 +152,15 @@ class NonRecognizedPassband(ValueError):
         if self.keyword:
             details.append("keyword = '%s'" % self.keyword)
         if details:
-            msg += " (%s). " % ', '.join(details)
+            msg += " (%s). " % ", ".join(details)
         else:
             msg += ". "
 
-        return msg  % self.name + self.ERROR_NOTE
+        return msg % self.name + self.ERROR_NOTE
 
 
 class InvalidPassbandLetter(NonRecognizedPassband):
-    """ Raised if the letter of the filter does not belong to the system.
+    """Raised if the letter of the filter does not belong to the system.
 
     For example, this exception should be raised if we come across something
     like 'Johnson Z', as Z is not a filter of the Johnson photometric system
@@ -171,7 +178,7 @@ class InvalidPassbandLetter(NonRecognizedPassband):
 
 
 class Passband(object):
-    """ Encapsulates a passband (or filter) of the photometric system.
+    """Encapsulates a passband (or filter) of the photometric system.
 
     The photometric systems currently supported are:
 
@@ -209,24 +216,43 @@ class Passband(object):
 
     """
 
-    SYSTEM_LETTERS = {JOHNSON : tuple('UBVRIJHKLMN'),
-                      COUSINS : tuple('VRI'),
-		      HARRIS : tuple('UBVRI'),
-                      GUNN : tuple('UVGR'),
-                      SDSS : tuple('UGRIZ'),
-                      TWOMASS : ('J', 'H', 'KS'),
-                      STROMGREN : ('U', 'V', 'B', 'Y', 'NARROW', 'N', 'WIDE', 'W')}
+    SYSTEM_LETTERS = {
+        JOHNSON: tuple("UBVRIJHKLMN"),
+        COUSINS: tuple("VRI"),
+        HARRIS: tuple("UBVRI"),
+        GUNN: tuple("UVGR"),
+        SDSS: tuple("UGRIZ"),
+        TWOMASS: ("J", "H", "KS"),
+        STROMGREN: ("U", "V", "B", "Y", "NARROW", "N", "WIDE", "W"),
+    }
 
     ALL_SYSTEMS = set(SYSTEM_LETTERS.keys() + [HALPHA, CUSTOM])
     ALL_LETTERS = set(itertools.chain(*SYSTEM_LETTERS.itervalues()))
 
     # The order of the photometric letters, regardless of the system
-    LETTERS_ORDER = ['U', 'B', 'NARROW', 'WIDE', 'V', 'G', 'R', 'I',
-                     'Z', 'Y', 'J', 'H', 'KS', 'K', 'L', 'M', 'N']
+    LETTERS_ORDER = [
+        "U",
+        "B",
+        "NARROW",
+        "WIDE",
+        "V",
+        "G",
+        "R",
+        "I",
+        "Z",
+        "Y",
+        "J",
+        "H",
+        "KS",
+        "K",
+        "L",
+        "M",
+        "N",
+    ]
 
     @staticmethod
     def _identify_system(name):
-        """ Return the photometric system to which a filter belongs.
+        """Return the photometric system to which a filter belongs.
 
         Loop over the regular expressions stored as values of the REGEXP
         module-level dictionary, returning the key of the first to which 'name'
@@ -244,7 +270,7 @@ class Passband(object):
 
     @classmethod
     def _parse_halpha_filter(cls, name):
-        """ Extract the wavelength from the name of a H-alpha filter.
+        """Extract the wavelength from the name of a H-alpha filter.
 
         Extract the wavelength from a H-alpha photometric filter name following
         the pattern 'Hxxxx(/yy)?', where xxxx is the filter wavelength and yy,
@@ -257,11 +283,11 @@ class Passband(object):
         regexp = ".*H(a(lpha)?)?(?P<wavelength>\d{4})(?P<bandwidth>/\d{2})?.*"
         match = re.match(regexp, name, re.IGNORECASE)
         if match is not None:
-            return match.group('wavelength')
+            return match.group("wavelength")
 
     @classmethod
     def _parse_name(cls, name, system):
-        """ Extract the letter from the name of a photometric filter.
+        """Extract the letter from the name of a photometric filter.
 
         Parse the name of a Johnson, Cousins, Gunn, SDSS, 2MASS or Strömgren
         filter (that is, all the photometric systems except for H-alpha and
@@ -282,12 +308,14 @@ class Passband(object):
         """
 
         if system == HALPHA:
-            msg = "Passband._parse_name() does not support H-alpha filter " \
-                  "names. Use Passband._parse_halpha_filter() instead"
+            msg = (
+                "Passband._parse_name() does not support H-alpha filter "
+                "names. Use Passband._parse_halpha_filter() instead"
+            )
             raise ValueError(msg)
 
         def fix_stromgren_letter(name):
-            """ A couple of cosmetic fixes needed by the Strömgren filters.
+            """A couple of cosmetic fixes needed by the Strömgren filters.
 
             Two of the filters of the Strömgren photometric system are 'HB
             narrow' and 'HB wide'. The 'HB' part is entirely optional and can
@@ -298,18 +326,18 @@ class Passband(object):
 
             """
 
-            name = re.sub("H[\-\s]*B(ETA)?", '', name.upper())
-            if name == 'N':
-                return 'NARROW'
-            elif name == 'W':
-                return 'WIDE'
+            name = re.sub("H[\-\s]*B(ETA)?", "", name.upper())
+            if name == "N":
+                return "NARROW"
+            elif name == "W":
+                return "WIDE"
             return name
 
         # Remove from the name of the filter, which is converted to uppercase,
         # the leftmost non-overlapping occurrences of the regular expression of
         # the photometric system. This means that e.g., 'vJohnson' returns 'V'.
         # We cannot use flags = re.IGNORECASE for Python 2.6 compatibility.
-        letter = re.sub(REGEXPS[system].upper(), '', name.upper()).upper()
+        letter = re.sub(REGEXPS[system].upper(), "", name.upper()).upper()
 
         # Strömgren subtleties
         if system == STROMGREN:
@@ -325,8 +353,7 @@ class Passband(object):
         # Otherwise, raise NonRecognizedPassband.
 
         elif letter not in cls.SYSTEM_LETTERS[system]:
-            all_letters = set(itertools.chain(cls.ALL_LETTERS,
-                                              string.ascii_uppercase))
+            all_letters = set(itertools.chain(cls.ALL_LETTERS, string.ascii_uppercase))
             if letter in all_letters:
                 raise InvalidPassbandLetter(letter, system)
             else:
@@ -335,7 +362,7 @@ class Passband(object):
             return letter
 
     def __init__custom(self, filter_name):
-        """ Instantiate a custom photometric filter.
+        """Instantiate a custom photometric filter.
 
         This method is called at the beginning of __init__() in order to check
         whether 'filter_name' corresponds to a custom photometric filter, those
@@ -368,7 +395,7 @@ class Passband(object):
         """
 
         for name, description in CUSTOM_FILTERS.iteritems():
-            regexp = '|'.join(re.escape(x) for x in [name, description])
+            regexp = "|".join(re.escape(x) for x in [name, description])
             if re.match(regexp, filter_name, re.IGNORECASE):
                 self.letter = description
                 self.system = CUSTOM
@@ -377,7 +404,7 @@ class Passband(object):
             return False
 
     def __init__(self, filter_name):
-        """ Instantiation method for the Passband class.
+        """Instantiation method for the Passband class.
 
         Receive the name of the photometric filter and automatically extract
         the system and letter (or wavelength, if it is H-alpha). The regular
@@ -408,7 +435,7 @@ class Passband(object):
             return
 
         # E.g., from "_Johnson_(V)_" to "JohnsonV"
-        name = re.sub('[\s\-_\(\)]', '', filter_name)
+        name = re.sub("[\s\-_\(\)]", "", filter_name)
 
         system = self._identify_system(name)
 
@@ -430,7 +457,7 @@ class Passband(object):
 
     @classmethod
     def all(cls):
-        """ Return (almost) all of the filters this class encapsulates.
+        """Return (almost) all of the filters this class encapsulates.
 
         Return a list with a Passband object for each photometric system and
         the corresponding letters contained in Passband.SYSTEM_LETTERS. That
@@ -448,7 +475,7 @@ class Passband(object):
             for letter in letters:
                 # Avoid duplicates: 'N' and 'W' are short for 'narrow' and
                 # 'wide', respectively, so they are indeed the same filter.
-                if system == STROMGREN and letter in ['N', 'W']:
+                if system == STROMGREN and letter in ["N", "W"]:
                     continue
                 name = "%s %s" % (system, letter)
                 pfilters.append(name)
@@ -460,7 +487,7 @@ class Passband(object):
         return [Passband(x) for x in pfilters]
 
     def __str__(self):
-        """ The 'informal' string representation.
+        """The 'informal' string representation.
 
         Return a nice string representation of the photometric filter, such as
         'Johnson V', 'Cousins R', 'Gunn r', 'SDSS g'', '2MASS Ks', 'Stromgren
@@ -476,8 +503,8 @@ class Passband(object):
         system = self.system
         letter = self.letter
 
-        if letter == 'KS':
-             letter = 'Ks'
+        if letter == "KS":
+            letter = "Ks"
 
         # User-defined filters have their description stored in the 'letter'
         # attribute, which is undeniably confusing. The reason for this is that
@@ -492,23 +519,23 @@ class Passband(object):
 
         if system == STROMGREN:
             system = "Stromgren"
-            if letter in ('NARROW', 'WIDE'):
+            if letter in ("NARROW", "WIDE"):
                 letter = "HB " + letter.lower()
             else:
                 letter = letter.lower()
         elif system == SDSS:
             letter = "%s'" % letter
         elif system == HALPHA:
-            system = 'Ha'
+            system = "Ha"
 
         return "%s %s" % (system, letter)
 
     def __repr__(self):
         """ The unambiguous string representation """
-        return "%s(\"%s\")" % (self.__class__.__name__, self)
+        return '%s("%s")' % (self.__class__.__name__, self)
 
     def __cmp__(self, other):
-        """ Called by comparison operations if rich comparison is not defined.
+        """Called by comparison operations if rich comparison is not defined.
 
         Returns a negative integer is self < other, zero if self == other, and
         a positive integer if self > other. Passband objects are sorted by the
@@ -529,7 +556,7 @@ class Passband(object):
         # description (stored in the 'letter' attribute). Custom filters are
         # smaller than all the other filters.
 
-        self_custom  =  self.system == CUSTOM
+        self_custom = self.system == CUSTOM
         other_custom = other.system == CUSTOM
 
         if self_custom or other_custom:
@@ -542,7 +569,7 @@ class Passband(object):
         # If both filters are H-alpha, sort by their wavelength.
         # H-alpha filters are greater than all the other filters
 
-        self_alpha =   self.system == HALPHA
+        self_alpha = self.system == HALPHA
         other_alpha = other.system == HALPHA
 
         if self_alpha or other_alpha:
@@ -553,7 +580,7 @@ class Passband(object):
 
         # If the photometric systems are different, sort by letter.
         # If the letters are the same, sort by system (lexicographically)
-        self_index  = self.LETTERS_ORDER.index(self.letter)
+        self_index = self.LETTERS_ORDER.index(self.letter)
         other_index = self.LETTERS_ORDER.index(other.letter)
 
         if self_index != other_index:
@@ -566,7 +593,7 @@ class Passband(object):
 
     @classmethod
     def random(cls):
-        """ Return a random Passband object.
+        """Return a random Passband object.
 
         Choose a random photometric system (Johnson, Cousins, Gunn, SDSS,
         2MASS, Strömgren or H-alpha) and one of the letters that the system
@@ -593,7 +620,7 @@ class Passband(object):
             return cls("%s %s" % (system, letter))
 
     def different(self):
-        """ Return a random Passband object different than this one.
+        """Return a random Passband object different than this one.
 
         The returned Passband object does not compare equal to 'self'. This
         means that it has a different photometric system or, in case these are
@@ -605,4 +632,3 @@ class Passband(object):
             passband = self.random()
             if passband != self:
                 return passband
-

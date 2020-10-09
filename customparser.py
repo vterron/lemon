@@ -26,28 +26,32 @@ import textwrap
 # LEMON modules
 import passband
 
+
 class NewlinesFormatter(optparse.IndentedHelpFormatter):
-    """ This quick-and-dirty trick prevents optparse from stripping newlines
+    """This quick-and-dirty trick prevents optparse from stripping newlines
     (using textwrap) when the description of the module is printed. This should
-    be acceptable enough until the transition to argparse is made. """
+    be acceptable enough until the transition to argparse is made."""
 
     def _format_text(self, text):
         text_width = self.width - self.current_indent
-        indent = ' ' * self.current_indent
+        indent = " " * self.current_indent
         # Wrap one paragraph at a time, then concatenate them
         formatted_text = ""
-        for paragraph in text.split('\n\n'):
+        for paragraph in text.split("\n\n"):
 
-            formatted_text += textwrap.fill(paragraph.strip(),
-                                            text_width,
-                                            initial_indent=indent,
-                                            subsequent_indent=indent)
-            formatted_text += '\n\n'
+            formatted_text += textwrap.fill(
+                paragraph.strip(),
+                text_width,
+                initial_indent=indent,
+                subsequent_indent=indent,
+            )
+            formatted_text += "\n\n"
 
         return formatted_text.rstrip()
 
+
 def check_passband(option, opt, value):
-    """ Type-checking function for the 'passband' optparse option type.
+    """Type-checking function for the 'passband' optparse option type.
 
     This is the type-checking function for 'passband', a custom optparse type
     that accepts a string with the name of a photometric filter and returns
@@ -66,8 +70,9 @@ def check_passband(option, opt, value):
         msg = "option %s: invalid photometric filter: %r (%s)"
         raise optparse.OptionValueError(msg % (opt, value, e))
 
+
 class PassbandOption(optparse.Option):
-    """ Custom optparse option type encapsulating a photometric filter.
+    """Custom optparse option type encapsulating a photometric filter.
 
     This subclass of optparse's Option class implements 'passband', a custom
     option type: it receives a string with the name of a photometric filter,
@@ -77,13 +82,14 @@ class PassbandOption(optparse.Option):
     """
 
     # A tuple of type names
-    TYPES = optparse.Option.TYPES + ('passband',)
+    TYPES = optparse.Option.TYPES + ("passband",)
     # A dictionary mapping type names to type-checking functions
     TYPE_CHECKER = copy.copy(optparse.Option.TYPE_CHECKER)
-    TYPE_CHECKER['passband'] = check_passband
+    TYPE_CHECKER["passband"] = check_passband
+
 
 def get_parser(description):
-    """ Return the OptionParser object used in the LEMON modules.
+    """Return the OptionParser object used in the LEMON modules.
 
     This function instantiates an optparse.OptionParser object and returns it.
     Its 'description' argument (a paragraph of text giving a brief overview of
@@ -96,15 +102,18 @@ def get_parser(description):
 
     """
 
-    kwargs = dict(description = description,
-                  add_help_option = False,
-                  formatter = NewlinesFormatter(),
-                  option_class = PassbandOption)
+    kwargs = dict(
+        description=description,
+        add_help_option=False,
+        formatter=NewlinesFormatter(),
+        option_class=PassbandOption,
+    )
     parser = optparse.OptionParser(**kwargs)
     return parser
 
+
 def clear_metavars(parser):
-    """ Set all the meta-variables of an OptionParser to a whitespace.
+    """Set all the meta-variables of an OptionParser to a whitespace.
 
     This is a hackish convenience function to set the meta-variables of all the
     options of an OptionParser, independently of whether they are contained in
@@ -120,15 +129,16 @@ def clear_metavars(parser):
 
     """
 
-    EMPTY_VALUE = ' '
+    EMPTY_VALUE = " "
     for option in parser.option_list:
         option.metavar = EMPTY_VALUE
-    for group in parser.__dict__['option_groups']:
+    for group in parser.__dict__["option_groups"]:
         for option in group.option_list:
             option.metavar = EMPTY_VALUE
 
+
 def additional_options_callback(option, opt_str, value, parser):
-    """ opt-parse callback function to parse option strings.
+    """opt-parse callback function to parse option strings.
 
     Use this function to parse a string containing an option with, if any, the
     argument that it takes. For example, given the string '--downsample = 2',
@@ -148,13 +158,14 @@ def additional_options_callback(option, opt_str, value, parser):
     regexp = "=?(?P<option>-+[\w-]+)\s*=?\s*(?P<value>\w+)?"
     match = re.match(regexp, value)
     if not match:
-        msg = ("cannot parse additional option. Are you using the GNU/POSIX "
-               "syntax? Note that options should always start with one or "
-               "two hyphens. Examples of valid syntax are '-o', '-o value', "
-               "'--name' and '--name=value', among many others.")
+        msg = (
+            "cannot parse additional option. Are you using the GNU/POSIX "
+            "syntax? Note that options should always start with one or "
+            "two hyphens. Examples of valid syntax are '-o', '-o value', "
+            "'--name' and '--name=value', among many others."
+        )
         raise ValueError(msg)
 
-    opt_  = match.group('option')
-    value = match.group('value')
+    opt_ = match.group("option")
+    value = match.group("value")
     getattr(parser.values, option.dest)[opt_] = value
-

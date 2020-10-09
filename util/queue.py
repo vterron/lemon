@@ -23,7 +23,7 @@ import multiprocessing.queues
 
 
 class SharedCounter(object):
-    """ A synchronized shared counter.
+    """A synchronized shared counter.
 
     The locking done by multiprocessing.Value ensures that only a single
     process or thread may read or write the in-memory ctypes object. However,
@@ -37,10 +37,10 @@ class SharedCounter(object):
 
     """
 
-    def __init__(self, n = 0):
-        self.count = multiprocessing.Value('i', n)
+    def __init__(self, n=0):
+        self.count = multiprocessing.Value("i", n)
 
-    def increment(self, n = 1):
+    def increment(self, n=1):
         """ Increment the counter by n (default = 1) """
         with self.count.get_lock():
             self.count.value += n
@@ -52,7 +52,7 @@ class SharedCounter(object):
 
 
 class Queue(multiprocessing.queues.Queue):
-    """ A portable implementation of multiprocessing.Queue.
+    """A portable implementation of multiprocessing.Queue.
 
     Because of multithreading / multiprocessing semantics, Queue.qsize() may
     raise the NotImplementedError exception on Unix platforms like Mac OS X

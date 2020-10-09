@@ -38,8 +38,8 @@ import test.dss_images
 if __name__ == "__main__":
 
     loader = unittest.TestLoader()
-    tests = loader.discover('.', top_level_dir='.')
-    runner = unittest.runner.TextTestRunner(verbosity = 2)
+    tests = loader.discover(".", top_level_dir=".")
+    runner = unittest.runner.TextTestRunner(verbosity=2)
     runner.failfast = True
     result = runner.run(tests)
     sys.exit(not result.wasSuccessful())

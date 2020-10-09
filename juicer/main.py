@@ -20,10 +20,11 @@
 
 import app
 
+
 def main(**kwargs):
     juicer = app.LEMONJuicerGUI(**kwargs)
     juicer.run()
 
+
 if __name__ == "__main__":
     main()
-

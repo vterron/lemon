@@ -38,6 +38,7 @@ import util
 
 NITERS = 100
 
+
 class PixelTest(unittest.TestCase):
 
     X_COORD_RANGE = (1, 2048)
@@ -59,11 +60,12 @@ class PixelTest(unittest.TestCase):
             self.assertRaises(AttributeError, setattr, pixel, name, value)
             self.assertRaises(AttributeError, delattr, pixel, name)
 
+
 class CoordinatesTest(unittest.TestCase):
 
     RIGHT_ASCENSION_RANGE = (0, 360)
     DECLINATION_RANGE = (-90, 90)
-    PM_RA_RANGE =  (0, 0.79858)
+    PM_RA_RANGE = (0, 0.79858)
     PM_DEC_RANGE = (0, 10.32812)
 
     @staticmethod
@@ -85,7 +87,7 @@ class CoordinatesTest(unittest.TestCase):
         # make much sense to know the proper motion in declination but not in
         # right ascension, or vice versa.
         if random.choice([True, False]):
-            pm_ra  = cls.get_random_pm(cls.PM_RA_RANGE)
+            pm_ra = cls.get_random_pm(cls.PM_RA_RANGE)
             pm_dec = cls.get_random_pm(cls.PM_DEC_RANGE)
         else:
             pm_ra = pm_dec = None
@@ -122,9 +124,9 @@ class CoordinatesTest(unittest.TestCase):
 
         # year = epoch, so coordinates do not change
         coords = barnard.get_exact_coordinates(2000)
-        self.assertEqual(coords.ra,  barnard.ra)
+        self.assertEqual(coords.ra, barnard.ra)
         self.assertEqual(coords.dec, barnard.dec)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
         # 2005 - 2000 = 5 years
@@ -132,8 +134,8 @@ class CoordinatesTest(unittest.TestCase):
         #   4.693391 + (10.32812 * 5) / 3600 =   4.707735611
         coords = barnard.get_exact_coordinates(2005)
         self.assertAlmostEqual(coords.ra, 269.450965861)
-        self.assertAlmostEqual(coords.dec,  4.707735611)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertAlmostEqual(coords.dec, 4.707735611)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
         # 2014.5 = July 3, 2014
@@ -142,8 +144,8 @@ class CoordinatesTest(unittest.TestCase):
         #   4.693391 + (10.32812 * 14.5) / 3600 =   4.734990372
         coords = barnard.get_exact_coordinates(2014.5)
         self.assertAlmostEqual(coords.ra, 269.448858497)
-        self.assertAlmostEqual(coords.dec,  4.734990372)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertAlmostEqual(coords.dec, 4.734990372)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
         # 1975.35 = May 9, 1975
@@ -152,8 +154,8 @@ class CoordinatesTest(unittest.TestCase):
         #   4.693391 + (10.32812 * -24.65) / 3600 =   4.622672067
         coords = barnard.get_exact_coordinates(1975.35)
         self.assertAlmostEqual(coords.ra, 269.457543055)
-        self.assertAlmostEqual(coords.dec,  4.622672067)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertAlmostEqual(coords.dec, 4.622672067)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
         # Kapteyn's Star (J1950): 6505.08 -5730.84 (mas/yr)
@@ -162,29 +164,29 @@ class CoordinatesTest(unittest.TestCase):
         # 2008 - 1950 = 58 years
         # 77.791453  + ( 6.50508 * 58) / 3600 =  77.896257067
         # -44.938748 + (-5.73084 * 58) / 3600 = -45.0310782
-        coords = kapteyn.get_exact_coordinates(2008, epoch = 1950)
-        self.assertAlmostEqual(coords.ra,   77.896257067)
+        coords = kapteyn.get_exact_coordinates(2008, epoch=1950)
+        self.assertAlmostEqual(coords.ra, 77.896257067)
         self.assertAlmostEqual(coords.dec, -45.0310782)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
         # 1905.49180328 = June 30, 1905
         # 1905.49180328 - 1950 = -44.50819672
         # 77.791453  + ( 6.50508 * -44.50819672) / 3600 =  77.711028172
         # -44.938748 + (-5.73084 * -44.50819672) / 3600 = -44.867895402
-        coords = kapteyn.get_exact_coordinates(1905.49180328, epoch = 1950)
-        self.assertAlmostEqual(coords.ra,   77.711028172)
+        coords = kapteyn.get_exact_coordinates(1905.49180328, epoch=1950)
+        self.assertAlmostEqual(coords.ra, 77.711028172)
         self.assertAlmostEqual(coords.dec, -44.867895402)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
         # IOK 1 (z = 6.96, 12.88 Gly)
         # No proper motion; object does not move
         iok1 = Coordinates(200.999170, 27.415500)
         coords = iok1.get_exact_coordinates(2061)
-        self.assertEqual(coords.ra,  iok1.ra)
+        self.assertEqual(coords.ra, iok1.ra)
         self.assertEqual(coords.dec, iok1.dec)
-        self.assertIs(coords.pm_ra,  None)
+        self.assertIs(coords.pm_ra, None)
         self.assertIs(coords.pm_dec, None)
 
 
@@ -251,24 +253,147 @@ class StarTest(unittest.TestCase):
 
 class CatalogTest(unittest.TestCase):
 
-    args = os.path.dirname(__file__), './test_data/'
+    args = os.path.dirname(__file__), "./test_data/"
     get_path = functools.partial(os.path.join, *args)
-    SAMPLE_CATALOG_PATH = get_path('sextractor.cat')
-    SAMPLE_INCOMPLETE_PATH = get_path('sextractor_incomplete.cat')
-    SAMPLE_NOASCIIHEAD_PATH = get_path('sextractor_noasciihead.cat')
+    SAMPLE_CATALOG_PATH = get_path("sextractor.cat")
+    SAMPLE_INCOMPLETE_PATH = get_path("sextractor_incomplete.cat")
+    SAMPLE_NOASCIIHEAD_PATH = get_path("sextractor_noasciihead.cat")
 
     def test_flag_saturated(self):
 
         # Numbers in the [0, 255] range whose 3rd least significant bit is one
-        saturated_flags = set([4, 5, 6, 7, 12, 13, 14, 15, 20, 21, 22, 23, 28,
-        29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 52, 53, 54, 55, 60, 61, 62,
-        63, 68, 69, 70, 71, 76, 77, 78, 79, 84, 85, 86, 87, 92, 93, 94, 95,
-        100, 101, 102, 103, 108, 109, 110, 111, 116, 117, 118, 119, 124, 125,
-        126, 127, 132, 133, 134, 135, 140, 141, 142, 143, 148, 149, 150, 151,
-        156, 157, 158, 159, 164, 165, 166, 167, 172, 173, 174, 175, 180, 181,
-        182, 183, 188, 189, 190, 191, 196, 197, 198, 199, 204, 205, 206, 207,
-        212, 213, 214, 215, 220, 221, 222, 223, 228, 229, 230, 231, 236, 237,
-        238, 239, 244, 245, 246, 247, 252, 253, 254, 255])
+        saturated_flags = set(
+            [
+                4,
+                5,
+                6,
+                7,
+                12,
+                13,
+                14,
+                15,
+                20,
+                21,
+                22,
+                23,
+                28,
+                29,
+                30,
+                31,
+                36,
+                37,
+                38,
+                39,
+                44,
+                45,
+                46,
+                47,
+                52,
+                53,
+                54,
+                55,
+                60,
+                61,
+                62,
+                63,
+                68,
+                69,
+                70,
+                71,
+                76,
+                77,
+                78,
+                79,
+                84,
+                85,
+                86,
+                87,
+                92,
+                93,
+                94,
+                95,
+                100,
+                101,
+                102,
+                103,
+                108,
+                109,
+                110,
+                111,
+                116,
+                117,
+                118,
+                119,
+                124,
+                125,
+                126,
+                127,
+                132,
+                133,
+                134,
+                135,
+                140,
+                141,
+                142,
+                143,
+                148,
+                149,
+                150,
+                151,
+                156,
+                157,
+                158,
+                159,
+                164,
+                165,
+                166,
+                167,
+                172,
+                173,
+                174,
+                175,
+                180,
+                181,
+                182,
+                183,
+                188,
+                189,
+                190,
+                191,
+                196,
+                197,
+                198,
+                199,
+                204,
+                205,
+                206,
+                207,
+                212,
+                213,
+                214,
+                215,
+                220,
+                221,
+                222,
+                223,
+                228,
+                229,
+                230,
+                231,
+                236,
+                237,
+                238,
+                239,
+                244,
+                245,
+                246,
+                247,
+                252,
+                253,
+                254,
+                255,
+            ]
+        )
 
         for flag in xrange(0, 256):
             is_saturated = Catalog.flag_saturated(flag)
@@ -300,7 +425,7 @@ class CatalogTest(unittest.TestCase):
         self.assertFalse(star.saturated)
         # S/N = FLUX_ISO / FLUXERR_ISO = 8545557 / 12811.09
         self.assertAlmostEqual(star.snr, 667.043709786)
-        self.assertAlmostEqual(star.fwhm, 12.668) # FLUX_RADIUS x 2
+        self.assertAlmostEqual(star.fwhm, 12.668)  # FLUX_RADIUS x 2
         self.assertEqual(star.elongation, 1.562)
 
         star = catalog[68]
@@ -313,7 +438,7 @@ class CatalogTest(unittest.TestCase):
         self.assertFalse(star.saturated)
         # S/N = FLUX_ISO / FLUXERR_ISO = 10539.52 / 569.9098
         self.assertAlmostEqual(star.snr, 18.49331245)
-        self.assertAlmostEqual(star.fwhm, 2.126) # FLUX_RADIUS x 2
+        self.assertAlmostEqual(star.fwhm, 2.126)  # FLUX_RADIUS x 2
         self.assertEqual(star.elongation, 1.339)
 
         star = catalog[126]
@@ -326,13 +451,14 @@ class CatalogTest(unittest.TestCase):
         self.assertTrue(star.saturated)
         # S/N = FLUX_ISO / FLUXERR_ISO = 3833.773 / 450.5532
         self.assertAlmostEqual(star.snr, 8.509035115)
-        self.assertAlmostEqual(star.fwhm, 2.412) # FLUX_RADIUS x 2
+        self.assertAlmostEqual(star.fwhm, 2.412)  # FLUX_RADIUS x 2
         self.assertEqual(star.elongation, 1.613)
 
         # IOError is raised if the SExtractor catalog does not exist; in order
         # to get the path to a non-existent file, we use NamedTemporaryFile and
         # close the file (deleting it) immediately after.
-        with tempfile.NamedTemporaryFile(suffix = '.cat') as fd: pass
+        with tempfile.NamedTemporaryFile(suffix=".cat") as fd:
+            pass
         self.assertFalse(os.path.exists(fd.name))
         self.assertRaises(IOError, Catalog, fd.name)
 
@@ -406,19 +532,20 @@ class CatalogTest(unittest.TestCase):
             self.assertEqual(coord.dec, star.delta)
 
 
-def get_nonexistent_path(ext = None):
+def get_nonexistent_path(ext=None):
     """ Return the path to a nonexistent file """
-    with tempfile.NamedTemporaryFile(suffix = ext) as fd:
+    with tempfile.NamedTemporaryFile(suffix=ext) as fd:
         return fd.name
 
 
 class SExtractorFunctionsTest(unittest.TestCase):
 
-    SEXTRACTOR_MODULE_VARS = \
-      ('SEXTRACTOR_CONFIG',
-       'SEXTRACTOR_PARAMS',
-       'SEXTRACTOR_FILTER',
-       'SEXTRACTOR_STARNNW')
+    SEXTRACTOR_MODULE_VARS = (
+        "SEXTRACTOR_CONFIG",
+        "SEXTRACTOR_PARAMS",
+        "SEXTRACTOR_FILTER",
+        "SEXTRACTOR_STARNNW",
+    )
 
     def test_sextractor_md5sum(self):
 
@@ -429,7 +556,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
         # If the SExtractor configuration files are not modified in between,
         # two different executions of the function must yield the same hash.
-        checksum  = astromatic.sextractor_md5sum()
+        checksum = astromatic.sextractor_md5sum()
         identical = astromatic.sextractor_md5sum()
         self.assertEqual(checksum, identical)
 
@@ -449,7 +576,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         for variable in self.SEXTRACTOR_MODULE_VARS:
 
             # The variable must exist and refer to an existing file
-            path = eval('astromatic.%s' % variable)
+            path = eval("astromatic.%s" % variable)
             self.assertTrue(os.path.exists(path))
 
             # Make a temporary copy of the configuration file and modify it,
@@ -459,11 +586,11 @@ class SExtractorFunctionsTest(unittest.TestCase):
             # the settings are still the same), the MD5 hash must be different.
 
             ext = os.path.splitext(path)[1]
-            copy_path = get_nonexistent_path(ext = ext)
+            copy_path = get_nonexistent_path(ext=ext)
 
             try:
                 shutil.copy2(path, copy_path)
-                with open(copy_path, 'at') as fd:
+                with open(copy_path, "at") as fd:
                     fd.write("# useless comment\n")
 
                 with mock.patch.object(astromatic, variable, copy_path):
@@ -484,9 +611,9 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
             for line in fd:
                 stripped = line.strip()
-                if stripped and stripped[0] != '#': # ignore comment lines
+                if stripped and stripped[0] != "#":  # ignore comment lines
                     key, value = stripped.split()[:2]
-                    options = {key : value}
+                    options = {key: value}
                     different = astromatic.sextractor_md5sum(options)
                     self.assertNotEqual(checksum, different)
 
@@ -497,11 +624,11 @@ class SExtractorFunctionsTest(unittest.TestCase):
                     try:
                         options[key] = str(int(options[key]) + 1)
                         also_different = astromatic.sextractor_md5sum(options)
-                        self.assertNotEqual(checksum,  also_different)
+                        self.assertNotEqual(checksum, also_different)
                         self.assertNotEqual(different, also_different)
 
                     except ValueError:
-                        pass # non-numeric option
+                        pass  # non-numeric option
 
         # IOError is raised if any of the SExtractor configuration files is not
         # readable or does not exist. To test that, mock again the module-level
@@ -510,9 +637,9 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
         for variable in self.SEXTRACTOR_MODULE_VARS:
 
-            path = eval('astromatic.%s' % variable)
+            path = eval("astromatic.%s" % variable)
             ext = os.path.splitext(path)[1]
-            copy_path = get_nonexistent_path(ext = ext)
+            copy_path = get_nonexistent_path(ext=ext)
             shutil.copy2(path, copy_path)
 
             with mock.patch.object(astromatic, variable, copy_path):
@@ -531,12 +658,12 @@ class SExtractorFunctionsTest(unittest.TestCase):
                 self.assertRaises(*args)
 
         # TypeError raised if 'options' is not a dictionary
-        kwargs = dict(options = ['DETECT_MINAREA', '5'])
+        kwargs = dict(options=["DETECT_MINAREA", "5"])
         with self.assertRaises(TypeError):
             astromatic.sextractor_md5sum(**kwargs)
 
         # ... or if any of its elements is not a string
-        kwargs['options'] = {'DETECT_MINAREA' : 125}
+        kwargs["options"] = {"DETECT_MINAREA": 125}
         with self.assertRaises(TypeError):
             astromatic.sextractor_md5sum(**kwargs)
 
@@ -551,7 +678,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         which_mock.return_value = []
         with self.assertRaises(astromatic.SExtractorNotInstalled):
             astromatic.sextractor_version()
-        which_mock.assert_has_calls([mock.call('sextractor'), mock.call('sex')])
+        which_mock.assert_has_calls([mock.call("sextractor"), mock.call("sex")])
 
     def test_sextractor(self):
 
@@ -568,7 +695,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # the STScI Digitized Sky Survey) and return the path to the output
         # catalog, which astromatic.Catalog should be always able to parse.
 
-        kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
+        kwargs = dict(stdout=open(os.devnull), stderr=open(os.devnull))
         for img_path in dss_images.TEST_IMAGES:
             catalog_path = astromatic.sextractor(img_path, **kwargs)
             try:
@@ -583,8 +710,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # any other command) will appear as not installed on the system.
 
         environment_copy = copy.deepcopy(os.environ)
-        with mock.patch.object(os, 'environ', environment_copy) as mocked:
-            mocked['PATH'] = ''
+        with mock.patch.object(os, "environ", environment_copy) as mocked:
+            mocked["PATH"] = ""
             with self.assertRaises(astromatic.SExtractorNotInstalled):
                 astromatic.sextractor(img_path)
 
@@ -595,9 +722,9 @@ class SExtractorFunctionsTest(unittest.TestCase):
 
         for variable in self.SEXTRACTOR_MODULE_VARS:
 
-            path = eval('astromatic.%s' % variable)
+            path = eval("astromatic.%s" % variable)
             ext = os.path.splitext(path)[1]
-            copy_path = get_nonexistent_path(ext = ext)
+            copy_path = get_nonexistent_path(ext=ext)
             shutil.copy2(path, copy_path)
 
             with mock.patch.object(astromatic, variable, copy_path):
@@ -627,7 +754,7 @@ class SExtractorFunctionsTest(unittest.TestCase):
         version[-1] += 1
         version = tuple(version)
 
-        with mock.patch.object(astromatic, 'SEXTRACTOR_REQUIRED_VERSION', version):
+        with mock.patch.object(astromatic, "SEXTRACTOR_REQUIRED_VERSION", version):
             with self.assertRaises(astromatic.SExtractorUpgradeRequired):
                 astromatic.sextractor(img_path)
 
@@ -640,8 +767,8 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # many different reasons that we cannot even foresee.
 
         # (1) Try to run SExtractor on a non-existent image
-        kwargs = dict(stdout = open(os.devnull), stderr = open(os.devnull))
-        nonexistent_path = get_nonexistent_path(ext = '.fits')
+        kwargs = dict(stdout=open(os.devnull), stderr=open(os.devnull))
+        nonexistent_path = get_nonexistent_path(ext=".fits")
         with self.assertRaises(astromatic.SExtractorError):
             astromatic.sextractor(nonexistent_path, **kwargs)
 
@@ -650,37 +777,37 @@ class SExtractorFunctionsTest(unittest.TestCase):
         # to it a string will cause SExtractor to complain ("keyword out of
         # range") and abort its execution.
 
-        kwargs['options'] = dict(DETECT_MINAREA = 'Y')
+        kwargs["options"] = dict(DETECT_MINAREA="Y")
         with self.assertRaises(astromatic.SExtractorError):
             astromatic.sextractor(img_path, **kwargs)
-        del kwargs['options']
+        del kwargs["options"]
 
         # (3) Try to run SExtractor on a nonexistent FITS extension.
-        hdulist = pyfits.open(img_path, mode = 'readonly')
+        hdulist = pyfits.open(img_path, mode="readonly")
         nextensions = len(hdulist)
         hdulist.close()
 
-        kwargs['ext'] = nextensions + 1
+        kwargs["ext"] = nextensions + 1
         with self.assertRaises(astromatic.SExtractorError):
             astromatic.sextractor(img_path, **kwargs)
 
         # TypeError raised if 'options' is not a dictionary
-        kwargs = dict(options = ['DETECT_MINAREA', '5'])
+        kwargs = dict(options=["DETECT_MINAREA", "5"])
         with self.assertRaises(TypeError):
             astromatic.sextractor(img_path, **kwargs)
 
         # ... or if any of its elements is not a string.
-        kwargs['options'] = {'DETECT_MINAREA' : 125}
+        kwargs["options"] = {"DETECT_MINAREA": 125}
         with self.assertRaises(TypeError):
             astromatic.sextractor(img_path, **kwargs)
 
         # TypeError also raised if 'ext' is not an integer...
-        kwargs = dict(ext = 0.56)
+        kwargs = dict(ext=0.56)
         with self.assertRaises(TypeError):
             astromatic.sextractor(img_path, **kwargs)
 
         # ... even if it is a float but has nothing after the decimal point
         # (for which the built-in is_integer() function would return True).
-        kwargs = dict(ext = 0.0)
+        kwargs = dict(ext=0.0)
         with self.assertRaises(TypeError):
             astromatic.sextractor(img_path, **kwargs)

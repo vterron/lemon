@@ -26,4 +26,3 @@ prefix = ">> "
 
 # The error message to be printed if the execution is aborted.w
 error_exit_message = "%sExecution aborted." % prefix
-

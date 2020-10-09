@@ -34,18 +34,19 @@ import errno
 import shutil
 import subprocess
 
-MKIRAF_BIN = 'mkiraf'
-TERM_TYPE = 'xgterm'
-LOGIN_FILE = 'login.cl'
-UPARM_DIR = 'uparm'
-PYRAF_CACHE = 'pyraf'
+MKIRAF_BIN = "mkiraf"
+TERM_TYPE = "xgterm"
+LOGIN_FILE = "login.cl"
+UPARM_DIR = "uparm"
+PYRAF_CACHE = "pyraf"
 
 # The LEMON configuration file
-CONFIG_FILENAME = '~/.lemonrc'
+CONFIG_FILENAME = "~/.lemonrc"
 CONFIG_PATH = os.path.expanduser(CONFIG_FILENAME)
 
+
 def mkiraf(path):
-    """ Create the IRAF login script and the uparm directory.
+    """Create the IRAF login script and the uparm directory.
 
     This function implements a high-level wrapper around IRAF's mkiraf, which
     initializes the IRAF login script and the user parameters directory in the
@@ -72,18 +73,18 @@ def mkiraf(path):
     # not accepting it as a command line argument. Thus, we need to use a pipe
     # to send the terminal type to mkiraf's stdin.
     args = [MKIRAF_BIN]
-    p = subprocess.Popen(args, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-    p.communicate(input = TERM_TYPE)
+    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    p.communicate(input=TERM_TYPE)
 
     if p.returncode:
         msg = "execution of %s failed" % MKIRAF_BIN
         raise subprocess.CalledProcessError(p.returncode, args)
 
-    with open(LOGIN_FILE, 'rt') as fd:
+    with open(LOGIN_FILE, "rt") as fd:
         for line in fd:
             splitted = line.split()
             if len(splitted) == 2:
-                if splitted[0] == 'stty':
+                if splitted[0] == "stty":
                     if splitted[1] == TERM_TYPE:
                         break
                     else:
@@ -93,8 +94,9 @@ def mkiraf(path):
             msg = "terminal type not defined in %s" % LOGIN_FILE
             raise ValueError(msg)
 
+
 def mkdir_p(path):
-    """ Create a directory, give no error if it already exists.
+    """Create a directory, give no error if it already exists.
 
     This implements the functionality of Unix `mkdir -p`, creating a
     directory but without giving any error if it already exists and
@@ -105,7 +107,7 @@ def mkdir_p(path):
 
     try:
         os.mkdir(path)
-    except OSError as exc: # Python >2.5
+    except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
@@ -115,12 +117,11 @@ def mkdir_p(path):
 if __name__ == "__main__":
 
     lemon_path = os.path.dirname(os.path.realpath(__file__))
-    print "Setting up IRAF's %s in %s ..." % (LOGIN_FILE, lemon_path) ,
+    print "Setting up IRAF's %s in %s ..." % (LOGIN_FILE, lemon_path),
     mkiraf(lemon_path)
-    print 'done.'
+    print "done."
 
     print "Creating pyraf/ directory for cache...",
     pyraf_cache_path = os.path.join(lemon_path, PYRAF_CACHE)
     mkdir_p(pyraf_cache_path)
-    print 'done.'
-
+    print "done."

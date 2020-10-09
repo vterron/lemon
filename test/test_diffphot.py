@@ -34,8 +34,9 @@ from diffphot import Weights, StarSet
 
 NITERS = 50  # How many times some test cases are run with random data
 
+
 def assertSequencesAlmostEqual(cls, first, second):
-    """ Test that the elements of these two sequences are almost equal.
+    """Test that the elements of these two sequences are almost equal.
 
     The first parameter, 'cls', must be the subclass of unittest.TestCase
     instance in which this test is done. Values are considered to be almost
@@ -48,9 +49,10 @@ def assertSequencesAlmostEqual(cls, first, second):
     for values in zip(first, second):
         cls.assertAlmostEqual(*values)
 
+
 class WeightsTest(unittest.TestCase):
 
-    MIN_COEFFS = 2   # Minimum number of coefficients for random Weights
+    MIN_COEFFS = 2  # Minimum number of coefficients for random Weights
     MAX_COEFFS = 99  # Maximum number of coefficients for random Weights
 
     @staticmethod
@@ -59,7 +61,7 @@ class WeightsTest(unittest.TestCase):
         return [random.random() for index in xrange(n)]
 
     def setUp(self):
-        """ Prepare the test fixture.
+        """Prepare the test fixture.
 
         Sets the 'rcoefficients' attibute to a list of random size, each of its
         elements being a random list of coefficients in the [0.0, 1.0) range"""
@@ -92,10 +94,10 @@ class WeightsTest(unittest.TestCase):
         assertSequencesAlmostEqual(self, r0, [0.6, 0.4])
         assertSequencesAlmostEqual(self, r0.values, [0.3, 0.2])
 
-        assertSequencesAlmostEqual(self, r1, [5/7, 2/7])
+        assertSequencesAlmostEqual(self, r1, [5 / 7, 2 / 7])
         assertSequencesAlmostEqual(self, r1.values, [0.5, 0.2])
 
-        assertSequencesAlmostEqual(self, r2, [5/8, 3/8])
+        assertSequencesAlmostEqual(self, r2, [5 / 8, 3 / 8])
         assertSequencesAlmostEqual(self, r2.values, [0.5, 0.3])
 
         w2 = Weights([0.2, 0.4, 0.4])
@@ -106,10 +108,10 @@ class WeightsTest(unittest.TestCase):
         assertSequencesAlmostEqual(self, r0, [0.5, 0.5])
         assertSequencesAlmostEqual(self, r0.values, [0.4, 0.4])
 
-        assertSequencesAlmostEqual(self, r1, [1/3, 2/3])
+        assertSequencesAlmostEqual(self, r1, [1 / 3, 2 / 3])
         assertSequencesAlmostEqual(self, r1.values, [0.2, 0.4])
 
-        assertSequencesAlmostEqual(self, r2, [1/3, 2/3])
+        assertSequencesAlmostEqual(self, r2, [1 / 3, 2 / 3])
         assertSequencesAlmostEqual(self, r2.values, [0.2, 0.4])
 
         w3 = Weights([3])
@@ -118,7 +120,7 @@ class WeightsTest(unittest.TestCase):
 
         # Random cases in which one of the coefficients is discarded
         for coeffs in self.rcoefficients:
-            weights  = Weights(coeffs)
+            weights = Weights(coeffs)
             oweights = copy.deepcopy(weights)
 
             index = random.choice(xrange(len(weights)))
@@ -127,10 +129,10 @@ class WeightsTest(unittest.TestCase):
             # The original instance must not have been modified
             assertSequencesAlmostEqual(self, weights, oweights)
             self.assertAlmostEqual(rweights.total, 1.0)
-            self.assertEqual(len(rweights), len(weights)- 1)
+            self.assertEqual(len(rweights), len(weights) - 1)
 
             # Test that normalized coefficients have the expected value
-            ecoeffs = coeffs[:index] + coeffs[index+1:]
+            ecoeffs = coeffs[:index] + coeffs[index + 1 :]
             eweights = Weights(ecoeffs).normalize()
             assertSequencesAlmostEqual(self, rweights, eweights)
 
@@ -167,19 +169,19 @@ class WeightsTest(unittest.TestCase):
 
         c2 = [1, 2]
         w2 = Weights.inversely_proportional(c2)
-        assertSequencesAlmostEqual(self, w2, [2/3, 1/3])
+        assertSequencesAlmostEqual(self, w2, [2 / 3, 1 / 3])
         assertSequencesAlmostEqual(self, w2.values, c2)
         self.assertNotEqual(id(w2.values), id(c2))
 
         c3 = [1, 3]
         w3 = Weights.inversely_proportional(c3)
-        assertSequencesAlmostEqual(self, w3, [3/4, 1/4])
+        assertSequencesAlmostEqual(self, w3, [3 / 4, 1 / 4])
         assertSequencesAlmostEqual(self, w3.values, c3)
         self.assertNotEqual(id(w3.values), id(c3))
 
         c4 = [1, 2, 3]
         w4 = Weights.inversely_proportional(c4)
-        assertSequencesAlmostEqual(self, w4, [6/11, 3/11, 2/11])
+        assertSequencesAlmostEqual(self, w4, [6 / 11, 3 / 11, 2 / 11])
         assertSequencesAlmostEqual(self, w4.values, c4)
         self.assertNotEqual(id(w4.values), id(c4))
 
@@ -190,7 +192,7 @@ class WeightsTest(unittest.TestCase):
 
         for coeffs in self.rcoefficients:
             iweights = Weights.inversely_proportional(coeffs)
-            icoeffs  = [1 / x for x in coeffs]
+            icoeffs = [1 / x for x in coeffs]
             eweights = [1 / x / math.fsum(icoeffs) for x in coeffs]
             self.assertAlmostEqual(iweights.total, 1.0)
             assertSequencesAlmostEqual(self, eweights, iweights)
@@ -234,27 +236,27 @@ class WeightsTest(unittest.TestCase):
         # 1st coefficient, percent change =  2.5 <-- maximum
         # 2nd coefficient, percent change = -0.069999999999999951 <-- 2nd highest
         # 3rd coefficient, percent change =  0.047619047619047658
-        w1 = Weights([0.5,  1,    2.1])
+        w1 = Weights([0.5, 1, 2.1])
         w2 = Weights([1.75, 0.93, 2.2])
 
         # If 'minimum = 0.75' is used, the first coefficient is ignored (as one
         # of the values, 0.5, is smaller than this threshold), so the maximum
         # absolute percent change is found among the two remaining coefficients
         # and the right answer becomes 0.09524.
-        pc = w1.absolute_percent_change(w2, minimum = 0.75)
+        pc = w1.absolute_percent_change(w2, minimum=0.75)
         self.assertAlmostEqual(pc, 0.069999999999999951)
 
         # If 'minimum' is set to 1.25 the second coefficient is also ignored
-        pc = w1.absolute_percent_change(w2, minimum = 1.25)
+        pc = w1.absolute_percent_change(w2, minimum=1.25)
         self.assertAlmostEqual(pc, 0.047619047619047658)
 
         # Finally, a too high minimum value discards all the weights, which
         # causes the method to raise the ValueError exception. This also
         # happens in the value of 'minimum' is negative or zero.
         func = functools.partial(w1.absolute_percent_change, w2)
-        self.assertRaises(ValueError, func, minimum = 2.5)
-        self.assertRaises(ValueError, func, minimum = -0.132)
-        self.assertRaises(ValueError, func, minimum =  0)
+        self.assertRaises(ValueError, func, minimum=2.5)
+        self.assertRaises(ValueError, func, minimum=-0.132)
+        self.assertRaises(ValueError, func, minimum=0)
 
     def test_random(self):
         for _ in xrange(NITERS):
@@ -270,19 +272,19 @@ class StarSetTest(unittest.TestCase):
     # integers N such that a <= N <= b will be chosen when random sets of
     # data are used by some tests cases.
 
-    NSTARS_RANGE  = (10, 50)   # Number of DBStars in random StarSets
-    NRECORDS_RANGE = (25, 100) # Number of records in DBStars
-    IDS_RANGE = (1, 9999) # IDs for random DBStars
+    NSTARS_RANGE = (10, 50)  # Number of DBStars in random StarSets
+    NRECORDS_RANGE = (25, 100)  # Number of records in DBStars
+    IDS_RANGE = (1, 9999)  # IDs for random DBStars
 
     # And these tuples define the range from within random floating point
     # numbers N such that a <= N <= b will be chosen for some random sets
     # of data.
 
-    MAG_RANGE = (1.47, 25) # Instrumental magnitudes (Saturn, Fenrir)
-    SNR_RANGE = (2, 10000) # Signal-to-noise ratios
+    MAG_RANGE = (1.47, 25)  # Instrumental magnitudes (Saturn, Fenrir)
+    SNR_RANGE = (2, 10000)  # Signal-to-noise ratios
 
-    def rDBStars(self, size = None, nrecords = None, pfilter = None):
-        """ Return a random list of DBStars.
+    def rDBStars(self, size=None, nrecords=None, pfilter=None):
+        """Return a random list of DBStars.
 
         The random DBStars are guaranteed to have the same photometric filter
         and records for the same Unix times, as well as different IDs. If the
@@ -353,7 +355,7 @@ class StarSetTest(unittest.TestCase):
             StarSet([])
 
         # The DBStars cannot be empty either
-        stars = self.rDBStars(nrecords = 0)
+        stars = self.rDBStars(nrecords=0)
         with self.assertRaises(ValueError):
             StarSet(stars)
 
@@ -370,9 +372,9 @@ class StarSetTest(unittest.TestCase):
         # of photometric records and filter, but different Unix times.
         stars = self.rDBStars()
         while True:
-            dstar = self.rDBStars(size = len(stars),
-                                  nrecords = len(stars[0]),
-                                  pfilter = stars[0].pfilter)[0]
+            dstar = self.rDBStars(
+                size=len(stars), nrecords=len(stars[0]), pfilter=stars[0].pfilter
+            )[0]
             if set(dstar._unix_times) != set(stars[0]._unix_times):
                 stars.append(dstar)
                 break
@@ -424,8 +426,8 @@ class StarSetTest(unittest.TestCase):
             for index in xrange(rindex, len(set_)):
                 self.assertTrue(_eq_(set_[index], stars[index + 1]))
 
-    def _populate_set(self, magnitudes, snrs = None):
-        """ Return a random StarSet whose stars have the specified magnitudes.
+    def _populate_set(self, magnitudes, snrs=None):
+        """Return a random StarSet whose stars have the specified magnitudes.
 
         The method returns a StarSet with a random photometric filter, Unix
         times and signal-to-noise ratios, but the magnitudes of whose stars are
@@ -458,12 +460,11 @@ class StarSetTest(unittest.TestCase):
             msg = "the same number of magnitudes is needed for all stars"
             self.fail(msg)
 
-
         # If the sequence of sequences with the signal-to-noise ratio of
         # each instrumental magnitude is not given, use random values.
         if not snrs:
             snrs = []
-            n = len(magnitudes[0]) # number of magnitudes of each star
+            n = len(magnitudes[0])  # number of magnitudes of each star
             for _ in xrange(len(magnitudes)):
                 star_snrs = [random.uniform(*self.SNR_RANGE) for x in xrange(n)]
                 snrs.append(star_snrs)
@@ -499,9 +500,7 @@ class StarSetTest(unittest.TestCase):
 
     def test_flux_proportional_weights(self):
 
-        star_mags = \
-        [[6.4, 6.9],  # star = 0
-         [8.5, 8.7]]  # star = 1
+        star_mags = [[6.4, 6.9], [8.5, 8.7]]  # star = 0  # star = 1
         # img1 img2
 
         # (1) Normalized (for each image)
@@ -516,10 +515,11 @@ class StarSetTest(unittest.TestCase):
         weights = self._populate_set(star_mags).flux_proportional_weights()
         assertSequencesAlmostEqual(self, weights, expected)
 
-        star_mags = \
-        [[12.4, 11.3, 12.3, 11.8], # star = 0
-         [13.4, 12.5, 13.2, 12.7], # star = 1
-         [11.3, 10.3, 11.4, 10.7]] # star = 2
+        star_mags = [
+            [12.4, 11.3, 12.3, 11.8],  # star = 0
+            [13.4, 12.5, 13.2, 12.7],  # star = 1
+            [11.3, 10.3, 11.4, 10.7],
+        ]  # star = 2
         # img1  img2  img3  img4
 
         # (1) Normalized (for each image)
@@ -535,11 +535,12 @@ class StarSetTest(unittest.TestCase):
         weights = self._populate_set(star_mags).flux_proportional_weights()
         assertSequencesAlmostEqual(self, weights, expected)
 
-        star_mags = \
-        [[11.3, 12.3, 14.3, 12.1], # star = 0
-         [10.4, 11.8, 13.4, 11.4], # star = 1
-         [12.8, 14.2, 15.8,  8.1], # star = 2
-         [10.4, 11.4, 13.0, 11.9]] # star = 3
+        star_mags = [
+            [11.3, 12.3, 14.3, 12.1],  # star = 0
+            [10.4, 11.8, 13.4, 11.4],  # star = 1
+            [12.8, 14.2, 15.8, 8.1],  # star = 2
+            [10.4, 11.4, 13.0, 11.9],
+        ]  # star = 3
         # img1  img2  img3  img4
 
         # (1) Normalized (for each image)
@@ -552,12 +553,12 @@ class StarSetTest(unittest.TestCase):
         # [0.89393789556962022, 0.83954359065787132, 1. , 0.81764240506329111]
         #
         # (3) Magnitude-inversely proportional weights:
-        expected = Weights([0.24807083, 0.26081552, 0.2249836 , 0.26613004])
+        expected = Weights([0.24807083, 0.26081552, 0.2249836, 0.26613004])
         weights = self._populate_set(star_mags).flux_proportional_weights()
         assertSequencesAlmostEqual(self, weights, expected)
 
-    def random_set(self, size = None, nrecords = None):
-        """ Return a random StarSet and a DBStar for which it is complete.
+    def random_set(self, size=None, nrecords=None):
+        """Return a random StarSet and a DBStar for which it is complete.
 
         The method returns a two-element tuple: a StarSet of random photometric
         filter, 'size' stars and 'nrecords' photometric records, and a DBStar
@@ -572,7 +573,7 @@ class StarSetTest(unittest.TestCase):
         if size is None:
             size = random.randint(*self.NSTARS_RANGE)
 
-        set_ = StarSet(self.rDBStars(size = size + 1, nrecords = nrecords))
+        set_ = StarSet(self.rDBStars(size=size + 1, nrecords=nrecords))
         star = set_[-1]
         del set_[-1]
         self.assertEqual(len(set_), size)
@@ -580,9 +581,17 @@ class StarSetTest(unittest.TestCase):
         self.assertTrue(star.id not in set_.star_ids)
         return set_, star
 
-    def _assert_light_curve(self, cmp_stars, weights, star_mags, star_snrs,
-                            expected_mags, expected_snrs, _exclude_index = None):
-        """ Assert that the StarSet class generates the expected LightCurve.
+    def _assert_light_curve(
+        self,
+        cmp_stars,
+        weights,
+        star_mags,
+        star_snrs,
+        expected_mags,
+        expected_snrs,
+        _exclude_index=None,
+    ):
+        """Assert that the StarSet class generates the expected LightCurve.
 
         The method receives a StarSet, 'cmp_stars', and creates a random DBStar
         with the same photometric filter and Unix times that the set, and which
@@ -611,8 +620,10 @@ class StarSetTest(unittest.TestCase):
         """
 
         if cmp_stars.nimages != len(star_mags):
-            msg = ("number of instrumental magnitudes of the DBStar must be "
-                   "equal to the number of records of each comparison star")
+            msg = (
+                "number of instrumental magnitudes of the DBStar must be "
+                "equal to the number of records of each comparison star"
+            )
             self.fail(msg)
 
         if len(star_mags) != len(star_snrs):
@@ -620,8 +631,10 @@ class StarSetTest(unittest.TestCase):
             self.fail(msg)
 
         if len(star_mags) != len(expected_mags):
-            msg = ("number of instrumental magnitudes of the DBStar must "
-                   "match that of the expected differential magnitudes")
+            msg = (
+                "number of instrumental magnitudes of the DBStar must "
+                "match that of the expected differential magnitudes"
+            )
             self.fail(msg)
 
         if len(expected_mags) != len(expected_snrs):
@@ -638,7 +651,7 @@ class StarSetTest(unittest.TestCase):
         id_ = random.choice(list(candidate_ids))
         star = DBStar.make_star(id_, cmp_stars.pfilter, rows)
 
-        kwargs = dict(_exclude_index = _exclude_index, no_snr = False)
+        kwargs = dict(_exclude_index=_exclude_index, no_snr=False)
         curve = cmp_stars.light_curve(weights, star, **kwargs)
         returned_mags, returned_snrs = zip(*[x[1:] for x in curve])
         assertSequencesAlmostEqual(self, returned_mags, expected_mags)
@@ -647,7 +660,7 @@ class StarSetTest(unittest.TestCase):
         # The differental magnitudes must be the same when the 'no_snr' keyword
         # argument is set to True. It is only the signal-to-noise ratios, which
         # are set to None, that should be affected.
-        kwargs['no_snr'] = True
+        kwargs["no_snr"] = True
         curve = cmp_stars.light_curve(weights, star, **kwargs)
         returned_mags, returned_snrs = zip(*[x[1:] for x in curve])
         assertSequencesAlmostEqual(self, returned_mags, expected_mags)
@@ -666,7 +679,7 @@ class StarSetTest(unittest.TestCase):
         weights = Weights.random(nstars + 1)
         self.assertRaises(ValueError, func)
         weights = Weights.random(nstars)
-        set_.light_curve(weights, star) # this works!
+        set_.light_curve(weights, star)  # this works!
 
         # The Unix times of the DBStar must exactly match those of the StarSet;
         # in practical terms this means that they will be those returned by the
@@ -674,7 +687,7 @@ class StarSetTest(unittest.TestCase):
         # can be used to create the artificial comparison star.
         while True:
             # Loop until we get a random DBStar with different Unix times
-            kwargs = dict(size = 1, nrecords = len(star), pfilter = star.pfilter)
+            kwargs = dict(size=1, nrecords=len(star), pfilter=star.pfilter)
             dstar = self.rDBStars(**kwargs)[0]
             if set(dstar._unix_times) != set(star._unix_times):
                 weights = Weights.random(nstars)
@@ -684,18 +697,20 @@ class StarSetTest(unittest.TestCase):
 
     def test_light_curve_basic_case(self):
 
-        cmp_mags = \
-        [[14.5, 14.2, 13.4], # (a)
-         [13.2, 13.1, 12.8], # (b)
-         [10.1, 10.0,  9.7], # (c)
-         [11.3, 12.0, 10.3]] # (d)
+        cmp_mags = [
+            [14.5, 14.2, 13.4],  # (a)
+            [13.2, 13.1, 12.8],  # (b)
+            [10.1, 10.0, 9.7],  # (c)
+            [11.3, 12.0, 10.3],
+        ]  # (d)
         # img1  img2  img3
 
-        cmp_snrs = \
-        [[100, 250, 115], # (a)
-         [120, 280, 110], # (b)
-         [150, 400, 170], # (c)
-         [140, 310, 160]] # (d)
+        cmp_snrs = [
+            [100, 250, 115],  # (a)
+            [120, 280, 110],  # (b)
+            [150, 400, 170],  # (c)
+            [140, 310, 160],
+        ]  # (d)
         # img1  img2  img3
 
         star_set = self._populate_set(cmp_mags, cmp_snrs)
@@ -732,25 +747,28 @@ class StarSetTest(unittest.TestCase):
 
         expected_mags = [0.28, 0.64, -0.33]
         expected_snrs = [103.32946003293335, 144.93925214045919, 151.36317796943533]
-        self._assert_light_curve(star_set, weights, star_mags, star_snrs,
-                                 expected_mags, expected_snrs)
+        self._assert_light_curve(
+            star_set, weights, star_mags, star_snrs, expected_mags, expected_snrs
+        )
 
     def test_light_curve_more_complex_case(self):
 
-        cmp_mags = \
-        [[12.1, 13.2, 12.3, 12.4, 11.5], # (a)
-         [10.3, 11.2, 10.6, 10.5,  9.7], # (b)
-         [ 9.2, 10.5,  9.7,  9.8,  8.6], # (c)
-         [11.8, 12.8, 11.9, 11.9, 10.4], # (d)
-         [13.5, 14.3, 13.7, 13.8, 13.3]] # (e)
+        cmp_mags = [
+            [12.1, 13.2, 12.3, 12.4, 11.5],  # (a)
+            [10.3, 11.2, 10.6, 10.5, 9.7],  # (b)
+            [9.2, 10.5, 9.7, 9.8, 8.6],  # (c)
+            [11.8, 12.8, 11.9, 11.9, 10.4],  # (d)
+            [13.5, 14.3, 13.7, 13.8, 13.3],
+        ]  # (e)
         # img1  img2  img3  img4  img5
 
-        cmp_snrs = \
-        [[100,   90,  400,  120,  130], # (a)
-         [200,  180,  600,  160,  170], # (b)
-         [300,  260,  850,  210,  190], # (c)
-         [250,  200,  700,  300,  275], # (d)
-         [ 75,  125,  300,  105,  120]] # (e)
+        cmp_snrs = [
+            [100, 90, 400, 120, 130],  # (a)
+            [200, 180, 600, 160, 170],  # (b)
+            [300, 260, 850, 210, 190],  # (c)
+            [250, 200, 700, 300, 275],  # (d)
+            [75, 125, 300, 105, 120],
+        ]  # (e)
         # img1  img2  img3  img4  img5
 
         star_set = self._populate_set(cmp_mags, cmp_snrs)
@@ -781,24 +799,31 @@ class StarSetTest(unittest.TestCase):
         # img5 = 11.4 - 10.755 = 0.645 (SNR = 247.63237581648795)
 
         expected_mags = [0.945, 1.995, 2.265, 1.705, 0.645]
-        expected_snrs = [153.27250023365929, 177.94827806386499,
-                         285.31216200419124, 132.80545638560201,
-                         247.63237581648795]
-        self._assert_light_curve(star_set, weights, star_mags, star_snrs,
-                                 expected_mags, expected_snrs)
+        expected_snrs = [
+            153.27250023365929,
+            177.94827806386499,
+            285.31216200419124,
+            132.80545638560201,
+            247.63237581648795,
+        ]
+        self._assert_light_curve(
+            star_set, weights, star_mags, star_snrs, expected_mags, expected_snrs
+        )
 
     def test_light_curve_exclude_index(self):
 
-        cmp_mags = \
-        [[12.1, 11.4, 10.5], # (a)
-         [11.9, 10.3,  9.5], # (b)
-         [ 8.2,  9.6,  9.9]] # (c)
+        cmp_mags = [
+            [12.1, 11.4, 10.5],  # (a)
+            [11.9, 10.3, 9.5],  # (b)
+            [8.2, 9.6, 9.9],
+        ]  # (c)
         # img1  img2  img3
 
-        cmp_snrs = \
-        [[100, 200, 150], # (a)
-         [155, 110,  95], # (b)
-         [175, 180, 200]] # (c)
+        cmp_snrs = [
+            [100, 200, 150],  # (a)
+            [155, 110, 95],  # (b)
+            [175, 180, 200],
+        ]  # (c)
         # img1  img2  img3
 
         star_set = self._populate_set(cmp_mags, cmp_snrs)
@@ -824,7 +849,7 @@ class StarSetTest(unittest.TestCase):
         expected_mags = [-1.1666666669999994, -1.5666666669999998, -0.8333333329999986]
         expected_snrs = [145.75823127087546, 129.2172884922613, 125.78548090920276]
         args = [star_set, weights, star_mags, star_snrs, expected_mags, expected_snrs]
-        self._assert_light_curve(*args, _exclude_index = 0)
+        self._assert_light_curve(*args, _exclude_index=0)
 
         # Second case: _exclude_index = 1 (star 'b')
         # Rescaled Weights are (again) [0.66666667, 0.33333333]
@@ -841,7 +866,7 @@ class StarSetTest(unittest.TestCase):
 
         args[-2] = [-1.3, -2.3, -1.5]
         args[-1] = [117.01037414473119, 170.85882319080514, 172.44067461856571]
-        self._assert_light_curve(*args, _exclude_index = 1)
+        self._assert_light_curve(*args, _exclude_index=1)
 
         # Third case: _exclude_index = 2 (star 'c')
         # Rescaled Weights are [0.5, 0.5]
@@ -858,7 +883,7 @@ class StarSetTest(unittest.TestCase):
 
         args[-2] = [-2.5, -2.35, -1.2]
         args[-1] = [128.69392743319793, 146.40717535218673, 141.45872827469148]
-        self._assert_light_curve(*args, _exclude_index = 2)
+        self._assert_light_curve(*args, _exclude_index=2)
 
         # IndexError is raised if _exclude_index is out of range
         nstars = random.randint(*self.NSTARS_RANGE)
@@ -866,17 +891,17 @@ class StarSetTest(unittest.TestCase):
         weights = Weights.random(nstars)
 
         func = functools.partial(set_.light_curve, weights, star)
-        self.assertRaises(IndexError, func, _exclude_index = -2)
-        self.assertRaises(IndexError, func, _exclude_index = -1)
-        self.assertRaises(IndexError, func, _exclude_index = nstars)
-        self.assertRaises(IndexError, func, _exclude_index = nstars + 1)
+        self.assertRaises(IndexError, func, _exclude_index=-2)
+        self.assertRaises(IndexError, func, _exclude_index=-1)
+        self.assertRaises(IndexError, func, _exclude_index=nstars)
+        self.assertRaises(IndexError, func, _exclude_index=nstars + 1)
 
         # Nothing goes wrong, of course, for valid indexes
         for index in xrange(nstars):
-            set_.light_curve(weights, star, _exclude_index = index)
+            set_.light_curve(weights, star, _exclude_index=index)
 
     def _assert_broeg_weights(self, star_mags, eweights, pct, max_iters):
-        """ Assert that the StarSet class returns the expected Broeg weights.
+        """Assert that the StarSet class returns the expected Broeg weights.
 
         The method populates a StarSet with a random photometric filter, Unix
         times and signal-to-noise ratios, but the magnitudes of whose stars are
@@ -902,7 +927,7 @@ class StarSetTest(unittest.TestCase):
             self.fail(msg)
 
         set_ = self._populate_set(star_mags)
-        weights = set_.broeg_weights(pct = pct, max_iters = max_iters)
+        weights = set_.broeg_weights(pct=pct, max_iters=max_iters)
         assertSequencesAlmostEqual(self, weights, eweights)
 
     def test_broeg_weights_fewer_than_two_stars(self):
@@ -911,7 +936,7 @@ class StarSetTest(unittest.TestCase):
         # since StarSet.__init__ raises ValueError if it receives no DBStars
         expected_weights = [1]
         for _ in xrange(NITERS):
-            set_ = self.random_set(size = 1)[0]
+            set_ = self.random_set(size=1)[0]
             bweights = set_.broeg_weights()
             self.assertEqual(bweights, expected_weights)
 
@@ -919,7 +944,7 @@ class StarSetTest(unittest.TestCase):
 
         expected_weights = [0.5, 0.5]
         for _ in xrange(NITERS):
-            set_ = self.random_set(size = 2)[0]
+            set_ = self.random_set(size=2)[0]
             bweights = set_.broeg_weights()
             self.assertEqual(list(bweights), expected_weights)
 
@@ -928,7 +953,7 @@ class StarSetTest(unittest.TestCase):
         # StarSet.__init__ raises ValueError if it receives empty DBStars,
         # so the number of images of the stars in a set can never be zero
         for index in xrange(NITERS):
-            set_ = self.random_set(nrecords = 1)[0]
+            set_ = self.random_set(nrecords=1)[0]
             with self.assertRaises(ValueError):
                 set_.broeg_weights()
 
@@ -936,10 +961,11 @@ class StarSetTest(unittest.TestCase):
     # magnitudes of three stars, observed in three images, whose light curves
     # we have to compute manually to compare them to the output of the method.
 
-    broeg_mags =  \
-    [[14.5, 14.2, 13.4], # (a)
-     [13.2, 13.1, 12.8], # (b)
-     [10.1, 10.0,  9.7]] # (c)
+    broeg_mags = [
+        [14.5, 14.2, 13.4],  # (a)
+        [13.2, 13.1, 12.8],  # (b)
+        [10.1, 10.0, 9.7],
+    ]  # (c)
     # img1  img2  img3
 
     # Flux-propotional weights (initial values in Broeg's algorithm)
@@ -1017,9 +1043,9 @@ class StarSetTest(unittest.TestCase):
         # set to one, or both.
 
         args = self.broeg_mags, self.w1
-        self._assert_broeg_weights(*args, pct = 0.40, max_iters = 1)
-        self._assert_broeg_weights(*args, pct = 0.45, max_iters = None)
-        self._assert_broeg_weights(*args, pct = None, max_iters = 1)
+        self._assert_broeg_weights(*args, pct=0.40, max_iters=1)
+        self._assert_broeg_weights(*args, pct=0.45, max_iters=None)
+        self._assert_broeg_weights(*args, pct=None, max_iters=1)
 
     def test_broeg_weights_two_iterations(self):
 
@@ -1028,23 +1054,23 @@ class StarSetTest(unittest.TestCase):
         # [0.27, 0.37), or max_iters set to two, or both.
 
         args = self.broeg_mags, self.w2
-        self._assert_broeg_weights(*args, pct = 0.275, max_iters = 2)
-        self._assert_broeg_weights(*args, pct = 0.315, max_iters = None)
-        self._assert_broeg_weights(*args, pct = None, max_iters = 2)
+        self._assert_broeg_weights(*args, pct=0.275, max_iters=2)
+        self._assert_broeg_weights(*args, pct=0.315, max_iters=None)
+        self._assert_broeg_weights(*args, pct=None, max_iters=2)
 
     def test_worst_fraction_out_of_range(self):
 
         # # Valid fractions are in the range (0, 1]
         set_, _ = self.random_set()
         self.assertRaises(ValueError, set_.worst, -0.1)
-        self.assertRaises(ValueError, set_.worst,  0.0)
-        self.assertRaises(ValueError, set_.worst,  1.1)
-        self.assertRaises(ValueError, set_.worst,  2.0)
+        self.assertRaises(ValueError, set_.worst, 0.0)
+        self.assertRaises(ValueError, set_.worst, 1.1)
+        self.assertRaises(ValueError, set_.worst, 2.0)
 
         # Try now with different values, evenly spaced in the interval.
         # The method always returns at least one star, the worst in the
         # set, no matter how low the value of 'fraction' is.
-        for fraction in numpy.linspace(1, 0, NITERS, endpoint = False):
+        for fraction in numpy.linspace(1, 0, NITERS, endpoint=False):
             nworst = max(1, round(fraction * len(set_)))
             worst_indexes = set_.worst(fraction)
             self.assertEqual(nworst, len(worst_indexes))
@@ -1055,14 +1081,14 @@ class StarSetTest(unittest.TestCase):
         for index in xrange(NITERS):
             size = 1 + (index % 2)
             self.assertTrue(1 <= size <= 2)
-            set_, _ = self.random_set(size = size)
-            fraction = 1.0 - random.random() # (0.0, 1.0]
+            set_, _ = self.random_set(size=size)
+            fraction = 1.0 - random.random()  # (0.0, 1.0]
             self.assertTrue(0 < fraction <= 1)
             with self.assertRaises(ValueError):
                 set_.worst(fraction)
 
     def _assert_worst(self, star_set, fraction, expected_indexes):
-        """ Assert that the StarSet correctly identifies the worst stars.
+        """Assert that the StarSet correctly identifies the worst stars.
 
         The method receives a StarSet and calls its method StarSet.worst to
         find the specified fraction of its stars with the highest standard
@@ -1080,12 +1106,13 @@ class StarSetTest(unittest.TestCase):
     # manually identify the less and most constant, to compare them to the
     # output of both methods.
 
-    star_mags = \
-    [[12.1, 13.2, 12.3, 12.4, 11.5], # index = 0
-     [10.3, 11.2, 10.6, 10.5,  9.7], # index = 1
-     [ 9.2, 10.5,  9.7,  9.8,  8.6], # index = 2
-     [11.8, 12.8, 11.9, 11.9, 10.4], # index = 3
-     [13.5, 14.3, 13.7, 13.8, 13.3]] # index = 4
+    star_mags = [
+        [12.1, 13.2, 12.3, 12.4, 11.5],  # index = 0
+        [10.3, 11.2, 10.6, 10.5, 9.7],  # index = 1
+        [9.2, 10.5, 9.7, 9.8, 8.6],  # index = 2
+        [11.8, 12.8, 11.9, 11.9, 10.4],  # index = 3
+        [13.5, 14.3, 13.7, 13.8, 13.3],
+    ]  # index = 4
     # img1  img2  img3  img4  img5
 
     def test_worst(self):
@@ -1116,7 +1143,7 @@ class StarSetTest(unittest.TestCase):
         # (c) 0.25 x 5 = 1.25, rounded down to one
         # (d) 0.29 x 5 = 1.45,            "
         self._assert_worst(set_, 0.01, indexes[0:1])
-        self._assert_worst(set_, 0.1,  indexes[0:1])
+        self._assert_worst(set_, 0.1, indexes[0:1])
         self._assert_worst(set_, 0.25, indexes[0:1])
         self._assert_worst(set_, 0.29, indexes[0:1])
 
@@ -1124,12 +1151,12 @@ class StarSetTest(unittest.TestCase):
         # (f) 0.4  x 5 = 2
         # (g) 0.47 x 5 = 2.35, rounded down to two
         self._assert_worst(set_, 0.35, indexes[0:2])
-        self._assert_worst(set_, 0.4,  indexes[0:2])
+        self._assert_worst(set_, 0.4, indexes[0:2])
         self._assert_worst(set_, 0.47, indexes[0:2])
 
         # (h) 0.5  x 5 = 2.5,  rounded up to three
         # (i) 0.65 x 5 = 3.25, rounded down to three
-        self._assert_worst(set_, 0.5,  indexes[0:3])
+        self._assert_worst(set_, 0.5, indexes[0:3])
         self._assert_worst(set_, 0.65, indexes[0:3])
 
         # (j) 0.8  x 5 = 4
@@ -1138,10 +1165,10 @@ class StarSetTest(unittest.TestCase):
         self._assert_worst(set_, 0.8, indexes[0:4])
 
         # (l) For fractions >= 0.9, must return of the indexes
-        self._assert_worst(set_, 0.9,  indexes)
+        self._assert_worst(set_, 0.9, indexes)
         self._assert_worst(set_, 0.95, indexes)
         self._assert_worst(set_, 0.99, indexes)
-        self._assert_worst(set_, 1,    indexes)
+        self._assert_worst(set_, 1, indexes)
 
         # Test the method now with random data. Not being the right answer
         # known beforehand, we need to determine at runtime which are the
@@ -1158,7 +1185,7 @@ class StarSetTest(unittest.TestCase):
 
         set_ = self.random_set()[0]
         for _ in xrange(NITERS):
-            fraction = fraction = 1.0 - random.random() # (0.0, 1.0]
+            fraction = fraction = 1.0 - random.random()  # (0.0, 1.0]
             nworst = max(1, round(fraction * len(set_)))
             self.assertTrue(1 <= nworst <= len(set_))
 
@@ -1168,13 +1195,13 @@ class StarSetTest(unittest.TestCase):
             while len(expected_indexes) != nworst:
                 index = bweights.index(min(bweights))
                 expected_indexes.append(index)
-                bweights[index] = float('inf')
+                bweights[index] = float("inf")
 
             worst_indexes = set_.worst(fraction)
             self.assertEqual(worst_indexes, expected_indexes)
 
     def _assert_best(self, star_set, how_many, fraction, expected_indexes):
-        """ Assert that the StarSet correctly identifies the best stars.
+        """Assert that the StarSet correctly identifies the best stars.
 
         The method receives a StarSet and calls its method StarSet.best to find
         the 'how_many' most constant stars by iteratively discarding the given
@@ -1193,7 +1220,7 @@ class StarSetTest(unittest.TestCase):
         # identified, assert that the IDs match.
 
         expected_ids = [star_set[index].id for index in expected_indexes]
-        best_indexes = star_set.best(how_many, fraction = fraction)
+        best_indexes = star_set.best(how_many, fraction=fraction)
         self.assertEqual(set(best_indexes.star_ids), set(expected_ids))
 
     def test_best(self):
@@ -1265,14 +1292,15 @@ class StarSetTest(unittest.TestCase):
         self._assert_best(set_, 5, 0.99, [0, 1, 2, 4, 3])
 
         # A second data set: seven stars, observed in seven images
-        other_star_mags = \
-        [[11.4, 12.3, 11.5, 12.4, 14.1, 12.6, 11.2], # index = 0
-         [12.5, 15.3, 14.8, 14.9, 14.4, 11.4, 12.3], # index = 1
-         [10.3, 11.8, 10.6, 12.4, 11.4,  9.2,  8.9], # index = 2
-         [14.2, 13.7, 13.8, 12.4, 13.2, 10.2, 12.3], # index = 3
-         [12.3, 12.2, 12.6, 12.5, 12.7, 11.3, 10.3], # index = 4
-         [ 9.8,  7.3,  8.3,  8.1,  9.3,  9.6, 10.3], # index = 5
-         [10.3, 11.4, 10.5, 11.5, 12.9, 11.6, 10.7]] # index = 6
+        other_star_mags = [
+            [11.4, 12.3, 11.5, 12.4, 14.1, 12.6, 11.2],  # index = 0
+            [12.5, 15.3, 14.8, 14.9, 14.4, 11.4, 12.3],  # index = 1
+            [10.3, 11.8, 10.6, 12.4, 11.4, 9.2, 8.9],  # index = 2
+            [14.2, 13.7, 13.8, 12.4, 13.2, 10.2, 12.3],  # index = 3
+            [12.3, 12.2, 12.6, 12.5, 12.7, 11.3, 10.3],  # index = 4
+            [9.8, 7.3, 8.3, 8.1, 9.3, 9.6, 10.3],  # index = 5
+            [10.3, 11.4, 10.5, 11.5, 12.9, 11.6, 10.7],
+        ]  # index = 6
         # img1  img2  img3  img4  img5  img6  img7
 
         set_ = self._populate_set(other_star_mags)
@@ -1364,14 +1392,14 @@ class StarSetTest(unittest.TestCase):
         # Valid fractions are in the range (0, 1]
         set_ = self.random_set()[0]
         for _ in xrange(NITERS):
-            fraction = 1.0 - random.random() # (0.0, 1.0]
+            fraction = 1.0 - random.random()  # (0.0, 1.0]
             self.assertTrue(0 < fraction <= 1)
-            set_.best(1, fraction = fraction)
+            set_.best(1, fraction=fraction)
 
-        self.assertRaises(ValueError, set_.best, 1, fraction = -0.1)
-        self.assertRaises(ValueError, set_.best, 2, fraction =  0.0)
-        self.assertRaises(ValueError, set_.best, 3, fraction =  1.1)
-        self.assertRaises(ValueError, set_.best, 4, fraction =  2.0)
+        self.assertRaises(ValueError, set_.best, 1, fraction=-0.1)
+        self.assertRaises(ValueError, set_.best, 2, fraction=0.0)
+        self.assertRaises(ValueError, set_.best, 3, fraction=1.1)
+        self.assertRaises(ValueError, set_.best, 4, fraction=2.0)
 
     def test_best_less_than_three_stars(self):
 
@@ -1379,8 +1407,8 @@ class StarSetTest(unittest.TestCase):
         for index in xrange(NITERS):
             size = 1 + (index % 2)
             self.assertTrue(1 <= size <= 2)
-            set_ = self.random_set(size = size)[0]
-            fraction = 1.0 - random.random() # (0.0, 1.0]
+            set_ = self.random_set(size=size)[0]
+            fraction = 1.0 - random.random()  # (0.0, 1.0]
             self.assertTrue(0 < fraction <= 1)
             with self.assertRaises(ValueError):
                 set_.best(fraction)
@@ -1397,4 +1425,3 @@ class StarSetTest(unittest.TestCase):
         self.assertRaises(ValueError, set_.best, 0)
         self.assertRaises(ValueError, set_.best, len(set_) + 1)
         self.assertRaises(ValueError, set_.best, len(set_) + 5)
-

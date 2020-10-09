@@ -64,8 +64,9 @@ import fitsimage
 import style
 import util
 
+
 def str_split_callback(option, opt, value, parser):
-    """ opt-parse callback function to parse a list of values.
+    """opt-parse callback function to parse a list of values.
 
     This method is intended to be used in order to parse opt-parse options that
     contain a list of values. In other words, the received comma-separated
@@ -80,92 +81,143 @@ def str_split_callback(option, opt, value, parser):
 
     """
 
-    setattr(parser.values, option.dest, value.split(','))
+    setattr(parser.values, option.dest, value.split(","))
 
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DIRS... OUTPUT_DIR"
 
-parser.add_option('--object', action = 'callback', type = 'str',
-                  dest = 'objectn', default = ['*'],
-                  callback = str_split_callback,
-                  help = "list of case-insensitive patterns, according to the "
-                  "rules used by the Unix shell, and separated by commas, of "
-                  "the object names to import. Those FITS images whose object "
-                  "keyword (see --objectk option) matches none of these "
-                  "patterns will be ignored [default: %default]")
+parser.add_option(
+    "--object",
+    action="callback",
+    type="str",
+    dest="objectn",
+    default=["*"],
+    callback=str_split_callback,
+    help="list of case-insensitive patterns, according to the "
+    "rules used by the Unix shell, and separated by commas, of "
+    "the object names to import. Those FITS images whose object "
+    "keyword (see --objectk option) matches none of these "
+    "patterns will be ignored [default: %default]",
+)
 
-parser.add_option('--pattern', action = 'store', type = 'str',
-                  dest = 'pattern',
-                  help = "pattern, according to the rules used by the Unix "
-                  "shell, that the filename of a FITS image must match if "
-                  "it is to be considered when scanning the directories. "
-                  "Non-matching images will be ignored.")
+parser.add_option(
+    "--pattern",
+    action="store",
+    type="str",
+    dest="pattern",
+    help="pattern, according to the rules used by the Unix "
+    "shell, that the filename of a FITS image must match if "
+    "it is to be considered when scanning the directories. "
+    "Non-matching images will be ignored.",
+)
 
-parser.add_option('--counts', action = 'store', type = 'int',
-                  dest = 'max_counts', default = None,
-                  help = "median number of counts, or ADUs "
-                  "(analog-to-digital units) at which saturation arises. "
-                  "Images above this value will be ignored. If not set, "
-                  "no image is discarded because of its median ADUs "
-                  "[default: %default]")
+parser.add_option(
+    "--counts",
+    action="store",
+    type="int",
+    dest="max_counts",
+    default=None,
+    help="median number of counts, or ADUs "
+    "(analog-to-digital units) at which saturation arises. "
+    "Images above this value will be ignored. If not set, "
+    "no image is discarded because of its median ADUs "
+    "[default: %default]",
+)
 
-parser.add_option('--filename', action = 'store', type = 'str',
-                  dest = 'filename',
-                  help = "name shared by all output images, to which the "
-                  "sequence number will be appended. If not set, it will be "
-                  "automatically detected by finding the most common "
-                  "filename among the input images.")
+parser.add_option(
+    "--filename",
+    action="store",
+    type="str",
+    dest="filename",
+    help="name shared by all output images, to which the "
+    "sequence number will be appended. If not set, it will be "
+    "automatically detected by finding the most common "
+    "filename among the input images.",
+)
 
-parser.add_option('--follow', action = 'store_true', default = False,
-                  dest = 'followlinks',
-                  help = "walk down into symbolic links that resolve to "
-                  "directories, on systems that support them. This can lead "
-                  "to infinite recursion if a link points to a parent "
-                  "directory of itself.")
+parser.add_option(
+    "--follow",
+    action="store_true",
+    default=False,
+    dest="followlinks",
+    help="walk down into symbolic links that resolve to "
+    "directories, on systems that support them. This can lead "
+    "to infinite recursion if a link points to a parent "
+    "directory of itself.",
+)
 
-parser.add_option('--exact', action = 'store_true', default = False,
-                  dest = 'exact',
-                  help = "do not modify the imported files, but just rename "
-                  "their exact copies. This means that FITS headers are not "
-                  "altered and, in particular, that the --uik keyword is not "
-                  "added. The SHA-1 hash is used to verify that the copy of "
-                  "the FITS images is identical.")
+parser.add_option(
+    "--exact",
+    action="store_true",
+    default=False,
+    dest="exact",
+    help="do not modify the imported files, but just rename "
+    "their exact copies. This means that FITS headers are not "
+    "altered and, in particular, that the --uik keyword is not "
+    "added. The SHA-1 hash is used to verify that the copy of "
+    "the FITS images is identical.",
+)
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
+key_group = optparse.OptionGroup(parser, "FITS Keywords", keywords.group_description)
 
-key_group.add_option('--datek', action = 'store', type = 'str',
-                     dest = 'datek', default = keywords.datek,
-                     help = keywords.desc['datek'])
+key_group.add_option(
+    "--datek",
+    action="store",
+    type="str",
+    dest="datek",
+    default=keywords.datek,
+    help=keywords.desc["datek"],
+)
 
-key_group.add_option('--timek', action = 'store', type = 'str',
-                     dest = 'timek', default = keywords.timek,
-                     help = keywords.desc['timek'])
+key_group.add_option(
+    "--timek",
+    action="store",
+    type="str",
+    dest="timek",
+    default=keywords.timek,
+    help=keywords.desc["timek"],
+)
 
-key_group.add_option('--expk', action = 'store', type = 'str',
-                     dest = 'exptimek', default = keywords.exptimek,
-                     help = keywords.desc['exptimek'])
+key_group.add_option(
+    "--expk",
+    action="store",
+    type="str",
+    dest="exptimek",
+    default=keywords.exptimek,
+    help=keywords.desc["exptimek"],
+)
 
-key_group.add_option('--objectk', action = 'store', type = 'str',
-                     dest = 'objectk', default = keywords.objectk,
-                     help = keywords.desc['objectk'])
+key_group.add_option(
+    "--objectk",
+    action="store",
+    type="str",
+    dest="objectk",
+    default=keywords.objectk,
+    help=keywords.desc["objectk"],
+)
 
-key_group.add_option('--uik', action = 'store', type = 'str',
-                     dest = 'uncimgk', default = keywords.uncimgk,
-                     help = "keyword to which the path of each imported image "
-                     "is written to its own FITS header. In this manner, when "
-                     "later on we do photometry we can use the original FITS "
-                     "image, before any possible calibration was performed, "
-                     "to check for saturation -- as the overscan, bias and "
-                     "(particularly) flat-fielding steps may take a saturated "
-                     "pixel below the saturation threshold.")
+key_group.add_option(
+    "--uik",
+    action="store",
+    type="str",
+    dest="uncimgk",
+    default=keywords.uncimgk,
+    help="keyword to which the path of each imported image "
+    "is written to its own FITS header. In this manner, when "
+    "later on we do photometry we can use the original FITS "
+    "image, before any possible calibration was performed, "
+    "to check for saturation -- as the overscan, bias and "
+    "(particularly) flat-fielding steps may take a saturated "
+    "pixel below the saturation threshold.",
+)
 
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -182,8 +234,8 @@ def main(arguments = None):
     """
 
     if arguments is None:
-        arguments = sys.argv[1:] # ignore argv[0], the script name
-    (options, args) = parser.parse_args(args = arguments)
+        arguments = sys.argv[1:]  # ignore argv[0], the script name
+    (options, args) = parser.parse_args(args=arguments)
 
     # Print the help message and abort the execution if there are not two
     # positional arguments left after parsing the options, as the user must
@@ -199,8 +251,10 @@ def main(arguments = None):
     # Make sure that all the input directories exist, abort otherwise.
     for path in input_dirs:
         if not os.path.exists(path):
-            print "%sThe input directory, '%s', does not exist. Exiting." % \
-                  (style.prefix, path)
+            print "%sThe input directory, '%s', does not exist. Exiting." % (
+                style.prefix,
+                path,
+            )
             return 1
 
     # The input and output directories must be different, as otherwise some
@@ -208,8 +262,7 @@ def main(arguments = None):
     # detected) could be overwritten.
     for path in input_dirs:
         if os.path.abspath(path) == os.path.abspath(output_dir):
-            print "%s[INPUT_DIRS] and OUTPUT_DIR must be different. " \
-                  "Exiting." % style.prefix
+            print "%s[INPUT_DIRS] and OUTPUT_DIR must be different. " "Exiting." % style.prefix
             return 1
 
     # Make sure that the output directory exists, create it otherwise
@@ -219,15 +272,16 @@ def main(arguments = None):
     # regular files. Then, and while a progress bar is shown to let the user
     # estimate how much longer it is, detect which among them are FITS files.
 
-    print "%sIndexing regular files within directory trees starting at " \
-          "INPUT_DIRS..." % style.prefix ,
-    files_paths = fitsimage.find_files(input_dirs,
-                                       followlinks = options.followlinks,
-                                       pattern = options.pattern)
-    print 'done.'
+    print "%sIndexing regular files within directory trees starting at " "INPUT_DIRS..." % style.prefix,
+    files_paths = fitsimage.find_files(
+        input_dirs, followlinks=options.followlinks, pattern=options.pattern
+    )
+    print "done."
 
-    print "%sDetecting FITS images among the %d indexed regular files..." % \
-          (style.prefix, len(files_paths))
+    print "%sDetecting FITS images among the %d indexed regular files..." % (
+        style.prefix,
+        len(files_paths),
+    )
 
     images_set = set()
     util.show_progress(0.0)
@@ -252,42 +306,54 @@ def main(arguments = None):
     # most common dimensions will be imported, while the rest will be ignored
     print style.prefix
     print "%sChecking the sizes of the detected images..." % style.prefix,
-    img_sizes = collections.defaultdict(int) # dimensions counter
+    img_sizes = collections.defaultdict(int)  # dimensions counter
     for img in images_set:
         img_sizes[img.size] += 1
-    print 'done.'
+    print "done."
 
     # The most common size is the only one element in case len(img_sizes) == 1
-    x_size, y_size = max(img_sizes.iterkeys(), key = img_sizes.get)[:2]
+    x_size, y_size = max(img_sizes.iterkeys(), key=img_sizes.get)[:2]
 
     if len(img_sizes) == 1:
-        print "%sAll the FITS images have the same size: %d x %d pixels" % \
-              (style.prefix, x_size, y_size)
+        print "%sAll the FITS images have the same size: %d x %d pixels" % (
+            style.prefix,
+            x_size,
+            y_size,
+        )
     else:
 
         print "%sMultiple sizes were detected among the FITS images." % style.prefix
-        print "%sDiscarding images with a size other than %d x %d pixels, " \
-              "the most common..." % (style.prefix, x_size, y_size) ,
+        print "%sDiscarding images with a size other than %d x %d pixels, " "the most common..." % (
+            style.prefix,
+            x_size,
+            y_size,
+        ),
         old_size = len(images_set)
         images_set = set(img for img in images_set if img.size == (x_size, y_size))
-        print 'done.'
+        print "done."
 
         if not images_set:
             print "%sThere are no FITS files left. Exiting." % style.prefix
             return 1
         else:
-            print "%s%d FITS files were discarded because of their size, " \
-                  "%s remain." % (style.prefix, old_size - len(images_set),
-                                  len(images_set))
+            print "%s%d FITS files were discarded because of their size, " "%s remain." % (
+                style.prefix,
+                old_size - len(images_set),
+                len(images_set),
+            )
 
     # Those FITS images whose object names do not match any of the given
     # patterns, or which do not even have the keyword which contains the
     # name for the object observed, are discarded.
     print style.prefix
-    print "%sImporting only those FITS files whose %s keyword can be found " \
-          "and matches" % (style.prefix, options.objectk)
-    print "%sone of the following Unix patterns: %s ..." % \
-          (style.prefix, options.objectn)
+    print "%sImporting only those FITS files whose %s keyword can be found " "and matches" % (
+        style.prefix,
+        options.objectk,
+    )
+    print "%sone of the following Unix patterns: %s ..." % (
+        style.prefix,
+        options.objectn,
+    )
 
     # We first test that the keyword exists (hence the pass for the KeyError
     # exception, which means that the image is filtered out) and, after that,
@@ -311,26 +377,35 @@ def main(arguments = None):
                     # number of ADUs is irrelevant we can avoid having to
                     # unnecessarily compute it.
                     if options.max_counts:
-                        with pyfits.open(img.path, readonly = True) as hdu:
+                        with pyfits.open(img.path, readonly=True) as hdu:
                             median_counts = numpy.median(hdu[0].data)
                         if median_counts > options.max_counts:
-                            print "%s%s excluded (matched, but saturated " \
-                                  "with %d ADUs)" % (style.prefix, img.path,
-                                                     median_counts)
+                            print "%s%s excluded (matched, but saturated " "with %d ADUs)" % (
+                                style.prefix,
+                                img.path,
+                                median_counts,
+                            )
                             saturated_excluded += 1
                             break
 
                     # This point reached if median number of ADUs of image is
                     # above the threshold or irrelevant, so it can be imported.
-                    print "%s%s imported (%s matches '%s')" % (style.prefix,
-                           img.path, object_name, pattern)
+                    print "%s%s imported (%s matches '%s')" % (
+                        style.prefix,
+                        img.path,
+                        object_name,
+                        pattern,
+                    )
 
                     object_set.add(img)
                     break
 
-            else: # only executed if for loop exited cleanly
-                print "%s%s excluded (%s does not match anything)" % \
-                      (style.prefix, img.path, object_name)
+            else:  # only executed if for loop exited cleanly
+                print "%s%s excluded (%s does not match anything)" % (
+                    style.prefix,
+                    img.path,
+                    object_name,
+                )
                 non_match_excluded += 1
         except KeyError:
             pass
@@ -338,12 +413,16 @@ def main(arguments = None):
     if not saturated_excluded and not non_match_excluded:
         print "%sNo images were filtered out. Hooray!" % style.prefix
     if saturated_excluded:
-        print "%s%d files were discarded because they were saturated " \
-              "(> %d ADUs)." % (style.prefix, saturated_excluded,
-                                options.max_counts)
+        print "%s%d files were discarded because they were saturated " "(> %d ADUs)." % (
+            style.prefix,
+            saturated_excluded,
+            options.max_counts,
+        )
     if non_match_excluded:
-        print "%s%d files were discarded because of their non-matching " \
-              "object names." % (style.prefix, non_match_excluded)
+        print "%s%d files were discarded because of their non-matching " "object names." % (
+            style.prefix,
+            non_match_excluded,
+        )
 
     # Abort the execution if all the FITS files were filtered out
     if not object_set:
@@ -352,14 +431,18 @@ def main(arguments = None):
 
     # Sort the FITS files by their date of observation, according to the header
     print style.prefix
-    print "%sSorting the FITS files by their date of observation " \
-          "[keyword: %s]..." % (style.prefix, options.datek) ,
+    print "%sSorting the FITS files by their date of observation " "[keyword: %s]..." % (
+        style.prefix,
+        options.datek,
+    ),
 
-    kwargs = dict(date_keyword = options.datek,
-                  time_keyword = options.timek,
-                  exp_keyword = options.exptimek)
-    get_date = operator.methodcaller('date', **kwargs)
-    sorted_imgs = sorted(object_set, key = get_date)
+    kwargs = dict(
+        date_keyword=options.datek,
+        time_keyword=options.timek,
+        exp_keyword=options.exptimek,
+    )
+    get_date = operator.methodcaller("date", **kwargs)
+    sorted_imgs = sorted(object_set, key=get_date)
 
     # Let the user know if one or more images could not be sorted (because of
     # problems when parsing the FITS keywords from which the observation date
@@ -368,17 +451,18 @@ def main(arguments = None):
     assert difference >= 0
     if difference:
         print
-        print "%s%d files were discarded as the observation date keyword " \
-              "was not found or the " % (style.prefix, difference)
-        print "%sdate in it represented did not conform to the FITS " \
-              "standard." % style.prefix
+        print "%s%d files were discarded as the observation date keyword " "was not found or the " % (
+            style.prefix,
+            difference,
+        )
+        print "%sdate in it represented did not conform to the FITS " "standard." % style.prefix
 
         # Execution is aborted if all the FITS files were filtered out
         if not sorted_imgs:
             print "%sThere are no FITS files left. Exiting." % style.prefix
             return 1
     else:
-        print 'done.'
+        print "done."
 
     # If no filename for the output images was specified, attempt to
     # automatically detect the most common basename among the FITS files.
@@ -387,8 +471,7 @@ def main(arguments = None):
 
     if not options.filename:
         print style.prefix
-        print "%sDetecting the most common name among input files..." % \
-              style.prefix ,
+        print "%sDetecting the most common name among input files..." % style.prefix,
         sys.stdout.flush()
 
         # Use a dictionary in order to keep the track of how many times we
@@ -400,11 +483,13 @@ def main(arguments = None):
             prefixes[prefix] += 1
 
         # Select the prefix (key) that is repeated the most
-        options.filename = max(prefixes, key = prefixes.get)
-        print 'done.'
+        options.filename = max(prefixes, key=prefixes.get)
+        print "done."
 
-    print "%sImported FITS filenames will start with the string: '%s'" % \
-          (style.prefix, options.filename)
+    print "%sImported FITS filenames will start with the string: '%s'" % (
+        style.prefix,
+        options.filename,
+    )
 
     # Now we have to copy the FITS files. The basename of each imported file
     # will be options.filename + its sequence number. Filling zeros will be
@@ -413,17 +498,19 @@ def main(arguments = None):
 
     assert len(sorted_imgs)
     ndigits = len(str(len(sorted_imgs) - 1))
-    print "%s%d digits are needed in order to enumerate %d files." % \
-          (style.prefix, ndigits, len(sorted_imgs))
+    print "%s%d digits are needed in order to enumerate %d files." % (
+        style.prefix,
+        ndigits,
+        len(sorted_imgs),
+    )
 
     print style.prefix
-    print "%sCopying the FITS files to '%s'..." % \
-          (style.prefix, output_dir)
+    print "%sCopying the FITS files to '%s'..." % (style.prefix, output_dir)
 
     for index, fits_file in enumerate(sorted_imgs):
 
         # i.e., 'ferM_' + '0000' + '.fits' = 'ferM_0000.fits'
-        dest_name = '%s%0*d.fits' % (options.filename, ndigits, index)
+        dest_name = "%s%0*d.fits" % (options.filename, ndigits, index)
         dest_path = os.path.join(output_dir, dest_name)
 
         shutil.copy2(fits_file.path, dest_path)
@@ -450,9 +537,9 @@ def main(arguments = None):
             if options.uncimgk:
 
                 comment = "before any calibration task"
-                dest_img.update_keyword(options.uncimgk,
-                                        os.path.abspath(dest_img.path),
-                                        comment = comment)
+                dest_img.update_keyword(
+                    options.uncimgk, os.path.abspath(dest_img.path), comment=comment
+                )
 
                 msg2 = "[Import] Original image: %s"
                 dest_img.add_history(msg2 % os.path.abspath(fits_file.path))
@@ -465,24 +552,30 @@ def main(arguments = None):
 
         # Show which file has been copied, using the format of the
         # 'cp -v' command: `./ultra2/ferM_11.fits' -> `imported/img_01.fits'
-        print  "%s`%s' -> `%s'" % (style.prefix, fits_file.path, dest_path)
+        print "%s`%s' -> `%s'" % (style.prefix, fits_file.path, dest_path)
 
     # Finally, let the user know how many FITS images, and the fraction of
     # the total, that were imported, as well as their size in megabytes.
     print style.prefix
     ifraction = len(sorted_imgs) / len(images_set) * 100
     print "%sFITS files detected: %d" % (style.prefix, len(images_set))
-    print "%sFITS files successfully imported: %d (%.2f%%)" % \
-          (style.prefix, len(sorted_imgs), ifraction)
+    print "%sFITS files successfully imported: %d (%.2f%%)" % (
+        style.prefix,
+        len(sorted_imgs),
+        ifraction,
+    )
 
     total_size = 0.0
     for fits_file in sorted_imgs:
-        total_size += os.path.getsize(fits_file.path) # in bytes
+        total_size += os.path.getsize(fits_file.path)  # in bytes
 
-    print "%sTotal size of imported files: %.2f MB" % \
-          (style.prefix, total_size / (1024.0 ** 2))
+    print "%sTotal size of imported files: %.2f MB" % (
+        style.prefix,
+        total_size / (1024.0 ** 2),
+    )
     print "%sYou're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

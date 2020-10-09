@@ -19,15 +19,18 @@
 
 import functools
 
+
 def memoize(f):
-    """ Minimalistic memoization decorator (*args / **kwargs)
-    Based on: http://code.activestate.com/recipes/577219/ """
+    """Minimalistic memoization decorator (*args / **kwargs)
+    Based on: http://code.activestate.com/recipes/577219/"""
 
     cache = {}
+
     @functools.wraps(f)
     def memf(*args, **kwargs):
         fkwargs = frozenset(kwargs.iteritems())
         if (args, fkwargs) not in cache:
             cache[args, fkwargs] = f(*args, **kwargs)
         return cache[args, fkwargs]
+
     return memf

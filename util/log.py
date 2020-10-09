@@ -22,8 +22,9 @@ import re
 import sys
 import warnings
 
+
 def func_catchall(func, *args, **kwargs):
-    """ Return func(*args, **kwargs), or None if an exception is raised.
+    """Return func(*args, **kwargs), or None if an exception is raised.
 
     Return whatever func() returns when called with the positional arguments
     'args' and keyword arguments 'keywords'. If any exception is raised by
@@ -43,8 +44,9 @@ def func_catchall(func, *args, **kwargs):
         logging.debug(msg)
         return None
 
+
 class StreamToWarningFilter(object):
-    """ A file-like class that matches strings and issues them as warnings.
+    """A file-like class that matches strings and issues them as warnings.
 
     This class creates a file-like object that normally writes a string to
     'fd', a file type object. However, those lines that match 'regexp' are
@@ -73,7 +75,7 @@ class StreamToWarningFilter(object):
 
         match = re.match(self.regexp, str_)
         if match:
-            msg = match.group('msg')
+            msg = match.group("msg")
             logging.info(msg)
             warnings.warn(msg, self.category)
         else:
@@ -85,8 +87,9 @@ class StreamToWarningFilter(object):
     def close(self):
         self.fd.close()
 
+
 class LoggerWriter(object):
-    """ Wrap a logger with a file-like API.
+    """Wrap a logger with a file-like API.
 
     Sometimes, we need to interface to a third-party API which expects a
     file-like object to write to, but we want to direct the API's output to a
@@ -95,9 +98,8 @@ class LoggerWriter(object):
 
     """
 
-
     def __init__(self, level):
-        """ Initialize the LoggerWritter object.
+        """Initialize the LoggerWritter object.
 
         The argument 'level' must be a valid logging level: 'debug', 'info',
         'warning', 'error' or 'critical', and will correspond to the function
@@ -113,7 +115,7 @@ class LoggerWriter(object):
         self.log_func(msg)
 
     def flush(self):
-        """ Do nothing -- required by PyRAF.
+        """Do nothing -- required by PyRAF.
 
         This method does nothing, but it is required in order to be able to
         redirect the output of the PyRAF tasks to the logger. Otherwise, the

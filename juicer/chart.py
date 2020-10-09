@@ -29,17 +29,18 @@ import numpy
 import pyfits
 
 import matplotlib.figure
-from matplotlib.backends.backend_gtkagg \
-     import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_gtkagg \
-     import NavigationToolbar2GTKAgg as NavigationToolbar
+from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
+from matplotlib.backends.backend_gtkagg import (
+    NavigationToolbar2GTKAgg as NavigationToolbar,
+)
 
 # LEMON modules
 import glade
 import util
 
+
 class PreferencesDialog(object):
-    """ gtk.Dialog to configure the finding chart normalization parameters.
+    """gtk.Dialog to configure the finding chart normalization parameters.
 
     This class encapsulates a GTK dialog window that allows the user the adjust
     the value of the 'vmin' and 'vmax' parameters of APLpy's logarithmic
@@ -52,7 +53,7 @@ class PreferencesDialog(object):
     """
 
     def __init__(self, parent):
-        """ Initialize a new PreferencesDialog object.
+        """Initialize a new PreferencesDialog object.
 
         The gtk.Dialog has two spin buttons, so that the user can select the
         value for both Vmin and Vmax. The lower and upper range values of these
@@ -88,7 +89,7 @@ class PreferencesDialog(object):
         builder = self.parent.builder
         builder.add_from_file(glade.CHART_PREFERENCES_DIALOG)
 
-        self.dialog = builder.get_object('chart-preferences-dialog')
+        self.dialog = builder.get_object("chart-preferences-dialog")
         self.dialog.set_transient_for(self.parent.dialog)
         self.dialog.set_title("Finding Chart: Preferences")
         self.dialog.set_resizable(False)
@@ -96,7 +97,7 @@ class PreferencesDialog(object):
         # Note: gtk.RESPONSE_SAVE doesn't exist; we use gtk.RESPONSE_OK
         self.close_button = self.dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
         self.apply_button = self.dialog.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
-        self.save_button  = self.dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+        self.save_button = self.dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_OK)
         self.dialog.set_default_response(gtk.RESPONSE_CLOSE)
         self.dialog.set_focus(self.close_button)
 
@@ -107,8 +108,8 @@ class PreferencesDialog(object):
         self.save_button.set_tooltip_text(text)
 
         # Spin buttons to select the value of Vmin / Vmax
-        self.vmin_button = builder.get_object('vmin-spinbutton')
-        self.vmax_button = builder.get_object('vmax-spinbutton')
+        self.vmin_button = builder.get_object("vmin-spinbutton")
+        self.vmax_button = builder.get_object("vmax-spinbutton")
 
         # If the values of both Vmin and Vmax are stored in the LEMONdB, assume
         # a logarithmic scale. Otherwise, use the normalization algorithm and
@@ -117,7 +118,7 @@ class PreferencesDialog(object):
         # FITSFigure.show_grayscale() uses a linear stretch.
 
         try:
-            self.stretch = 'log'
+            self.stretch = "log"
             vmin = self.db.vmin
             vmax = self.db.vmax
 
@@ -129,8 +130,8 @@ class PreferencesDialog(object):
         except AttributeError:
             normalize = self.parent.aplpy_plot.image.norm
             self.stretch = normalize.stretch
-            vmin    = normalize.vmin
-            vmax    = normalize.vmax
+            vmin = normalize.vmin
+            vmax = normalize.vmax
 
             msg1 = "Normalization parameters not stored in the LEMONdB"
             msg2 = "Algorithm and values read from APLpyNormalize object"
@@ -150,13 +151,13 @@ class PreferencesDialog(object):
         # returned by APLpyNormalize can be greater than the maximum pixel
         # level, so we must take that into account.
 
-        data_min = numpy.ceil (min(self.parent.data_min, vmin))
+        data_min = numpy.ceil(min(self.parent.data_min, vmin))
         data_max = numpy.floor(max(self.parent.data_max, vmax))
-        assert hasattr(self, 'stretch')
+        assert hasattr(self, "stretch")
 
-        kwargs = dict(lower = data_min, upper = data_max, step_incr = 1)
-        vmin_adjust = gtk.Adjustment(value = vmin, **kwargs)
-        vmax_adjust = gtk.Adjustment(value = vmax, **kwargs)
+        kwargs = dict(lower=data_min, upper=data_max, step_incr=1)
+        vmin_adjust = gtk.Adjustment(value=vmin, **kwargs)
+        vmax_adjust = gtk.Adjustment(value=vmax, **kwargs)
         self.vmin_button.set_adjustment(vmin_adjust)
         self.vmax_button.set_adjustment(vmax_adjust)
 
@@ -169,12 +170,12 @@ class PreferencesDialog(object):
         self.vmax_button.set_width_chars(ndigits(data_max))
 
         # Show the absolute minimum and maximum allowed values
-        data_min_entry = builder.get_object('data-min-entry')
+        data_min_entry = builder.get_object("data-min-entry")
         data_min_entry.set_width_chars(ndigits(data_min))
         data_min_entry.set_text(str(data_min))
         data_min_entry.set_sensitive(False)
 
-        data_max_entry = builder.get_object('data-max-entry')
+        data_max_entry = builder.get_object("data-max-entry")
         data_max_entry.set_width_chars(ndigits(data_max))
         data_max_entry.set_text(str(data_max))
         data_max_entry.set_sensitive(False)
@@ -197,9 +198,9 @@ class PreferencesDialog(object):
             if self.vmax_button.get_value() < lower:
                 self.vmax_button.set_value(lower)
 
-        self.vmin_button.connect('value-changed', vmin_changed_callback)
-        self.vmax_button.connect('value-changed', vmax_changed_callback)
-        self.dialog.connect('response', self.handle_response)
+        self.vmin_button.connect("value-changed", vmin_changed_callback)
+        self.vmax_button.connect("value-changed", vmax_changed_callback)
+        self.dialog.connect("response", self.handle_response)
 
     def hide(self):
         """ Hide the gtk.Dialog """
@@ -215,7 +216,7 @@ class PreferencesDialog(object):
         self.dialog.destroy()
 
     def normalize_plot(self):
-        """ Update the finding chart with the current normalization parameters.
+        """Update the finding chart with the current normalization parameters.
 
         Create an APLpyNormalize object (an APLpy class that allows different
         stretching functions for astronomical images) and set it as the
@@ -226,15 +227,17 @@ class PreferencesDialog(object):
 
         """
 
-        kwargs = dict(stretch = self.stretch,
-                      vmin = self.vmin_button.get_value(),
-                      vmax = self.vmax_button.get_value())
+        kwargs = dict(
+            stretch=self.stretch,
+            vmin=self.vmin_button.get_value(),
+            vmax=self.vmax_button.get_value(),
+        )
         norm = aplpy.normalize.APLpyNormalize(**kwargs)
         self.parent.aplpy_plot.image.set_norm(norm)
         self.parent.aplpy_plot.refresh()
 
     def handle_response(self, widget, response):
-        """ Callback function for the 'response' signal.
+        """Callback function for the 'response' signal.
 
         This is the callback function that should be registered as the handler
         for the 'response' signal emitted by the gtk.Dialog. If the user clicks
@@ -247,7 +250,6 @@ class PreferencesDialog(object):
         Vmax in the LEMONdB.
 
         """
-
 
         # Don't destroy the gtk.Dialog if we click on the close button
         if response in (gtk.RESPONSE_CLOSE, gtk.RESPONSE_DELETE_EVENT):
@@ -276,7 +278,7 @@ class FindingChartDialog(object):
 
     # The name of the scatter layer (the 'layer' keyword argument) when
     # FITSFigure.show_markers() is called to overlay markers on a plot.
-    MARKERS_LAYER = 'markers'
+    MARKERS_LAYER = "markers"
 
     def handle_response(self, widget, response):
         """ Handler for the dialog 'response' event """
@@ -296,12 +298,12 @@ class FindingChartDialog(object):
 
         self.db = parent.db
         parent_window = parent._main_window
-        self.view_star = parent.view_star # LEMONJuicerGUI.view_star()
+        self.view_star = parent.view_star  # LEMONJuicerGUI.view_star()
         self.toggle_toolbar_button = parent.set_finding_chart_button_active
 
         self.builder = gtk.Builder()
         self.builder.add_from_file(glade.FINDING_CHART_DIALOG)
-        self.dialog = self.builder.get_object('finding-chart-dialog')
+        self.dialog = self.builder.get_object("finding-chart-dialog")
         self.dialog.set_resizable(True)
         self.dialog.set_title("Finding Chart: %s" % self.db.field_name)
 
@@ -319,14 +321,14 @@ class FindingChartDialog(object):
         self._currently_shown = False
 
         # The matplotlib figure...
-        matplotlib_container = self.builder.get_object('matplotlib-container')
-        self.image_box = self.builder.get_object('image-container-box')
+        matplotlib_container = self.builder.get_object("matplotlib-container")
+        self.image_box = self.builder.get_object("image-container-box")
         self.figure = matplotlib.figure.Figure()
         canvas = FigureCanvas(self.figure)
         self.image_box.pack_start(canvas)
 
         # ... and the navigation toolbar
-        self.navigation_box = self.builder.get_object('navigation-toolbar-box')
+        self.navigation_box = self.builder.get_object("navigation-toolbar-box")
         self.navig = NavigationToolbar(canvas, self.image_box.get_window())
         self.navigation_box.pack_start(self.navig)
         matplotlib_container.show_all()
@@ -354,8 +356,8 @@ class FindingChartDialog(object):
             self.data_min = numpy.nanmin(data)
             self.data_max = numpy.nanmax(data)
 
-        self.aplpy_plot = aplpy.FITSFigure(path, figure = self.figure)
-        self.figure.canvas.mpl_connect('button_press_event', self.mark_closest_star)
+        self.aplpy_plot = aplpy.FITSFigure(path, figure=self.figure)
+        self.figure.canvas.mpl_connect("button_press_event", self.mark_closest_star)
         self.aplpy_plot.show_grayscale()
 
         self.aplpy_plot.add_grid()
@@ -374,7 +376,7 @@ class FindingChartDialog(object):
         # __init__() method of the PreferencesDialog class needs to access to
         # it if the values of Vmin and Vmax cannot be read from the LEMONdB.
 
-        assert hasattr(self.aplpy_plot.image, 'norm')
+        assert hasattr(self.aplpy_plot.image, "norm")
         self.preferences_dialog = PreferencesDialog(self)
         self.preferences_dialog.normalize_plot()
 
@@ -389,10 +391,10 @@ class FindingChartDialog(object):
         # loop, while we want it to be non-modal. Therefore, we need to show()
         # it. But this means that we cannot get the response ID directly from
         # run(), so we have to connect to the dialog 'response' event.
-        self.dialog.connect('response', self.handle_response)
+        self.dialog.connect("response", self.handle_response)
 
         # Don't destroy the gtk.Dialog if we click on the window's close button
-        self.dialog.connect('delete-event', self.on_delete_event)
+        self.dialog.connect("delete-event", self.on_delete_event)
 
         # Button to, when a star is selected, view its details. We want to
         # render a stock button, STOCK_GO_FORWARD, but with a different label.
@@ -400,8 +402,8 @@ class FindingChartDialog(object):
         # the image from the existing stock item, as seen in the PyGTK FAQ:
         # http://faq.pygtk.org/index.py?req=show&file=faq09.005.htp
 
-        STOCK_GOTO_STAR = 'goto-star-custom'
-        gtk.stock_add([(STOCK_GOTO_STAR, '_Go to Star', 0, 0, None)])
+        STOCK_GOTO_STAR = "goto-star-custom"
+        gtk.stock_add([(STOCK_GOTO_STAR, "_Go to Star", 0, 0, None)])
         factory = gtk.IconFactory()
         factory.add_default()
         style = self.dialog.get_style()
@@ -415,13 +417,12 @@ class FindingChartDialog(object):
         # <Ctrl>G also activates the 'Go to Star' button
         accelerators = gtk.AccelGroup()
         self.dialog.add_accel_group(accelerators)
-        key, modifier = gtk.accelerator_parse('<Control>G')
-        args = 'activate', accelerators, key, modifier, gtk.ACCEL_VISIBLE
+        key, modifier = gtk.accelerator_parse("<Control>G")
+        args = "activate", accelerators, key, modifier, gtk.ACCEL_VISIBLE
         self.goto_button.add_accelerator(*args)
 
-
     def mark_closest_star(self, event):
-        """ Callback function for 'button_press_event'.
+        """Callback function for 'button_press_event'.
 
         Find the closest star to the right ascension and declination where the
         user has right-clicked and overlay a red marker of radius MARK_RADIUS
@@ -444,9 +445,7 @@ class FindingChartDialog(object):
             star_id = self.db.star_closest_to_world_coords(*coords)[0]
             # LEMONdB.get_star() returns (x, y, ra, dec, epoch, pm_ra, pm_dec, imag)
             ra, dec = self.db.get_star(star_id)[2:4]
-            kwargs = dict(layer = self.MARKERS_LAYER,
-                          edgecolor = 'red',
-                          s = self.MARK_RADIUS)
+            kwargs = dict(layer=self.MARKERS_LAYER, edgecolor="red", s=self.MARK_RADIUS)
             self.aplpy_plot.show_markers(ra, dec, **kwargs)
             self.selected_star_id = star_id
             self.goto_button.set_sensitive(True)
@@ -454,7 +453,7 @@ class FindingChartDialog(object):
             self.dialog.set_default_response(gtk.RESPONSE_APPLY)
 
     def mark_star(self, star_id):
-        """ Mark a star in the finding chart.
+        """Mark a star in the finding chart.
 
         Read from the LEMONdB the right ascension and declination of the star
         whose ID is 'star_id' and overlay a green marker of radius MARK_RADIUS
@@ -466,9 +465,7 @@ class FindingChartDialog(object):
         """
 
         ra, dec = self.db.get_star(star_id)[2:4]
-        kwargs = dict(layer = self.MARKERS_LAYER,
-                      edgecolor = '#24ff29',
-                      s = self.MARK_RADIUS)
+        kwargs = dict(layer=self.MARKERS_LAYER, edgecolor="#24ff29", s=self.MARK_RADIUS)
         self.aplpy_plot.show_markers(ra, dec, **kwargs)
         self.navig.home()
 
@@ -476,7 +473,7 @@ class FindingChartDialog(object):
         self.goto_button.set_sensitive(True)
 
     def goto_star(self):
-        """ Show the details of the selected star.
+        """Show the details of the selected star.
 
         This method calls the parent LEMONdB.view_star() with the ID of the
         star currently selected in the finding chart. It adds a notebook page
@@ -506,7 +503,7 @@ class FindingChartDialog(object):
         return self._currently_shown
 
     def on_delete_event(self, widget, event):
-        """ Callback handler for the 'delete-event' signal.
+        """Callback handler for the 'delete-event' signal.
 
         Closing a window using the window manager (i.e., clicking on the
         window's close button), by default, causes it to be destroyed, so after

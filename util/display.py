@@ -25,8 +25,9 @@ import traceback
 # LEMON modules
 import style
 
+
 def show_progress(percentage):
-    """ Print a progress bar strikingly similar to that of the wget command.
+    """Print a progress bar strikingly similar to that of the wget command.
 
     Displays a progress bar with the format used as the Unix wget command:
     51%[===============================>                                 ]
@@ -44,21 +45,22 @@ def show_progress(percentage):
     if not 0 <= percentage <= 100:
         raise ValueError("The value of 'percentage' must be in the range [0,100]")
 
-    length = 79     # the 79 character line recommendation
+    length = 79  # the 79 character line recommendation
     occupied = 3 + len(style.prefix)  # "%" + "[" + "]" + style.prefix
 
-
     percent = str(int(percentage))
-    available = length-occupied-len(percent)
-    bar = int((available)*int(percent)/100.0)
-    spaces = available-bar
+    available = length - occupied - len(percent)
+    bar = int((available) * int(percent) / 100.0)
+    spaces = available - bar
 
-    sys.stdout.write("\r" + style.prefix + percent + "%[" + bar * "=" + \
-                     ">" + spaces*" " + "]")
+    sys.stdout.write(
+        "\r" + style.prefix + percent + "%[" + bar * "=" + ">" + spaces * " " + "]"
+    )
     sys.stdout.flush()
 
-def utctime(seconds = None, suffix = True):
-    """ UTC version of time.ctime.
+
+def utctime(seconds=None, suffix=True):
+    """UTC version of time.ctime.
 
     Convert a time expressed in seconds since the Unix epoch to a 28-character
     string, representing Coordinated Universal Time, of the following form:
@@ -71,11 +73,12 @@ def utctime(seconds = None, suffix = True):
 
     utc_ctime = time.asctime(time.gmtime(seconds))
     if suffix:
-        utc_ctime += ' UTC'
+        utc_ctime += " UTC"
     return utc_ctime
 
+
 def print_exception_traceback(func):
-    """ Decorator to print the stack trace of an exception.
+    """Decorator to print the stack trace of an exception.
 
     This decorator catches any exception raised by the decorated function,
     prints its information to the standard output (traceback.print_exc()) and
@@ -96,4 +99,5 @@ def print_exception_traceback(func):
             traceback.print_exc()
             print
             raise
+
     return wrapper

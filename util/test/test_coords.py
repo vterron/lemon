@@ -26,18 +26,19 @@ from util import load_coordinates, tempinput
 
 NITERS = 100  # How many times each test case is run with random data
 
+
 class LoadCoordinatesTest(unittest.TestCase):
 
     # A series of two-element tuples, one per line. The first element is a
     # string containing the name of an astronomical object. The second is a
     # four-element tuple with the right ascension, declination and proper
     # motions. Nones are used if the proper motions are not known.
-    TEST_DATA_DIR = './test/test_data/SIMBAD_objects'
+    TEST_DATA_DIR = "./test/test_data/SIMBAD_objects"
 
     # Parse the SIMBAD file and map each astronomical object (a string) to
     # its right ascension and declination (an astromatic.Coordinates object)
     COORDINATES = {}
-    with open(TEST_DATA_DIR, 'rt') as fd:
+    with open(TEST_DATA_DIR, "rt") as fd:
         for line in fd:
             line = line.strip()
             if line and not line.startswith("#"):
@@ -45,15 +46,15 @@ class LoadCoordinatesTest(unittest.TestCase):
                 COORDINATES[object_] = Coordinates(*coords)
 
     NCOORDS = (1, len(COORDINATES))  # number of objects in each file
-    NEMPTY = (1, 50)    # minimum and maximum number of empty lines
-    NCOMMENTS = (1, 50) # minimum and maximum number of comment lines
-    COMMENT_PROB = 0.35 # probability of inline comments
-    SEPS = [' ', '\t'] # separators randomly added to the coords file
-    MAX_SEPS = 5       # maximum number of consecutive separators
+    NEMPTY = (1, 50)  # minimum and maximum number of empty lines
+    NCOMMENTS = (1, 50)  # minimum and maximum number of comment lines
+    COMMENT_PROB = 0.35  # probability of inline comments
+    SEPS = [" ", "\t"]  # separators randomly added to the coords file
+    MAX_SEPS = 5  # maximum number of consecutive separators
 
     @classmethod
     def get_seps(cls, minimum):
-        """ Return a string containing a random number of separators.
+        """Return a string containing a random number of separators.
 
         The separators are randomly chosen from cls.SEPS. The returned string
         contains N of them, where N is a random integer such that: minimum <=
@@ -62,7 +63,7 @@ class LoadCoordinatesTest(unittest.TestCase):
         """
 
         n = random.randint(minimum, cls.MAX_SEPS)
-        return ''.join(random.choice(cls.SEPS) for _ in range(n))
+        return "".join(random.choice(cls.SEPS) for _ in range(n))
 
     @classmethod
     def get_comment(cls):
@@ -76,7 +77,7 @@ class LoadCoordinatesTest(unittest.TestCase):
 
     @classmethod
     def get_coords_data(cls, coords):
-        """ Format 'coords' as the contents of a coordinates file.
+        """Format 'coords' as the contents of a coordinates file.
 
         Return a string that contains a line for each astronomical object in
         'coords', an iterable argument, listing their right ascensions and
@@ -117,7 +118,7 @@ class LoadCoordinatesTest(unittest.TestCase):
 
             lines.append(line)
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def test_load_coordinates(self):
 
@@ -143,7 +144,7 @@ class LoadCoordinatesTest(unittest.TestCase):
 
         # For some datasets that generate coords so close to zero that they end up in scientific notation
 
-        data = '7.9720694373e-05 44.6352243008'
+        data = "7.9720694373e-05 44.6352243008"
         with tempinput(data) as path:
             coordinates = load_coordinates(path)
             coords_list = list(coordinates)
@@ -154,7 +155,7 @@ class LoadCoordinatesTest(unittest.TestCase):
 
     def test_load_coordinates_scientific_notation_with_propper_motion(self):
 
-        data = '7.9720694373e-05 44.6352243008 [0.00123] [0.0000432]'
+        data = "7.9720694373e-05 44.6352243008 [0.00123] [0.0000432]"
         with tempinput(data) as path:
             coordinates = load_coordinates(path)
             coords_list = list(coordinates)
@@ -176,7 +177,7 @@ class LoadCoordinatesTest(unittest.TestCase):
             objects = random.sample(self.COORDINATES.values(), n)
             data = self.get_coords_data(objects)
 
-            lines = data.split('\n')
+            lines = data.split("\n")
 
             # Randomly insert inline comments
             for index in range(len(lines)):
@@ -198,7 +199,7 @@ class LoadCoordinatesTest(unittest.TestCase):
                 comment = self.get_comment()
                 lines.insert(index, sep + comment)
 
-            data = '\n'.join(lines)
+            data = "\n".join(lines)
 
             with tempinput(data) as path:
                 coordinates = load_coordinates(path)
@@ -207,13 +208,12 @@ class LoadCoordinatesTest(unittest.TestCase):
 
     def test_load_coordinates_empty_file(self):
         # If the file is empty, nothing is returned
-        with tempinput('') as path:
+        with tempinput("") as path:
             self.assertEqual([], list(load_coordinates(path)))
 
     def test_load_coordinates_invalid_data(self):
-
         def check_raise(data, exception, regexp):
-            """ Make sure that load_coordinates() raises 'exception'
+            """Make sure that load_coordinates() raises 'exception'
             when a file containing 'data' is parsed. 'regexp' is the regular
             expression that must be matched by the string representation of
             the raised exception"""
@@ -237,9 +237,8 @@ class LoadCoordinatesTest(unittest.TestCase):
 
         c = get_coords()
         unparseable_data = [
-
             # The names of three objects, no coordinates
-            '\n'.join(["NGC 4494", "11 Com b", "TrES-1"]),
+            "\n".join(["NGC 4494", "11 Com b", "TrES-1"]),
             # String + float
             "foo %.8f" % c.dec,
             # Three floating-point numbers
@@ -249,7 +248,8 @@ class LoadCoordinatesTest(unittest.TestCase):
             # Missing declination proper motion
             (("%.8f " * 2) + "[%.6f]") % c[:-1],
             # Three proper motions
-            (("%.8f " * 2) + ("[%.6f] " * 3)) % (c + (c.pm_dec,))]
+            (("%.8f " * 2) + ("[%.6f] " * 3)) % (c + (c.pm_dec,)),
+        ]
 
         regexp = "Unable to parse line"
         for data in unparseable_data:
@@ -259,19 +259,19 @@ class LoadCoordinatesTest(unittest.TestCase):
         c = get_coords()
         regexp = "Right ascension .* not in range"
         fmt = "%.8f %.8f [%.6f] [%.6f]"
-        c = c._replace(ra = -24.19933)
+        c = c._replace(ra=-24.19933)
         data1 = fmt % c  # RA < 0
         check_raise(data1, ValueError, regexp)
-        data2 = "%.8f %.8f" % (360, c.dec)     # RA >= 360
+        data2 = "%.8f %.8f" % (360, c.dec)  # RA >= 360
         check_raise(data2, ValueError, regexp)
-        data3 = "%.8f %.8f" % (417.993, c.dec) # RA >= 360
+        data3 = "%.8f %.8f" % (417.993, c.dec)  # RA >= 360
         check_raise(data3, ValueError, regexp)
 
         # (3) An object with declination out of range
         c = get_coords()
         regexp = "Declination .* not in range"
-        c = c._replace(dec = -90.21)
-        data1 = fmt % c # DEC < -90
+        c = c._replace(dec=-90.21)
+        data1 = fmt % c  # DEC < -90
         check_raise(data1, ValueError, regexp)
-        data2 = "%.8f %.8f" % (c.ra,  113.93) # DEC > +90
+        data2 = "%.8f %.8f" % (c.ra, 113.93)  # DEC > +90
         check_raise(data2, ValueError, regexp)

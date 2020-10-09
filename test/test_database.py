@@ -35,34 +35,38 @@ import time
 
 from test import unittest
 import passband
-from database import \
-  (DBStar,
-   DuplicateLightCurvePointError,
-   DuplicateImageError,
-   DuplicatePhotometryError,
-   DuplicateStarError,
-   Image,
-   LEMONdB,
-   LightCurve,
-   PhotometricParameters,
-   UnknownImageError,
-   UnknownStarError)
+from database import (
+    DBStar,
+    DuplicateLightCurvePointError,
+    DuplicateImageError,
+    DuplicatePhotometryError,
+    DuplicateStarError,
+    Image,
+    LEMONdB,
+    LightCurve,
+    PhotometricParameters,
+    UnknownImageError,
+    UnknownStarError,
+)
 
 from diffphot import Weights
 from json_parse import CandidateAnnuli
 import test.test_fitsimage
+
 # https://stackoverflow.com/q/12603541/184363
 from test.test_astromatic import CoordinatesTest
+
 get_random_coords = CoordinatesTest.random
 
-NITERS = 100      # How many times each test case is run with random data
-MIN_NSTARS = 25   # Minimum number of items for random collections of DBStars
+NITERS = 100  # How many times each test case is run with random data
+MIN_NSTARS = 25  # Minimum number of items for random collections of DBStars
 MAX_NSTARS = 100  # Maximum number of items for random collections of DBStars
-MIN_UNIX_TIME = 0            # Thu Jan  1 01:00:00 1970
+MIN_UNIX_TIME = 0  # Thu Jan  1 01:00:00 1970
 MAX_UNIX_TIME = time.time()  # Minimum and maximum random Unix times
 
+
 def assertSequenceOfTuplesAlmostEqual(cls, first, second):
-    """ Assert that the tuples of the two sequences are almost equal.
+    """Assert that the tuples of the two sequences are almost equal.
 
     The first parameter, 'cls', must be the subclass of unittest.TestCase
     instance in which this test is done. Values are considered to be almost
@@ -78,6 +82,7 @@ def assertSequenceOfTuplesAlmostEqual(cls, first, second):
         for values in zip(tuple1, tuple2):
             cls.assertAlmostEqual(*values)
 
+
 def runix_times(size):
     """ Return a list of 'size' random, different Unix times """
     rtimes = []
@@ -86,6 +91,7 @@ def runix_times(size):
         if utime not in rtimes:
             rtimes.append(utime)
     return rtimes
+
 
 def different_runix_time(utimes):
     """ Return a random Unix time not in 'utimes' """
@@ -97,18 +103,18 @@ def different_runix_time(utimes):
 
 class DBStarTest(unittest.TestCase):
 
-    MIN_ID = 1     # Minimum ID for random DBStars
+    MIN_ID = 1  # Minimum ID for random DBStars
     MAX_ID = 9999  # Maximum ID for random DBStars
-    MIN_SIZE = 1   # Minimum number of photometric records
-    MAX_SIZE = 250 # Maximum number of photometric records
-    MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
-    MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
-    MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
+    MIN_SIZE = 1  # Minimum number of photometric records
+    MAX_SIZE = 250  # Maximum number of photometric records
+    MIN_MAG = 1.47  # Minimum value for random magnitudes (Saturn)
+    MAX_MAG = 25  # Maximum value for random magnitudes (Fenrir)
+    MIN_SNR = 2  # Minimum value for random signal-to-noise ratios
     MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
 
     @classmethod
-    def random_data(cls, pfilter = None):
-        """ Return the information needed to instantiate a random DBStar.
+    def random_data(cls, pfilter=None):
+        """Return the information needed to instantiate a random DBStar.
 
         If 'pfilter' is given, it is used as the photometric filter in the
         returned tuple (the second element), instead of a random one.
@@ -124,19 +130,19 @@ class DBStarTest(unittest.TestCase):
         for index, unix_time in enumerate(runix_times(size)):
             magnitude = random.uniform(cls.MIN_MAG, cls.MAX_MAG)
             snr = random.uniform(cls.MIN_SNR, cls.MAX_SNR)
-            phot_info[:,index] = unix_time, magnitude, snr
+            phot_info[:, index] = unix_time, magnitude, snr
             times_indexes[unix_time] = index
         return id_, pfilter, phot_info, times_indexes
 
     @classmethod
-    def random(cls, pfilter = None):
-        """ Return a random DBStar.
+    def random(cls, pfilter=None):
+        """Return a random DBStar.
 
         If 'pfilter' is given, it is used as the photometric filter of the
         DBStar, instead of a random one.
 
         """
-        args = cls.random_data(pfilter = pfilter)
+        args = cls.random_data(pfilter=pfilter)
         return DBStar(*args)
 
     def test_init(self):
@@ -152,14 +158,14 @@ class DBStarTest(unittest.TestCase):
         # ValueError must be raised if 'phot_info' does not have three rows
         id_, pfilter, phot_info, times_indexes = DBStarTest.random_data()
         row_index = random.randint(0, 2)
-        phot_info = numpy.delete(phot_info, row_index, axis = 0)
+        phot_info = numpy.delete(phot_info, row_index, axis=0)
         with self.assertRaises(ValueError):
             DBStar(id_, pfilter, phot_info, times_indexes)
 
     def test_len(self):
         for _ in xrange(NITERS):
             id_, pfilter, phot_info, times_indexes = DBStarTest.random_data()
-            size = phot_info.shape[1] # as many photometric records as columns
+            size = phot_info.shape[1]  # as many photometric records as columns
             star = DBStar(id_, pfilter, phot_info, times_indexes)
             self.assertEqual(len(star), size)
 
@@ -189,7 +195,7 @@ class DBStarTest(unittest.TestCase):
 
     @classmethod
     def make_subset(cls, star):
-        """ Return a DBstar which is a subset of 'star'. In other words: the
+        """Return a DBstar which is a subset of 'star'. In other words: the
         set of Unix times of the returned DBStar star is a subset of the Unix
         times of 'star'."""
 
@@ -199,7 +205,7 @@ class DBStarTest(unittest.TestCase):
         sid = random.randint(cls.MIN_ID, cls.MAX_ID)
         to_delete = random.randint(0, len(star) - 1)
         delete_indexes = random.sample(range(len(star)), to_delete)
-        sphot_info = numpy.delete(star._phot_info, delete_indexes, axis = 1)
+        sphot_info = numpy.delete(star._phot_info, delete_indexes, axis=1)
 
         # Populate 'sphot_info' with other magnitudes and SNRs
         for index in xrange(sphot_info.shape[1]):
@@ -218,7 +224,7 @@ class DBStarTest(unittest.TestCase):
 
     @classmethod
     def make_superset(cls, star):
-        """ Return a DBstar which is a superset of 'star'. This means that the
+        """Return a DBstar which is a superset of 'star'. This means that the
         set of Unix times of the returned DBStar star is a subset of the Unix
         times of the 'star'."""
 
@@ -236,7 +242,7 @@ class DBStarTest(unittest.TestCase):
             row = [unix_time, magnitude, snr]
 
             size = sphot_info.shape[1]
-            sphot_info = numpy.insert(sphot_info, size, row, axis = 1)
+            sphot_info = numpy.insert(sphot_info, size, row, axis=1)
             stimes_indexes[unix_time] = size
 
         # There must be no gaps in the indexes mapped by the dictionary
@@ -258,7 +264,7 @@ class DBStarTest(unittest.TestCase):
 
             self.assertTrue(subset.issubset(original))
             self.assertTrue(original.issubset(superset))
-            self.assertTrue(subset.issubset(superset)) # transitive relation
+            self.assertTrue(subset.issubset(superset))  # transitive relation
 
             self.assertTrue(subset.issubset(subset))
             self.assertTrue(original.issubset(original))
@@ -279,13 +285,13 @@ class DBStarTest(unittest.TestCase):
             # Modify one of the Unix times of 'subset', so that it is no longer
             # a subset of 'original', and verify that the method returns False
             index = random.randint(0, len(subset) - 1)
-            while True: # +/- one hour, until we get a different Unix time
+            while True:  # +/- one hour, until we get a different Unix time
                 unix_time = subset.time(index) + random.uniform(-3600, 3600)
                 if unix_time != subset.time(index):
                     break
 
             # Update the Unix time (a key) in the 'time_indexes' dictionary
-            time_indexes = subset._time_indexes # shorter variable name
+            time_indexes = subset._time_indexes  # shorter variable name
             time_indexes[unix_time] = time_indexes.pop(subset.time(index))
             subset._phot_info[0][index] = unix_time
             assert subset.time(index) == unix_time
@@ -293,9 +299,9 @@ class DBStarTest(unittest.TestCase):
 
     @classmethod
     def make_star(cls, records):
-        """ Return a DBStar whose photometric information (Unix time, magnitude
+        """Return a DBStar whose photometric information (Unix time, magnitude
         and SNR of each record) is taken from the tree-element tuples contained
-        in 'records'). The rest of the information is randomly generated """
+        in 'records'). The rest of the information is randomly generated"""
 
         if not records:
             raise ValueError("'records' cannot be empty")
@@ -307,14 +313,15 @@ class DBStarTest(unittest.TestCase):
 
         # A specific, non-random test case...
         original = DBStarTest.make_star(
-        [(13000, 15.6, 100),
-         (13100, 14.5, 230),
-         (14000, 13.4, 200),
-         (16700, 15.3, 250)])
+            [
+                (13000, 15.6, 100),
+                (13100, 14.5, 230),
+                (14000, 13.4, 200),
+                (16700, 15.3, 250),
+            ]
+        )
 
-        subset = DBStarTest.make_star(
-        [(13100, 19.3, 85),
-         (14000, 17.4, 115)])
+        subset = DBStarTest.make_star([(13100, 19.3, 85), (14000, 17.4, 115)])
 
         self.assertTrue(subset.issubset(original))
         trimmed = original._trim_to(subset)
@@ -344,8 +351,9 @@ class DBStarTest(unittest.TestCase):
             # The internal dictionaries mapping each Unix time to its position
             # in '_phot_info' must be identical, as both stars contain now
             # information for exactly the same Unix times, in the same order.
-            self.assertTrue(numpy.all(numpy.equal(trimmed._unix_times,
-                                                  subset._unix_times)))
+            self.assertTrue(
+                numpy.all(numpy.equal(trimmed._unix_times, subset._unix_times))
+            )
 
         # KeyError is raised if we attempt to trim a star which is not a subset
         star = DBStarTest.random()
@@ -360,7 +368,7 @@ class DBStarTest(unittest.TestCase):
         for _ in xrange(NITERS):
             original = DBStarTest.random()
             stars = [original]
-            super_ids = [] # the IDs of the superset stars
+            super_ids = []  # the IDs of the superset stars
 
             while len(stars) < random.randint(MIN_NSTARS, MAX_NSTARS):
                 # Half of the stars in the collection will be supersets
@@ -384,7 +392,7 @@ class DBStarTest(unittest.TestCase):
     def test_make_star(self):
 
         id_ = 1
-        pfilter = passband.Passband('V')
+        pfilter = passband.Passband("V")
 
         row0 = (13000, 15.6, 100)
         row1 = (14000, 14.5, 230)
@@ -399,16 +407,16 @@ class DBStarTest(unittest.TestCase):
         self.assertEqual(star.pfilter, pfilter)
 
         self.assertEqual(star.time(0), row0[0])
-        self.assertEqual(star.mag(0),  row0[1])
-        self.assertEqual(star.snr(0),  row0[2])
+        self.assertEqual(star.mag(0), row0[1])
+        self.assertEqual(star.snr(0), row0[2])
 
         self.assertEqual(star.time(1), row1[0])
-        self.assertEqual(star.mag(1),  row1[1])
-        self.assertEqual(star.snr(1),  row1[2])
+        self.assertEqual(star.mag(1), row1[1])
+        self.assertEqual(star.snr(1), row1[2])
 
         self.assertEqual(star.time(2), row2[0])
-        self.assertEqual(star.mag(2),  row2[1])
-        self.assertEqual(star.snr(2),  row2[2])
+        self.assertEqual(star.mag(2), row2[1])
+        self.assertEqual(star.snr(2), row2[2])
 
         # Now random test cases
         for _ in xrange(NITERS):
@@ -427,16 +435,20 @@ class DBStarTest(unittest.TestCase):
     def equal(first, second):
         """ Check whether two DBStars are equal """
 
-        if (first.id != second.id or
-            first.pfilter != second.pfilter or
-            len(first) != len(second)):
-              return False
+        if (
+            first.id != second.id
+            or first.pfilter != second.pfilter
+            or len(first) != len(second)
+        ):
+            return False
 
         for index in xrange(len(first)):
-            if (first.time(index) != second.time(index) or
-                first.mag(index) != second.mag(index) or
-                first.snr(index) != second.snr(index)):
-                  return False
+            if (
+                first.time(index) != second.time(index)
+                or first.mag(index) != second.mag(index)
+                or first.snr(index) != second.snr(index)
+            ):
+                return False
 
         return True
 
@@ -460,7 +472,7 @@ class PhotometricParametersTest(unittest.TestCase):
         # are correctly set at instantiation time, and the class must work
         # for all numbers anyway, whether realistic or not.
         aperture = random.uniform(cls.MIN_APERTURE, cls.MAX_APERTURE)
-        annulus  = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
+        annulus = random.uniform(cls.MIN_ANNULUS, cls.MAX_ANNULUS)
         dannulus = random.uniform(cls.MIN_DANNULUS, cls.MAX_DANNULUS)
         return aperture, annulus, dannulus
 
@@ -481,27 +493,27 @@ class PhotometricParametersTest(unittest.TestCase):
 
 class ImageTest(unittest.TestCase):
 
-    MIN_AIRMASS = 1     # Minimum value for random airmasses (zenith)
+    MIN_AIRMASS = 1  # Minimum value for random airmasses (zenith)
     MAX_AIRMASS = 2.92  # Maximum value for random airmasses (~70 dec)
-    MIN_GAIN = 1   # Minimum value for random CCD gains
+    MIN_GAIN = 1  # Minimum value for random CCD gains
     MAX_GAIN = 10  # Maximum value for random CCD gains
     RA_RANGE = (0, 359.99999)  # Minimum and maximum right ascensions (degrees)
-    DEC_RANGE = (-90, 90) # Minimum and maximum declinations (degrees)
-    OBJECT_LENGTH = (1, 30) # Minimum and maximum length of the random string
-                            # used as the name of the observed object
+    DEC_RANGE = (-90, 90)  # Minimum and maximum declinations (degrees)
+    OBJECT_LENGTH = (1, 30)  # Minimum and maximum length of the random string
+    # used as the name of the observed object
 
     @classmethod
     def random_data(cls):
         """ Return the information needed to instantiate a random Image """
 
-        fd, path = tempfile.mkstemp(suffix = '.fits')
+        fd, path = tempfile.mkstemp(suffix=".fits")
         os.close(fd)
         os.unlink(path)
 
         pfilter = passband.Passband.random()
         unix_time = runix_times(1)[0]
         size = random.randint(*cls.OBJECT_LENGTH)
-        object_ = ''.join(random.choice(string.letters) for _ in xrange(size))
+        object_ = "".join(random.choice(string.letters) for _ in xrange(size))
         airmass = random.uniform(cls.MIN_AIRMASS, cls.MAX_AIRMASS)
         gain = random.uniform(cls.MIN_GAIN, cls.MAX_GAIN)
         ra = random.uniform(*cls.RA_RANGE)
@@ -510,8 +522,8 @@ class ImageTest(unittest.TestCase):
         return (path, pfilter, unix_time, object_, airmass, gain, ra, dec)
 
     @classmethod
-    def nrandom(cls, size, pfilter = None, simult_prob = 0.5):
-        """ Return a generator which steps through 'size' random Images.
+    def nrandom(cls, size, pfilter=None, simult_prob=0.5):
+        """Return a generator which steps through 'size' random Images.
 
         The random Image instances may have the same Unix time, but in these
         cases they are guaranteed to have a different photometric filter, to
@@ -548,7 +560,7 @@ class ImageTest(unittest.TestCase):
             # randomly to have a duplicate Unix time.
 
             if pfilter:
-                img = img._replace(pfilter = pfilter)
+                img = img._replace(pfilter=pfilter)
 
             elif bool(used_utimes) and random.random() < simult_prob:
 
@@ -562,8 +574,8 @@ class ImageTest(unittest.TestCase):
                 random.shuffle(all_pfilters)
                 for duplicate_pfilter in all_pfilters:
                     if duplicate_utime not in used_utimes[duplicate_pfilter]:
-                        img = img._replace(unix_time = duplicate_utime)
-                        img = img._replace(pfilter = duplicate_pfilter)
+                        img = img._replace(unix_time=duplicate_utime)
+                        img = img._replace(pfilter=duplicate_pfilter)
                         break
 
                 # This point is reached only if all the photometric filters
@@ -582,8 +594,8 @@ class ImageTest(unittest.TestCase):
             assert len(all_utimes) <= size
 
     @classmethod
-    def random(cls, pfilter = None):
-        """ Return a random Image.
+    def random(cls, pfilter=None):
+        """Return a random Image.
 
         If 'pfilter' is given, it is used as the photometric filter, instead
         of a random one -- though it could be argued then that the Image is
@@ -591,7 +603,7 @@ class ImageTest(unittest.TestCase):
 
         """
 
-        return cls.nrandom(1, pfilter = pfilter).next()
+        return cls.nrandom(1, pfilter=pfilter).next()
 
     def test_init_(self):
         for _ in xrange(NITERS):
@@ -609,16 +621,16 @@ class ImageTest(unittest.TestCase):
 
 class LightCurveTest(unittest.TestCase):
 
-    MIN_ID = 1     # Minimum value for random DBStar IDs
+    MIN_ID = 1  # Minimum value for random DBStar IDs
     MAX_ID = 9999  # Maximum value for random DBStar IDs
-    MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
-    MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
-    MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
+    MIN_MAG = 1.47  # Minimum value for random magnitudes (Saturn)
+    MAX_MAG = 25  # Maximum value for random magnitudes (Fenrir)
+    MIN_SNR = 2  # Minimum value for random signal-to-noise ratios
     MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
 
     @classmethod
     def random_points(cls, size):
-        """ Return a generator which steps through 'size' random (Unix
+        """Return a generator which steps through 'size' random (Unix
         time, magnitude, snr) tuples, guaranteed to have different times.
 
         """
@@ -638,8 +650,8 @@ class LightCurveTest(unittest.TestCase):
         return cls.random_points(1).next()
 
     @classmethod
-    def random_data(cls, pfilter = None, cstars = None):
-        """ Return the arguments needed to instantiate a random LightCurve.
+    def random_data(cls, pfilter=None, cstars=None):
+        """Return the arguments needed to instantiate a random LightCurve.
 
         Return a four-element tuple: (a) a photometric filter and three lists
         with the (b) comparison stars, (c) weights and (b) standard deviations.
@@ -661,8 +673,8 @@ class LightCurveTest(unittest.TestCase):
         return pfilter, cstars, cweights, cstdevs
 
     @classmethod
-    def random(cls, pfilter = None, cstars = None):
-        """ Return a random, empty LightCurve.
+    def random(cls, pfilter=None, cstars=None):
+        """Return a random, empty LightCurve.
 
         If given, the photometric filter and comparison star IDs are not
         random. Instead, the passed values (a Passband instance and a
@@ -670,7 +682,7 @@ class LightCurveTest(unittest.TestCase):
 
         """
 
-        args = cls.random_data(pfilter = pfilter, cstars = cstars)
+        args = cls.random_data(pfilter=pfilter, cstars=cstars)
         return LightCurve(*args)
 
     @classmethod
@@ -693,7 +705,7 @@ class LightCurveTest(unittest.TestCase):
         # ValueError raised if number of weights != stdevs != comparison stars
         pfilter, cstars, cweights, cstdevs = self.random_data()
         rindex = random.choice(range(len(cweights)))
-        cweights = cweights.rescale(rindex) # remove rindex-th coefficient
+        cweights = cweights.rescale(rindex)  # remove rindex-th coefficient
         assert len(cstars) != len(cweights) != len(cstdevs)
         with self.assertRaises(ValueError):
             LightCurve(pfilter, cstars, cweights, cstdevs)
@@ -721,7 +733,7 @@ class LightCurveTest(unittest.TestCase):
         point3 = (24000, 19.9, 110)
         point4 = (19000, 20.3, 105)
         for index in xrange(1, 5):
-            curve.add(*eval('point%d' % index))
+            curve.add(*eval("point%d" % index))
         points = iter(curve)
         self.assertEqual(points.next(), point4)
         self.assertEqual(points.next(), point2)
@@ -739,7 +751,7 @@ class LightCurveTest(unittest.TestCase):
                 curve.add(*point)
 
             # __iter__ returns the tuples *sorted chronologically*
-            curve_points.sort(key = operator.itemgetter(0))
+            curve_points.sort(key=operator.itemgetter(0))
             self.assertEqual(list(curve), curve_points)
 
     def test_stdev(self):
@@ -789,17 +801,17 @@ class LightCurveTest(unittest.TestCase):
 
         # 14.5 - 13.1 = 1.4 (only one point is used to determine the peak
         # and trough, so whether we use the median or mean is irrelevant)
-        amplitude1 = curve.amplitude(npoints = 1, median = True)
-        amplitude2 = curve.amplitude(npoints = 1, median = False)
+        amplitude1 = curve.amplitude(npoints=1, median=True)
+        amplitude2 = curve.amplitude(npoints=1, median=False)
         self.assertEqual(amplitude1, amplitude2)
         self.assertAlmostEqual(amplitude1, 1.4)
 
         # median([14.5, 14.45]) - median([13.1, 13.4]) = 1.225
-        amplitude = curve.amplitude(npoints = 2, median = True)
+        amplitude = curve.amplitude(npoints=2, median=True)
         self.assertAlmostEqual(amplitude, 1.225)
 
         # mean([14.5, 14.45, 14.3]) - mean([13.1, 13.4, 14.3]) = ~0.81666
-        amplitude = curve.amplitude(npoints = 3, median = False)
+        amplitude = curve.amplitude(npoints=3, median=False)
         self.assertAlmostEqual(amplitude, 0.81666666666666643)
 
         for _ in xrange(NITERS):
@@ -820,14 +832,14 @@ class LightCurveTest(unittest.TestCase):
             minimum = numpy.median(magnitudes[:npoints])
             amplitude = maximum - minimum
 
-            kwargs = dict(npoints = npoints, median = True)
+            kwargs = dict(npoints=npoints, median=True)
             self.assertAlmostEqual(amplitude, curve.amplitude(**kwargs))
 
             # ... and now with the arithmetic mean
             maximum = numpy.mean(magnitudes[-npoints:])
             minimum = numpy.mean(magnitudes[:npoints])
             amplitude = maximum - minimum
-            kwargs = dict(npoints = npoints, median = False)
+            kwargs = dict(npoints=npoints, median=False)
             self.assertAlmostEqual(amplitude, curve.amplitude(**kwargs))
 
         # ValueError is raised if the LightCuve is empty
@@ -874,12 +886,12 @@ class LightCurveTest(unittest.TestCase):
                 nutimes, nmags, nsnrs = zip(*npoints)
                 self.assertTrue(min(nsnrs) >= threshold)
                 self.assertEqual(nutimes, tuple(p[0] for p in non_noisy_curve))
-                self.assertEqual(nmags,   tuple(p[1] for p in non_noisy_curve))
-                self.assertEqual(nsnrs,   tuple(p[2] for p in non_noisy_curve))
+                self.assertEqual(nmags, tuple(p[1] for p in non_noisy_curve))
+                self.assertEqual(nsnrs, tuple(p[2] for p in non_noisy_curve))
 
     @staticmethod
     def assertThatAreEqual(cls, first, second):
-        """ Assert that two LightCurves are equal.
+        """Assert that two LightCurves are equal.
 
         Two LightCurve are instances if they have the same photometric filter
         and number of points, with the same values. Furthermore, the comparison
@@ -903,8 +915,7 @@ class LightCurveTest(unittest.TestCase):
             cls.assertAlmostEqual(point1[1], point2[1])
             cls.assertAlmostEqual(point1[2], point2[2])
 
-        for weight1, weight2 in zip(sorted(first.weights()),
-                                    sorted(second.weights())):
+        for weight1, weight2 in zip(sorted(first.weights()), sorted(second.weights())):
             # Three-element tuples: ID, weight and standard deviation
             cls.assertEqual(weight1[0], weight2[0])
             cls.assertAlmostEqual(weight1[1], weight2[1])
@@ -915,18 +926,18 @@ class LEMONdBTest(unittest.TestCase):
 
     MIN_NIMAGES = 100  # Minimum number of images for random databases
     MAX_NIMAGES = 250  # Maximum number of images for random databases
-    MIN_ID = 1     # Minimum value for random star IDs
+    MIN_ID = 1  # Minimum value for random star IDs
     MAX_ID = 9999  # Maximum value for random star IDs
-    XSIZE = 2000 # Dimensions in pixels of the imaginary reference image on
-    YSIZE = 2000 # which random stars were detected. Thus, the values of their
-                 # x- and y-coordinates will be in the range [0, X/YSIZE]
-    MIN_MAG = 1.47   # Minimum value for random magnitudes (Saturn)
-    MAX_MAG = 25     # Maximum value for random magnitudes (Fenrir)
-    MIN_SNR = 2      # Minimum value for random signal-to-noise ratios
+    XSIZE = 2000  # Dimensions in pixels of the imaginary reference image on
+    YSIZE = 2000  # which random stars were detected. Thus, the values of their
+    # x- and y-coordinates will be in the range [0, X/YSIZE]
+    MIN_MAG = 1.47  # Minimum value for random magnitudes (Saturn)
+    MAX_MAG = 25  # Maximum value for random magnitudes (Fenrir)
+    MIN_SNR = 2  # Minimum value for random signal-to-noise ratios
     MAX_SNR = 10000  # Maximum value for random signal-to-noise ratios
 
     OBSERVED_PROB = 0.50  # Probability of a star being observed in each image,
-                          # needed some test cases which use random sets of data
+    # needed some test cases which use random sets of data
 
     # Minimum and maximum number of random json_parse.CandidateAnnuli objects
     # to be added and retrieved from random databases in the test cases of the
@@ -942,7 +953,7 @@ class LEMONdBTest(unittest.TestCase):
     @staticmethod
     def random_path():
         """ Return to path to a temporary file, without creating it """
-        fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+        fd, path = tempfile.mkstemp(suffix=".LEMONdB")
         os.close(fd)
         os.unlink(path)
         return path
@@ -961,9 +972,9 @@ class LEMONdBTest(unittest.TestCase):
 
         for _ in xrange(NITERS):
 
-            db = LEMONdB(':memory:')
+            db = LEMONdB(":memory:")
             args = self.MIN_CANDIDATE_PPARAMS, self.MAX_CANDIDATE_PPARAMS
-            how_many = random.randint(*args) # number of CandidateAnnuli
+            how_many = random.randint(*args)  # number of CandidateAnnuli
 
             # Map each photometric filter to a list of CandidateAnnuli objects;
             # to keep the track of which have been added for each filter. This
@@ -972,7 +983,7 @@ class LEMONdBTest(unittest.TestCase):
 
             for index in xrange(how_many):
                 args = list(PhotometricParametersTest.random_data())
-                args.append(random.random()) # the standard deviation
+                args.append(random.random())  # the standard deviation
                 candidate = CandidateAnnuli(*args)
                 pfilter = passband.Passband.random()
 
@@ -983,24 +994,24 @@ class LEMONdBTest(unittest.TestCase):
             # filter again, but using a different standard deviation. This
             # should replace the record we added previously, and for that
             # reason we need to update 'added' accordingly.
-            candidate = candidate._replace(stdev = random.random())
+            candidate = candidate._replace(stdev=random.random())
 
-            kwargs = dict(stdev = candidate.stdev)
+            kwargs = dict(stdev=candidate.stdev)
             added[pfilter][-1] = added[pfilter][-1]._replace(**kwargs)
             db.add_candidate_pparams(candidate, pfilter)
 
             for pfilter, expected in added.iteritems():
                 # The returned CandidateAnnuli are sorted by their stdev
-                expected.sort(key = operator.attrgetter('stdev'))
+                expected.sort(key=operator.attrgetter("stdev"))
                 retrieved = db.get_candidate_pparams(pfilter)
                 self.assertEqual(retrieved, expected)
 
     @staticmethod
     def images_filters_tables_status(db):
-        """ Return two sorted tuples with all the information stored in the
+        """Return two sorted tuples with all the information stored in the
         IMAGES and PHOTOMETRIC_FILTERS tables of the 'db' LEMONdB"""
 
-        query_images  = "SELECT * FROM images ORDER BY unix_time"
+        query_images = "SELECT * FROM images ORDER BY unix_time"
         query_filters = "SELECT * FROM photometric_filters ORDER BY id"
         db._execute(query_images)
         images = tuple(db._rows)
@@ -1009,7 +1020,7 @@ class LEMONdBTest(unittest.TestCase):
         return images, filters
 
     def test_simage_and_mosaic(self):
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
 
         self.assertEqual(db.simage, None)
         self.assertEqual(db.mosaic, None)
@@ -1022,7 +1033,7 @@ class LEMONdBTest(unittest.TestCase):
             # the body of the with statement.
             with test.test_fitsimage.FITSImageTest.random() as input:
                 img = ImageTest.random()
-                img = img._replace(path = input.path)
+                img = img._replace(path=input.path)
                 db.simage = img
                 self.assertEqual(db.simage, img)
                 with test.test_fitsimage.FITSImage(db.mosaic) as output:
@@ -1034,7 +1045,7 @@ class LEMONdBTest(unittest.TestCase):
         # add a new image with the same filter and observation date than the
         # last Image added in the above loop.
 
-        kwargs = dict(pfilter = img.pfilter, unix_time = img.unix_time)
+        kwargs = dict(pfilter=img.pfilter, unix_time=img.unix_time)
         duplicate_img = ImageTest.random()._replace(**kwargs)
         before_tables = self.images_filters_tables_status(db)
         with self.assertRaises(DuplicateImageError):
@@ -1043,7 +1054,7 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(before_tables, after_tables)
 
     def test_add_and_get_image(self):
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         size = random.randint(self.MIN_NIMAGES, self.MAX_NIMAGES)
 
         # Add the random Images to the database. Use a two-level dictionary to
@@ -1085,7 +1096,7 @@ class LEMONdBTest(unittest.TestCase):
         # (2) Missing photometric filter. We need a fresh LEMONdB here as all
         # the photometric filters that the Passband class can encapsulate may
         # have been used when we populated the database in the above code.
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         image = ImageTest.random()
         db.add_image(image)
 
@@ -1103,13 +1114,13 @@ class LEMONdBTest(unittest.TestCase):
         # image that was previously added. In these cases we need to verify
         # that any possible insertions into the tables are rolled back, so
         # that the database is not modified in case of an error.
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         img1 = ImageTest.random()
         db.add_image(img1)
 
         # Another random Image with the same Unix time filter.
-        img2 = ImageTest.random(pfilter = img1.pfilter)
-        img2 = img2._replace(unix_time = img1.unix_time)
+        img2 = ImageTest.random(pfilter=img1.pfilter)
+        img2 = img2._replace(unix_time=img1.unix_time)
 
         assert img1.unix_time == img2.unix_time
         assert img1.pfilter == img2.pfilter
@@ -1121,14 +1132,13 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(before_tables, after_tables)
 
     def test_add_and_get_image_None_fields(self):
-
         def img_None_attr(attr):
             """ Return a random Image where only this attribute is None """
-            kwargs = {attr : None}
+            kwargs = {attr: None}
             return ImageTest.random()._replace(**kwargs)
 
         def assert_None_raises(db, attr, is_sources_img):
-            """ Test that, when an Image whose 'attr' attribute is None is
+            """Test that, when an Image whose 'attr' attribute is None is
             added to the LEMONdB with add_image(), sqlite3.IntegrityError is
             raised. Make also sure that none of the involved tables of the
             database are modified (i.e., that the transacion is rolled back)"""
@@ -1143,7 +1153,7 @@ class LEMONdBTest(unittest.TestCase):
 
             img = img_None_attr(attr)
             with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
-                db.add_image(img, _is_sources_img = is_sources_img)
+                db.add_image(img, _is_sources_img=is_sources_img)
             after_tables = self.images_filters_tables_status(db)
             self.assertEqual(before_tables, after_tables)
 
@@ -1152,14 +1162,14 @@ class LEMONdBTest(unittest.TestCase):
         # IMAGES table). Raises sqlite3.IntegrityError if that is the case (for
         # example: "images.ra may not be NULL")
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         attributes = set(Image._fields)
-        for attr in attributes.difference(set(['object'])):
+        for attr in attributes.difference(set(["object"])):
             img = img_None_attr(attr)
             assert_None_raises(db, attr, False)
 
         # The object name can be None
-        input_img = img_None_attr('object')
+        input_img = img_None_attr("object")
         db.add_image(input_img)
         output_img = db.get_image(input_img.unix_time, input_img.pfilter)
         self.assertEqual(input_img, output_img)
@@ -1170,79 +1180,78 @@ class LEMONdBTest(unittest.TestCase):
         # and gain) may be meaningless if we assemble several images into a
         # custom mosaic and use the resulting image to detect the sources.
 
-        mandatory_fields = set(['path', 'ra', 'dec'])
+        mandatory_fields = set(["path", "ra", "dec"])
         for attr in mandatory_fields:
             img = img_None_attr(attr)
             assert_None_raises(db, attr, True)
 
         for attr in attributes.difference(mandatory_fields):
             img = img_None_attr(attr)
-            db.add_image(img, _is_sources_img = True)
+            db.add_image(img, _is_sources_img=True)
             # We do not test LEMONdB.get_image() here: the sources image should
             # be extracted from the database using the LEMONdB.simage property.
 
     def test_add_image_ra_dec_out_of_range(self):
-
-        def test_img_addition(ra = None, dec = None):
-            """ Insert a random Image object, returned by ImageTest.random(),
+        def test_img_addition(ra=None, dec=None):
+            """Insert a random Image object, returned by ImageTest.random(),
             in a fresh LEMONdB. In case the 'ra' or 'dec' (or both) keyword
             arguments are specified, these attributes of the random Image
             object are replaced with their values before the insertion.
 
             """
-            db = LEMONdB(':memory:')
+            db = LEMONdB(":memory:")
             img = ImageTest.random()
 
             kwargs = {}
             if ra:
-                kwargs['ra'] = ra
+                kwargs["ra"] = ra
             if dec:
-                kwargs['dec'] = dec
+                kwargs["dec"] = dec
             if kwargs:
                 img = img._replace(**kwargs)
             db.add_image(img)
 
-        def test_img_addition_raises(regexp, ra = None, dec = None):
-            """ Make sure that, when test_img_addition(ra = ra, dec = dec)
+        def test_img_addition_raises(regexp, ra=None, dec=None):
+            """Make sure that, when test_img_addition(ra = ra, dec = dec)
             is called, the sqlite3.IntegrityError exception is raised and
             its string representation matches 'regexp'
 
             """
             with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
-                test_img_addition(ra = ra, dec = dec)
+                test_img_addition(ra=ra, dec=dec)
 
         # RA [0, 360]: boundary cases
         regexp = "RA out of range \[0, 360\["
-        test_img_addition_raises(regexp, ra = -5)
-        test_img_addition_raises(regexp, ra = -0.001)
-        test_img_addition(ra = 0) # boundary (inclusive)
-        test_img_addition(ra = 0.0025)
+        test_img_addition_raises(regexp, ra=-5)
+        test_img_addition_raises(regexp, ra=-0.001)
+        test_img_addition(ra=0)  # boundary (inclusive)
+        test_img_addition(ra=0.0025)
 
-        test_img_addition(ra = 120)
-        test_img_addition(ra = 240)
+        test_img_addition(ra=120)
+        test_img_addition(ra=240)
 
-        test_img_addition(ra = 359.9999999)
-        test_img_addition_raises(regexp, ra = 360) # boundary (exclusive)
-        test_img_addition_raises(regexp, ra = 360.13)
-        test_img_addition_raises(regexp, ra = 400)
+        test_img_addition(ra=359.9999999)
+        test_img_addition_raises(regexp, ra=360)  # boundary (exclusive)
+        test_img_addition_raises(regexp, ra=360.13)
+        test_img_addition_raises(regexp, ra=400)
 
         # DEC [-90, 90]: boundary cases
         regexp = "DEC out of range \[-90, 90\]"
-        test_img_addition_raises(regexp, dec = -120)
-        test_img_addition_raises(regexp, dec = -90.001)
-        test_img_addition(dec = -90) # boundary (inclusive)
-        test_img_addition(dec = -45.25)
+        test_img_addition_raises(regexp, dec=-120)
+        test_img_addition_raises(regexp, dec=-90.001)
+        test_img_addition(dec=-90)  # boundary (inclusive)
+        test_img_addition(dec=-45.25)
 
-        test_img_addition(dec = 0)
+        test_img_addition(dec=0)
 
-        test_img_addition(dec = 75.81)
-        test_img_addition(dec = 90) # boundary (inclusive)
-        test_img_addition_raises(regexp, dec = 90.0001)
-        test_img_addition_raises(regexp, dec = 91)
+        test_img_addition(dec=75.81)
+        test_img_addition(dec=90)  # boundary (inclusive)
+        test_img_addition_raises(regexp, dec=90.0001)
+        test_img_addition_raises(regexp, dec=91)
 
     @classmethod
     def random_stars_info(cls, size):
-        """ Return a generator which steps through 'size' random nine-element
+        """Return a generator which steps through 'size' random nine-element
         tuples (the ID, x- and y- coordinates of the star in the sources image,
         the right ascension and declination, the astronomical epoch, the two
         proper motions and the instrumental magnitude, in this very order),
@@ -1264,8 +1273,8 @@ class LEMONdBTest(unittest.TestCase):
             yield star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag
 
     @classmethod
-    def random_star_info(cls, id_ = None):
-        """ Return a nine-element tuple with the information of a random star.
+    def random_star_info(cls, id_=None):
+        """Return a nine-element tuple with the information of a random star.
 
         The method returns a tuple with the ID, x- and y-coordinates, right
         ascension, declination, epoch, both proper motions and instrumental
@@ -1280,9 +1289,9 @@ class LEMONdBTest(unittest.TestCase):
         return star_info
 
     def test_add_and_get_star(self):
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         size = random.randint(MIN_NSTARS, MAX_NSTARS)
-        stars = {} # map each ID to the rest of the star info
+        stars = {}  # map each ID to the rest of the star info
         for star_info in self.random_stars_info(size):
             id_ = star_info[0]
             stars[id_] = star_info[1:]
@@ -1298,7 +1307,7 @@ class LEMONdBTest(unittest.TestCase):
         # DuplicateStarError must be raised if the specified ID was
         # already used for another star in the database.
         star_info = list(self.random_star_info())
-        star_info[0] = random.choice(stars.keys()) # reuse an ID
+        star_info[0] = random.choice(stars.keys())  # reuse an ID
         with self.assertRaises(DuplicateStarError):
             db.add_star(*star_info)
 
@@ -1312,7 +1321,7 @@ class LEMONdBTest(unittest.TestCase):
                 break
 
     def test_len(self):
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         size = random.randint(MIN_NSTARS, MAX_NSTARS)
         for index, star_info in enumerate(self.random_stars_info(size)):
             self.assertEqual(len(db), index)
@@ -1320,9 +1329,9 @@ class LEMONdBTest(unittest.TestCase):
             self.assertEqual(len(db), index + 1)
 
     def test_star_ids(self):
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         size = random.randint(MIN_NSTARS, MAX_NSTARS)
-        stars_ids = [] # keep track of inserted IDs
+        stars_ids = []  # keep track of inserted IDs
         self.assertEqual([], db.star_ids)
         for star_info in self.random_stars_info(size):
             id_ = star_info[0]
@@ -1332,7 +1341,7 @@ class LEMONdBTest(unittest.TestCase):
 
     @classmethod
     def random_stars(cls, size, unix_times):
-        """ Return a generator which steps through 'size' random DBstars.
+        """Return a generator which steps through 'size' random DBstars.
 
         The returned stars are observed in the dates given in the sequence
         'unix_times': a random number of unique elements will be chosen among
@@ -1362,17 +1371,17 @@ class LEMONdBTest(unittest.TestCase):
         # A specific, non-random test case. Three astronomical objects,
         # the first two with known proper-motions, the third without it.
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
 
-        star1 = self.random_star_info(id_ = 1)
+        star1 = self.random_star_info(id_=1)
         star1[6:8] = [0.57095399531758917, -9.0025061305781175]
         db.add_star(*star1)
 
-        star2 = self.random_star_info(id_ = 2)
+        star2 = self.random_star_info(id_=2)
         star2[6:8] = [-0.016290290457260315, -4.9776521868125601]
         db.add_star(*star2)
 
-        star3 = self.random_star_info(id_ = 3)
+        star3 = self.random_star_info(id_=3)
         star3[6:8] = [None, None]
         db.add_star(*star3)
 
@@ -1380,8 +1389,8 @@ class LEMONdBTest(unittest.TestCase):
         pfilter2 = passband.Passband("Johnson R")
 
         img1, img2 = ImageTest.nrandom(2)
-        img1 = img1._replace(pfilter = pfilter1)
-        img2 = img2._replace(pfilter = pfilter2)
+        img1 = img1._replace(pfilter=pfilter1)
+        img2 = img2._replace(pfilter=pfilter2)
 
         db.add_image(img1)
         db.add_image(img2)
@@ -1390,21 +1399,21 @@ class LEMONdBTest(unittest.TestCase):
         utime2 = img2.unix_time
 
         f = db.add_pm_correction
-        f(1, utime1, pfilter1,  28.87617936271731, -36.84344057247144)
-        f(1, utime2, pfilter2, -34.18950418859132,  10.93687152558971)
-        f(2, utime1, pfilter1,  -4.65494684748566, -31.26563816482958)
+        f(1, utime1, pfilter1, 28.87617936271731, -36.84344057247144)
+        f(1, utime2, pfilter2, -34.18950418859132, 10.93687152558971)
+        f(2, utime1, pfilter1, -4.65494684748566, -31.26563816482958)
         # Do not store a proper-motion correction for the second image
 
         x, y = db.get_pm_correction(1, utime1, pfilter1)
-        self.assertAlmostEqual(x,  28.87617936271731)
+        self.assertAlmostEqual(x, 28.87617936271731)
         self.assertAlmostEqual(y, -36.84344057247144)
 
         x, y = db.get_pm_correction(1, utime2, pfilter2)
         self.assertAlmostEqual(x, -34.18950418859132)
-        self.assertAlmostEqual(y,  10.93687152558971)
+        self.assertAlmostEqual(y, 10.93687152558971)
 
         x, y = db.get_pm_correction(2, utime1, pfilter1)
-        self.assertAlmostEqual(x,  -4.65494684748566)
+        self.assertAlmostEqual(x, -4.65494684748566)
         self.assertAlmostEqual(y, -31.26563816482958)
 
         x, y = db.get_pm_correction(2, utime2, pfilter2)
@@ -1423,7 +1432,7 @@ class LEMONdBTest(unittest.TestCase):
         # UnknownStarError if 'star_id' does not match the ID of any of the
         # stars in the database
         star_id = 4
-        star4 = self.random_star_info(id_ = star_id)
+        star4 = self.random_star_info(id_=star_id)
         star4[6:8] = [-8.6902812929289581, -41.295196884794784]
         self.assertTrue(star_id not in db.star_ids)
 
@@ -1472,7 +1481,7 @@ class LEMONdBTest(unittest.TestCase):
         # pm_corrections.star_id, pm_corrections.image_id". Do not worry about
         # the specifics as long as the exception message tells us that this is
         # a UNIQUE-type integrity error. See issue #42.
-        regexp = re.compile('UNIQUE', re.IGNORECASE)
+        regexp = re.compile("UNIQUE", re.IGNORECASE)
 
         with self.assertRaisesRegexp(sqlite3.IntegrityError, regexp):
             db.add_pm_correction(*args)
@@ -1487,13 +1496,13 @@ class LEMONdBTest(unittest.TestCase):
     def test_add_and_get_photometry(self):
 
         # A specific, non-random test case...
-        db = LEMONdB(':memory:')
-        johnson_B = passband.Passband('B')
-        johnson_V = passband.Passband('V')
+        db = LEMONdB(":memory:")
+        johnson_B = passband.Passband("B")
+        johnson_V = passband.Passband("V")
 
         star_ids = [star1_id, star2_id] = range(2)
         for id_ in star_ids:
-            star_info =  self.random_star_info(id_ = id_)
+            star_info = self.random_star_info(id_=id_)
             db.add_star(*star_info)
 
         # Note that the second image precedes the first one in time, and that
@@ -1502,13 +1511,13 @@ class LEMONdBTest(unittest.TestCase):
         # supports simultaneous observations.
 
         img1 = ImageTest.random(johnson_B)
-        img1 = img1._replace(unix_time = 100000)
+        img1 = img1._replace(unix_time=100000)
         img2 = ImageTest.random(johnson_B)
-        img2 = img2._replace(unix_time = 90000)
+        img2 = img2._replace(unix_time=90000)
         img3 = ImageTest.random(johnson_V)
-        img3 = img3._replace(unix_time = 150400)
+        img3 = img3._replace(unix_time=150400)
         img4 = ImageTest.random(johnson_B)
-        img4 = img4._replace(unix_time = img3.unix_time)
+        img4 = img4._replace(unix_time=img3.unix_time)
 
         images = [img1, img2, img3, img4]
         for img in images:
@@ -1576,7 +1585,7 @@ class LEMONdBTest(unittest.TestCase):
         star_id = star_info[0] = 2
         self.assertTrue(star_id not in db.star_ids)
 
-        img = ImageTest.random(pfilter = johnson_B)
+        img = ImageTest.random(pfilter=johnson_B)
         db.add_image(img)
 
         args = [star_id, img.unix_time, img.pfilter, 14.5, 100]
@@ -1598,7 +1607,7 @@ class LEMONdBTest(unittest.TestCase):
             db.add_photometry(*args)
 
         # (2) Missing photometric filter
-        nonexistent_filter = passband.Passband('Z')
+        nonexistent_filter = passband.Passband("Z")
         self.assertTrue(nonexistent_filter not in db.pfilters)
         args = star_id, img.unix_time, nonexistent_filter, 16.5, 175
         with self.assertRaises(UnknownImageError):
@@ -1629,12 +1638,12 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_pfilters_and_star_pfilters(self):
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
 
         # FITS file is deleted on exit from the with statement.
         with test.test_fitsimage.FITSImageTest.random() as fits:
             img = ImageTest.random()
-            img = img._replace(path = fits.path)
+            img = img._replace(path=fits.path)
             db.simage = img
             self.assertEqual([], db.pfilters)
 
@@ -1691,7 +1700,7 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_add_and_get_light_curve(self):
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         curve = LightCurveTest.random()
         nstars = random.randint(MIN_NSTARS, MAX_NSTARS)
         for star_info in LEMONdBTest.random_stars_info(nstars):
@@ -1717,7 +1726,7 @@ class LEMONdBTest(unittest.TestCase):
                 assert star_id not in candidate_cstars
                 ncstars = random.randint(1, len(candidate_cstars))
                 cstars = random.sample(candidate_cstars, ncstars)
-                curve = LightCurveTest.random(pfilter = pfilter, cstars = cstars)
+                curve = LightCurveTest.random(pfilter=pfilter, cstars=cstars)
                 curve = LightCurveTest.populate(curve, images[pfilter])
                 assert len(curve) == len(images[pfilter])
 
@@ -1741,9 +1750,9 @@ class LEMONdBTest(unittest.TestCase):
         # none of the tables of the database is modified.
 
         def tables_status(db):
-            """ Return three sorted tuples with all the information stored in
+            """Return three sorted tuples with all the information stored in
             the LIGHT_CURVES, CMP_STARS and PHOTOMETRIC_FILTERS tables of the
-            'db' LEMONdB """
+            'db' LEMONdB"""
 
             query_curves = "SELECT * FROM light_curves ORDER BY id"
             query_cmp_stars = "SELECT * FROM cmp_stars ORDER BY id"
@@ -1758,25 +1767,24 @@ class LEMONdBTest(unittest.TestCase):
             return curves, cmp_stars, filters
 
         def add_test_star(db, *ids):
-            """ Add to 'db' LEMONdB random information for the stars whose IDs
-            are given as arguments """
+            """Add to 'db' LEMONdB random information for the stars whose IDs
+            are given as arguments"""
             for id_ in ids:
-                db.add_star(*LEMONdBTest.random_star_info(id_ = id_))
+                db.add_star(*LEMONdBTest.random_star_info(id_=id_))
 
         def add_test_img(db, *images):
             """ Add to 'db' LEMONdB the Image instances given as arguments """
             for img in images:
                 db.add_image(img)
 
-
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         star1_id, star2_id, star3_id = range(3)
         pfilter = passband.Passband.random()
         # Three random Images in the same filter, for use only two
-        images = list(ImageTest.nrandom(3, pfilter = pfilter))
+        images = list(ImageTest.nrandom(3, pfilter=pfilter))
         img1, img2, img3 = images
         add_test_img(db, img1, img2)
-        kwargs = dict(pfilter = pfilter, cstars = [star2_id, star3_id])
+        kwargs = dict(pfilter=pfilter, cstars=[star2_id, star3_id])
         curve = LightCurveTest.random(**kwargs)
         curve = LightCurveTest.populate(curve, [img1, img2])
 
@@ -1798,7 +1806,7 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(tables_status(db), before_tables)
 
         add_test_star(db, star3_id)
-        db.add_light_curve(*args) # works!
+        db.add_light_curve(*args)  # works!
 
         # UnknownImageError raised if the stars are in the LEMONdB but not one
         # (or more) of the images to which the light curve refers; we use the
@@ -1806,7 +1814,7 @@ class LEMONdBTest(unittest.TestCase):
         # records for the three images (although only the first two have been
         # added to the LEMONdB).
 
-        kwargs = dict(pfilter = pfilter, cstars = [star3_id])
+        kwargs = dict(pfilter=pfilter, cstars=[star3_id])
         curve = LightCurveTest.random(**kwargs)
         curve = LightCurveTest.populate(curve, [img1, img2, img3])
 
@@ -1817,7 +1825,7 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(tables_status(db), before_tables)
 
         add_test_img(db, img3)
-        db.add_light_curve(*args) # works!
+        db.add_light_curve(*args)  # works!
 
         # DuplicateLightCurvePointError raised if the light curve has more than
         # one point for the same Unix time, or if more than one light curve per
@@ -1831,7 +1839,7 @@ class LEMONdBTest(unittest.TestCase):
 
         # Generate the light curve of the third star (uses both the first and
         # second as comparison), but insert two points with the same Unix time
-        kwargs = dict(pfilter = pfilter, cstars = [star1_id, star2_id])
+        kwargs = dict(pfilter=pfilter, cstars=[star1_id, star2_id])
         curve = LightCurveTest.random(**kwargs)
         curve = LightCurveTest.populate(curve, [img1, img2, img3])
 
@@ -1846,14 +1854,14 @@ class LEMONdBTest(unittest.TestCase):
             db.add_light_curve(star3_id, duplicate_curve)
         self.assertEqual(tables_status(db), before_tables)
 
-        db.add_light_curve(star3_id, curve) # the good one works, of course!
+        db.add_light_curve(star3_id, curve)  # the good one works, of course!
 
         # ValueError if the star uses itself as one of its comparison stars; to
         # test this, we add to the LEMONdB a new star (the fourth one), and use
         # a light curve where it has itself as one of the comparison stars.
         star4_id = 3
         add_test_star(db, star_id, star4_id)
-        kwargs = dict(pfilter = pfilter, cstars = [star2_id, star4_id])
+        kwargs = dict(pfilter=pfilter, cstars=[star2_id, star4_id])
         curve = LightCurveTest.random(**kwargs)
         curve = LightCurveTest.populate(curve, [img1, img2, img3])
 
@@ -1864,7 +1872,7 @@ class LEMONdBTest(unittest.TestCase):
 
         # The LEMONdB.get_light_curve method, on the other hand, raises
         # KeyError if the star with the given ID is not in the database...
-        nstar_id = 17 # any other new value would work
+        nstar_id = 17  # any other new value would work
         self.assertTrue(nstar_id not in db.star_ids)
         with self.assertRaises(KeyError):
             db.get_light_curve(nstar_id, pfilter)
@@ -1884,16 +1892,16 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_get_instrumental_magnitudes(self):
 
-        db = LEMONdB(':memory:')
-        johnson_R = passband.Passband('Johnson R')
-        johnson_I = passband.Passband('Johnson I')
+        db = LEMONdB(":memory:")
+        johnson_R = passband.Passband("Johnson R")
+        johnson_I = passband.Passband("Johnson I")
 
         star_ids = [star1_id, star2_id, star3_id] = range(3)
         for id_ in star_ids:
-            star_info =  self.random_star_info(id_ = id_)
+            star_info = self.random_star_info(id_=id_)
             db.add_star(*star_info)
 
-        def get_seconds(date_str, format='%d %B %Y'):
+        def get_seconds(date_str, format="%d %B %Y"):
             """ Parse a date, return it in seconds since the epoch."""
             return time.mktime(time.strptime(date_str, format))
 
@@ -1901,13 +1909,13 @@ class LEMONdBTest(unittest.TestCase):
         # This is not an issue as they have different photometric filters.
 
         img1 = ImageTest.random(johnson_R)
-        img1 = img1._replace(unix_time = get_seconds("28 December 1903"))
+        img1 = img1._replace(unix_time=get_seconds("28 December 1903"))
         img2 = ImageTest.random(johnson_I)
-        img2 = img2._replace(unix_time = get_seconds("11 May 1918"))
+        img2 = img2._replace(unix_time=get_seconds("11 May 1918"))
         img3 = ImageTest.random(johnson_R)
-        img3 = img3._replace(unix_time = get_seconds("08 January 1942"))
+        img3 = img3._replace(unix_time=get_seconds("08 January 1942"))
         img4 = ImageTest.random(johnson_R)
-        img4 = img4._replace(unix_time = img2.unix_time)
+        img4 = img4._replace(unix_time=img2.unix_time)
 
         images = [img1, img2, img3, img4]
         for img in images:
@@ -1924,17 +1932,21 @@ class LEMONdBTest(unittest.TestCase):
         db.add_photometry(star2_id, img4.unix_time, img4.pfilter, 16.554, 161.5531)
 
         # The different dictionaries that we expect to be returned...
-        star1_expected_R = {img1.unix_time : (17.650, 119.3508),
-                            img3.unix_time : (16.802, 174.5824),
-                            img4.unix_time : (16.545, 206.4919)}
+        star1_expected_R = {
+            img1.unix_time: (17.650, 119.3508),
+            img3.unix_time: (16.802, 174.5824),
+            img4.unix_time: (16.545, 206.4919),
+        }
 
-        star1_expected_I = {img2.unix_time : (16.754, 191.2367)}
+        star1_expected_I = {img2.unix_time: (16.754, 191.2367)}
 
-        star2_expected_R = {img1.unix_time : (17.044, 157.0627),
-                            img3.unix_time : (16.881, 121.2279),
-                            img4.unix_time : (16.554, 161.5531)}
+        star2_expected_R = {
+            img1.unix_time: (17.044, 157.0627),
+            img3.unix_time: (16.881, 121.2279),
+            img4.unix_time: (16.554, 161.5531),
+        }
 
-        star2_expected_I = {img2.unix_time : (17.778, 110.2448)}
+        star2_expected_I = {img2.unix_time: (17.778, 110.2448)}
 
         # ... and the dictionaries that the method actually returns
         star1_magnitudes_R = db.get_instrumental_magnitudes(star1_id, johnson_R)
@@ -1952,7 +1964,7 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db.get_instrumental_magnitudes(star3_id, johnson_I), {})
 
     def test_airmasses(self):
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
 
         # Two-level dictionary: map each photometric filter to a dictionary
         # which in turns maps each Unix time to its airmass (we're building
@@ -1964,7 +1976,7 @@ class LEMONdBTest(unittest.TestCase):
         # been stored in the database.
         with test.test_fitsimage.FITSImageTest.random() as fits:
             simg = ImageTest.random()
-            simg = simg._replace(path = fits.path)
+            simg = simg._replace(path=fits.path)
             db.simage = simg
             airmasses[simg.pfilter][simg.unix_time] = simg.airmass
 
@@ -1978,7 +1990,7 @@ class LEMONdBTest(unittest.TestCase):
 
     def test_get_phase_diagram(self):
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         star_id = 1
         pfilter = passband.Passband.random()
         cstars = [2, 3]
@@ -1987,13 +1999,13 @@ class LEMONdBTest(unittest.TestCase):
         curve = LightCurve(pfilter, cstars, cweights, cstdevs)
 
         all_ids = [star_id] + cstars
-        [db.add_star(*LEMONdBTest.random_star_info(id_ = x)) for x in all_ids]
-        images = list(ImageTest.nrandom(3, pfilter = pfilter))
+        [db.add_star(*LEMONdBTest.random_star_info(id_=x)) for x in all_ids]
+        images = list(ImageTest.nrandom(3, pfilter=pfilter))
         # Note that img2 precedes img1 in time
         img1, img2, img3 = images
-        img1 = img1._replace(unix_time = 500)
-        img2 = img2._replace(unix_time = 100)
-        img3 = img3._replace(unix_time = 785)
+        img1 = img1._replace(unix_time=500)
+        img2 = img2._replace(unix_time=100)
+        img3 = img3._replace(unix_time=785)
 
         db.add_image(img1)
         db.add_image(img2)
@@ -2019,7 +2031,7 @@ class LEMONdBTest(unittest.TestCase):
         assertSequenceOfTuplesAlmostEqual(self, phase, expected_phase)
 
         # Try now with another value and a different repeat value
-        phase = sorted(db.get_phase_diagram(star_id, pfilter, 175, repeat = 2))
+        phase = sorted(db.get_phase_diagram(star_id, pfilter, 175, repeat=2))
 
         epoint1 = (0.2857142857142856, 14.5, 100)
         epoint2 = (0, 10.1, 200)
@@ -2027,7 +2039,7 @@ class LEMONdBTest(unittest.TestCase):
         epoint4 = (epoint1[0] + 1, 14.5, 100)
         epoint5 = (epoint2[0] + 1, 10.1, 200)
         epoint6 = (epoint3[0] + 1, 12.2, 140)
-        expected_phase = [locals()['epoint%d' % x] for x in xrange(1, 7)]
+        expected_phase = [locals()["epoint%d" % x] for x in xrange(1, 7)]
         expected_phase.sort()
 
         assertSequenceOfTuplesAlmostEqual(self, phase, expected_phase)
@@ -2051,14 +2063,15 @@ class LEMONdBTest(unittest.TestCase):
         # test case. These values are all required by LEMONdB.add_star(), but
         # we are only interested in the first (star ID) and last (magnitude).
 
-        stars_info = \
-        [[1, 115, 235, 145.3, 190.4, 2000,   None,   None, 11.5], # star 1
-         [2, 931, 833, 146.2, 191.3, 2000,   None,   None, 12.9], # star 2
-         [3, 342, 781, 144.1, 190.9, 2000, -0.021, 0.0013, 10.1], # star 3
-         [4, 782, 101, 143.9, 189.2, 2000,   None,   None, 13.4], # star 4
-         [5, 689, 288, 144.2, 189.4, 2000,   None,   None, 10.3]] # star 5
+        stars_info = [
+            [1, 115, 235, 145.3, 190.4, 2000, None, None, 11.5],  # star 1
+            [2, 931, 833, 146.2, 191.3, 2000, None, None, 12.9],  # star 2
+            [3, 342, 781, 144.1, 190.9, 2000, -0.021, 0.0013, 10.1],  # star 3
+            [4, 782, 101, 143.9, 189.2, 2000, None, None, 13.4],  # star 4
+            [5, 689, 288, 144.2, 189.4, 2000, None, None, 10.3],
+        ]  # star 5
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         for info in stars_info:
             db.add_star(*info)
 
@@ -2070,14 +2083,14 @@ class LEMONdBTest(unittest.TestCase):
         # filter (Johnson V), in order to guarantee that their Unix times are
         # unique, and then we change the filter of the last five to Johnson I.
 
-        johnson_V = passband.Passband('V')
-        johnson_I = passband.Passband('I')
+        johnson_V = passband.Passband("V")
+        johnson_I = passband.Passband("I")
 
         # Map each photometric filter to the list of Images observed in it
         images = collections.defaultdict(list)
-        for index, img in enumerate(ImageTest.nrandom(15, pfilter = johnson_V)):
+        for index, img in enumerate(ImageTest.nrandom(15, pfilter=johnson_V)):
             if index >= 10:
-                img = img._replace(pfilter = johnson_I)
+                img = img._replace(pfilter=johnson_I)
             images[img.pfilter].append(img)
 
         assert len(images[johnson_V]) == 10
@@ -2088,14 +2101,14 @@ class LEMONdBTest(unittest.TestCase):
             db.add_image(img)
 
         def add_rcurve(star_id, all_ids, pfilter):
-            """ Add a random light curve to the LEMONdB for the star with ID
+            """Add a random light curve to the LEMONdB for the star with ID
             'star_id' and the 'pfilter' photometric filter. Use as comparison
             stars those whose IDs are in 'all_ids', excluding 'star_id' in case
             it is contained there -- as a star cannot use itself as comparison.
             """
 
             cstars = list(set(all_ids) - set([star_id]))
-            kwargs = dict(pfilter = pfilter, cstars = cstars)
+            kwargs = dict(pfilter=pfilter, cstars=cstars)
             curve = LightCurveTest.random(**kwargs)
             curve = LightCurveTest.populate(curve, images[pfilter])
             db.add_light_curve(star_id, curve)
@@ -2228,70 +2241,104 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(star5_similar_I, expected)
 
     def test_field_name(self):
-
         def populate_with_images(names):
-            """ Return a LEMONdB that contains Images whose object names are
-            taken from 'names', which must be an iterable of strings. """
+            """Return a LEMONdB that contains Images whose object names are
+            taken from 'names', which must be an iterable of strings."""
 
-            db = LEMONdB(':memory:')
+            db = LEMONdB(":memory:")
             rimages = ImageTest.nrandom(len(names))
             for image, name in zip(rimages, names):
-                image = image._replace(object = name)
+                image = image._replace(object=name)
                 db.add_image(image)
             return db
 
         # (1) An easy case: 'FT_Tau_' is the prefix common to all the object
         # names. However, the trailing '_' is stripped, resulting in 'FT_Tau'.
-        names = ['FT_Tau_15secI', 'FT_Tau_15secI', 'FT_Tau_2minV',
-                 'FT_Tau_5minV',  'FT_Tau_15secI', 'FT_Tau_30secI',
-                 'FT_Tau_20secI', 'FT_Tau_25secI', 'FT_Tau_25secI',
-                 'FT_Tau_25secI', 'FT_Tau_5minV',  'FT_Tau_4minV',
-                 'FT_Tau_3minV',  'FT_Tau_10minB', 'FT_Tau_25secI',
-                 'FT_Tau_15secI', 'FT_Tau_15secI', 'FT_Tau_15secI']
+        names = [
+            "FT_Tau_15secI",
+            "FT_Tau_15secI",
+            "FT_Tau_2minV",
+            "FT_Tau_5minV",
+            "FT_Tau_15secI",
+            "FT_Tau_30secI",
+            "FT_Tau_20secI",
+            "FT_Tau_25secI",
+            "FT_Tau_25secI",
+            "FT_Tau_25secI",
+            "FT_Tau_5minV",
+            "FT_Tau_4minV",
+            "FT_Tau_3minV",
+            "FT_Tau_10minB",
+            "FT_Tau_25secI",
+            "FT_Tau_15secI",
+            "FT_Tau_15secI",
+            "FT_Tau_15secI",
+        ]
         db = populate_with_images(names)
-        self.assertEqual(db.field_name, 'FT_Tau')
+        self.assertEqual(db.field_name, "FT_Tau")
 
         # (2) The method must return 'IC5146', which is common to all of the
         # images except for the last one, where lower-case letters were used.
-        names = ['IC5146_30minV', 'IC5146_30minR', 'IC5146_1minI',
-                 'IC5146_25minI', 'IC5146_20minV', 'ic5146_1minI']
+        names = [
+            "IC5146_30minV",
+            "IC5146_30minR",
+            "IC5146_1minI",
+            "IC5146_25minI",
+            "IC5146_20minV",
+            "ic5146_1minI",
+        ]
         db = populate_with_images(names)
-        self.assertEqual(db.field_name, 'IC5146')
+        self.assertEqual(db.field_name, "IC5146")
 
         # (3) Note the typo ('mgc') in the second object name
-        names = ['ngc2264_20minB', 'mgc2264_25minV', 'ngc2264_5minV',
-                 'ngc2264_3minI',  'ngc2264_25minI', 'ngc2264_15minV']
+        names = [
+            "ngc2264_20minB",
+            "mgc2264_25minV",
+            "ngc2264_5minV",
+            "ngc2264_3minI",
+            "ngc2264_25minI",
+            "ngc2264_15minV",
+        ]
         db = populate_with_images(names)
-        self.assertEqual(db.field_name, 'ngc2264')
+        self.assertEqual(db.field_name, "ngc2264")
 
         # (4) Two images of FT Tau amid a series of observations of BD+78_779
-        names = ['BD+78_779_30secI', 'BD+78_779_750secI', 'BD+78_779_75secV',
-                 'BD+78_779_20minV', 'BD+78_779_2minB',   'BD+78_779_20minB',
-                 'BD+78_779_30secI', 'BD+78_779_750secI', 'BD+78_779_3minB',
-                 'FT_Tau_5minV',  'FT_Tau_15secI']
+        names = [
+            "BD+78_779_30secI",
+            "BD+78_779_750secI",
+            "BD+78_779_75secV",
+            "BD+78_779_20minV",
+            "BD+78_779_2minB",
+            "BD+78_779_20minB",
+            "BD+78_779_30secI",
+            "BD+78_779_750secI",
+            "BD+78_779_3minB",
+            "FT_Tau_5minV",
+            "FT_Tau_15secI",
+        ]
         db = populate_with_images(names)
-        self.assertEqual(db.field_name, 'BD+78_779')
+        self.assertEqual(db.field_name, "BD+78_779")
 
         # (5) The object name of a single image is also the common prefix
-        name = 'BD+78_779_3minB'
+        name = "BD+78_779_3minB"
         db = populate_with_images([name])
         self.assertEqual(db.field_name, name)
 
         # (6) None is returned if there is no common prefix
-        names = ['IC5146_1minI', 'FT_Tau_5minV', 'BD+78_779_30secI']
+        names = ["IC5146_1minI", "FT_Tau_5minV", "BD+78_779_30secI"]
         db = populate_with_images(names)
         self.assertEqual(db.field_name, None)
 
         # (7) Exception raised if there are no images in the LEMONdB
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
         with self.assertRaises(ValueError):
             db.field_name
 
     def test_set_get_and_del_metadata(self):
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
 
-        key, value = 'AUTHOR', 'John Doe'
+        key, value = "AUTHOR", "John Doe"
         # AttributeError is raised if the key is not in the table
         regexp = "METADATA table has no record '%s'" % key
         with self.assertRaisesRegexp(AttributeError, regexp):
@@ -2301,7 +2348,7 @@ class LEMONdBTest(unittest.TestCase):
         self.assertEqual(db._get_metadata(key), value)
 
         # If assigned again, the value of the record is replaced
-        value = 'Jane Doe'
+        value = "Jane Doe"
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
@@ -2312,15 +2359,15 @@ class LEMONdBTest(unittest.TestCase):
             db._get_metadata(key)
 
         # Numbers and None are also allowed as values
-        key, value = 'ATTEMPTS', 17
+        key, value = "ATTEMPTS", 17
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
-        key, value = 'Pi', numpy.pi
+        key, value = "Pi", numpy.pi
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
-        key, value = 'OBSERVER', None
+        key, value = "OBSERVER", None
         db._set_metadata(key, value)
         self.assertEqual(db._get_metadata(key), value)
 
@@ -2328,19 +2375,19 @@ class LEMONdBTest(unittest.TestCase):
         # object: they are stored in the METADATA table of the LEMON database.
         # Therefore, a second LEMONdB object must be able to access them.
 
-        key, value = 'VMIN', 12143.281
-        fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+        key, value = "VMIN", 12143.281
+        fd, path = tempfile.mkstemp(suffix=".LEMONdB")
         os.close(fd)
         db1 = LEMONdB(path)
         db1._set_metadata(key, value)
-        db1.commit() # otherwise changes are lost
+        db1.commit()  # otherwise changes are lost
         del db1
         db2 = LEMONdB(path)
         self.assertEqual(db2._get_metadata(key), value)
         os.unlink(path)
 
         def test_raises(regexp, key, value):
-            """ Make sure that, when db._set_metadata(key, value) is called,
+            """Make sure that, when db._set_metadata(key, value) is called,
             the ValueErrror exception is raised and its string representation
             matches 'regexp'.
             """
@@ -2357,7 +2404,7 @@ class LEMONdBTest(unittest.TestCase):
         test_raises(regexp, key, [])
         test_raises(regexp, key, ())
         test_raises(regexp, key, {})
-        test_raises(regexp, key, dict(one = 1, two = 2))
+        test_raises(regexp, key, dict(one=1, two=2))
 
     def test_metadata_properties(self):
 
@@ -2372,11 +2419,11 @@ class LEMONdBTest(unittest.TestCase):
         # the value that it returns is the same that was previously assigned.
 
         def make_db(name, value):
-            """ Return the path to a LEMON database with the 'name' property
+            """Return the path to a LEMON database with the 'name' property
             set to 'value'. We are responsible for deleting the database file
             when done with it.
             """
-            fd, path = tempfile.mkstemp(suffix = '.LEMONdB')
+            fd, path = tempfile.mkstemp(suffix=".LEMONdB")
             os.close(fd)
             db = LEMONdB(path)
             setattr(db, name, value)
@@ -2384,12 +2431,13 @@ class LEMONdBTest(unittest.TestCase):
             return path
 
         # The different values that each property will take
-        metaproperties = \
-          dict(date = [time.time(), time.time() + 100],
-               author = ["Jane Doe", "John Doe"],
-               hostname = ['example.com', 'github.com'],
-               vmin = [11345.641, None],
-               vmax = [20000, 1298820.91])
+        metaproperties = dict(
+            date=[time.time(), time.time() + 100],
+            author=["Jane Doe", "John Doe"],
+            hostname=["example.com", "github.com"],
+            vmin=[11345.641, None],
+            vmax=[20000, 1298820.91],
+        )
 
         for name, values in metaproperties.iteritems():
 
@@ -2406,7 +2454,7 @@ class LEMONdBTest(unittest.TestCase):
             self.assertEqual(getattr(db2, name), first_value)
             setattr(db2, name, second_value)
             self.assertEqual(getattr(db2, name), second_value)
-            db2.commit() # otherwise changes are lost
+            db2.commit()  # otherwise changes are lost
             del db2
 
             # Test not only that the new value of the METADATA property has
@@ -2433,32 +2481,32 @@ class LEMONdBTest(unittest.TestCase):
 
         regexp = "'LEMONdB' object has no attribute 'foo'"
         with self.assertRaisesRegexp(AttributeError, regexp):
-            db = LEMONdB(':memory:')
+            db = LEMONdB(":memory:")
             db.foo
 
     def test_star_closest_to_world_coords(self):
 
-        db = LEMONdB(':memory:')
+        db = LEMONdB(":memory:")
 
         # LEMONdB is empty, raises ValueError
-        point = (24.19933, 41.40547) # or any other value
+        point = (24.19933, 41.40547)  # or any other value
         with self.assertRaises(ValueError):
             db.star_closest_to_world_coords(*point)
 
-        star_1 = list(self.random_star_info(id_ = 1))
-        star_1[3:5] = (186.612871, 31.223544) # NGC 4414
+        star_1 = list(self.random_star_info(id_=1))
+        star_1[3:5] = (186.612871, 31.223544)  # NGC 4414
         db.add_star(*star_1)
 
-        star_2 = list(self.random_star_info(id_ = 2))
-        star_2[3:5] = (5.166987, 31.989942) # WASP-1 b
+        star_2 = list(self.random_star_info(id_=2))
+        star_2[3:5] = (5.166987, 31.989942)  # WASP-1 b
         db.add_star(*star_2)
 
-        star_3 = list(self.random_star_info(id_ = 3))
-        star_3[3:5] = (278.064554, 6.945753) # HD 171028 b
+        star_3 = list(self.random_star_info(id_=3))
+        star_3[3:5] = (278.064554, 6.945753)  # HD 171028 b
         db.add_star(*star_3)
 
-        star_4 = list(self.random_star_info(id_ = 4))
-        star_4[3:5] = (97.69629, 58.16264) # 6 Lyn b
+        star_4 = list(self.random_star_info(id_=4))
+        star_4[3:5] = (97.69629, 58.16264)  # 6 Lyn b
         db.add_star(*star_4)
 
         # First point: ra = 73.68192, dec = 12.35219 (HD 31253 b)
@@ -2496,4 +2544,3 @@ class LEMONdBTest(unittest.TestCase):
         star_id, distance = db.star_closest_to_world_coords(*point_3)
         self.assertAlmostEqual(star_id, 1)
         self.assertAlmostEqual(distance, 47.939281840122732)
-

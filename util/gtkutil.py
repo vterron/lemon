@@ -22,6 +22,7 @@ import contextlib
 import functools
 import gtk
 
+
 @contextlib.contextmanager
 def destroying(thing):
     try:
@@ -29,13 +30,12 @@ def destroying(thing):
     finally:
         thing.destroy()
 
-def show_message_dialog(parent_window, title, msg,
-                        msg_type = gtk.MESSAGE_INFO,
-                        buttons = gtk.BUTTONS_CLOSE):
 
-    kwargs = dict(type = msg_type,
-                  buttons = buttons,
-                  message_format = msg)
+def show_message_dialog(
+    parent_window, title, msg, msg_type=gtk.MESSAGE_INFO, buttons=gtk.BUTTONS_CLOSE
+):
+
+    kwargs = dict(type=msg_type, buttons=buttons, message_format=msg)
     msg_dlg = gtk.MessageDialog(**kwargs)
     msg_dlg.set_title(title)
     msg_dlg.set_transient_for(parent_window)
@@ -44,12 +44,13 @@ def show_message_dialog(parent_window, title, msg,
     msg_dlg.destroy()
     return res
 
-show_error_dialog = functools.partial(show_message_dialog,
-                                      msg_type = gtk.MESSAGE_ERROR)
+
+show_error_dialog = functools.partial(show_message_dialog, msg_type=gtk.MESSAGE_ERROR)
+
 
 @contextlib.contextmanager
 def gtk_sync():
-    """ A context manager to force an update to the GTK application window.
+    """A context manager to force an update to the GTK application window.
 
     By design, all GTK events (including window refreshing and updates) are
     handled in the main loop, which cannot handle window update events while
@@ -75,9 +76,10 @@ def gtk_sync():
     finally:
         sync()
 
+
 @contextlib.contextmanager
 def disable_while(widget):
-    """ A context manager to temporarily disable a GTK widget.
+    """A context manager to temporarily disable a GTK widget.
 
     Use the gtk.Widget.set_sensitive() method to set the 'sensitive' property
     of the widget to False (therefore disabling it, so that it appears 'grayed
@@ -94,4 +96,3 @@ def disable_while(widget):
 
     with gtk_sync():
         widget.set_sensitive(True)
-
