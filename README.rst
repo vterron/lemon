@@ -33,7 +33,10 @@ Project Status
 --------------
 
 .. image:: https://travis-ci.org/vterron/lemon.png?branch=master
-  :target: https://travis-ci.org/vterron/lemon
+   :target: https://travis-ci.org/vterron/lemon
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
 
 .. _LEMON: https://lemon.readthedocs.org/
 .. _Python: https://www.python.org/
