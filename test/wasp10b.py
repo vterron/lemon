@@ -164,7 +164,6 @@ class WASP10Test(parameterized.TestCase):
             assert len(os.listdir(".")) == 1
             zx_file = os.listdir(".")[0]
             cmd("tar -xvf {}".format(zx_file))
-            cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
             copy_coordinates_file()
         return path
 
@@ -196,6 +195,7 @@ class WASP10Test(parameterized.TestCase):
 
         with cd(self.create_tempdir().full_path):
             link(WASP10Test.data_dir)
+            cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
 
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd(
