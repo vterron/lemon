@@ -33,6 +33,7 @@ import functools
 import itertools
 import os
 import os.path
+import shutil
 import subprocess
 import sys
 
@@ -64,13 +65,9 @@ def cd(dst):
         os.chdir(cwd)
 
 
-def download():
-    """Downloads and uncompresses the WASP-10b test data."""
-    url = os.environ["WASP10_URL"]
-    cmd("curl --remote-header-name --remote-name {}".format(url))
-    zx_file = os.listdir(".")[0]
-    cmd("tar -xvf {}".format(zx_file))
-    cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
+def link(path):
+    """Hard links in the current directory all the files under 'path'."""
+    cmd("cp -v --link {}/* .".format(path))
 
 
 def copy_coordinates_file():
@@ -152,6 +149,33 @@ def load_golden_file():
 class WASP10Test(parameterized.TestCase):
     """End-to-end test using WASP-10b data."""
 
+    def download(self):
+        """Downloads and uncompresses the WASP-10b test data."""
+
+        # Need to cleanup the directory ourselves via tearDownClass();
+        # otherwise it gets deleted as soon as the first test completes.
+        path = self.create_tempdir(
+            cleanup=absltest.TempFileCleanup.OFF,
+        ).full_path
+
+        with cd(path):
+            url = os.environ["WASP10_URL"]
+            cmd("curl --remote-header-name --remote-name {}".format(url))
+            assert len(os.listdir(".")) == 1
+            zx_file = os.listdir(".")[0]
+            cmd("tar -xvf {}".format(zx_file))
+            cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
+            copy_coordinates_file()
+        return path
+
+    @classmethod
+    def setUpClass(cls):
+        cls.data_dir = None
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.data_dir)
+
     @parameterized.named_parameters(
         # Exercise the multiprocessing logic of `photometry` and `diffphot`.
         # The goal is to make sure that light cuves computed in parallel are
@@ -167,9 +191,11 @@ class WASP10Test(parameterized.TestCase):
     )
     def test_e2e(self, ncores):
 
+        if WASP10Test.data_dir is None:
+            WASP10Test.data_dir = self.download()
+
         with cd(self.create_tempdir().full_path):
-            download()
-            copy_coordinates_file()
+            link(WASP10Test.data_dir)
 
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd(
