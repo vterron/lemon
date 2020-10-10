@@ -13,6 +13,8 @@ LEMON has [an integration test](./wasp10b.py) that generates the light curve of 
    * For each data point, compares three values: Julian Date, differential magnitude and signal-to-noise ratio.
    * For each (floating-point) value, uses [`assertAlmostEqual()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertAlmostEqual) with `places=6`.
 
+The light curve is generated for multiple values of `--cores`, including a single CPU. This exercises the multiprocessing logic, making sure that light curves generated in parallel are absolutely independent of each other: the resulting light curves are always the same, regardless of the number of CPUs among which the work was divided.
+
 This integration test is part of [our Travis CI configuration](../.travis.yml), and thus runs automatically for any code change.
 
 ## Test data

@@ -36,7 +36,7 @@ import os.path
 import subprocess
 import sys
 
-from absl.testing import absltest
+from absl.testing import absltest, parameterized
 
 CHECKSUMS_FILE = "SHA1SUMS"
 COORDINATES_FILE = "WASP10b-coordinates.txt"
@@ -149,21 +149,40 @@ def load_golden_file():
                 yield DataPoint(*[float(x) for x in chunks])
 
 
-class WASP10Test(absltest.TestCase):
+class WASP10Test(parameterized.TestCase):
     """End-to-end test using WASP-10b data."""
 
-    def test_e2e(self):
+    @parameterized.named_parameters(
+        # Exercise the multiprocessing logic of `photometry` and `diffphot`.
+        # The goal is to make sure that light cuves computed in parallel are
+        # absolutely independent of each other.
+        #
+        # Underscores in the test names as create_tempdir() includes them
+        # verbatim in the resulting path, and IRAF raises an error if the
+        # path to the FITS images has whitespaces.
+        {"testcase_name": "single_core", "ncores": 1},
+        {"testcase_name": "two_cores", "ncores": 2},
+        {"testcase_name": "three_cores", "ncores": 3},
+        {"testcase_name": "four_cores", "ncores": 4},
+    )
+    def test_e2e(self, ncores):
+
         with cd(self.create_tempdir().full_path):
             download()
             copy_coordinates_file()
 
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd(
-                "lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1".format(
-                    COORDINATES_FILE
+                "lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1 --cores={}".format(
+                    COORDINATES_FILE, ncores
                 )
             )
-            cmd("lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB")
+
+            cmd(
+                "lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB --cores={}".format(
+                    ncores
+                )
+            )
 
             # Export the generated light curve to a text file.
             cmd(
