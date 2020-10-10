@@ -173,27 +173,44 @@ class WASP10Test(parameterized.TestCase):
 
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd(
-                "lemon photometry WASP10b-mosaic.fits WASP10b-*a.fits WASP10b-photometry.LEMONdB --coordinates={} --gain=1 --cores={}".format(
-                    COORDINATES_FILE, ncores
+                "lemon "
+                "photometry "
+                "WASP10b-mosaic.fits "
+                "WASP10b-*a.fits "
+                "WASP10b-photometry.LEMONdB "
+                "--coordinates={coordinates} "
+                "--gain=1 "
+                "--cores={cores}".format(
+                    coordinates=COORDINATES_FILE,
+                    cores=ncores,
                 )
             )
 
             cmd(
-                "lemon diffphot WASP10b-photometry.LEMONdB WASP10b-diffphot.LEMONdB --cores={}".format(
-                    ncores
+                "lemon "
+                "diffphot "
+                "WASP10b-photometry.LEMONdB "
+                "WASP10b-diffphot.LEMONdB "
+                "--cores={cores}".format(
+                    cores=ncores,
                 )
             )
 
             # Export the generated light curve to a text file.
             cmd(
-                "lemon export "
-                "WASP10b-diffphot.LEMONdB {} {} {} "
-                "--decimal_places={} --output_file={}".format(
-                    WASP10_RA,
-                    WASP10_DEC,
-                    CURVE_FILTER,
-                    DECIMAL_PLACES,
-                    EXPORTED_LIGHT_CURVE_FILE,
+                "lemon "
+                "export "
+                "WASP10b-diffphot.LEMONdB "
+                "{ra} "
+                "{dec} "
+                "{pfilter} "
+                "--decimal_places={nplaces} "
+                "--output_file={path}".format(
+                    ra=WASP10_RA,
+                    dec=WASP10_DEC,
+                    pfilter=CURVE_FILTER,
+                    nplaces=DECIMAL_PLACES,
+                    path=EXPORTED_LIGHT_CURVE_FILE,
                 )
             )
 
