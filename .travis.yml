@@ -27,20 +27,24 @@ before_install:
   - sudo ./ci/travis-setup.sh
   - python ./setup.py
 
-script:
   - export iraf=/iraf/iraf/
   - export IRAFARCH=linux64
   - export PATH=$(pwd):$PATH
-  - ./run_tests.py
 
-  # Exercise the multiprocessing logic of `photometry` and `diffphot`.
-  # The goal is to make sure that light cuves computed in parallel are
-  # absolutely independent of each other.
+jobs:
+  include:
+    - stage: Test
+      script: ./run_tests.py
 
-  - NCORES=1 ./test/wasp10b.py
-  - NCORES=2 ./test/wasp10b.py
-  - NCORES=3 ./test/wasp10b.py
-  - NCORES=4 ./test/wasp10b.py
+    # Exercise the multiprocessing logic of `photometry` and `diffphot`.
+    # The goal is to make sure that light cuves computed in parallel are
+    # absolutely independent of each other.
+    #
+    # TODO(vterron): download the data only once in an earlier stage.
+    - script: NCORES=1 ./test/wasp10b.py
+    - script: NCORES=2 ./test/wasp10b.py
+    - script: NCORES=3 ./test/wasp10b.py
+    - script: NCORES=4 ./test/wasp10b.py
 
 notifications:
   email:
