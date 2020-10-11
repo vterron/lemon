@@ -32,7 +32,15 @@ script:
   - export IRAFARCH=linux64
   - export PATH=$(pwd):$PATH
   - ./run_tests.py
-  - ./test/wasp10b.py
+
+  # Exercise the multiprocessing logic of `photometry` and `diffphot`.
+  # The goal is to make sure that light cuves computed in parallel are
+  # absolutely independent of each other.
+
+  - NCORES=1 ./test/wasp10b.py
+  - NCORES=2 ./test/wasp10b.py
+  - NCORES=3 ./test/wasp10b.py
+  - NCORES=4 ./test/wasp10b.py
 
 notifications:
   email:

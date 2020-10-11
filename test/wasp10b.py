@@ -176,17 +176,17 @@ class WASP10Test(parameterized.TestCase):
         shutil.rmtree(cls.data_dir)
 
     @parameterized.named_parameters(
-        # Exercise the multiprocessing logic of `photometry` and `diffphot`.
-        # The goal is to make sure that light cuves computed in parallel are
-        # absolutely independent of each other.
+        # Use parameterized instead of reading the environment variable
+        # directly in the function body so that the resulting test name
+        # includes the CPUs count (e.g. "WASP10Test.test_e2e_4_cores").
         #
         # Underscores in the test names as create_tempdir() includes them
         # verbatim in the resulting path, and IRAF raises an error if the
         # path to the FITS images has whitespaces.
-        {"testcase_name": "single_core", "ncores": 1},
-        {"testcase_name": "two_cores", "ncores": 2},
-        {"testcase_name": "three_cores", "ncores": 3},
-        {"testcase_name": "four_cores", "ncores": 4},
+        {
+            "testcase_name": "{}_cores".format(os.environ["NCORES"]),
+            "ncores": int(os.environ["NCORES"]),
+        },
     )
     def test_e2e(self, ncores):
 
