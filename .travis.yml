@@ -10,6 +10,9 @@ install: true
 virtualenv:
   system_site_packages: true
 
+git:
+  depth: false
+
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y alien realpath
