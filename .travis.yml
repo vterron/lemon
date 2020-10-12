@@ -33,7 +33,8 @@ before_install:
 
 jobs:
   include:
-    - stage: Test
+    - stage: Tests
+      name: "Unit Tests"
       script: ./run_tests.py
 
     # Exercise the multiprocessing logic of `photometry` and `diffphot`.
@@ -42,9 +43,16 @@ jobs:
     #
     # TODO(vterron): download the data only once in an earlier stage.
     - script: NCORES=1 ./test/wasp10b.py
+      name: "Integration Test (cores = 1)"
+
     - script: NCORES=2 ./test/wasp10b.py
+      name: "Integration Test (cores = 2)"
+
     - script: NCORES=3 ./test/wasp10b.py
+      name: "Integration Test (cores = 3)"
+
     - script: NCORES=4 ./test/wasp10b.py
+      name: "Integration Test (cores = 4)"
 
 notifications:
   email:
