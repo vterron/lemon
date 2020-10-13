@@ -33,6 +33,14 @@ before_install:
   - export IRAFARCH=linux64
   - export PATH=$(pwd):$PATH
 
+  # Download and uncompress the WASP-10b test data.
+  - export WASP10_DATA=$(mktemp -d --suffix "_WASP10")
+  - pushd $WASP10_DATA
+  - curl --remote-header-name --remote-name WASP10_URL
+  - tar -xvf WASP10b-2011-08-23.tar.xz
+  - chmod a-w -v *.fits
+  - popd
+
 install: true
 
 jobs:

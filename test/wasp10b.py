@@ -20,6 +20,10 @@
 
 """
 See README.md.
+
+Expects two environment variables:
+  - $NCORES: number of --cores for the `photometry` and `diffphot` commands.
+  - $WASP10_DATA: path to the directory with the images of WASP10b's transit.
 """
 
 from __future__ import absolute_import
@@ -149,32 +153,6 @@ def load_golden_file():
 class WASP10Test(parameterized.TestCase):
     """End-to-end test using WASP-10b data."""
 
-    def download(self):
-        """Downloads and uncompresses the WASP-10b test data."""
-
-        # Need to cleanup the directory ourselves via tearDownClass();
-        # otherwise it gets deleted as soon as the first test completes.
-        path = self.create_tempdir(
-            cleanup=absltest.TempFileCleanup.OFF,
-        ).full_path
-
-        with cd(path):
-            url = os.environ["WASP10_URL"]
-            cmd("curl --remote-header-name --remote-name {}".format(url))
-            assert len(os.listdir(".")) == 1
-            zx_file = os.listdir(".")[0]
-            cmd("tar -xvf {}".format(zx_file))
-            copy_coordinates_file()
-        return path
-
-    @classmethod
-    def setUpClass(cls):
-        cls.data_dir = None
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.data_dir)
-
     @parameterized.named_parameters(
         # Use parameterized instead of reading the environment variable
         # directly in the function body so that the resulting test name
@@ -190,11 +168,9 @@ class WASP10Test(parameterized.TestCase):
     )
     def test_e2e(self, ncores):
 
-        if WASP10Test.data_dir is None:
-            WASP10Test.data_dir = self.download()
-
         with cd(self.create_tempdir().full_path):
-            link(WASP10Test.data_dir)
+            copy_coordinates_file()
+            link(os.environ["WASP10_DATA"])
             cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
 
             # TODO(vterron): look up and set the actual gain at OSN.
