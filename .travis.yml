@@ -7,13 +7,18 @@ python:
 
 env:
   global:
-    secure: he7Pc9wLoKddJ+FDgzyiiNrlGjeelLX16SUhCniLLev1Dsdvyy0wKL7HBEstrJjfTL2rVg2p2rR07bcC0TWXTAGxhbOIw+rddN+cZr50oWvs43Xru0kX0esErm0KmrxNpoqK7I090RmhN7BBk/uVuVpIDW4E3cKmrwCQQ7Jh3Gc=
+    - WASP10_DATA=$HOME/WASP10_data
+    - secure: he7Pc9wLoKddJ+FDgzyiiNrlGjeelLX16SUhCniLLev1Dsdvyy0wKL7HBEstrJjfTL2rVg2p2rR07bcC0TWXTAGxhbOIw+rddN+cZr50oWvs43Xru0kX0esErm0KmrxNpoqK7I090RmhN7BBk/uVuVpIDW4E3cKmrwCQQ7Jh3Gc=
 
 virtualenv:
   system_site_packages: true
 
 git:
   depth: false
+
+cache:
+  directories:
+  - $WASP10_DATA
 
 before_install:
   - sudo apt-get update
@@ -33,18 +38,15 @@ before_install:
   - export IRAFARCH=linux64
   - export PATH=$(pwd):$PATH
 
-  # Download and uncompress the WASP-10b test data.
-  - export WASP10_DATA=$(mktemp -d --suffix "_WASP10")
-  - pushd $WASP10_DATA
-  - curl --remote-header-name --remote-name $WASP10_URL
-  - tar -xvf WASP10b-2011-08-23.tar.xz
-  - chmod a-w -v *.fits
-  - popd
-
 install: true
 
 jobs:
   include:
+    # Download test data to the cached directory.
+    - stage: Setup
+      name: "Prepare test data"
+      script: ./test/wasp10b-download.sh $WASP10_DATA
+
     - stage: Tests
       name: "Unit Tests"
       script: ./run_tests.py
@@ -52,8 +54,7 @@ jobs:
     # Exercise the multiprocessing logic of `photometry` and `diffphot`.
     # The goal is to make sure that light cuves computed in parallel are
     # absolutely independent of each other.
-    #
-    # TODO(vterron): download the data only once in an earlier stage.
+
     - script: NCORES=1 ./test/wasp10b.py
       name: "Integration Test (cores = 1)"
 

@@ -43,7 +43,6 @@ import sys
 
 from absl.testing import absltest, parameterized
 
-CHECKSUMS_FILE = "SHA1SUMS"
 COORDINATES_FILE = "WASP10b-coordinates.txt"
 WASP10_RA = 348.9930
 WASP10_DEC = 31.4629
@@ -171,7 +170,6 @@ class WASP10Test(parameterized.TestCase):
         with cd(self.create_tempdir().full_path):
             copy_coordinates_file()
             link(os.environ["WASP10_DATA"])
-            cmd("sha1sum -c {}".format(CHECKSUMS_FILE))
 
             # TODO(vterron): look up and set the actual gain at OSN.
             cmd(
