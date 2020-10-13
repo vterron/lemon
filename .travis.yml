@@ -5,8 +5,6 @@ python:
     # Python system packages only include Python 2.7 libraries on Ubuntu 12.04.
     - "2.7"
 
-install: true
-
 virtualenv:
   system_site_packages: true
 
@@ -30,6 +28,8 @@ before_install:
   - export iraf=/iraf/iraf/
   - export IRAFARCH=linux64
   - export PATH=$(pwd):$PATH
+
+install: true
 
 jobs:
   include:
