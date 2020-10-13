@@ -75,16 +75,18 @@ import style
 
 # Message of the warning that is issued when the width of the sky annulus is
 # smaller than the number of pixels specified with the --min-sky option.
-DANNULUS_TOO_THIN_MSG = \
-"Whoops! Sky annulus too thin, setting it to the minimum of %.2f pixels"
+DANNULUS_TOO_THIN_MSG = (
+    "Whoops! Sky annulus too thin, setting it to the minimum of %.2f pixels"
+)
 
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
 queue = util.Queue()
 
+
 def get_fwhm(img, options):
-    """ Return the FWHM of the FITS image.
+    """Return the FWHM of the FITS image.
 
     Attempt to read the full width at half maximum from the header of the FITS
     image (keyword options.fwhmk). If the keyword cannot be found, then compute
@@ -124,14 +126,14 @@ def get_fwhm(img, options):
             logging.debug(msg % img.path)
 
             args = (img.path, options.maximum, options.margin)
-            kwargs = dict(coaddk = options.coaddk)
+            kwargs = dict(coaddk=options.coaddk)
             img = seeing.FITSeeingImage(*args, **kwargs)
 
         msg = "%s: calling FITSeeingImage.fwhm() to compute FWHM"
         logging.debug(msg % img.path)
 
-        mode = 'mean' if options.mean else 'median'
-        kwargs = dict(per = options.per, mode = mode)
+        mode = "mean" if options.mean else "median"
+        kwargs = dict(per=options.per, mode=mode)
         fwhm = img.fwhm(**kwargs)
 
         msg = "%s: FITSeeingImage.fwhm() returned %.3f"
@@ -139,9 +141,10 @@ def get_fwhm(img, options):
         logging.debug(msg % args)
         return fwhm
 
+
 @util.print_exception_traceback
 def parallel_photometry(args):
-    """ Function argument of map_async() to do photometry in parallel.
+    """Function argument of map_async() to do photometry in parallel.
 
     This will be the first argument passed to multiprocessing.Pool.map_async(),
     which chops the iterable into a number of chunks that are submitted to the
@@ -171,15 +174,25 @@ def parallel_photometry(args):
     msg = "%s: qphot dannulus: %.3f"
     logging.debug(msg % (image.path, pparams.dannulus))
 
-    maximum = image.saturation(options.maximum, coaddk = options.coaddk)
+    maximum = image.saturation(options.maximum, coaddk=options.coaddk)
     msg = "%s: saturation level = %d ADUs'"
     args = (image.path, maximum)
     logging.debug(msg % args)
 
     logging.info("Running qphot on %s" % image.path)
-    args = (image, options.coordinates, options.epoch,
-            pparams.aperture, pparams.annulus, pparams.dannulus, maximum,
-            options.datek, options.timek, options.exptimek, options.uncimgk)
+    args = (
+        image,
+        options.coordinates,
+        options.epoch,
+        pparams.aperture,
+        pparams.annulus,
+        pparams.dannulus,
+        maximum,
+        options.datek,
+        options.timek,
+        options.exptimek,
+        options.uncimgk,
+    )
     img_qphot = qphot.run(*args, cbox=options.cbox)
     logging.info("Finished running qphot on %s" % image.path)
 
@@ -190,9 +203,11 @@ def parallel_photometry(args):
     pfilter = image.pfilter(options.filterk)
     logging.debug("%s: filter = %s" % (image.path, pfilter))
 
-    kwargs = dict(date_keyword = options.datek,
-                  time_keyword = options.timek,
-                  exp_keyword = options.exptimek)
+    kwargs = dict(
+        date_keyword=options.datek,
+        time_keyword=options.timek,
+        exp_keyword=options.exptimek,
+    )
     unix_time = image.date(**kwargs)
     msg = "%s: observation date: %.2f (%s)"
     args = (image.path, unix_time, util.utctime(unix_time))
@@ -227,244 +242,407 @@ def parallel_photometry(args):
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... SOURCES_IMG INPUT_IMGS... OUTPUT_DB"
 
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output database if it already exists")
+parser.add_option(
+    "--overwrite",
+    action="store_true",
+    dest="overwrite",
+    help="overwrite output database if it already exists",
+)
 
-parser.add_option('--filter', action = 'append', type = 'passband',
-                  dest = 'filters', default = None,
-                  help = "do not do photometry on all the FITS files given "
-                  "as input, but only on those taken in this photometric "
-                  "filter. This option may be used multiple times in order "
-                  "to specify more than one filter with which we want to "
-                  "work. " + defaults.desc['filter'])
+parser.add_option(
+    "--filter",
+    action="append",
+    type="passband",
+    dest="filters",
+    default=None,
+    help="do not do photometry on all the FITS files given "
+    "as input, but only on those taken in this photometric "
+    "filter. This option may be used multiple times in order "
+    "to specify more than one filter with which we want to "
+    "work. " + defaults.desc["filter"],
+)
 
-parser.add_option('--exclude', action = 'append', type = 'passband',
-                  dest = 'excluded_filters', default = None,
-                  help = "ignore those FITS files taken in this photometric "
-                  "filter. This option is the opposite of --filter, and may "
-                  "be as well used multiple times in order to specify more "
-                  "than one photometric filter that must be discarded.")
+parser.add_option(
+    "--exclude",
+    action="append",
+    type="passband",
+    dest="excluded_filters",
+    default=None,
+    help="ignore those FITS files taken in this photometric "
+    "filter. This option is the opposite of --filter, and may "
+    "be as well used multiple times in order to specify more "
+    "than one photometric filter that must be discarded.",
+)
 
-parser.add_option('--cbox', action = 'store', type = 'float',
-                  dest = 'cbox', default = 5,
-                  help = "the width, in pixels, of the centering box to "
-                  "search for the accurate center of the astronomical object "
-                  "around the input coordinates. Distortions introduced in "
-                  "the FoV by the optics, limitations in the precision of the "
-                  "astrometry or proper movements of objects can contribute "
-                  "to an apparent movement of the center of the object. In "
-                  "these cases, leaving a few pixels' margin to search for "
-                  "the center of the star improves the photometry. If you "
-                  "absolutely trust the celestial coordinates of each object "
-                  "and want photometry to be done without any centering, you "
-                  "may set this option to zero [default: %default]")
+parser.add_option(
+    "--cbox",
+    action="store",
+    type="float",
+    dest="cbox",
+    default=5,
+    help="the width, in pixels, of the centering box to "
+    "search for the accurate center of the astronomical object "
+    "around the input coordinates. Distortions introduced in "
+    "the FoV by the optics, limitations in the precision of the "
+    "astrometry or proper movements of objects can contribute "
+    "to an apparent movement of the center of the object. In "
+    "these cases, leaving a few pixels' margin to search for "
+    "the center of the star improves the photometry. If you "
+    "absolutely trust the celestial coordinates of each object "
+    "and want photometry to be done without any centering, you "
+    "may set this option to zero [default: %default]",
+)
 
-parser.add_option('--maximum', action = 'store', type = 'int',
-                  dest = 'maximum', default = defaults.maximum,
-                  help = defaults.desc['maximum'])
+parser.add_option(
+    "--maximum",
+    action="store",
+    type="int",
+    dest="maximum",
+    default=defaults.maximum,
+    help=defaults.desc["maximum"],
+)
 
-parser.add_option('--margin', action = 'store', type = 'int',
-                  dest = 'margin', default = defaults.margin,
-                  help = defaults.desc['margin'])
+parser.add_option(
+    "--margin",
+    action="store",
+    type="int",
+    dest="margin",
+    default=defaults.margin,
+    help=defaults.desc["margin"],
+)
 
-parser.add_option('--gain', action = 'store', type = 'float',
-                  dest = 'gain', default = None,
-                  help = "the gain of the CCD, in e-/ADU. Needed in order to "
-                  "accurately calculate the SNR of each measurement. In case "
-                  "this option is given, the value will not be read from the "
-                  "FITS header (--gaink option)")
+parser.add_option(
+    "--gain",
+    action="store",
+    type="float",
+    dest="gain",
+    default=None,
+    help="the gain of the CCD, in e-/ADU. Needed in order to "
+    "accurately calculate the SNR of each measurement. In case "
+    "this option is given, the value will not be read from the "
+    "FITS header (--gaink option)",
+)
 
-parser.add_option('--annuli', action = 'store', type = str,
-                  dest = 'json_annuli', default = None,
-                  help = "ignore the Aperture Photometry (FWHM and Pixels) "
-                  "sections below an instead read the apertures and sky annuli "
-                  "to use from a JSON file output by the 'annuli' command. "
-                  "This file should, of course, have been generated for the "
-                  "same set of images on which photometry is now being done. "
-                  "For this same reason, the execution will be aborted if the "
-                  "JSON file does not have information for the photometric "
-                  "filters of all the input FITS files. Even when this option "
-                  "is used, the aperture and sky annulus used for the sources "
-                  "image are determined by the 'Aperture Photometry' sections.")
+parser.add_option(
+    "--annuli",
+    action="store",
+    type=str,
+    dest="json_annuli",
+    default=None,
+    help="ignore the Aperture Photometry (FWHM and Pixels) "
+    "sections below an instead read the apertures and sky annuli "
+    "to use from a JSON file output by the 'annuli' command. "
+    "This file should, of course, have been generated for the "
+    "same set of images on which photometry is now being done. "
+    "For this same reason, the execution will be aborted if the "
+    "JSON file does not have information for the photometric "
+    "filters of all the input FITS files. Even when this option "
+    "is used, the aperture and sky annulus used for the sources "
+    "image are determined by the 'Aperture Photometry' sections.",
+)
 
-parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = defaults.ncores,
-                  help = defaults.desc['ncores'])
+parser.add_option(
+    "--cores",
+    action="store",
+    type="int",
+    dest="ncores",
+    default=defaults.ncores,
+    help=defaults.desc["ncores"],
+)
 
-parser.add_option('-v', '--verbose', action = 'count',
-                  dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'])
+parser.add_option(
+    "-v",
+    "--verbose",
+    action="count",
+    dest="verbose",
+    default=defaults.verbosity,
+    help=defaults.desc["verbosity"],
+)
 
-coords_group = optparse.OptionGroup(parser, "List of Coordinates",
-               "By default, we run SExtractor on the sources image in order "
-               "to detect the astronomical objects on which to do photometry. "
-               "Alternatively, with this option it is possible to skip the "
-               "detection stage and directly do photometry on the objects "
-               "whose celestial coordinates are specified in a text file. "
-               "Note that this option is exclusive with the automatic "
-               "detection of sources, so photometry will be done *only* on "
-               "these coordinates.")
+coords_group = optparse.OptionGroup(
+    parser,
+    "List of Coordinates",
+    "By default, we run SExtractor on the sources image in order "
+    "to detect the astronomical objects on which to do photometry. "
+    "Alternatively, with this option it is possible to skip the "
+    "detection stage and directly do photometry on the objects "
+    "whose celestial coordinates are specified in a text file. "
+    "Note that this option is exclusive with the automatic "
+    "detection of sources, so photometry will be done *only* on "
+    "these coordinates.",
+)
 
-coords_group.add_option('--coordinates', action = 'store', type = str,
-                        dest = 'coordinates', default = None,
-                        help = "path to the file containing the celestial "
-                        "coordinates of the objects on which photometry must "
-                        "be done. The file must have two columns, with the "
-                        "right ascension and declination (in decimal degrees) "
-                        "and, optionally, two other columns with the proper "
-                        "motion in right ascension and declination (in "
-                        "seconds of arc per year) surrounded by brackets. The "
-                        "coordinates of the objects with a proper motion are "
-                        "automatically corrected for each image, in order to "
-                        "account for the change in their position over time.")
+coords_group.add_option(
+    "--coordinates",
+    action="store",
+    type=str,
+    dest="coordinates",
+    default=None,
+    help="path to the file containing the celestial "
+    "coordinates of the objects on which photometry must "
+    "be done. The file must have two columns, with the "
+    "right ascension and declination (in decimal degrees) "
+    "and, optionally, two other columns with the proper "
+    "motion in right ascension and declination (in "
+    "seconds of arc per year) surrounded by brackets. The "
+    "coordinates of the objects with a proper motion are "
+    "automatically corrected for each image, in order to "
+    "account for the change in their position over time.",
+)
 
-coords_group.add_option('--epoch', action = 'store', type = int,
-                        dest = 'epoch', default = 2000,
-                        help = "epoch of the coordinates [default: %default]")
+coords_group.add_option(
+    "--epoch",
+    action="store",
+    type=int,
+    dest="epoch",
+    default=2000,
+    help="epoch of the coordinates [default: %default]",
+)
 
 parser.add_option_group(coords_group)
 
-qphot_group = optparse.OptionGroup(parser, "Aperture Photometry (FWHM)",
-              "Photometry is done on the images by IRAF's qphot, the quick "
-              "aperture photometer, which computes accurate sky values and "
-              "magnitudes for a series of objects. Instead of using "
-              "absolute values (such as, for example, 8, 11 or 13 pixels), "
-              "the values of the following parameters are defined in terms "
-              "of the *median* FWHM of the images in each filter.\n\n"
+qphot_group = optparse.OptionGroup(
+    parser,
+    "Aperture Photometry (FWHM)",
+    "Photometry is done on the images by IRAF's qphot, the quick "
+    "aperture photometer, which computes accurate sky values and "
+    "magnitudes for a series of objects. Instead of using "
+    "absolute values (such as, for example, 8, 11 or 13 pixels), "
+    "the values of the following parameters are defined in terms "
+    "of the *median* FWHM of the images in each filter.\n\n"
+    "The full width at half-maximum of an image is defined here as "
+    "the median of the FWHM of all the astronomical objects detected "
+    "by SExtractor. Therefore, you may think of the median 'FWHM of "
+    "the images' as the 'median of the median of the FWHM of all the "
+    "astronomical objects, if you find it easier. Note also that a "
+    "different median FWHM is computed for each photometric filter "
+    "on which photometry is done.",
+)
 
-              "The full width at half-maximum of an image is defined here as "
-              "the median of the FWHM of all the astronomical objects detected "
-              "by SExtractor. Therefore, you may think of the median 'FWHM of "
-              "the images' as the 'median of the median of the FWHM of all the "
-              "astronomical objects, if you find it easier. Note also that a "
-              "different median FWHM is computed for each photometric filter "
-              "on which photometry is done.")
+qphot_group.add_option(
+    "--aperture",
+    action="store",
+    type="float",
+    dest="aperture",
+    default=3.0,
+    help="the aperture radius, in number of times the "
+    "median FWHM [default: %default]",
+)
 
-qphot_group.add_option('--aperture', action = 'store', type = 'float',
-                       dest = 'aperture', default = 3.0,
-                       help = "the aperture radius, in number of times the "
-                       "median FWHM [default: %default]")
+qphot_group.add_option(
+    "--annulus",
+    action="store",
+    type="float",
+    dest="annulus",
+    default=4.5,
+    help="the inner radius of the sky annulus, in "
+    "number of times the median FWHM [default: %default]",
+)
 
-qphot_group.add_option('--annulus', action = 'store', type = 'float',
-                       dest = 'annulus', default = 4.5,
-                       help = "the inner radius of the sky annulus, in "
-                       "number of times the median FWHM [default: %default]")
+qphot_group.add_option(
+    "--dannulus",
+    action="store",
+    type="float",
+    dest="dannulus",
+    default=1.0,
+    help="the width of the sky annulus, in number "
+    "of times the median FWHM [default: %default]",
+)
 
-qphot_group.add_option('--dannulus', action = 'store', type = 'float',
-                       dest = 'dannulus', default = 1.0,
-                       help = "the width of the sky annulus, in number "
-                       "of times the median FWHM [default: %default]")
+qphot_group.add_option(
+    "--min-sky",
+    action="store",
+    type="float",
+    dest="min",
+    default=3.0,
+    help="the minimum width of the sky annulus, in "
+    "pixels, regardless of the value specified in the "
+    "above parameter. This option is intended to prevent "
+    "small FWHMs from resulting in too thin a sky "
+    "annulus. [default = %default]",
+)
 
-qphot_group.add_option('--min-sky', action = 'store', type = 'float',
-                       dest = 'min', default = 3.0,
-                       help = "the minimum width of the sky annulus, in "
-                       "pixels, regardless of the value specified in the "
-                       "above parameter. This option is intended to prevent "
-                       "small FWHMs from resulting in too thin a sky "
-                       "annulus. [default = %default]")
-
-qphot_group.add_option('--individual-fwhm', action = 'store_true',
-                       dest = 'individual_fwhm',
-                       help = "consider FITS images individually when the "
-                       "FWHM (and, therefore, the derived aperture and sky "
-                       "annuli) is computed. That is, instead of using the "
-                       "median FWHM of *all* the images in the same filter, "
-                       "when this option is present the aperture and sky "
-                       "annuli used to do photometry on an image depend "
-                       "exclusively on the FWHM of *that* image.")
+qphot_group.add_option(
+    "--individual-fwhm",
+    action="store_true",
+    dest="individual_fwhm",
+    help="consider FITS images individually when the "
+    "FWHM (and, therefore, the derived aperture and sky "
+    "annuli) is computed. That is, instead of using the "
+    "median FWHM of *all* the images in the same filter, "
+    "when this option is present the aperture and sky "
+    "annuli used to do photometry on an image depend "
+    "exclusively on the FWHM of *that* image.",
+)
 parser.add_option_group(qphot_group)
 
-qphot_fixed = optparse.OptionGroup(parser, "Aperture Photometry (pixels)",
-              "In case the exact sizes of the aperture and sky annulus are "
-              "known, their dimensions can be specified in pixels. If used, "
-              "these three options must be used together.\n\n"
+qphot_fixed = optparse.OptionGroup(
+    parser,
+    "Aperture Photometry (pixels)",
+    "In case the exact sizes of the aperture and sky annulus are "
+    "known, their dimensions can be specified in pixels. If used, "
+    "these three options must be used together.\n\n"
+    "Note that setting the aperture photometry parameters to a "
+    "fixed size, as these options do, means that the same values "
+    "are used regardless of the photometric filter of the images, "
+    "including the sources image. You probably want to use these "
+    "options in conjunction with --filter, in order to do "
+    "photometry one photometric filter at a time.",
+)
 
-              "Note that setting the aperture photometry parameters to a "
-              "fixed size, as these options do, means that the same values "
-              "are used regardless of the photometric filter of the images, "
-              "including the sources image. You probably want to use these "
-              "options in conjunction with --filter, in order to do "
-              "photometry one photometric filter at a time.")
+qphot_fixed.add_option(
+    "--aperture-pix",
+    action="store",
+    type="float",
+    dest="aperture_pix",
+    default=None,
+    help="the aperture radius, in pixels",
+)
 
-qphot_fixed.add_option('--aperture-pix', action = 'store', type = 'float',
-                       dest = 'aperture_pix', default = None,
-                       help = "the aperture radius, in pixels")
+qphot_fixed.add_option(
+    "--annulus-pix",
+    action="store",
+    type="float",
+    dest="annulus_pix",
+    default=None,
+    help="the inner radius of the sky annulus, in pixels",
+)
 
-qphot_fixed.add_option('--annulus-pix', action = 'store', type = 'float',
-                       dest = 'annulus_pix', default = None,
-                       help = "the inner radius of the sky annulus, in pixels")
-
-qphot_fixed.add_option('--dannulus-pix', action = 'store', type = 'float',
-                       dest = 'dannulus_pix', default = None,
-                       help = "the width of the sky annulus, in pixels")
+qphot_fixed.add_option(
+    "--dannulus-pix",
+    action="store",
+    type="float",
+    dest="dannulus_pix",
+    default=None,
+    help="the width of the sky annulus, in pixels",
+)
 parser.add_option_group(qphot_fixed)
 
-fwhm_group = optparse.OptionGroup(parser, "FWHM",
-              "The full width at half maximum of each FITS image is written "
-              "to its header by the 'seeing' command, which is generally run "
-              "before photometry is done. However, it may be the case that "
-              "not all the images with which we have to work now are the "
-              "output of 'seeing' (for example, if the sources image is that "
-              "output by the 'mosaic' command). In these cases, we need to "
-              "compute the FWHM of these images, in the same way the "
-              "'seeing' command does.")
+fwhm_group = optparse.OptionGroup(
+    parser,
+    "FWHM",
+    "The full width at half maximum of each FITS image is written "
+    "to its header by the 'seeing' command, which is generally run "
+    "before photometry is done. However, it may be the case that "
+    "not all the images with which we have to work now are the "
+    "output of 'seeing' (for example, if the sources image is that "
+    "output by the 'mosaic' command). In these cases, we need to "
+    "compute the FWHM of these images, in the same way the "
+    "'seeing' command does.",
+)
 
-fwhm_group.add_option('--snr-percentile', action = 'store', type = 'float',
-                      dest = 'per', default = defaults.snr_percentile,
-                      help = defaults.desc['snr_percentile'])
+fwhm_group.add_option(
+    "--snr-percentile",
+    action="store",
+    type="float",
+    dest="per",
+    default=defaults.snr_percentile,
+    help=defaults.desc["snr_percentile"],
+)
 
-fwhm_group.add_option('--mean', action = 'store_true', dest = 'mean',
-                      help = defaults.desc['mean'])
+fwhm_group.add_option(
+    "--mean", action="store_true", dest="mean", help=defaults.desc["mean"]
+)
 parser.add_option_group(fwhm_group)
 
-key_group = optparse.OptionGroup(parser, "FITS Keywords",
-                                 keywords.group_description)
+key_group = optparse.OptionGroup(parser, "FITS Keywords", keywords.group_description)
 
-key_group.add_option('--objectk', action = 'store', type = 'str',
-                     dest = 'objectk', default = keywords.objectk,
-                     help = keywords.desc['objectk'])
+key_group.add_option(
+    "--objectk",
+    action="store",
+    type="str",
+    dest="objectk",
+    default=keywords.objectk,
+    help=keywords.desc["objectk"],
+)
 
-key_group.add_option('--filterk', action = 'store', type = 'str',
-                     dest = 'filterk', default = keywords.filterk,
-                     help = keywords.desc['filterk'])
+key_group.add_option(
+    "--filterk",
+    action="store",
+    type="str",
+    dest="filterk",
+    default=keywords.filterk,
+    help=keywords.desc["filterk"],
+)
 
-key_group.add_option('--datek', action = 'store', type = 'str',
-                     dest = 'datek', default = keywords.datek,
-                     help = keywords.desc['datek'])
+key_group.add_option(
+    "--datek",
+    action="store",
+    type="str",
+    dest="datek",
+    default=keywords.datek,
+    help=keywords.desc["datek"],
+)
 
-key_group.add_option('--timek', action = 'store', type = 'str',
-                     dest = 'timek', default = keywords.timek,
-                     help = keywords.desc['timek'])
+key_group.add_option(
+    "--timek",
+    action="store",
+    type="str",
+    dest="timek",
+    default=keywords.timek,
+    help=keywords.desc["timek"],
+)
 
-key_group.add_option('--expk', action = 'store', type = 'str',
-                     dest = 'exptimek', default = keywords.exptimek,
-                     help = keywords.desc['exptimek'])
+key_group.add_option(
+    "--expk",
+    action="store",
+    type="str",
+    dest="exptimek",
+    default=keywords.exptimek,
+    help=keywords.desc["exptimek"],
+)
 
-key_group.add_option('--coaddk', action = 'store', type = 'str',
-                     dest = 'coaddk', default = keywords.coaddk,
-                     help = keywords.desc['coaddk'])
+key_group.add_option(
+    "--coaddk",
+    action="store",
+    type="str",
+    dest="coaddk",
+    default=keywords.coaddk,
+    help=keywords.desc["coaddk"],
+)
 
-key_group.add_option('--gaink', action = 'store', type = 'str',
-                     dest = 'gaink', default = keywords.gaink,
-                     help = keywords.desc['gaink'])
+key_group.add_option(
+    "--gaink",
+    action="store",
+    type="str",
+    dest="gaink",
+    default=keywords.gaink,
+    help=keywords.desc["gaink"],
+)
 
-key_group.add_option('--fwhmk', action = 'store', type = 'str',
-                     dest = 'fwhmk', default = keywords.fwhmk,
-                     help = keywords.desc['fwhmk'])
+key_group.add_option(
+    "--fwhmk",
+    action="store",
+    type="str",
+    dest="fwhmk",
+    default=keywords.fwhmk,
+    help=keywords.desc["fwhmk"],
+)
 
-key_group.add_option('--airmk', action = 'store', type = 'str',
-                     dest = 'airmassk', default = keywords.airmassk,
-                     help = keywords.desc['airmassk'])
+key_group.add_option(
+    "--airmk",
+    action="store",
+    type="str",
+    dest="airmassk",
+    default=keywords.airmassk,
+    help=keywords.desc["airmassk"],
+)
 
-key_group.add_option('--uik', action = 'store', type = 'str',
-                     dest = 'uncimgk', default = keywords.uncimgk,
-                     help = keywords.desc['uncimgk'])
+key_group.add_option(
+    "--uik",
+    action="store",
+    type="str",
+    dest="uncimgk",
+    default=keywords.uncimgk,
+    help=keywords.desc["uncimgk"],
+)
 
 parser.add_option_group(key_group)
 customparser.clear_metavars(parser)
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -481,14 +659,14 @@ def main(arguments = None):
     """
 
     if arguments is None:
-        arguments = sys.argv[1:] # ignore argv[0], the script name
+        arguments = sys.argv[1:]  # ignore argv[0], the script name
 
     # All the parameters must be cast to string before beging passed to the
     # option parser, as apparently it only expects str data types. Otherwise,
     # optparse may raise a TypeError exception and complains about how int or
     # float objects are unsuscriptable.
     arguments = [str(param) for param in arguments]
-    (options, args) = parser.parse_args(args = arguments)
+    (options, args) = parser.parse_args(args=arguments)
 
     # Adjust the logger level to WARNING, INFO or DEBUG, depending on the
     # given number of -v options (none, one or two or more, respectively)
@@ -497,7 +675,7 @@ def main(arguments = None):
         logging_level = logging.INFO
     elif options.verbose >= 2:
         logging_level = logging.DEBUG
-    logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
+    logging.basicConfig(format=style.LOG_FORMAT, level=logging_level)
 
     # Print the help and abort the execution if there are not three positional
     # arguments left after parsing the options, as the user must specify the
@@ -505,7 +683,7 @@ def main(arguments = None):
     # and the output LEMON database.
     if len(args) < 3:
         parser.print_help()
-        return 2     # 2 is generally used for command line syntax errors
+        return 2  # 2 is generally used for command line syntax errors
     else:
         sources_img_path = args[0]
         input_paths = set(args[1:-1])
@@ -543,8 +721,10 @@ def main(arguments = None):
 
     if options.json_annuli:
         if not os.path.exists(options.json_annuli):
-            print "%sError. The file '%s' does not exist." % \
-                  (style.prefix, options.json_annuli)
+            print "%sError. The file '%s' does not exist." % (
+                style.prefix,
+                options.json_annuli,
+            )
             print style.error_exit_message
             return 1
         else:
@@ -561,15 +741,19 @@ def main(arguments = None):
     # Abort the execution if one or more of the {aperture,{,d}annulus}-pix:
     # options are given, but not all three. If we are going to use fixed sizes
     # for the aperture and sky annuli we need to know all of them.
-    fixed_pix_count = bool(options.aperture_pix) + \
-                      bool(options.annulus_pix)  + \
-                      bool(options.dannulus_pix)
+    fixed_pix_count = (
+        bool(options.aperture_pix)
+        + bool(options.annulus_pix)
+        + bool(options.dannulus_pix)
+    )
 
     if fixed_pix_count:
         if fixed_pix_count < 3:
             assert 1 <= fixed_pix_count <= 2
-            msg = "%sError. The --aperture-pix, --annulus-pix and " + \
-                  "--dannulus-pix options must be used together."
+            msg = (
+                "%sError. The --aperture-pix, --annulus-pix and "
+                + "--dannulus-pix options must be used together."
+            )
             print msg % style.prefix
             print style.error_exit_message
             return 1
@@ -583,8 +767,10 @@ def main(arguments = None):
     # and simultaneously specify that these very values must be read from the
     # JSON file. Does not compute.
     if fixed_annuli and json_annuli:
-        print ("%sError. The --aperture-pix, --annulus-pix and --dannulus-pix "
-              "options are incompatible with --annuli." % style.prefix)
+        print (
+            "%sError. The --aperture-pix, --annulus-pix and --dannulus-pix "
+            "options are incompatible with --annuli." % style.prefix
+        )
         print style.error_exit_message
         return 1
 
@@ -593,17 +779,14 @@ def main(arguments = None):
         # If the photometric parameters are set to a fixed value, they cannot
         # be also derived from the FWHM of each image.
         if fixed_annuli:
-            print "%sError. The --aperture-pix, --annulus-pix and " \
-                  "--dannulus-pix options are incompatible with " \
-                  "--individual-fwhm." % style.prefix
+            print "%sError. The --aperture-pix, --annulus-pix and " "--dannulus-pix options are incompatible with " "--individual-fwhm." % style.prefix
             print style.error_exit_message
             return 1
 
         # The same applies to --annuli: if the photometric parameters are read
         # from the JSON file, they cannot also depend on the FWHM of the images.
         if json_annuli:
-            print "%sError. The --annuli option is incompatible with " \
-                  "--individual-fwhm." % style.prefix
+            print "%sError. The --annuli option is incompatible with " "--individual-fwhm." % style.prefix
             print style.error_exit_message
             return 1
 
@@ -615,19 +798,22 @@ def main(arguments = None):
     fwhm_options = (options.aperture, options.annulus, options.dannulus)
     pixel_options = (options.aperture_pix, options.annulus_pix, options.dannulus_pix)
 
-    if (not fixed_annuli and min(fwhm_options)  <= 0) or \
-           (fixed_annuli and min(pixel_options) <= 0):
-        print "%sError. The aperture, annulus and dannulus values must be " \
-              "positive numbers." % style.prefix
+    if (not fixed_annuli and min(fwhm_options) <= 0) or (
+        fixed_annuli and min(pixel_options) <= 0
+    ):
+        print "%sError. The aperture, annulus and dannulus values must be " "positive numbers." % style.prefix
         print style.error_exit_message
         return 1
 
-    if (not fixed_annuli and options.aperture > options.annulus) or \
-           (fixed_annuli and options.aperture_pix > options.annulus_pix):
-        print "%sError. The aperture radius (%.2f) must be smaller than or equal\n" \
-              "%sto the inner radius of the sky annulus (%.2f)" % \
-              (style.prefix, options.aperture_pix if fixed_annuli else options.aperture,
-               style.prefix, options.annulus_pix if fixed_annuli else options.annulus)
+    if (not fixed_annuli and options.aperture > options.annulus) or (
+        fixed_annuli and options.aperture_pix > options.annulus_pix
+    ):
+        print "%sError. The aperture radius (%.2f) must be smaller than or equal\n" "%sto the inner radius of the sky annulus (%.2f)" % (
+            style.prefix,
+            options.aperture_pix if fixed_annuli else options.aperture,
+            style.prefix,
+            options.annulus_pix if fixed_annuli else options.annulus,
+        )
 
         print style.error_exit_message
         return 1
@@ -659,8 +845,10 @@ def main(arguments = None):
 
     if os.path.exists(output_db_path):
         if not options.overwrite:
-            print "%sError. The output database '%s' already exists." % \
-                  (style.prefix, output_db_path)
+            print "%sError. The output database '%s' already exists." % (
+                style.prefix,
+                output_db_path,
+            )
             print style.error_exit_message
             return 1
         else:
@@ -675,9 +863,11 @@ def main(arguments = None):
 
     def get_date(img):
         """ Return the date() of a FITSImage object """
-        return img.date(date_keyword = options.datek,
-                        time_keyword = options.timek,
-                        exp_keyword = options.exptimek)
+        return img.date(
+            date_keyword=options.datek,
+            time_keyword=options.timek,
+            exp_keyword=options.exptimek,
+        )
 
     files = fitsimage.InputFITSFiles()
     img_dates = {}
@@ -694,7 +884,7 @@ def main(arguments = None):
         percentage = (index + 1) / len(input_paths) * 100
         util.show_progress(percentage)
 
-    print # progress bar doesn't include newline
+    print  # progress bar doesn't include newline
 
     msg = "%s%d different photometric filters were detected:"
     print msg % (style.prefix, len(files.keys()))
@@ -718,7 +908,7 @@ def main(arguments = None):
     # we better forget about these images.
 
     msg = "%sMaking sure there are no images with the same date and filter..."
-    print msg % style.prefix ,
+    print msg % style.prefix,
     sys.stdout.flush()
 
     # Two-level dictionary: map each date of observation (UTC), in Unix time,
@@ -763,7 +953,7 @@ def main(arguments = None):
                     discarded += files.remove(img)
 
     if not discarded:
-        print 'done.'
+        print "done."
 
     else:
 
@@ -813,7 +1003,7 @@ def main(arguments = None):
             former_total = len(files) + discarded
             msg = "%s%d images (%.2f %%) taken in the above filters,"
             percentage = len(files) / former_total * 100
-            print msg % (style.prefix, len(files), percentage) ,
+            print msg % (style.prefix, len(files), percentage),
 
             msg = "%d (%.2f %%) were discarded."
             percentage = discarded / former_total * 100
@@ -859,7 +1049,7 @@ def main(arguments = None):
             former_total = len(files) + discarded
             msg = "%s%d images (%.2f %%) discarded,"
             percentage = discarded / former_total * 100
-            print msg % (style.prefix, discarded, percentage) ,
+            print msg % (style.prefix, discarded, percentage),
 
             msg = "%d (%.2f %%) remain."
             percentage = len(files) / former_total * 100
@@ -870,22 +1060,23 @@ def main(arguments = None):
     if json_annuli:
         for pfilter in files.iterkeys():
             if pfilter not in json_annuli.iterkeys():
-                msg = ("%sError. Photometric parameters for the '%s' "
-                       "filter not listed in '%s. Wrong file, maybe?")
+                msg = (
+                    "%sError. Photometric parameters for the '%s' "
+                    "filter not listed in '%s. Wrong file, maybe?"
+                )
                 json_basename = os.path.basename(options.json_annuli)
                 print msg % (style.prefix, pfilter, json_basename)
                 print style.error_exit_message
                 return 1
 
     print "%sSources image: %s" % (style.prefix, sources_img_path)
-    print "%sRunning SExtractor on the sources image..." % style.prefix ,
+    print "%sRunning SExtractor on the sources image..." % style.prefix,
     sys.stdout.flush()
 
     # Work on a temporary copy of the input image, in order not to modify it.
     basename = os.path.basename(sources_img_path)
     root, extension = os.path.splitext(basename)
-    kwargs = dict(prefix = '{0}_'.format(root),
-                  suffix = extension)
+    kwargs = dict(prefix="{0}_".format(root), suffix=extension)
     tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
     os.close(tmp_fd)
     shutil.copy2(sources_img_path, tmp_sources_img_path)
@@ -906,26 +1097,26 @@ def main(arguments = None):
     # combined with Montage.
 
     args = (tmp_sources_img_path, sys.maxint, options.margin)
-    kwargs = dict(coaddk = options.coaddk)
+    kwargs = dict(coaddk=options.coaddk)
     sources_img = seeing.FITSeeingImage(*args, **kwargs)
-    print 'done.'
+    print "done."
 
     msg = "%sCalculating coordinates of field center..."
-    print msg % style.prefix ,
+    print msg % style.prefix,
     sys.stdout.flush()
 
     ra, dec = sources_img.center_wcs()
     sources_img_ra = ra
     sources_img_dec = dec
-    print 'done.'
+    print "done."
 
     # Print coordinates, in degrees and sexagesimal
-    print "%sα = %11.7f" % (style.prefix, sources_img_ra) ,
+    print "%sα = %11.7f" % (style.prefix, sources_img_ra),
     msg = " (%.02d %.02d %05.2f)"
     args = util.DD_to_HMS(sources_img_ra)
     print msg % args
 
-    print "%sδ = %11.7f" % (style.prefix, sources_img_dec) ,
+    print "%sδ = %11.7f" % (style.prefix, sources_img_dec),
     msg = "(%+.02d %.02d %05.2f)"
     args = util.DD_to_DMS(sources_img_dec)
     print msg % args
@@ -952,7 +1143,7 @@ def main(arguments = None):
 
         if __debug__:
             for coord in sources_coordinates:
-                assert coord.pm_ra  == 0
+                assert coord.pm_ra == 0
                 assert coord.pm_dec == 0
 
         assert len(sources_coordinates) == len(sources_img)
@@ -984,7 +1175,7 @@ def main(arguments = None):
 
         sources_img_fwhm = get_fwhm(sources_img, options)
         sources_aperture = options.aperture * sources_img_fwhm
-        sources_annulus  = options.annulus  * sources_img_fwhm
+        sources_annulus = options.annulus * sources_img_fwhm
         sources_dannulus = options.dannulus * sources_img_fwhm
 
         t = (style.prefix, sources_img_fwhm)
@@ -1004,7 +1195,7 @@ def main(arguments = None):
 
     else:
         sources_aperture = options.aperture_pix
-        sources_annulus  = options.annulus_pix
+        sources_annulus = options.annulus_pix
         sources_dannulus = options.dannulus_pix
 
         msg = "%sAperture radius = %.3f pixels"
@@ -1016,7 +1207,7 @@ def main(arguments = None):
 
     print style.prefix
     msg = "%sRunning IRAF's qphot..."
-    print msg % style.prefix ,
+    print msg % style.prefix,
     sys.stdout.flush()
 
     # Some (or even many) astronomical objects may be saturated in the sources
@@ -1037,10 +1228,19 @@ def main(arguments = None):
     # integer supported by the regular integer type. Being at least 2 ** 31 -
     # 1, as a saturation level this value is sufficiently close to infinity.
 
-    qphot_args = \
-        [sources_img, options.coordinates, options.epoch,
-         sources_aperture, sources_annulus, sources_dannulus, sys.maxint,
-         options.datek, options.timek, options.exptimek, None]
+    qphot_args = [
+        sources_img,
+        options.coordinates,
+        options.epoch,
+        sources_aperture,
+        sources_annulus,
+        sources_dannulus,
+        sys.maxint,
+        options.datek,
+        options.timek,
+        options.exptimek,
+        None,
+    ]
 
     # The options.exptimek FITS keyword is allowed to be missing from the
     # header of the sources image (for example, a legitimate scenario: we
@@ -1052,11 +1252,11 @@ def main(arguments = None):
     # serve as an estimate of how bright each astronomical object is.
 
     with warnings.catch_warnings():
-        kwargs = dict(category = qphot.MissingFITSKeyword)
-        warnings.filterwarnings('ignore', **kwargs)
+        kwargs = dict(category=qphot.MissingFITSKeyword)
+        warnings.filterwarnings("ignore", **kwargs)
         sources_phot = qphot.run(*qphot_args, cbox=options.cbox)
 
-    print 'done.'
+    print "done."
 
     # Remove those astronomical objects so faint that they are INDEF in the
     # sources image. After all, if they are not even visible in this image,
@@ -1072,7 +1272,7 @@ def main(arguments = None):
     # by qphot.run() preserves that of the input Coordinates objects.
 
     msg = "%sDetecting INDEF objects..."
-    print msg % style.prefix ,
+    print msg % style.prefix,
     sys.stdout.flush()
 
     ignored_counter = 0
@@ -1097,7 +1297,7 @@ def main(arguments = None):
 
     assert non_ignored_counter == len(sources_phot)
     assert ignored_counter + non_ignored_counter == original_size
-    print 'done.'
+    print "done."
 
     if ignored_counter:
         msg = "%s%s objects" % (style.prefix, ignored_counter)
@@ -1118,23 +1318,23 @@ def main(arguments = None):
     if __debug__:
 
         msg = "%sMaking sure INDEF objects were removed..."
-        print msg % style.prefix ,
+        print msg % style.prefix,
         sys.stdout.flush()
 
         # Do photometry again, use the non-INDEF coordinates
         qphot_args[1] = options.coordinates
 
         with warnings.catch_warnings():
-            kwargs = dict(category = qphot.MissingFITSKeyword)
-            warnings.filterwarnings('ignore', **kwargs)
+            kwargs = dict(category=qphot.MissingFITSKeyword)
+            warnings.filterwarnings("ignore", **kwargs)
             non_INDEF_phot = qphot.run(*qphot_args, cbox=options.cbox)
 
         assert sources_phot == non_INDEF_phot
-        print 'done.'
+        print "done."
 
     print style.prefix
     msg = "%sInitializing output LEMONdB..."
-    print msg % style.prefix ,
+    print msg % style.prefix,
     sys.stdout.flush()
 
     with database.LEMONdB(output_db_path) as output_db:
@@ -1157,7 +1357,7 @@ def main(arguments = None):
             output_db.add_star(*args)
 
         output_db.commit()
-        print 'done.'
+        print "done."
 
         # Store some relevant information about the sources image in the LEMONdB.
         # Do this by creating a database.Image object, which encapsulates a FITS
@@ -1174,9 +1374,11 @@ def main(arguments = None):
         path = sources_img.path
         pfilter = util.func_catchall(sources_img.pfilter, options.filterk)
 
-        kwargs = dict(date_keyword = options.datek,
-                      time_keyword = options.timek,
-                      exp_keyword = options.exptimek)
+        kwargs = dict(
+            date_keyword=options.datek,
+            time_keyword=options.timek,
+            exp_keyword=options.exptimek,
+        )
         unix_time = util.func_catchall(sources_img.date, **kwargs)
 
         # In theory, sources should be detected on the result on mosaicking several
@@ -1210,22 +1412,28 @@ def main(arguments = None):
             img = fitsimage.FITSImage(dates_counter[unix_time][pfilter][0])
             if pfilter == img.pfilter(options.filterk):
 
-                msg1 = ("%s has the same date (%.4f, %s) and filter (%s) as the "
-                        "sources image (%s)")
+                msg1 = (
+                    "%s has the same date (%.4f, %s) and filter (%s) as the "
+                    "sources image (%s)"
+                )
                 date_str = util.utctime(unix_time)
                 args = (img.path, unix_time, date_str, pfilter, path)
                 logging.debug(msg1 % args)
 
-                msg2 = ("This must mean you are doing photometry on the FITS image "
-                        "that you are also using to detect astronomical sources")
+                msg2 = (
+                    "This must mean you are doing photometry on the FITS image "
+                    "that you are also using to detect astronomical sources"
+                )
                 logging.debug(msg2)
 
-                msg3 = ("Avoid collision: ignore date and filter of the sources "
-                        "image (store in the LEMONdB a None instead)")
+                msg3 = (
+                    "Avoid collision: ignore date and filter of the sources "
+                    "image (store in the LEMONdB a None instead)"
+                )
                 logging.debug(msg3)
 
                 unix_time = None
-                pfilter   = None
+                pfilter = None
 
         object_ = util.func_catchall(sources_img.read_keyword, options.objectk)
         airmass = util.func_catchall(sources_img.read_keyword, options.airmassk)
@@ -1268,7 +1476,7 @@ def main(arguments = None):
 
                 filter_annuli = json_annuli[pfilter][0]
                 aperture = filter_annuli.aperture
-                annulus  = filter_annuli.annulus
+                annulus = filter_annuli.annulus
                 dannulus = filter_annuli.dannulus
 
                 msg = "%sUsing the parameters listed in the JSON file, which are:"
@@ -1292,7 +1500,7 @@ def main(arguments = None):
 
             elif not fixed_annuli:
                 msg = "%sCalculating the median FWHM for this filter..."
-                print msg % style.prefix ,
+                print msg % style.prefix,
                 sys.stdout.flush()
 
                 pfilter_fwhms = []
@@ -1303,10 +1511,10 @@ def main(arguments = None):
                     pfilter_fwhms.append(img_fwhm)
 
                 fwhm = numpy.median(pfilter_fwhms)
-                print 'done.'
+                print "done."
 
                 aperture = fwhm * options.aperture
-                annulus  = fwhm * options.annulus
+                annulus = fwhm * options.annulus
                 dannulus = fwhm * options.dannulus
 
                 msg = "%sFWHM (%s) = %.3f pixels, therefore:"
@@ -1323,9 +1531,9 @@ def main(arguments = None):
                     msg = style.prefix + DANNULUS_TOO_THIN_MSG
                     warnings.warn(msg % dannulus)
 
-            else: # fixed aperture and sky annuli directly specified in pixels
+            else:  # fixed aperture and sky annuli directly specified in pixels
                 aperture = options.aperture_pix
-                annulus  = options.annulus_pix
+                annulus = options.annulus_pix
                 dannulus = options.dannulus_pix
 
                 msg = "%sAperture radius = %.3f pixels"
@@ -1340,7 +1548,7 @@ def main(arguments = None):
             pool = multiprocessing.Pool(options.ncores)
 
             def fwhm_derived_params(img):
-                """ Return the FWHM-derived aperture and sky annuli parameters.
+                """Return the FWHM-derived aperture and sky annuli parameters.
 
                 Return a database.PhotometricParameters object (a three-element
                 named tuple) containing (1) the aperture radius, (2) sky annulus
@@ -1353,7 +1561,7 @@ def main(arguments = None):
 
                 fwhm = get_fwhm(img, options)
                 aperture = fwhm * options.aperture
-                annulus  = fwhm * options.annulus
+                annulus = fwhm * options.annulus
                 dannulus = fwhm * options.dannulus
 
                 path = img.path
@@ -1408,8 +1616,8 @@ def main(arguments = None):
                 if logging_level < logging.WARNING:
                     print
 
-            result.get() # reraise exceptions of the remote call, if any
-            util.show_progress(100) # in case the queue was ready too soon
+            result.get()  # reraise exceptions of the remote call, if any
+            util.show_progress(100)  # in case the queue was ready too soon
             print
 
             msg = "%sStoring photometric measurements in the database..."
@@ -1437,7 +1645,7 @@ def main(arguments = None):
                         logging.debug(msg % args)
                         continue
 
-                    elif object_phot.mag == float('infinity'):
+                    elif object_phot.mag == float("infinity"):
                         msg = "%s: object %d is saturated (infinity)"
                         args = db_image.path, object_id
                         logging.debug(msg % args)
@@ -1469,11 +1677,13 @@ def main(arguments = None):
                         args = db_image.path, object_id
                         logging.debug(msg % args)
 
-                        args = (object_id,
-                                db_image.unix_time,
-                                db_image.pfilter,
-                                object_phot.mag,
-                                object_snr)
+                        args = (
+                            object_id,
+                            db_image.unix_time,
+                            db_image.pfilter,
+                            object_phot.mag,
+                            object_snr,
+                        )
 
                         output_db.add_photometry(*args)
 
@@ -1497,7 +1707,7 @@ def main(arguments = None):
 
                         else:
 
-                            assert pm_ra  is not None
+                            assert pm_ra is not None
                             assert pm_dec is not None
 
                             msg = "%s: object %d pm_ra = %f (x = %f)"
@@ -1512,11 +1722,13 @@ def main(arguments = None):
                             args = db_image.path, object_id
                             logging.debug(msg % args)
 
-                            args = (object_id,
-                                    db_image.unix_time,
-                                    db_image.pfilter,
-                                    object_phot.x,
-                                    object_phot.y)
+                            args = (
+                                object_id,
+                                db_image.unix_time,
+                                db_image.pfilter,
+                                object_phot.x,
+                                object_phot.y,
+                            )
 
                             output_db.add_pm_correction(*args)
 
@@ -1542,10 +1754,10 @@ def main(arguments = None):
         # SQLite assumes that each table contains one million records when deciding
         # between doing a full table scan and constructing an automatic index.
 
-        print "%sGathering statistics about tables and indexes..." % style.prefix ,
+        print "%sGathering statistics about tables and indexes..." % style.prefix,
         sys.stdout.flush()
         output_db.analyze()
-        print 'done.'
+        print "done."
 
         # Store into the METADATA table of the LEMONdB the current time (in seconds
         # since the Unix epoch), the login name of the currently effective user id
@@ -1567,9 +1779,10 @@ def main(arguments = None):
         output_db.id = md5.hexdigest()
         output_db.commit()
 
-    util.owner_writable(output_db_path, False) # chmod u-w
+    util.owner_writable(output_db_path, False)  # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -63,23 +63,25 @@ import defaults
 import snr
 import style
 
+
 def percentage_change(old, new):
-    """ Return the relative change between the old value and the new one.
+    """Return the relative change between the old value and the new one.
 
     Note we need to use an absolute value for V1 in the denominator regarding
     values with V1 being a negative and V2 being positive, as well as V1 being
-    negative, and V2 being greater than V1 but still negative. """
+    negative, and V2 being greater than V1 but still negative."""
 
     if old < 0 and (new > 0 or old < new < 0):
         return (new - old) / float(abs(old))
     else:
         return (new - old) / float(old)
 
+
 class Weights(numpy.ndarray):
     """ Encapsulate the weights associated with some values """
 
-    def __new__(cls, coefficients, dtype = numpy.longdouble):
-        """ Return a new instance of the Weights class.
+    def __new__(cls, coefficients, dtype=numpy.longdouble):
+        """Return a new instance of the Weights class.
 
         The weights are not automatically normalized for us, so they do not
         necessarily have to add up to 1.0. Use Weights.normalize() for that.
@@ -90,7 +92,7 @@ class Weights(numpy.ndarray):
 
         if not len(coefficients):
             raise ValueError("arg is an empty sequence")
-        w = numpy.asarray(coefficients, dtype = dtype).view(cls)
+        w = numpy.asarray(coefficients, dtype=dtype).view(cls)
         w.values = numpy.array(coefficients)
         return w
 
@@ -99,7 +101,7 @@ class Weights(numpy.ndarray):
         return "%s(%s)" % (self.__class__.__name__, coeffs_str)
 
     def rescale(self, key):
-        """ Exclude the key-th coefficient and return the rescaled Weights.
+        """Exclude the key-th coefficient and return the rescaled Weights.
 
         Note that the key-th element is also removed from the 'values'
         attribute of the returned object. The reason is that, if a coefficient
@@ -119,7 +121,7 @@ class Weights(numpy.ndarray):
         return numpy.sum(self)
 
     def normalize(self):
-        """ Rescale the coefficients to that they add up to one.
+        """Rescale the coefficients to that they add up to one.
 
         Return a new Weights object where each element has been divided by the
         sum of all the coefficients. The 'values' attribute of the new object
@@ -134,8 +136,8 @@ class Weights(numpy.ndarray):
         return w
 
     @classmethod
-    def inversely_proportional(cls, values, dtype = numpy.longdouble):
-        """ Return Weights inversely proportional to 'values'.
+    def inversely_proportional(cls, values, dtype=numpy.longdouble):
+        """Return Weights inversely proportional to 'values'.
 
         For example, [1, 1, 2] returns Weights([0.4, 0.4, 0.2]). Note that at
         least one value is required, and that none of them may be zero (as in
@@ -148,13 +150,13 @@ class Weights(numpy.ndarray):
             raise ValueError("'values' is an empty sequence")
         if not all(values):
             raise ValueError("'values' cannot contain zeros")
-        values = numpy.array(values,  dtype = dtype)
+        values = numpy.array(values, dtype=dtype)
         w = cls(1 / values).normalize()
         w.values = numpy.array(values)
         return w
 
-    def absolute_percent_change(self, other, minimum = None):
-        """ Return the percent change of two Weights of the same size. More
+    def absolute_percent_change(self, other, minimum=None):
+        """Return the percent change of two Weights of the same size. More
         specifically, the method returns the maximum absolute percent change
         between the coefficients of both instances that have the same
         position. In other words: the percent change between the first
@@ -190,8 +192,7 @@ class Weights(numpy.ndarray):
             msg = "all coefficients were discarded ('minimum' too high?)"
             raise ValueError(msg, self)
         else:
-            return max((abs(percentage_change(x, y))
-                            for x, y in coefficients))
+            return max((abs(percentage_change(x, y)) for x, y in coefficients))
 
     @classmethod
     def random(cls, size):
@@ -200,13 +201,13 @@ class Weights(numpy.ndarray):
 
 
 class StarSet(object):
-    """ A collection of DBStars *with information for the exact same images*,
+    """A collection of DBStars *with information for the exact same images*,
     all of them also taken in the same filter. Internally, and for performance
     purposes, all the photometric information is kept in a three-dimensional
-    (star, data, image) array. """
+    (star, data, image) array."""
 
     def _add(self, index, star):
-        """ Add a DBStar to the set.
+        """Add a DBStar to the set.
 
         In order not to maintain duplicate information in memory, the DBStar
         instances are parsed and their photometric information stored in the
@@ -264,8 +265,8 @@ class StarSet(object):
             self._star_ids.append(star.id)
             self._phot_info[index] = star._phot_info[1:]
 
-    def __init__(self, stars, dtype = numpy.longdouble):
-        """ Instantiation method for the StarSet class.
+    def __init__(self, stars, dtype=numpy.longdouble):
+        """Instantiation method for the StarSet class.
 
         The DBStars that belong to the StarSet must be given in a sequence (the
         'stars' parameter) at instantiation time. You are not expected, and
@@ -286,7 +287,7 @@ class StarSet(object):
         self.dtype = dtype
         self._star_ids = []
         # Do not set the array values to zero (marginally faster)
-        self._phot_info = numpy.empty((len(stars), 2, len(stars[0])), dtype = self.dtype)
+        self._phot_info = numpy.empty((len(stars), 2, len(stars[0])), dtype=self.dtype)
         for index, star in enumerate(stars):
             self._add(index, star)
 
@@ -306,10 +307,13 @@ class StarSet(object):
 
     def __delitem__(self, index):
         """ Delete the index-th star """
-        self._phot_info = numpy.delete(self._phot_info, index, axis = 0)
+        self._phot_info = numpy.delete(self._phot_info, index, axis=0)
         assert self._phot_info.shape[0] == len(self)  # first dimension: star
         del self._star_ids[index]
-        assert len(self.star_ids) == len(self), "%d vs %d" % (len(self.star_ids), len(self))
+        assert len(self.star_ids) == len(self), "%d vs %d" % (
+            len(self.star_ids),
+            len(self),
+        )
 
     def __getitem__(self, index):
         """ Return the index-th star as a DBStar instance """
@@ -318,17 +322,18 @@ class StarSet(object):
         # (the first for the time, the second for the magnitude and the last
         # for the SNR), and as many columns as records for which there is
         # photometric information.
-        sphot_info = numpy.empty((3, self.nimages), dtype = self.dtype)
+        sphot_info = numpy.empty((3, self.nimages), dtype=self.dtype)
         sphot_info[0] = self._unix_times
         sphot_info[1] = self._phot_info[index][0]
         sphot_info[2] = self._phot_info[index][1]
 
         id_ = self._star_ids[index]
-        return database.DBStar(id_, self.pfilter, sphot_info,
-                               self._times_indexes, self.dtype)
+        return database.DBStar(
+            id_, self.pfilter, sphot_info, self._times_indexes, self.dtype
+        )
 
     def flux_proportional_weights(self):
-        """ Return the Weights proportional to the flux of each star.
+        """Return the Weights proportional to the flux of each star.
 
         The method returns a Weights instance with as many coefficients as
         stars there are in the set, and where each one is assigned a value
@@ -357,7 +362,7 @@ class StarSet(object):
 
         # Bi-dimensional matrix (as many rows as stars, as many columns as
         # images) in which the normalized magnitude of the stars are stored
-        norm_mags = numpy.empty((len(self), self.nimages), dtype = self.dtype)
+        norm_mags = numpy.empty((len(self), self.nimages), dtype=self.dtype)
 
         # For each image (third dimension of self._phot_info), normalize the
         # magnitudes (second dimension, x = 0) of each star (first dimension).
@@ -368,15 +373,15 @@ class StarSet(object):
             norm_mags[:, image_index] = image_mags / image_mags.max()
 
         # Now, for each star, calculate the median of the normalized magnitudes
-        mag_medians = numpy.empty(len(self), dtype = self.dtype)
+        mag_medians = numpy.empty(len(self), dtype=self.dtype)
         for star_index in xrange(len(self)):
             mag_medians[star_index] = numpy.median(norm_mags[star_index])
 
         pogsonr = 100 ** 0.2  # fifth root of 100 (Pogson's Ratio)
         return Weights.inversely_proportional(pogsonr ** mag_medians)
 
-    def light_curve(self, weights, star, no_snr = False, _exclude_index = None):
-        """ Generate the light curve of a DBStar.
+    def light_curve(self, weights, star, no_snr=False, _exclude_index=None):
+        """Generate the light curve of a DBStar.
 
         Use the stars in the set to compute an artificial comparison star,
         using the weighted average of their instrumental magnitudes as the
@@ -445,17 +450,17 @@ class StarSet(object):
 
         assert len(rweights) == len(self)
 
-        assert hasattr(rweights, 'values')
+        assert hasattr(rweights, "values")
         cstdevs = rweights.values
         args = self.pfilter, self.star_ids, rweights, cstdevs
-        curve = database.LightCurve(*args, dtype = self.dtype)
+        curve = database.LightCurve(*args, dtype=self.dtype)
 
         for index, unix_time in enumerate(self._unix_times):
             # The magnitude and SNR of the comparison star
             cmags = self._phot_info[:, 0, index]
             csnrs = self._phot_info[:, 1, index]
-            cmag = numpy.average(cmags, weights = rweights)
-            csnr = None if no_snr else snr.mean_snr(csnrs, weights = rweights)
+            cmag = numpy.average(cmags, weights=rweights)
+            csnr = None if no_snr else snr.mean_snr(csnrs, weights=rweights)
 
             smag = star.mag(index)
             ssnr = star.snr(index)
@@ -466,8 +471,8 @@ class StarSet(object):
 
         return curve
 
-    def broeg_weights(self, pct = 0.01, max_iters = None, minimum = None):
-        """ Determine the weights that give the optimum comparison star.
+    def broeg_weights(self, pct=0.01, max_iters=None, minimum=None):
+        """Determine the weights that give the optimum comparison star.
 
         This is our implementation of C. Broeg's algorithm ('A new algorithm
         for differential photometry: computing an optimum artificial comparison
@@ -550,12 +555,15 @@ class StarSet(object):
         # between the old weights and the new one is below the threshold
 
         weights = [self.flux_proportional_weights()]
-        curves_stdevs = numpy.empty(len(self), dtype = self.dtype)
+        curves_stdevs = numpy.empty(len(self), dtype=self.dtype)
         for iteration in xrange(max_iters or sys.getrecursionlimit()):
             for star_index in xrange(len(self)):
-                star_curve = self.light_curve(weights[-1], self[star_index],
-                                              _exclude_index = star_index,
-                                              no_snr = True)
+                star_curve = self.light_curve(
+                    weights[-1],
+                    self[star_index],
+                    _exclude_index=star_index,
+                    no_snr=True,
+                )
                 curves_stdevs[star_index] = star_curve.stdev
 
             # Avoid the division by zero if, somehow, a star ends up having a
@@ -576,13 +584,13 @@ class StarSet(object):
             # The Weights object returned by Weights.inversely_proportional()
             # stores the standard deviations in the 'values' attribute.
             weights.append(Weights.inversely_proportional(curves_stdevs))
-            if weights[-2].absolute_percent_change(weights[-1], minimum = minimum) < pct:
+            if weights[-2].absolute_percent_change(weights[-1], minimum=minimum) < pct:
                 break
 
         return weights[-1]
 
-    def worst(self, fraction, pct = 0.01, max_iters = None, minimum = None):
-        """ Return the indexes of the less constant stars.
+    def worst(self, fraction, pct=0.01, max_iters=None, minimum=None):
+        """Return the indexes of the less constant stars.
 
         The method returns the indexes of the 'fraction' less constant (that
         is, the most variable) stars in the set, and consequently the less
@@ -627,12 +635,12 @@ class StarSet(object):
         # with the lowest values. These will correspond to the stars with the
         # maximum standard deviation, which we consider to be the worst. Code
         # courtesy of user 'aix' at: http://stackoverflow.com/q/6910672
-        kwargs = dict(pct = pct, max_iters = max_iters, minimum = minimum)
+        kwargs = dict(pct=pct, max_iters=max_iters, minimum=minimum)
         bweights = self.broeg_weights(**kwargs)
         return list(bweights.argsort()[:nstars])
 
-    def best(self, n, fraction = 0.1, pct = 0.01, max_iters = None, minimum = None):
-        """ Find the most constant stars in the set.
+    def best(self, n, fraction=0.1, pct=0.01, max_iters=None, minimum=None):
+        """Find the most constant stars in the set.
 
         The method returns a StarSet with the 'n' most constant (that is, the
         less variable) stars in the set, and therefore the optimal to be used
@@ -669,8 +677,10 @@ class StarSet(object):
             raise ValueError("at least three stars are needed")
 
         if not 1 <= n <= len(self):
-            msg = ("must ask for at least one star, at most for as many "
-                   "as there are in the set")
+            msg = (
+                "must ask for at least one star, at most for as many "
+                "as there are in the set"
+            )
             raise ValueError(msg)
 
         set_ = copy.deepcopy(self)
@@ -683,7 +693,7 @@ class StarSet(object):
         # happens first. After that, if we stopped at three but 'n' is smaller,
         # we can discard the last batch of stars until only 'n' are left.
 
-        kwargs = dict(pct = pct, max_iters = max_iters, minimum = minimum)
+        kwargs = dict(pct=pct, max_iters=max_iters, minimum=minimum)
         while len(set_) > max(n, 3):
 
             worst_indexes = set_.worst(fraction, **kwargs)
@@ -697,9 +707,9 @@ class StarSet(object):
             # first loop, while 25 more would be removed in the second. There
             # would then be 100 - 50 - 25 = 25 stars left, when we wanted 30!
 
-            del worst_indexes[(len(set_) - max(n, 3)):]
+            del worst_indexes[(len(set_) - max(n, 3)) :]
             # Remove the stars going backwards, from highest to lowest index
-            for index in sorted(worst_indexes, reverse = True):
+            for index in sorted(worst_indexes, reverse=True):
                 del set_[index]
 
         # If there are only three stars left but there are still stars to
@@ -709,22 +719,24 @@ class StarSet(object):
 
         assert len(set_) >= n
         if len(set_) != n:
-            worst_indexes = set_.worst(1.0, pct = pct, max_iters = max_iters)
-            del worst_indexes[(len(set_) - n):]
-            for index in sorted(worst_indexes, reverse = True):
+            worst_indexes = set_.worst(1.0, pct=pct, max_iters=max_iters)
+            del worst_indexes[(len(set_) - n) :]
+            for index in sorted(worst_indexes, reverse=True):
                 del set_[index]
 
         assert len(set_) == n
         return set_
+
 
 # The Queue is global -- this works, but note that we could have
 # passed its reference to the function managed by pool.map_async.
 # See http://stackoverflow.com/a/3217427/184363
 queue = util.Queue()
 
+
 @util.print_exception_traceback
 def parallel_light_curves(args):
-    """ Method argument of map_async to compute light curves in parallel.
+    """Method argument of map_async to compute light curves in parallel.
 
     Functions defined in classes don't pickle, so we have moved this code here
     in order to be able to use it with multiprocessing's map_async. As it
@@ -734,145 +746,217 @@ def parallel_light_curves(args):
     """
 
     star, all_stars, options = args
-    logging.debug("Star %d: photometry on %d images, enforced minimum of %d" %
-                 (star.id, len(star), options.min_images))
+    logging.debug(
+        "Star %d: photometry on %d images, enforced minimum of %d"
+        % (star.id, len(star), options.min_images)
+    )
 
     if len(star) < options.min_images:
-        logging.debug("Star %d: ignored (minimum of %d images not met)" %
-                     (star.id, options.min_images))
+        logging.debug(
+            "Star %d: ignored (minimum of %d images not met)"
+            % (star.id, options.min_images)
+        )
         queue.put((star.id, None))
         return
 
     complete_for = star.complete_for(all_stars)
-    logging.debug("Star %d: %d complete stars, enforced minimum = %d" %
-                 (star.id, len(complete_for), options.min_cstars))
+    logging.debug(
+        "Star %d: %d complete stars, enforced minimum = %d"
+        % (star.id, len(complete_for), options.min_cstars)
+    )
 
     ncstars = min(len(complete_for), options.ncstars)
     if ncstars < options.min_cstars:
-        logging.debug("Star %d: ignored (minimum of %d comparison stars "
-                      "not met)" % (star.id, options.min_cstars))
+        logging.debug(
+            "Star %d: ignored (minimum of %d comparison stars "
+            "not met)" % (star.id, options.min_cstars)
+        )
         queue.put((star.id, None))
         return
 
-    logging.debug("Star %d: will use %d complete stars (out of %d) as "
-                  "comparison)" % (star.id, ncstars, len(complete_for)))
+    logging.debug(
+        "Star %d: will use %d complete stars (out of %d) as "
+        "comparison)" % (star.id, ncstars, len(complete_for))
+    )
 
-    logging.debug("Star %d: fraction of worst stars to discard = %.4f" %
-                 (star.id, options.worst_fraction))
-    logging.debug("Star %d: weights percentage change threshold = %.4f" %
-                 (star.id, options.pct))
-    logging.debug("Star %d: minimum Weights coefficients = %.4f" %
-                 (star.id, options.wminimum))
-    logging.debug("Star %d: maximum Broeg iterations: %.4f" %
-                 (star.id, options.max_iters))
+    logging.debug(
+        "Star %d: fraction of worst stars to discard = %.4f"
+        % (star.id, options.worst_fraction)
+    )
+    logging.debug(
+        "Star %d: weights percentage change threshold = %.4f" % (star.id, options.pct)
+    )
+    logging.debug(
+        "Star %d: minimum Weights coefficients = %.4f" % (star.id, options.wminimum)
+    )
+    logging.debug(
+        "Star %d: maximum Broeg iterations: %.4f" % (star.id, options.max_iters)
+    )
 
     complete_stars = StarSet(complete_for)
-    comparison_stars = \
-        complete_stars.best(ncstars, fraction = options.worst_fraction,
-                            pct = options.pct, minimum = options.wminimum,
-                            max_iters = options.max_iters)
+    comparison_stars = complete_stars.best(
+        ncstars,
+        fraction=options.worst_fraction,
+        pct=options.pct,
+        minimum=options.wminimum,
+        max_iters=options.max_iters,
+    )
 
-    logging.debug("Star %d: identified the %d best stars (out of %d)" %
-                 (star.id, len(comparison_stars), len(complete_stars)))
-    logging.debug("Star %d: best stars IDs: %s" %
-                 (star.id, [x.id for x in comparison_stars]))
+    logging.debug(
+        "Star %d: identified the %d best stars (out of %d)"
+        % (star.id, len(comparison_stars), len(complete_stars))
+    )
+    logging.debug(
+        "Star %d: best stars IDs: %s" % (star.id, [x.id for x in comparison_stars])
+    )
 
-    cweights = \
-        comparison_stars.broeg_weights(pct = options.pct,
-                                       minimum = options.wminimum,
-                                       max_iters = options.max_iters)
+    cweights = comparison_stars.broeg_weights(
+        pct=options.pct, minimum=options.wminimum, max_iters=options.max_iters
+    )
 
     logging.debug("Star %d: Broeg weights: %s" % (star.id, str(cweights)))
     light_curve = comparison_stars.light_curve(cweights, star)
-    logging.debug("Star %d: light curve sucessfully generated "
-                  "(stdev = %.4f)" % (star.id, light_curve.stdev))
+    logging.debug(
+        "Star %d: light curve sucessfully generated "
+        "(stdev = %.4f)" % (star.id, light_curve.stdev)
+    )
     queue.put((star.id, light_curve))
 
 
 parser = customparser.get_parser(description)
 parser.usage = "%prog [OPTION]... INPUT_DB OUTPUT_DB"
-parser.add_option('--overwrite', action = 'store_true', dest = 'overwrite',
-                  help = "overwrite output database if it already exists")
+parser.add_option(
+    "--overwrite",
+    action="store_true",
+    dest="overwrite",
+    help="overwrite output database if it already exists",
+)
 
-parser.add_option('--cores', action = 'store', type = 'int',
-                  dest = 'ncores', default = defaults.ncores,
-                  help = defaults.desc['ncores'])
+parser.add_option(
+    "--cores",
+    action="store",
+    type="int",
+    dest="ncores",
+    default=defaults.ncores,
+    help=defaults.desc["ncores"],
+)
 
-parser.add_option('-v', '--verbose', action = 'count',
-                  dest = 'verbose', default = defaults.verbosity,
-                  help = defaults.desc['verbosity'])
+parser.add_option(
+    "-v",
+    "--verbose",
+    action="count",
+    dest="verbose",
+    default=defaults.verbosity,
+    help=defaults.desc["verbosity"],
+)
 
 curves_group = optparse.OptionGroup(parser, "Light Curves", "")
-curves_group.add_option('--minimum-images', action = 'store', type = 'int',
-                        dest = 'min_images', default = 10,
-                        help = "the minimum number of images in which a star "
-                        "must have been observed; the light curve will not be "
-                        "calculated for those filters for which the star was "
-                        "observed a number of times lower than this value "
-                        "[default: %default]")
+curves_group.add_option(
+    "--minimum-images",
+    action="store",
+    type="int",
+    dest="min_images",
+    default=10,
+    help="the minimum number of images in which a star "
+    "must have been observed; the light curve will not be "
+    "calculated for those filters for which the star was "
+    "observed a number of times lower than this value "
+    "[default: %default]",
+)
 
-curves_group.add_option('--stars', action = 'store', type = 'int',
-                        dest = 'ncstars', default = 20,
-                        help = "number of complete stars that will be used as "
-                        "the artificial comparison star. For each star, its "
-                        "'complete' set are those stars for which there is "
-                        "photometric information in at least each of the "
-                        "images in which it was observed [default: %default]")
+curves_group.add_option(
+    "--stars",
+    action="store",
+    type="int",
+    dest="ncstars",
+    default=20,
+    help="number of complete stars that will be used as "
+    "the artificial comparison star. For each star, its "
+    "'complete' set are those stars for which there is "
+    "photometric information in at least each of the "
+    "images in which it was observed [default: %default]",
+)
 
-curves_group.add_option('--minimum-stars', action = 'store',
-                        type = 'int', dest = 'min_cstars', default = 8,
-                        help = "the minimum number of stars used to compute "
-                        "the artificial comparison star, regarless of the "
-                        "value of the --stars option. The light curve will "
-                        "not be generated if this minimum value cannot be "
-                        "reached. It follows that if this option is set to a "
-                        "value greater than that of --stars, no curve is "
-                        "generated, so the module exits with an error. "
-                        "Although acceptable, a value equal to that of "
-                        "--stars is not recommended. [default: %default]")
+curves_group.add_option(
+    "--minimum-stars",
+    action="store",
+    type="int",
+    dest="min_cstars",
+    default=8,
+    help="the minimum number of stars used to compute "
+    "the artificial comparison star, regarless of the "
+    "value of the --stars option. The light curve will "
+    "not be generated if this minimum value cannot be "
+    "reached. It follows that if this option is set to a "
+    "value greater than that of --stars, no curve is "
+    "generated, so the module exits with an error. "
+    "Although acceptable, a value equal to that of "
+    "--stars is not recommended. [default: %default]",
+)
 parser.add_option_group(curves_group)
 
 broeg_group = optparse.OptionGroup(parser, "Broeg's Algorithm", "")
-broeg_group.add_option('--pct', action = 'store', type = 'float',
-                       dest = 'pct', default = 0.01,
-                       help = "the convergence threshold of the weights "
-                       "determined by Broeg algorithm, given as a percentage "
-                       "change. Iteration will stop when the percentage "
-                       "change between the last two weights is less than or "
-                       "equal to this value [default: %default]")
+broeg_group.add_option(
+    "--pct",
+    action="store",
+    type="float",
+    dest="pct",
+    default=0.01,
+    help="the convergence threshold of the weights "
+    "determined by Broeg algorithm, given as a percentage "
+    "change. Iteration will stop when the percentage "
+    "change between the last two weights is less than or "
+    "equal to this value [default: %default]",
+)
 
-broeg_group.add_option('--weights-threshold', action = 'store',
-                       type = 'float', dest = 'wminimum', default = 0.0001,
-                       help = "the minimum value for a coefficient to be "
-                       "taken into account when calculating the percentage "
-                       "change between two Weights; needed to prevent "
-                       "scientifically-insignificant values from making the "
-                       "algorithm stop earlier or iterate more than needed "
-                       "[default: %default]")
+broeg_group.add_option(
+    "--weights-threshold",
+    action="store",
+    type="float",
+    dest="wminimum",
+    default=0.0001,
+    help="the minimum value for a coefficient to be "
+    "taken into account when calculating the percentage "
+    "change between two Weights; needed to prevent "
+    "scientifically-insignificant values from making the "
+    "algorithm stop earlier or iterate more than needed "
+    "[default: %default]",
+)
 
-broeg_group.add_option('--max-iters', action = 'store', type = 'int',
-                       dest = 'max_iters', default = sys.getrecursionlimit(),
-                       help = "the maximum number of iterations of the "
-                       "algorithm. If exceeded, the last computed weights "
-                       "will be taken, regardless of the percentage change. "
-                       "This option defaults to the maximum depth of the "
-                       "Python interpreter stack [default: %default]")
+broeg_group.add_option(
+    "--max-iters",
+    action="store",
+    type="int",
+    dest="max_iters",
+    default=sys.getrecursionlimit(),
+    help="the maximum number of iterations of the "
+    "algorithm. If exceeded, the last computed weights "
+    "will be taken, regardless of the percentage change. "
+    "This option defaults to the maximum depth of the "
+    "Python interpreter stack [default: %default]",
+)
 parser.add_option_group(broeg_group)
 
 best_group = optparse.OptionGroup(parser, "Worst and Best Stars", "")
-best_group.add_option('--worst-fraction', action = 'store', type = 'float',
-                      dest = 'worst_fraction', default = 0.10,
-                      help = "the fraction of the stars that will be "
-                      "discarded at each step when identifying which are the "
-                      "most constant stars. The lower this value, the most "
-                      "reliable the identification of the constant stars in "
-                      "the field will be, but also more CPU-expensive "
-                      "[default: %default]")
+best_group.add_option(
+    "--worst-fraction",
+    action="store",
+    type="float",
+    dest="worst_fraction",
+    default=0.10,
+    help="the fraction of the stars that will be "
+    "discarded at each step when identifying which are the "
+    "most constant stars. The lower this value, the most "
+    "reliable the identification of the constant stars in "
+    "the field will be, but also more CPU-expensive "
+    "[default: %default]",
+)
 parser.add_option_group(best_group)
 customparser.clear_metavars(parser)
 
-def main(arguments = None):
-    """ main() function, encapsulated in a method to allow for easy invokation.
+
+def main(arguments=None):
+    """main() function, encapsulated in a method to allow for easy invokation.
 
     This method follows Guido van Rossum's suggestions on how to write Python
     main() functions in order to make them more flexible. By encapsulating the
@@ -889,8 +973,8 @@ def main(arguments = None):
     """
 
     if arguments is None:
-        arguments = sys.argv[1:] # ignore argv[0], the script name
-    (options, args) = parser.parse_args(args = arguments)
+        arguments = sys.argv[1:]  # ignore argv[0], the script name
+    (options, args) = parser.parse_args(args=arguments)
 
     # Adjust the logger level to WARNING, INFO or DEBUG, depending on the
     # given number of -v options (none, one or two or more, respectively)
@@ -899,7 +983,7 @@ def main(arguments = None):
         logging_level = logging.INFO
     elif options.verbose >= 2:
         logging_level = logging.DEBUG
-    logging.basicConfig(format = style.LOG_FORMAT, level = logging_level)
+    logging.basicConfig(format=style.LOG_FORMAT, level=logging_level)
 
     if len(args) != 2:
         parser.print_help()
@@ -921,8 +1005,10 @@ def main(arguments = None):
 
     if os.path.exists(output_db_path):
         if not options.overwrite:
-            print "%sError. The output database '%s' already exists." % \
-                  (style.prefix, output_db_path)
+            print "%sError. The output database '%s' already exists." % (
+                style.prefix,
+                output_db_path,
+            )
             print style.error_exit_message
             return 1
         else:
@@ -935,11 +1021,11 @@ def main(arguments = None):
     # inconceivable that the astronomer may need to recompute the curves more
     # than once, each time with a different set of parameters.
 
-    print "%sMaking a copy of the input database..." % style.prefix ,
+    print "%sMaking a copy of the input database..." % style.prefix,
     sys.stdout.flush()
     shutil.copy2(input_db_path, output_db_path)
-    util.owner_writable(output_db_path, True) # chmod u+w
-    print 'done.'
+    util.owner_writable(output_db_path, True)  # chmod u+w
+    print "done."
 
     with database.LEMONdB(output_db_path) as db:
         nstars = len(db)
@@ -948,12 +1034,14 @@ def main(arguments = None):
         for pfilter in sorted(db.pfilters):
 
             print style.prefix
-            print "%sLight curves for the %s filter will now be generated." % \
-                  (style.prefix, pfilter)
-            print "%sLoading photometric information..." % style.prefix ,
+            print "%sLight curves for the %s filter will now be generated." % (
+                style.prefix,
+                pfilter,
+            )
+            print "%sLoading photometric information..." % style.prefix,
             sys.stdout.flush()
             all_stars = [db.get_photometry(star_id, pfilter) for star_id in db.star_ids]
-            print 'done.'
+            print "done."
 
             # The generation of each light curve is a task independent from the
             # others, so we can use a pool of workers and do it in parallel.
@@ -971,8 +1059,8 @@ def main(arguments = None):
                 if logging_level < logging.WARNING:
                     print
 
-            result.get() # reraise exceptions of the remote call, if any
-            util.show_progress(100) # in case the queue was ready too soon
+            result.get()  # reraise exceptions of the remote call, if any
+            util.show_progress(100)  # in case the queue was ready too soon
             print
 
             # The multiprocessing queue contains two-element tuples,
@@ -986,8 +1074,10 @@ def main(arguments = None):
                 # curve could not be calculated -- because it did not meet the
                 # minimum number of images or comparison stars.
                 if curve is None:
-                    logging.debug("Nothing for star %d; light curve could not "
-                                  "be generated" % star_id)
+                    logging.debug(
+                        "Nothing for star %d; light curve could not "
+                        "be generated" % star_id
+                    )
                     continue
 
                 logging.debug("Storing light curve for star %d in database" % star_id)
@@ -1007,10 +1097,10 @@ def main(arguments = None):
                 util.show_progress(100.0)
                 print
 
-        print "%sUpdating statistics about tables and indexes..." % style.prefix ,
+        print "%sUpdating statistics about tables and indexes..." % style.prefix,
         sys.stdout.flush()
         db.analyze()
-        print 'done.'
+        print "done."
 
         # Update LEMONdB metadata
         db.date = time.time()
@@ -1018,9 +1108,10 @@ def main(arguments = None):
         db.hostname = socket.gethostname()
         db.commit()
 
-    util.owner_writable(output_db_path, False) # chmod u-w
+    util.owner_writable(output_db_path, False)  # chmod u-w
     print "%sYou're done ^_^" % style.prefix
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

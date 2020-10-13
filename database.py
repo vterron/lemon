@@ -46,8 +46,9 @@ import json_parse
 import passband
 import util
 
+
 class DBStar(object):
-    """ Encapsulates the instrumental photometric information for a star.
+    """Encapsulates the instrumental photometric information for a star.
 
     This class is used as a container for the instrumental photometry of a
     star, observed in a specific photometric filter. It implements both
@@ -56,9 +57,8 @@ class DBStar(object):
 
     """
 
-    def __init__(self, id_, pfilter, phot_info, times_indexes,
-                 dtype = numpy.longdouble):
-        """ Instantiation method for the DBStar class.
+    def __init__(self, id_, pfilter, phot_info, times_indexes, dtype=numpy.longdouble):
+        """Instantiation method for the DBStar class.
 
         This is an abrupt descent in the abstraction ladder, but needed in
         order to compute the light curves fast and minimize the memory usage.
@@ -84,7 +84,7 @@ class DBStar(object):
 
         self.id = id_
         self.pfilter = pfilter
-        if phot_info.shape[0] != 3: # number of rows
+        if phot_info.shape[0] != 3:  # number of rows
             raise ValueError("'phot_info' must have exactly three rows")
         self._phot_info = phot_info
         self._time_indexes = times_indexes
@@ -92,12 +92,16 @@ class DBStar(object):
 
     def __str__(self):
         """ The 'informal' string representation """
-        return "%s(ID = %d, filter = %s, %d records)" % \
-               (self.__class__.__name__, self.id, self.pfilter, len(self))
+        return "%s(ID = %d, filter = %s, %d records)" % (
+            self.__class__.__name__,
+            self.id,
+            self.pfilter,
+            len(self),
+        )
 
     def __len__(self):
         """ Return the number of records for the star """
-        return self._phot_info.shape[1] # number of columns
+        return self._phot_info.shape[1]  # number of columns
 
     def time(self, index):
         """ Return the Unix time of the index-th record """
@@ -121,8 +125,8 @@ class DBStar(object):
         return self._phot_info[0]
 
     def issubset(self, other):
-        """ Return True if for each Unix time at which 'self' was observed,
-        there is also an observation for 'other'; False otherwise """
+        """Return True if for each Unix time at which 'self' was observed,
+        there is also an observation for 'other'; False otherwise"""
 
         for unix_time in self._unix_times:
             if unix_time not in other._time_indexes:
@@ -130,22 +134,23 @@ class DBStar(object):
         return True
 
     def _trim_to(self, other):
-        """ Return a new DBStar which contains the records of 'self' that were
+        """Return a new DBStar which contains the records of 'self' that were
         observed at the Unix times that can be found in 'other'. KeyError will
         be raised if self if not a subset of other -- so you should check for
         that before trimming anything"""
 
-        phot_info = numpy.empty((3, len(other)), dtype = self.dtype)
+        phot_info = numpy.empty((3, len(other)), dtype=self.dtype)
         for oindex, unix_time in enumerate(other._unix_times):
             sindex = self._time_index(unix_time)
             phot_info[0][oindex] = self.time(sindex)
             phot_info[1][oindex] = self.mag(sindex)
             phot_info[2][oindex] = self.snr(sindex)
-        return DBStar(self.id, self.pfilter, phot_info,
-                      other._time_indexes, dtype = self.dtype)
+        return DBStar(
+            self.id, self.pfilter, phot_info, other._time_indexes, dtype=self.dtype
+        )
 
     def complete_for(self, iterable):
-        """ Iterate over the supplied DBStars and trim them.
+        """Iterate over the supplied DBStars and trim them.
 
         The method returns a list with the 'trimmed' version of those DBStars
         which are different than 'self' (i.e., a star instance will not be
@@ -160,8 +165,8 @@ class DBStar(object):
         return complete_stars
 
     @staticmethod
-    def make_star(id_, pfilter, rows, dtype = numpy.longdouble):
-        """ Construct a DBstar instance for some photometric data.
+    def make_star(id_, pfilter, rows, dtype=numpy.longdouble):
+        """Construct a DBstar instance for some photometric data.
 
         Feeding the class constructor with NumPy arrays and dictionaries is not
         particularly practical, so most of the time you may want to use instead
@@ -177,7 +182,7 @@ class DBStar(object):
         # array as big as will be needed -- numpy.empty(), unlike zeros, does
         # not initializes its entries and may therefore be marginally faster
 
-        phot_info = numpy.empty((3, len(rows)), dtype = dtype)
+        phot_info = numpy.empty((3, len(rows)), dtype=dtype)
 
         # A cache, mapping each Unix time to its index in phot_info; passed
         # to the constructor of DBStar for O(1) lookups of Unix times
@@ -189,21 +194,22 @@ class DBStar(object):
             phot_info[1][index] = magnitude
             phot_info[2][index] = snr
             times_indexes[unix_time] = index
-        return DBStar(id_, pfilter, phot_info, times_indexes, dtype = dtype)
+        return DBStar(id_, pfilter, phot_info, times_indexes, dtype=dtype)
 
 
 # The parameters used for aperture photometry
-typename = 'PhotometricParameters'
+typename = "PhotometricParameters"
 field_names = "aperture, annulus, dannulus"
 PhotometricParameters = collections.namedtuple(typename, field_names)
 
 # A FITS image
-typename = 'Image'
+typename = "Image"
 field_names = "path pfilter unix_time object airmass gain ra dec"
 Image = collections.namedtuple(typename, field_names)
 
+
 class LightCurve(object):
-    """ The data points of a graph of light intensity of a celestial object.
+    """The data points of a graph of light intensity of a celestial object.
 
     Encapsulates a series of Unix times linked to a differential magnitude with
     a signal-to-noise ratio. Internally stored as a list of three-element
@@ -212,8 +218,8 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, pfilter, cstars, cweights, cstdevs, dtype = numpy.longdouble):
-        """ Initialize a new LightCurve object.
+    def __init__(self, pfilter, cstars, cweights, cstdevs, dtype=numpy.longdouble):
+        """Initialize a new LightCurve object.
 
         The 'cstars' argument is a sequence or iterable with the IDs in the
         LEMONdB of the stars that were used as comparison stars when the light
@@ -251,19 +257,19 @@ class LightCurve(object):
         return self._data[index]
 
     def __iter__(self):
-        """ Return a copy of the (unix_time, magnitude, snr) tuples,
+        """Return a copy of the (unix_time, magnitude, snr) tuples,
         chronologically sorted"""
-        return iter(sorted(self._data, key = operator.itemgetter(0)))
+        return iter(sorted(self._data, key=operator.itemgetter(0)))
 
     @property
     def stdev(self):
         if not self:
             raise ValueError("light curve is empty")
         magnitudes = [mag for unix_time, mag, snr in self._data]
-        return numpy.std(numpy.array(magnitudes, dtype = self.dtype))
+        return numpy.std(numpy.array(magnitudes, dtype=self.dtype))
 
     def weights(self):
-        """ Return a generator over the comparison stars and their weights.
+        """Return a generator over the comparison stars and their weights.
 
         This method returns a generator of three-element tuples, with (a) the
         comparison star, (b) its weight and (c) the standard deviation of its
@@ -272,8 +278,8 @@ class LightCurve(object):
         """
         return itertools.izip(self.cstars, self.cweights, self.cstdevs)
 
-    def amplitude(self, npoints = 1, median = True):
-        """ Compute the peak-to-peak amplitude of the light curve.
+    def amplitude(self, npoints=1, median=True):
+        """Compute the peak-to-peak amplitude of the light curve.
 
         The amplitude of a light curve is usually defined, and in this manner
         it is calculated by default, as the change between peak (the highest
@@ -301,7 +307,7 @@ class LightCurve(object):
         return func(magnitudes[-npoints:]) - func(magnitudes[:npoints])
 
     def ignore_noisy(self, snr):
-        """ Return a copy of the LightCurve without noisy points.
+        """Return a copy of the LightCurve without noisy points.
 
         The method returns a deep copy of the instance from which those
         differential magnitudes whose signal-to-noise ratio is below 'snr'
@@ -317,49 +323,63 @@ class LightCurve(object):
 
 class DuplicateImageError(sqlite3.IntegrityError):
     """ Raised if two Images with the same Unix time are added to a LEMONdB """
+
     pass
+
 
 class DuplicateStarError(sqlite3.IntegrityError):
     """ Raised if tho stars with the same ID are added to a LEMONdB """
+
     pass
+
 
 class UnknownStarError(sqlite3.IntegrityError):
     """ Raised when a star foreign key constraint fails """
+
     pass
+
 
 class UnknownImageError(sqlite3.IntegrityError):
     """ Raised when an image foreign key constraint fails """
+
     pass
+
 
 class DuplicatePhotometryError(sqlite3.IntegrityError):
     """ Raised of more than one record for the same star and image is added"""
+
     pass
+
 
 class DuplicateLightCurvePointError(sqlite3.IntegrityError):
     """ If more than one curve point for the same star and image is added"""
+
     pass
 
 
-StarInfo = collections.namedtuple("_StarInfo", [
-    "x",       # the x- and y- coordinates of the star...
-    "y",       # ... in the image where it was detected.
-    "ra",      # right ascension
-    "dec",     # declination
-    "epoch",   # astronomical epoch
-    "pm_ra",   # proper motions in right ascension...
-    "pm_dec",  # ... and declination.
-    "imag",    # instrumental magnitude in the sources image.
-    ])
+StarInfo = collections.namedtuple(
+    "_StarInfo",
+    [
+        "x",  # the x- and y- coordinates of the star...
+        "y",  # ... in the image where it was detected.
+        "ra",  # right ascension
+        "dec",  # declination
+        "epoch",  # astronomical epoch
+        "pm_ra",  # proper motions in right ascension...
+        "pm_dec",  # ... and declination.
+        "imag",  # instrumental magnitude in the sources image.
+    ],
+)
 
 
 class LEMONdB(object):
     """ Interface to the SQLite database used to store our results """
 
-    def __init__(self, path, dtype = numpy.longdouble):
+    def __init__(self, path, dtype=numpy.longdouble):
 
         self.path = path
         self.dtype = dtype
-        self.connection = sqlite3.connect(self.path, isolation_level = None)
+        self.connection = sqlite3.connect(self.path, isolation_level=None)
         self._cursor = self.connection.cursor()
 
         # Enable foreign key support (SQLite >= 3.6.19)
@@ -382,7 +402,7 @@ class LEMONdB(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self._close()
 
-    def _execute(self, query, t = ()):
+    def _execute(self, query, t=()):
         """ Execute SQL query; returns nothing """
         self._cursor.execute(query, t)
 
@@ -400,17 +420,17 @@ class LEMONdB(object):
         self._execute("END TRANSACTION")
 
     def commit(self):
-        """ Make the changes of the current transaction permanent.
-        Automatically starts a new transaction """
+        """Make the changes of the current transaction permanent.
+        Automatically starts a new transaction"""
         self._end()
         self._start()
 
-    def _savepoint(self, name = None):
-        """ Start a new savepoint, use a random name if not given any.
-        Returns the name of the savepoint that was started. """
+    def _savepoint(self, name=None):
+        """Start a new savepoint, use a random name if not given any.
+        Returns the name of the savepoint that was started."""
 
         if not name:
-            name = ''.join(random.sample(string.letters, 12))
+            name = "".join(random.sample(string.letters, 12))
         self._execute("SAVEPOINT %s" % name)
         return name
 
@@ -419,12 +439,12 @@ class LEMONdB(object):
         self._execute("ROLLBACK TO %s" % name)
 
     def _release(self, name):
-        """ Remove from the transaction stack all savepoints back to and
-        including the most recent savepoint with this name """
+        """Remove from the transaction stack all savepoints back to and
+        including the most recent savepoint with this name"""
         self._execute("RELEASE %s" % name)
 
     def analyze(self):
-        """ Run the ANALYZE command and commit automatically.
+        """Run the ANALYZE command and commit automatically.
 
         This command gathers statistics about tables and indexes and stores the
         collected information in internal tables of the database where the
@@ -446,18 +466,21 @@ class LEMONdB(object):
         # This table will contain non-relational information about the LEMONdB
         # itself: we need to store records (key-value pairs, such as ('AUTHOR',
         # 'John Doe') or ('DATE', 1401993454.89).
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS metadata (
             key   TEXT NOT NULL,
             value BLOB,
             UNIQUE (key))
-        ''')
+        """
+        )
 
         # STARS table: 'x' and 'y' are the x- and y-image coordinates of the
         # stars (or, by extension, any astronomical object) in the FITS file
         # on which they are detected (what we call the "sources image").
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS stars (
             id     INTEGER PRIMARY KEY,
             x      REAL NOT NULL,
@@ -468,31 +491,39 @@ class LEMONdB(object):
             pm_ra  REAL,
             pm_dec REAL,
             imag   REAL NOT NULL)
-        ''')
+        """
+        )
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS photometric_filters (
             id    INTEGER PRIMARY KEY,
             name  TEXT UNIQUE NOT NULL)
-        ''')
+        """
+        )
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS photometric_parameters (
             id       INTEGER PRIMARY KEY,
             aperture INTEGER NOT NULL,
             annulus  INTEGER NOT NULL,
             dannulus INTEGER NOT NULL)
-        ''')
+        """
+        )
 
-        self._execute("CREATE INDEX IF NOT EXISTS phot_params_all_rows "
-                      "ON photometric_parameters(aperture, annulus, dannulus)")
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS phot_params_all_rows "
+            "ON photometric_parameters(aperture, annulus, dannulus)"
+        )
 
         # Map (1) a set of photometric parameters and (2) a photometric filter
         # to a standard deviation. This table is populated by the photometry
         # module when the --annuli option is used, storing here the contents
         # of the JSON file with all the candidate photometric parameters.
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS candidate_parameters (
             id         INTEGER PRIMARY KEY,
             pparams_id INTEGER NOT NULL,
@@ -501,17 +532,21 @@ class LEMONdB(object):
             FOREIGN KEY (pparams_id) REFERENCES photometric_parameters(id),
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
             UNIQUE (pparams_id, filter_id))
-        ''')
+        """
+        )
 
-        self._execute("CREATE INDEX IF NOT EXISTS cand_filter "
-                      "ON candidate_parameters(filter_id)")
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS cand_filter "
+            "ON candidate_parameters(filter_id)"
+        )
 
         # IMAGES table: the 'sources' column stores Boolean values as integers
         # 0 (False) and 1 (True), indicating the FITS image on which sources
         # were detected. Only one image must have 'sources' set to True; all
         # the others must be False.
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS images (
             id         INTEGER PRIMARY KEY,
             path       TEXT NOT NULL,
@@ -526,10 +561,13 @@ class LEMONdB(object):
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
             UNIQUE (filter_id, unix_time))
 
-        ''')
+        """
+        )
 
-        self._execute("CREATE INDEX IF NOT EXISTS img_by_filter_time "
-                      "ON images(filter_id, unix_time)")
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS img_by_filter_time "
+            "ON images(filter_id, unix_time)"
+        )
 
         # Enforce a maximum of one sources image (SOURCES == 1)
         for index, when in enumerate(("INSERT", "UPDATE OF sources")):
@@ -540,60 +578,74 @@ class LEMONdB(object):
                           WHERE (SELECT COUNT(*)
                                  FROM images
                                  WHERE sources = 1) > 1;
-                      END; """ % (index, when)
+                      END; """ % (
+                index,
+                when,
+            )
             self._execute(stmt)
 
         # Although FILTER_ID, UNIX_TIME, AIRMASS and GAIN may be NULL, we only
         # allow this for the sources image (that for which SOURCES == 1). The
         # four columns are mandatory for 'normal' (so to speak) images.
 
-        for field in ('FILTER_ID', 'UNIX_TIME', 'AIRMASS', 'GAIN'):
+        for field in ("FILTER_ID", "UNIX_TIME", "AIRMASS", "GAIN"):
             for index, where in enumerate(("INSERT", "UPDATE OF " + field)):
-                stmt =  """CREATE TRIGGER IF NOT EXISTS {0}_not_null_{1}
+                stmt = """CREATE TRIGGER IF NOT EXISTS {0}_not_null_{1}
                            AFTER {2} ON images
                            FOR EACH ROW
                            WHEN NEW.{0} is NULL AND NEW.sources != 1
                            BEGIN
                                SELECT RAISE(ABORT, '{0} may not be NULL unless SOURCES = 1');
-                           END; """.format(field, index, where)
+                           END; """.format(
+                    field, index, where
+                )
                 self._execute(stmt)
 
         # Require RA to be in range [0, 360[
         for index, when in enumerate(["INSERT", "UPDATE OF ra"]):
-            stmt =  """CREATE TRIGGER IF NOT EXISTS ra_within_range_%d
+            stmt = """CREATE TRIGGER IF NOT EXISTS ra_within_range_%d
                        AFTER %s ON images
                        FOR EACH ROW
                        WHEN (NEW.ra NOT BETWEEN 0 AND 360) OR (NEW.ra = 360)
                        BEGIN
                            SELECT RAISE(ABORT, 'RA out of range [0, 360[');
-                       END; """ % (index, when)
+                       END; """ % (
+                index,
+                when,
+            )
             self._execute(stmt)
 
         # Require DEC to be in range [-90, 90]
         for index, when in enumerate(["INSERT", "UPDATE OF dec"]):
-            stmt =  """CREATE TRIGGER IF NOT EXISTS dec_within_range_%d
+            stmt = """CREATE TRIGGER IF NOT EXISTS dec_within_range_%d
                        AFTER %s ON images
                        FOR EACH ROW
                        WHEN NEW.dec NOT BETWEEN -90 AND 90
                        BEGIN
                            SELECT RAISE(ABORT, 'DEC out of range [-90, 90]');
-                       END; """ % (index, when)
+                       END; """ % (
+                index,
+                when,
+            )
             self._execute(stmt)
 
         # Store as a blob entire FITS files.
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS raw_images (
             id   INTEGER PRIMARY KEY,
             fits BLOB NOT NULL,
             FOREIGN KEY (id) REFERENCES images(id))
-        ''')
+        """
+        )
 
         # For those astronomical objects with known proper motions, store the
         # x- and y-coordinates where photometry was done in each image. Mostly
         # useful for debugging purposes, this information allows us to verify
         # that the proper-motion correction was correctly applied.
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS pm_corrections (
             id         INTEGER PRIMARY KEY,
             star_id    INTEGER NOT NULL,
@@ -603,9 +655,11 @@ class LEMONdB(object):
             FOREIGN KEY (star_id)  REFERENCES stars(id),
             FOREIGN KEY (image_id) REFERENCES images(id),
             UNIQUE (star_id, image_id))
-        ''')
+        """
+        )
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS photometry (
             id         INTEGER PRIMARY KEY,
             star_id    INTEGER NOT NULL,
@@ -615,14 +669,19 @@ class LEMONdB(object):
             FOREIGN KEY (star_id)  REFERENCES stars(id),
             FOREIGN KEY (image_id) REFERENCES images(id),
             UNIQUE (star_id, image_id))
-        ''')
+        """
+        )
 
-        self._execute("CREATE INDEX IF NOT EXISTS phot_by_star_image "
-                      "ON photometry(star_id, image_id)")
-        self._execute("CREATE INDEX IF NOT EXISTS phot_by_image "
-                      "ON photometry(image_id)")
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS phot_by_star_image "
+            "ON photometry(star_id, image_id)"
+        )
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS phot_by_image " "ON photometry(image_id)"
+        )
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS light_curves (
             id         INTEGER PRIMARY KEY,
             star_id    INTEGER NOT NULL,
@@ -632,12 +691,16 @@ class LEMONdB(object):
             FOREIGN KEY (star_id)  REFERENCES stars(id),
             FOREIGN KEY (image_id) REFERENCES images(id),
             UNIQUE (star_id, image_id))
-        ''')
+        """
+        )
 
-        self._execute("CREATE INDEX IF NOT EXISTS curve_by_star_image "
-                      "ON light_curves(star_id, image_id)")
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS curve_by_star_image "
+            "ON light_curves(star_id, image_id)"
+        )
 
-        self._execute('''
+        self._execute(
+            """
         CREATE TABLE IF NOT EXISTS cmp_stars (
             id        INTEGER PRIMARY KEY,
             star_id   INTEGER NOT NULL,
@@ -648,21 +711,24 @@ class LEMONdB(object):
             FOREIGN KEY (star_id)    REFERENCES stars(id),
             FOREIGN KEY (filter_id) REFERENCES photometric_filters(id),
             FOREIGN KEY (cstar_id)   REFERENCES stars(id))
-        ''')
+        """
+        )
 
-        self._execute("CREATE INDEX IF NOT EXISTS cstars_by_star_filter "
-                      "ON cmp_stars(star_id, filter_id)")
+        self._execute(
+            "CREATE INDEX IF NOT EXISTS cstars_by_star_filter "
+            "ON cmp_stars(star_id, filter_id)"
+        )
 
     def _table_count(self, table):
         """ Return the number of rows in 'table' """
         self._execute("SELECT COUNT(*) FROM %s" % table)
-        rows = list(self._rows) # from iterator to list
+        rows = list(self._rows)  # from iterator to list
         assert len(rows) == 1
         return rows[0][0]
 
     def _add_pfilter(self, pfilter):
-        """ Store a photometric filter in the database. The primary
-        key of the Passband objects in the table is their hash value """
+        """Store a photometric filter in the database. The primary
+        key of the Passband objects in the table is their hash value"""
 
         # Duck typing is not the way to go here. The photometric filter *must*
         # be a Passband object: hash() always returns an integer, so dangerous
@@ -677,37 +743,41 @@ class LEMONdB(object):
     @property
     def _pparams_ids(self):
         """ Return the ID of the photometric parameters, in ascending order"""
-        self._execute("SELECT id "
-                      "FROM photometric_parameters "
-                      "ORDER BY id ASC")
+        self._execute("SELECT id " "FROM photometric_parameters " "ORDER BY id ASC")
         return list(x[0] for x in self._rows)
 
     def _get_pparams(self, id_):
-        """ Return the PhotometricParamaters with this ID.
-        Raises KeyError if the database has nothing for this ID """
+        """Return the PhotometricParamaters with this ID.
+        Raises KeyError if the database has nothing for this ID"""
 
-        self._execute("SELECT aperture, annulus, dannulus "
-                      "FROM photometric_parameters "
-                      "WHERE id = ?", (id_,))
+        self._execute(
+            "SELECT aperture, annulus, dannulus "
+            "FROM photometric_parameters "
+            "WHERE id = ?",
+            (id_,),
+        )
         rows = list(self._rows)
         if not rows:
-            raise KeyError('%d' % id_)
+            raise KeyError("%d" % id_)
         else:
             assert len(rows) == 1
             args = rows[0]
             return PhotometricParameters(*args)
 
     def _add_pparams(self, pparams):
-        """ Add a PhotometricParameters instance and return its ID or do
+        """Add a PhotometricParameters instance and return its ID or do
         nothing and simply return the ID if already present in the database"""
 
         t = [pparams.aperture, pparams.annulus, pparams.dannulus]
-        self._execute("SELECT id "
-                      "FROM photometric_parameters "
-                      "     INDEXED BY phot_params_all_rows "
-                      "WHERE aperture = ? "
-                      "  AND annulus  = ? "
-                      "  AND dannulus = ?", t)
+        self._execute(
+            "SELECT id "
+            "FROM photometric_parameters "
+            "     INDEXED BY phot_params_all_rows "
+            "WHERE aperture = ? "
+            "  AND annulus  = ? "
+            "  AND dannulus = ?",
+            t,
+        )
         try:
             return list(self._rows)[0][0]
         except IndexError:
@@ -716,7 +786,7 @@ class LEMONdB(object):
             return self._cursor.lastrowid
 
     def add_candidate_pparams(self, candidate_annuli, pfilter):
-        """ Store a CandidateAnnuli instance into the LEMONdB.
+        """Store a CandidateAnnuli instance into the LEMONdB.
 
         The method links an json_parse.CandidateAnnuli instance to a
         photometric filter, adding a new record to the CANDIDATE_PARAMETERS
@@ -740,11 +810,12 @@ class LEMONdB(object):
         pparams_id = self._add_pparams(candidate_annuli)
         self._add_pfilter(pfilter)
         t = (None, pparams_id, hash(pfilter), candidate_annuli.stdev)
-        self._execute("INSERT OR REPLACE INTO candidate_parameters "
-                      "VALUES (?, ?, ?, ?)", t)
+        self._execute(
+            "INSERT OR REPLACE INTO candidate_parameters " "VALUES (?, ?, ?, ?)", t
+        )
 
     def get_candidate_pparams(self, pfilter):
-        """ Return all the CandidateAnnuli for a photometric filter.
+        """Return all the CandidateAnnuli for a photometric filter.
 
         The method returns a list with all the CandidateAnnuli objects that
         have been stored in the LEMONdB (in the CANDIDATE_PARAMETERS table,
@@ -756,17 +827,20 @@ class LEMONdB(object):
         """
 
         t = (hash(pfilter),)
-        self._execute("SELECT p.aperture, p.annulus, p.dannulus, c.stdev "
-                      " FROM candidate_parameters AS c "
-                      "      INDEXED BY cand_filter, "
-                      "      photometric_parameters AS p "
-                      "ON c.pparams_id = p.id "
-                      "WHERE c.filter_id = ? "
-                      "ORDER BY c.stdev ASC", t)
+        self._execute(
+            "SELECT p.aperture, p.annulus, p.dannulus, c.stdev "
+            " FROM candidate_parameters AS c "
+            "      INDEXED BY cand_filter, "
+            "      photometric_parameters AS p "
+            "ON c.pparams_id = p.id "
+            "WHERE c.filter_id = ? "
+            "ORDER BY c.stdev ASC",
+            t,
+        )
         return [json_parse.CandidateAnnuli(*args) for args in self._rows]
 
     def _get_simage_id(self):
-        """ Return the ID of the image on which sources were detected.
+        """Return the ID of the image on which sources were detected.
 
         Return the ID of the FITS file that was used to detect sources: it can
         be identified in the IMAGES table because it is the only row where the
@@ -786,7 +860,7 @@ class LEMONdB(object):
 
     @property
     def simage(self):
-        """ Return the FITS image on which sources were detected.
+        """Return the FITS image on which sources were detected.
 
         Return an Image object with the information about the FITS file that
         was used to detect sources. The Image.path attribute is just that, a
@@ -802,11 +876,14 @@ class LEMONdB(object):
             return None
 
         t = (id_,)
-        self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
-                      "       i.airmass, i.gain, i.ra, i.dec "
-                      "FROM images AS i, photometric_filters AS p "
-                      "ON i.filter_id = p.id "
-                      "WHERE i.id = ?", t)
+        self._execute(
+            "SELECT i.path, p.name, i.unix_time, i.object, "
+            "       i.airmass, i.gain, i.ra, i.dec "
+            "FROM images AS i, photometric_filters AS p "
+            "ON i.filter_id = p.id "
+            "WHERE i.id = ?",
+            t,
+        )
 
         rows = list(self._rows)
         assert len(rows) == 1
@@ -816,7 +893,7 @@ class LEMONdB(object):
 
     @simage.setter
     def simage(self, image):
-        """ Set the FITS image on which sources were detected.
+        """Set the FITS image on which sources were detected.
 
         Receives an Image object with information about the FITS file that was
         used to detect sources and stores it in the LEMONdB. The file to which
@@ -827,9 +904,9 @@ class LEMONdB(object):
 
         """
 
-        self.add_image(image, _is_sources_img = True)
+        self.add_image(image, _is_sources_img=True)
 
-        with open(image.path, 'rb') as fd:
+        with open(image.path, "rb") as fd:
             blob = fd.read()
 
         # Get the ID of the sources image and store it as a blob
@@ -840,8 +917,8 @@ class LEMONdB(object):
         t = (id_, buffer(blob))
         self._execute("INSERT OR REPLACE INTO raw_images VALUES (?, ?)", t)
 
-    def add_image(self, image, _is_sources_img = False):
-        """ Store information about a FITS image in the database.
+    def add_image(self, image, _is_sources_img=False):
+        """Store information about a FITS image in the database.
 
         Raises DuplicateImageError if the Image has the same Unix time and
         photometric filter that another image already stored in the LEMON
@@ -891,11 +968,18 @@ class LEMONdB(object):
         if image.pfilter:
             self._add_pfilter(image.pfilter)
 
-        t = (None, image.path,
-             hash(image.pfilter) if image.pfilter else None,
-             image.unix_time,
-             image.object, image.airmass, image.gain, image.ra, image.dec,
-             int(_is_sources_img))
+        t = (
+            None,
+            image.path,
+            hash(image.pfilter) if image.pfilter else None,
+            image.unix_time,
+            image.object,
+            image.airmass,
+            image.gain,
+            image.ra,
+            image.dec,
+            int(_is_sources_img),
+        )
 
         try:
             # If this is the sources image (i.e., _is_sources_img == True), it
@@ -905,8 +989,9 @@ class LEMONdB(object):
             if _is_sources_img:
                 self._execute("UPDATE images SET sources = 0 WHERE sources = 1")
 
-            self._execute("INSERT INTO images "
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t)
+            self._execute(
+                "INSERT INTO images " "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", t
+            )
             self._release(mark)
 
         except Exception as e:
@@ -921,14 +1006,19 @@ class LEMONdB(object):
             pfilter = image.pfilter
 
             t = (unix_time, hash(pfilter))
-            self._execute("""SELECT *
+            self._execute(
+                """SELECT *
                              FROM images
                              WHERE unix_time = ?
-                               AND filter_id = ? """, t)
+                               AND filter_id = ? """,
+                t,
+            )
 
             if list(self._rows):
-                msg = ("Image with Unix time %.4f (%s) and filter %s already "
-                       "in database")
+                msg = (
+                    "Image with Unix time %.4f (%s) and filter %s already "
+                    "in database"
+                )
                 args = (unix_time, util.utctime(unix_time), pfilter)
                 raise DuplicateImageError(msg % args)
 
@@ -937,17 +1027,20 @@ class LEMONdB(object):
             raise e
 
     def _get_image_id(self, unix_time, pfilter):
-        """ Return the ID of the Image with this Unix time and filter.
+        """Return the ID of the Image with this Unix time and filter.
         Raises KeyError if there is no image for this date and filter"""
 
         # Note the cast to Python's built-in float. Otherwise, if the method
         # gets a NumPy float, SQLite raises "sqlite3.InterfaceError: Error
         # binding parameter - probably unsupported type"
         t = (float(unix_time), hash(pfilter))
-        self._execute("SELECT id "
-                      "FROM images INDEXED BY img_by_filter_time "
-                      "WHERE unix_time = ? "
-                      "  AND filter_id = ?", t)
+        self._execute(
+            "SELECT id "
+            "FROM images INDEXED BY img_by_filter_time "
+            "WHERE unix_time = ? "
+            "  AND filter_id = ?",
+            t,
+        )
         rows = list(self._rows)
         if not rows:
             msg = "%.4f (%s) and filter %s"
@@ -959,15 +1052,18 @@ class LEMONdB(object):
             return rows[0][0]
 
     def get_image(self, unix_time, pfilter):
-        """ Return the Image observed at a Unix time and photometric filter.
+        """Return the Image observed at a Unix time and photometric filter.
         Raises KeyError if there is no image for this date and filter"""
 
         image_id = self._get_image_id(unix_time, pfilter)
-        self._execute("SELECT i.path, p.name, i.unix_time, i.object, "
-                      "       i.airmass, i.gain, i.ra, i.dec "
-                      "FROM images AS i, photometric_filters AS p "
-                      "ON i.filter_id = p.id "
-                      "WHERE i.id = ?", (image_id,))
+        self._execute(
+            "SELECT i.path, p.name, i.unix_time, i.object, "
+            "       i.airmass, i.gain, i.ra, i.dec "
+            "FROM images AS i, photometric_filters AS p "
+            "ON i.filter_id = p.id "
+            "WHERE i.id = ?",
+            (image_id,),
+        )
 
         rows = list(self._rows)
         if not rows:
@@ -981,7 +1077,7 @@ class LEMONdB(object):
             return Image(*args)
 
     def add_star(self, star_id, x, y, ra, dec, epoch, pm_ra, pm_dec, imag):
-        """ Add a star to the database.
+        """Add a star to the database.
 
         This method only stores the 'description' of the star, that is, its
         image and celestial coordinates, astronomical epoch, proper motions and
@@ -1009,10 +1105,13 @@ class LEMONdB(object):
         Raises KeyError is no star in the database has this ID.
         """
 
-        t = (star_id, )
-        self._execute("SELECT x, y, ra, dec, epoch, pm_ra, pm_dec, imag "
-                      "FROM stars "
-                      "WHERE id = ?", t)
+        t = (star_id,)
+        self._execute(
+            "SELECT x, y, ra, dec, epoch, pm_ra, pm_dec, imag "
+            "FROM stars "
+            "WHERE id = ?",
+            t,
+        )
         try:
             return StarInfo(*self._rows.next())
         except StopIteration:
@@ -1020,7 +1119,7 @@ class LEMONdB(object):
 
     def __len__(self):
         """ Return the number of stars in the database """
-        return self._table_count('STARS')
+        return self._table_count("STARS")
 
     @property
     def star_ids(self):
@@ -1029,7 +1128,7 @@ class LEMONdB(object):
         return list(x[0] for x in self._rows)
 
     def add_pm_correction(self, star_id, unix_time, pfilter, pm_x, pm_y):
-        """ Store the proper-motion corrected pixel coordinates of a star.
+        """Store the proper-motion corrected pixel coordinates of a star.
 
         Store the x- and y-coordinates where photometry of an astronomical
         object was done in an image. When an object has a proper motion we do
@@ -1054,9 +1153,11 @@ class LEMONdB(object):
 
         try:
             if None in self.get_star(star_id)[5:7]:
-                msg = ("astronomical object with ID = %d does not have proper "
-                       "motions, so we cannot store proper-motion corrections "
-                       "for it. Where do these values come from?" % star_id)
+                msg = (
+                    "astronomical object with ID = %d does not have proper "
+                    "motions, so we cannot store proper-motion corrections "
+                    "for it. Where do these values come from?" % star_id
+                )
                 raise ValueError(msg)
         except KeyError:
             msg = "star with ID = %d not in database" % star_id
@@ -1072,7 +1173,7 @@ class LEMONdB(object):
         self._execute(stmt, t)
 
     def get_pm_correction(self, star_id, unix_time, pfilter):
-        """ Return the proper-motion correction of a star in an image.
+        """Return the proper-motion correction of a star in an image.
 
         Return the image coordinates of an astronomical object where photometry
         was done after applying proper-motion correction. Returns a two-element
@@ -1085,10 +1186,13 @@ class LEMONdB(object):
 
         image_id = self._get_image_id(unix_time, pfilter)
         t = (int(star_id), image_id)
-        self._execute("""SELECT x, y
+        self._execute(
+            """SELECT x, y
                          FROM pm_corrections
                          WHERE  star_id = ?
-                           AND image_id = ?""", t)
+                           AND image_id = ?""",
+            t,
+        )
         try:
             rows = tuple(self._rows)
             return rows[0]
@@ -1100,7 +1204,7 @@ class LEMONdB(object):
                 return None, None
 
     def add_photometry(self, star_id, unix_time, pfilter, magnitude, snr):
-        """ Store the photometric record of a star at a given time and filter.
+        """Store the photometric record of a star at a given time and filter.
 
         Raises UnknownStarError if 'star_id' does not match the ID of any of
         the stars in the database, while UnknownImageError is raised if the
@@ -1130,13 +1234,15 @@ class LEMONdB(object):
                 msg = "star with ID = %d not in database" % star_id
                 raise UnknownStarError(msg)
 
-            msg = "photometry for star ID = %d, Unix time = %4.f " \
-                  "(%s) and filter %s already in database"
+            msg = (
+                "photometry for star ID = %d, Unix time = %4.f "
+                "(%s) and filter %s already in database"
+            )
             args = (star_id, unix_time, util.utctime(unix_time), pfilter)
             raise DuplicatePhotometryError(msg % args)
 
     def get_photometry(self, star_id, pfilter):
-        """ Return the photometric information of the star.
+        """Return the photometric information of the star.
 
         The method returns a DBStar instance with the photometric information
         of the star in a given filter. The records are sorted by their date of
@@ -1153,19 +1259,22 @@ class LEMONdB(object):
         # a NumPy integer, SQLite raises "sqlite3.InterfaceError: Error binding
         # parameter - probably unsupported type"
         t = (int(star_id), hash(pfilter))
-        self._execute("SELECT img.unix_time, phot.magnitude, phot.snr "
-                      "FROM photometry AS phot INDEXED BY phot_by_star_image, "
-                      "     images AS img INDEXED BY img_by_filter_time "
-                      "ON phot.image_id = img.id "
-                      "WHERE phot.star_id = ? "
-                      "  AND img.filter_id = ? "
-                      "ORDER BY img.unix_time ASC", t)
+        self._execute(
+            "SELECT img.unix_time, phot.magnitude, phot.snr "
+            "FROM photometry AS phot INDEXED BY phot_by_star_image, "
+            "     images AS img INDEXED BY img_by_filter_time "
+            "ON phot.image_id = img.id "
+            "WHERE phot.star_id = ? "
+            "  AND img.filter_id = ? "
+            "ORDER BY img.unix_time ASC",
+            t,
+        )
 
         args = star_id, pfilter, list(self._rows)
-        return DBStar.make_star(*args, dtype = self.dtype)
+        return DBStar.make_star(*args, dtype=self.dtype)
 
     def _star_pfilters(self, star_id):
-        """ Return the photometric filters for which the star has data.
+        """Return the photometric filters for which the star has data.
 
         The method returns a sorted list of the photometric filters
         (encapsulated as Passband instances) of the images on which the star
@@ -1178,21 +1287,24 @@ class LEMONdB(object):
             msg = "star with ID = %d not in database" % star_id
             raise KeyError(msg)
 
-        t = (star_id, )
-        self._execute("""SELECT DISTINCT f.name
+        t = (star_id,)
+        self._execute(
+            """SELECT DISTINCT f.name
                          FROM (SELECT DISTINCT image_id
                                FROM photometry INDEXED BY phot_by_star_image
                                WHERE star_id = ?) AS phot
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
-                         ON img.filter_id = f.id """, t)
+                         ON img.filter_id = f.id """,
+            t,
+        )
 
         return sorted(passband.Passband(x[0]) for x in self._rows)
 
     @property
     def pfilters(self):
-        """ Return the photometric filters for which there is data.
+        """Return the photometric filters for which there is data.
 
         Return a sorted list of the photometric filters for which the database
         has photometric records. This means that a filter for which images were
@@ -1202,19 +1314,21 @@ class LEMONdB(object):
 
         """
 
-        self._execute("""SELECT DISTINCT f.name
+        self._execute(
+            """SELECT DISTINCT f.name
                          FROM (SELECT DISTINCT image_id
                                FROM photometry INDEXED BY phot_by_image)
                                AS phot
                          INNER JOIN images AS img
                          ON phot.image_id = img.id
                          INNER JOIN photometric_filters AS f
-                         ON img.filter_id = f.id """)
+                         ON img.filter_id = f.id """
+        )
 
         return sorted(passband.Passband(x[0]) for x in self._rows)
 
     def _add_curve_point(self, star_id, unix_time, pfilter, magnitude, snr):
-        """ Store a point of the light curve of a star.
+        """Store a point of the light curve of a star.
 
         Raises UnknownStarError if 'star_id' does not match the ID of any of
         the stars in the database, while UnknownImageError is raised if the
@@ -1234,8 +1348,7 @@ class LEMONdB(object):
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
             t = (None, star_id, image_id, float(magnitude), float(snr))
-            self._execute("INSERT INTO light_curves "
-                          "VALUES (?, ?, ?, ?, ?)", t)
+            self._execute("INSERT INTO light_curves " "VALUES (?, ?, ?, ?, ?)", t)
 
         except KeyError, e:
             raise UnknownImageError(str(e))
@@ -1245,13 +1358,15 @@ class LEMONdB(object):
                 msg = "star with ID = %d not in database" % star_id
                 raise UnknownStarError(msg)
 
-            msg = "light curve point for star ID = %d, Unix time = %4.f " \
-                  "(%s) and filter %s already in database"
+            msg = (
+                "light curve point for star ID = %d, Unix time = %4.f "
+                "(%s) and filter %s already in database"
+            )
             args = (star_id, unix_time, util.utctime(unix_time), pfilter)
             raise DuplicateLightCurvePointError(msg % args)
 
     def _add_cmp_star(self, star_id, pfilter, cstar_id, cweight, cstdev):
-        """ Add a comparison star to the light curve of a star.
+        """Add a comparison star to the light curve of a star.
 
         The method stores 'cstar_id' as the ID of one of the comparison stars
         (with a light curve standard deviation 'cstdev' and the corresponding
@@ -1276,10 +1391,9 @@ class LEMONdB(object):
             # method gets a NumPy float, SQLite raises "sqlite3.InterfaceError:
             # Error binding parameter - probably unsupported type"
             cweight = float(cweight)
-            cstdev  = float(cstdev)
+            cstdev = float(cstdev)
             t = (None, star_id, hash(pfilter), cstar_id, cstdev, cweight)
-            self._execute("INSERT INTO cmp_stars "
-                          "VALUES (?, ?, ?, ?, ?, ?)", t)
+            self._execute("INSERT INTO cmp_stars " "VALUES (?, ?, ?, ?, ?, ?)", t)
             self._release(mark)
 
         except sqlite3.IntegrityError:
@@ -1292,7 +1406,7 @@ class LEMONdB(object):
                 raise UnknownStarError(msg)
 
     def add_light_curve(self, star_id, light_curve):
-        """ Store the light curve of a star.
+        """Store the light curve of a star.
 
         The database is modified atomically, so in case an error is encountered
         it is left untouched. There are four different exceptions, propagated
@@ -1332,7 +1446,7 @@ class LEMONdB(object):
             raise
 
     def get_light_curve(self, star_id, pfilter):
-        """ Return the light curve of a star.
+        """Return the light curve of a star.
 
         The method returns a LightCurve instance which encapsulates the
         differential photometry of the star in a photometric filter. Raises
@@ -1353,22 +1467,28 @@ class LEMONdB(object):
 
         # Extract the points of the light curve ...
         t = (star_id, hash(pfilter))
-        self._execute("SELECT img.unix_time, curve.magnitude, curve.snr "
-                      "FROM light_curves AS curve INDEXED BY curve_by_star_image, "
-                      "     images AS img INDEXED BY img_by_filter_time "
-                      "ON curve.image_id = img.id "
-                      "WHERE curve.star_id = ? "
-                      "  AND img.filter_id = ? "
-                      "ORDER BY img.unix_time ASC", t)
+        self._execute(
+            "SELECT img.unix_time, curve.magnitude, curve.snr "
+            "FROM light_curves AS curve INDEXED BY curve_by_star_image, "
+            "     images AS img INDEXED BY img_by_filter_time "
+            "ON curve.image_id = img.id "
+            "WHERE curve.star_id = ? "
+            "  AND img.filter_id = ? "
+            "ORDER BY img.unix_time ASC",
+            t,
+        )
         curve_points = list(self._rows)
 
         if curve_points:
             # ... as well as the comparison stars.
-            self._execute("SELECT cstar_id, weight, stdev "
-                          "FROM cmp_stars INDEXED BY cstars_by_star_filter "
-                          "WHERE star_id = ? "
-                          "  AND filter_id = ? "
-                          "ORDER BY cstar_id", t)
+            self._execute(
+                "SELECT cstar_id, weight, stdev "
+                "FROM cmp_stars INDEXED BY cstars_by_star_filter "
+                "WHERE star_id = ? "
+                "  AND filter_id = ? "
+                "ORDER BY cstar_id",
+                t,
+            )
 
             rows = list(self._rows)
             if not rows:
@@ -1386,13 +1506,13 @@ class LEMONdB(object):
             # No curve in the database for this star and filter
             return None
 
-        curve = LightCurve(pfilter, cstars, cweights, cstdevs, dtype = self.dtype)
+        curve = LightCurve(pfilter, cstars, cweights, cstdevs, dtype=self.dtype)
         for point in curve_points:
             curve.add(*point)
         return curve
 
     def get_instrumental_magnitudes(self, star_id, pfilter):
-        """ Return the instrumental magnitudes of an astronomical object.
+        """Return the instrumental magnitudes of an astronomical object.
 
         Return a dictionary which maps the Unix time of each measurement of an
         astronomical object to a two-element namedtuple with fields 'magnitude'
@@ -1404,19 +1524,22 @@ class LEMONdB(object):
         """
 
         t = (star_id, hash(pfilter))
-        self._execute("""
+        self._execute(
+            """
                       SELECT i.unix_time, p.magnitude, p.snr
                       FROM photometry AS p, images AS i
                       ON p.image_id = i.id
                       WHERE p.star_id = ? AND
                             i.filter_id = ?
-                      """, t)
+                      """,
+            t,
+        )
 
-        cls = collections.namedtuple('InstrumentalMagnitude', "magnitude snr")
+        cls = collections.namedtuple("InstrumentalMagnitude", "magnitude snr")
         return dict((r[0], cls(*r[1:])) for r in self._rows)
 
     def airmasses(self, pfilter):
-        """ Return the airmasses of the images in a photometric filter.
+        """Return the airmasses of the images in a photometric filter.
 
         The method returns a dictionary which maps the Unix time of each of the
         images in this photometric filter to their airmasses. If no images were
@@ -1424,14 +1547,17 @@ class LEMONdB(object):
 
         """
 
-        t = (hash(pfilter), )
-        self._execute("SELECT unix_time, airmass "
-                      "FROM images INDEXED BY img_by_filter_time "
-                      "WHERE filter_id = ? ", t)
+        t = (hash(pfilter),)
+        self._execute(
+            "SELECT unix_time, airmass "
+            "FROM images INDEXED BY img_by_filter_time "
+            "WHERE filter_id = ? ",
+            t,
+        )
         return dict(self._rows)
 
-    def get_phase_diagram(self, star_id, pfilter, period, repeat = 1):
-        """ Return the folded light curve of a star.
+    def get_phase_diagram(self, star_id, pfilter, period, repeat=1):
+        """Return the folded light curve of a star.
 
         The method returns a LightCurve instance with the phase diagram of the
         star in a photometric filter: 'Phase diagrams (also known as 'folded
@@ -1457,11 +1583,9 @@ class LEMONdB(object):
         if curve is None:
             return None
 
-        phase = LightCurve(pfilter,
-                           curve.cstars,
-                           curve.cweights,
-                           curve.cstdevs,
-                           dtype = curve.dtype)
+        phase = LightCurve(
+            pfilter, curve.cstars, curve.cweights, curve.cstdevs, dtype=curve.dtype
+        )
 
         unix_times, magnitudes, snrs = zip(*curve)
         zero_t = min(unix_times)
@@ -1473,25 +1597,24 @@ class LEMONdB(object):
             phased_x.append(fractional_part)
         assert len(phased_x) == len(unix_times)
 
-        x_max = 1;
+        x_max = 1
         phased_unix_times = phased_x[:]
-        for _ in xrange(repeat - 1): # -1 as there is already one (phased_x)
+        for _ in xrange(repeat - 1):  # -1 as there is already one (phased_x)
             phased_unix_times += [utime + x_max for utime in phased_x]
-            x_max += 1;
+            x_max += 1
 
         assert len(phased_unix_times) == len(unix_times) * repeat
         phased_magnitudes = magnitudes * repeat
         phased_snr = snrs * repeat
 
-        for utime, mag, snr in \
-            zip(phased_unix_times, phased_magnitudes, phased_snr):
-                phase.add(utime, mag, snr)
+        for utime, mag, snr in zip(phased_unix_times, phased_magnitudes, phased_snr):
+            phase.add(utime, mag, snr)
 
         assert len(phase) == len(curve) * repeat
         return phase
 
     def most_similar_magnitude(self, star_id, pfilter):
-        """ Iterate over the stars sorted by their similarity in magnitude.
+        """Iterate over the stars sorted by their similarity in magnitude.
 
         Returns a generator over the stars in the LEMONdB that have a light
         curve in the 'pfilter' photometric filter, sorted by the difference
@@ -1505,21 +1628,22 @@ class LEMONdB(object):
         """
 
         # Map each ID other than 'star_id' to its instrumental magnitude
-        magnitudes = [(id_, self.get_star(id_)[-1])
-                      for id_ in self.star_ids if id_ != star_id]
+        magnitudes = [
+            (id_, self.get_star(id_)[-1]) for id_ in self.star_ids if id_ != star_id
+        ]
 
         # Sort the IDs by the difference between their instrumental magnitude
         # and the reference instrumental magnitude (that of the star with ID
         # 'star_id', and return one by one those which have a light curve
         rmag = self.get_star(star_id)[-1]
-        magnitudes.sort(key = lambda x: abs(rmag - x[1]))
+        magnitudes.sort(key=lambda x: abs(rmag - x[1]))
         for id_, imag in magnitudes:
             if self.get_light_curve(id_, pfilter):
                 yield id_, imag
 
     @property
     def field_name(self):
-        """ Determine the name of the field observed during a campaign.
+        """Determine the name of the field observed during a campaign.
 
         The method finds the most common prefix among the object names of the
         images (IMAGES table) contained in the database. What we understand by
@@ -1566,14 +1690,14 @@ class LEMONdB(object):
         # Loop over the prefixes, from longest to shortest, until one common to
         # more than half of the object names (i.e., images) in the database is
         # found.
-        longest = sorted(substrings.keys(), key = len, reverse = True)
+        longest = sorted(substrings.keys(), key=len, reverse=True)
         minimum_matches = len(object_names) // 2 + 1
         for prefix in longest:
             if startswith_counter(prefix, object_names) >= minimum_matches:
-                return prefix.strip(" _") # e.g., "NGC 2276_" to "NGC 2264"
+                return prefix.strip(" _")  # e.g., "NGC 2276_" to "NGC 2264"
 
     def _set_metadata(self, key, value):
-        """ Set (or replace) the value of a record in the METADATA table.
+        """Set (or replace) the value of a record in the METADATA table.
 
         Since it is stored in the METADATA table as a TEXT type, 'key' must be
         a string object. A BLOB type, on the other hand, is used for 'value',
@@ -1584,18 +1708,17 @@ class LEMONdB(object):
         if not isinstance(key, basestring):
             raise ValueError("key must be a string")
 
-        if not ((value is None) or
-                (isinstance(value, (basestring, numbers.Real)))):
+        if not ((value is None) or (isinstance(value, (basestring, numbers.Real)))):
             raise ValueError("value must be a string, number or None")
 
         t = (str(key), value)
         self._execute("INSERT OR REPLACE INTO metadata VALUES (?, ?)", t)
 
     def _get_metadata(self, key):
-        """ Return the value of a record in the METADATA table. Raise
+        """Return the value of a record in the METADATA table. Raise
         AttributeError if 'key' does not match that of any key-value pair."""
 
-        t = (key, )
+        t = (key,)
         self._execute("SELECT value FROM metadata WHERE key = ?", t)
         rows = tuple(self._rows)
         if not rows:
@@ -1607,7 +1730,7 @@ class LEMONdB(object):
             return rows[0][0]
 
     def _del_metadata(self, key):
-        """ Delete a record in the METADATA table.
+        """Delete a record in the METADATA table.
 
         Raise AttributeError if the key does not exist in the table.
 
@@ -1616,12 +1739,12 @@ class LEMONdB(object):
         # Not interested in the return value, just want LEMONdB._get_metadata()
         # to raise AttributeError in case the key does not exist in the table.
         self._get_metadata(key)
-        t = (key, )
+        t = (key,)
         self._execute("DELETE FROM metadata WHERE key = ?", t)
 
     @property
     def mosaic(self):
-        """ Save to disk the FITS file on which sources were detected.
+        """Save to disk the FITS file on which sources were detected.
 
         This method saves to a temporary location, with the '.fits' extension,
         the FITS file that was used to detect sources, stored as a blob in the
@@ -1643,13 +1766,13 @@ class LEMONdB(object):
         assert len(rows) == 1
         assert len(rows[0]) == 1
         blob = rows[0][0]
-        fd, path = tempfile.mkstemp(suffix = '.fits')
+        fd, path = tempfile.mkstemp(suffix=".fits")
         os.write(fd, blob)
         os.close(fd)
         return path
 
     def star_closest_to_world_coords(self, ra, dec):
-        """ Find the star closest to a right ascension and declination.
+        """Find the star closest to a right ascension and declination.
 
         Compute the angular distance from the right ascension and declination
         of each star in the LEMONdB to the specified coordinates (ra, dec).
@@ -1665,7 +1788,7 @@ class LEMONdB(object):
         self._execute("SELECT id, ra, dec FROM stars")
 
         closest_id = None
-        closest_distance = float('inf')
+        closest_distance = float("inf")
         coordinates = astromatic.Coordinates(ra, dec)
         for star_id, star_ra, star_dec in self._rows:
             star_coords = astromatic.Coordinates(star_ra, star_dec)
@@ -1676,8 +1799,9 @@ class LEMONdB(object):
 
         return closest_id, closest_distance
 
+
 def _add_metadata_property(name):
-    """ Dynamically add a property to the LEMONdB class.
+    """Dynamically add a property to the LEMONdB class.
 
     Add to the LEMONdB class the property 'name', whose getter and setter
     functions are the LEMONdB._get_metadata() and LEMONdB._set_metadata()
@@ -1701,9 +1825,10 @@ def _add_metadata_property(name):
     deleter = lambda self: self._del_metadata(name)
     setattr(LEMONdB, name.lower(), property(getter, setter, deleter))
 
-_add_metadata_property('DATE')     # date of creation of the LEMONdB
-_add_metadata_property('AUTHOR')   # who ran LEMON to create the LEMONdB
-_add_metadata_property('HOSTNAME') # where the LEMONdB was created
-_add_metadata_property('ID')       # unique identifier of the LEMONdB
-_add_metadata_property('VMIN')     # values for the log scale (APLpy)
-_add_metadata_property('VMAX')
+
+_add_metadata_property("DATE")  # date of creation of the LEMONdB
+_add_metadata_property("AUTHOR")  # who ran LEMON to create the LEMONdB
+_add_metadata_property("HOSTNAME")  # where the LEMONdB was created
+_add_metadata_property("ID")  # unique identifier of the LEMONdB
+_add_metadata_property("VMIN")  # values for the log scale (APLpy)
+_add_metadata_property("VMAX")
