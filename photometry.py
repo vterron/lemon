@@ -1073,13 +1073,14 @@ def main(arguments=None):
     print "%sRunning SExtractor on the sources image..." % style.prefix,
     sys.stdout.flush()
 
-    # Work on a temporary copy of the input image, in order not to modify it.
+    # Work on a temporary copy of the sources image, in order not to modify it.
     basename = os.path.basename(sources_img_path)
     root, extension = os.path.splitext(basename)
     kwargs = dict(prefix="{0}_".format(root), suffix=extension)
     tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
     os.close(tmp_fd)
     shutil.copy2(sources_img_path, tmp_sources_img_path)
+    util.owner_writable(tmp_sources_img_path, True)  # chmod u+w
     atexit.register(util.clean_tmp_files, tmp_sources_img_path)
 
     # Remove from the FITS header the path to the on-disk catalog, if present,
