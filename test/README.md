@@ -1,6 +1,6 @@
 # WASP-10b integration test
 
-LEMON has [an integration test](./wasp10b.py) that generates the light curve of a [WASP-10b](https://en.wikipedia.org/wiki/WASP-10b) transit, comparing the resulting light curve to that in a [golden file](./WASP10b-golden-curve.txt). Although this test doesn't exercise the entire pipeline, it covers the two critical commands: `photometry` (to perform aperture photometry) and `diffphot` (to generate the light curves). These are the steps that the integration test follows:
+LEMON has [an integration test](./wasp10b.py) that reduces a transit of exoplanet [WASP-10b](https://en.wikipedia.org/wiki/WASP-10b), comparing the resulting light curve to that in a [golden file](./WASP10b-golden-curve.txt). Although this test doesn't exercise the entire pipeline, it covers the two critical commands: `photometry` (to perform aperture photometry) and `diffphot` (to generate the light curves). These are the steps that the integration test follows:
 
 1. Downloads a 2.3 GiB `.xz` file with [the test data](#test-data).
    * The URL of the file is read from the `WASP10_URL` environment variable.
