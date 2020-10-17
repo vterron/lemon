@@ -32,19 +32,20 @@ import sys
 # LEMON module
 import git
 
-API_QUERY_TIMEOUT = 2 # seconds
+API_QUERY_TIMEOUT = 2  # seconds
 LEMON_COMMANDS = [
-    'annuli',
-    'astrometry',
-    'diffphot',
-    'export',
-    'import',
-    'juicer',
-    'mosaic',
-    'offsets',
-    'photometry',
-    'seeing',
-    ]
+    "annuli",
+    "astrometry",
+    "diffphot",
+    "export",
+    "import",
+    "juicer",
+    "mosaic",
+    "offsets",
+    "photometry",
+    "seeing",
+]
+
 
 def show_help(name):
     """ Help message, listing all commands, that looks like Git's """
@@ -67,19 +68,20 @@ def show_help(name):
     print
     print "See '%s COMMAND' for more information on a specific command." % name
 
+
 if __name__ == "__main__":
 
     name = os.path.basename(sys.argv[0])
     revision = git.get_git_revision()
 
-    if len(sys.argv) == 1 or '--help' in sys.argv:
+    if len(sys.argv) == 1 or "--help" in sys.argv:
         show_help(name)
 
-    elif '--version' in sys.argv:
+    elif "--version" in sys.argv:
         print revision
         sys.exit(0)
 
-    elif '--update' in sys.argv:
+    elif "--update" in sys.argv:
         retcode = git.git_update()
         sys.exit(retcode)
 
@@ -92,7 +94,7 @@ if __name__ == "__main__":
         # on an outdated version than stopping us from getting things done.
 
         try:
-            git.check_up_to_date(timeout = API_QUERY_TIMEOUT)
+            git.check_up_to_date(timeout=API_QUERY_TIMEOUT)
         except requests.exceptions.Timeout:
             pass
 
@@ -116,18 +118,19 @@ if __name__ == "__main__":
             matches = difflib.get_close_matches(command, LEMON_COMMANDS)
             if matches:
                 print
-                print "Did you mean" ,
+                print "Did you mean",
                 print len(matches) == 1 and "this?" or "one of these?"
                 for match in matches:
-                    print ' ' * 8 + match
+                    print " " * 8 + match
 
             sys.exit(1)
 
-        elif command == 'juicer':
+        elif command == "juicer":
             import juicer.main
+
             kwargs = {}
             if args:
-                kwargs['db_path'] = args[0]
+                kwargs["db_path"] = args[0]
             juicer.main.main(**kwargs)
 
         else:
@@ -144,4 +147,3 @@ if __name__ == "__main__":
 
             module = __import__(command)
             module.main(args)
-
