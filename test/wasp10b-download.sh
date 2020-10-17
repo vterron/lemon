@@ -13,6 +13,13 @@ pushd $1
 
 if sha1sum -c SHA1SUMS; then
     popd
+
+    # Cache archives expire after 45 days for repositories on https://travis-ci.com.
+    # [https://docs.travis-ci.com/user/caching/#caches-expiration] Write the current
+    # date and time to a file so that (because of this modification inside the cache
+    # directory) the expiration delay is reset.
+    date > last-access.txt
+
     exit 0
 fi
 
@@ -22,4 +29,5 @@ curl --remote-header-name --remote-name $WASP10_URL
 tar -xvf $XZ_FILE
 rm -fv $XZ_FILE
 chmod a-w -v *.fits
+
 popd
