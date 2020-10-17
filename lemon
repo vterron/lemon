@@ -29,8 +29,6 @@ import os.path
 import requests
 import sys
 
-# LEMON module
-import git
 
 API_QUERY_TIMEOUT = 2  # seconds
 LEMON_COMMANDS = [
@@ -72,78 +70,48 @@ def show_help(name):
 if __name__ == "__main__":
 
     name = os.path.basename(sys.argv[0])
-    revision = git.get_git_revision()
 
     if len(sys.argv) == 1 or "--help" in sys.argv:
         show_help(name)
-
-    elif "--version" in sys.argv:
-        print revision
         sys.exit(0)
 
-    elif "--update" in sys.argv:
-        retcode = git.git_update()
-        sys.exit(retcode)
+    command = sys.argv[1]
+    args = sys.argv[2:]
+
+    if command not in LEMON_COMMANDS:
+        msg = "%s: '%s' is not a lemon command. See 'lemon --help'."
+        print msg % (name, command)
+
+        # Show suggestions, if any, when the command does not exist
+        matches = difflib.get_close_matches(command, LEMON_COMMANDS)
+        if matches:
+            print
+            print "Did you mean",
+            print len(matches) == 1 and "this?" or "one of these?"
+            for match in matches:
+                print " " * 8 + match
+
+        sys.exit(1)
+
+    elif command == "juicer":
+        import juicer.main
+
+        kwargs = {}
+        if args:
+            kwargs["db_path"] = args[0]
+        juicer.main.main(**kwargs)
 
     else:
 
-        # Issue a warning if there is a newer version available on GitHub,
-        # letting the user know that the local installation can be updated by
-        # running the `lemon --update` command. Do nothing if the connection
-        # to the GitHub API times out after two seconds: better not to report
-        # on an outdated version than stopping us from getting things done.
+        # Add the name of the command to the script name so that the brief
+        # summary of the imported script options includes it (for example,
+        # "lemon photometry" instead of just "lemon".
 
-        try:
-            git.check_up_to_date(timeout=API_QUERY_TIMEOUT)
-        except requests.exceptions.Timeout:
-            pass
+        sys.argv[0] = "%s %s" % (name, command)
 
-        # Register logging.info() to be executed at termination, so that the
-        # Git revision number is logged at INFO level before our program
-        # exits. The reason why we do it on exit, instead of now, is because
-        # the logger level has not yet been adjusted. We need to wait until the
-        # main() method of the module that we are going to import counts the
-        # number of -v options and sets the level to WARNING, INFO or DEBUG.
-        msg = "LEMON Git revision: %s" % revision
-        atexit.register(logging.info, msg)
+        # The 'import' statement cannot be used as the name of the module
+        # is only known at runtime. We need to manually invoke __import__
+        # to import the module by name and then run its main() function.
 
-        command = sys.argv[1]
-        args = sys.argv[2:]
-
-        if command not in LEMON_COMMANDS:
-            msg = "%s: '%s' is not a lemon command. See 'lemon --help'."
-            print msg % (name, command)
-
-            # Show suggestions, if any, when the command does not exist
-            matches = difflib.get_close_matches(command, LEMON_COMMANDS)
-            if matches:
-                print
-                print "Did you mean",
-                print len(matches) == 1 and "this?" or "one of these?"
-                for match in matches:
-                    print " " * 8 + match
-
-            sys.exit(1)
-
-        elif command == "juicer":
-            import juicer.main
-
-            kwargs = {}
-            if args:
-                kwargs["db_path"] = args[0]
-            juicer.main.main(**kwargs)
-
-        else:
-
-            # Add the name of the command to the script name so that the brief
-            # summary of the imported script options includes it (for example,
-            # "lemon photometry" instead of just "lemon".
-
-            sys.argv[0] = "%s %s" % (name, command)
-
-            # The 'import' statement cannot be used as the name of the module
-            # is only known at runtime. We need to manually invoke __import__
-            # to import the module by name and then run its main() function.
-
-            module = __import__(command)
-            module.main(args)
+        module = __import__(command)
+        module.main(args)
