@@ -1,4 +1,5 @@
 # Golden file with the light curve of a WASP-10b transit on Aug 4th 2011.
+# File generated via `lemon juicer` -> Export to text file.
 #
 # Julian Date	Δ magnitude	SNR
 2455777.367999	-0.948379	1046.571986
