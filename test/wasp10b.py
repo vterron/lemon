@@ -171,7 +171,6 @@ class WASP10Test(parameterized.TestCase):
             copy_coordinates_file()
             link(os.environ["WASP10_DATA"])
 
-            # TODO(vterron): look up and set the actual gain at OSN.
             cmd(
                 "lemon "
                 "photometry "
@@ -179,7 +178,7 @@ class WASP10Test(parameterized.TestCase):
                 "WASP10b-*a.fits "
                 "WASP10b-photometry.LEMONdB "
                 "--coordinates={coordinates} "
-                "--gain=1 "
+                "--gain=1.31 "
                 "--cores={cores}".format(
                     coordinates=COORDINATES_FILE,
                     cores=ncores,
