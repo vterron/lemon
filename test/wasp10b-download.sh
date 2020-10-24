@@ -12,14 +12,13 @@ XZ_FILE="WASP10b-2011-08-23.tar.xz"
 pushd $1
 
 if sha1sum -c SHA1SUMS; then
-    popd
-
     # Cache archives expire after 45 days for repositories on https://travis-ci.com.
     # [https://docs.travis-ci.com/user/caching/#caches-expiration] Write the current
     # date and time to a file so that (because of this modification inside the cache
     # directory) the expiration delay is reset.
     date > last-access.txt
 
+    popd
     exit 0
 fi
 
