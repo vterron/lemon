@@ -54,7 +54,9 @@ EXPORTED_LIGHT_CURVE_FILE = "WASP10b-exported_curve.txt"
 cmd = functools.partial(subprocess.check_call, shell=True)
 
 # Returns the absolute path of a file in the test/ directory.
-test_path = functools.partial(os.path.join, os.environ["TRAVIS_BUILD_DIR"], "test")
+test_path = functools.partial(
+    os.path.join, os.environ["TRAVIS_BUILD_DIR"], "test/integration"
+)
 
 
 @contextlib.contextmanager

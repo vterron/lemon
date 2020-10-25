@@ -42,10 +42,10 @@ install: true
 
 jobs:
   include:
-    # Download test data to the cached directory.
+    # Download integration test data to the cached directory.
     - stage: Setup
       name: "Prepare test data"
-      script: ./test/wasp10b-download.sh $WASP10_DATA
+      script: ./test/integration/wasp10b-download.sh $WASP10_DATA
 
     - stage: Tests
       name: "Unit Tests"
@@ -55,16 +55,16 @@ jobs:
     # The goal is to make sure that light cuves computed in parallel are
     # absolutely independent of each other.
 
-    - script: NCORES=1 ./test/wasp10b.py
+    - script: NCORES=1 ./test/integration/wasp10b.py
       name: "Integration Test (cores = 1)"
 
-    - script: NCORES=2 ./test/wasp10b.py
+    - script: NCORES=2 ./test/integration/wasp10b.py
       name: "Integration Test (cores = 2)"
 
-    - script: NCORES=3 ./test/wasp10b.py
+    - script: NCORES=3 ./test/integration/wasp10b.py
       name: "Integration Test (cores = 3)"
 
-    - script: NCORES=4 ./test/wasp10b.py
+    - script: NCORES=4 ./test/integration/wasp10b.py
       name: "Integration Test (cores = 4)"
 
 notifications:
