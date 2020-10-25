@@ -35,21 +35,44 @@ import util.coords
 import util
 
 parser = argparse.ArgumentParser(description=_DESCRIPTION)
-parser.add_argument('db_path', metavar='LEMON_DB', type=str,
-                    help="the LEMON database with the light curves")
-parser.add_argument('ra', metavar='<right ascension>', type=float,
-                    help="Right adcension of the astronomical object, "
-                         "in decimal degrees.")
-parser.add_argument('dec', metavar='<declination>', type=float,
-                    help="Declination of the astronomical object, in "
-                         "decimal degrees.")
-parser.add_argument('filter', metavar='<photometric filter>', type=passband.Passband,
-                    help="The name of the photometric filter.")
-parser.add_argument('--decimal_places', dest='places', type=int, default=3,
-                    help="Round floating-point numbers to this many decimal places.")
-parser.add_argument('--output_file', dest='output', type=argparse.FileType('w'),
-                    default=sys.stdout,
-                    help="File to which to write the light curve data points")
+parser.add_argument(
+    "db_path",
+    metavar="LEMON_DB",
+    type=str,
+    help="the LEMON database with the light curves",
+)
+parser.add_argument(
+    "ra",
+    metavar="<right ascension>",
+    type=float,
+    help="Right adcension of the astronomical object, " "in decimal degrees.",
+)
+parser.add_argument(
+    "dec",
+    metavar="<declination>",
+    type=float,
+    help="Declination of the astronomical object, in " "decimal degrees.",
+)
+parser.add_argument(
+    "filter",
+    metavar="<photometric filter>",
+    type=passband.Passband,
+    help="The name of the photometric filter.",
+)
+parser.add_argument(
+    "--decimal_places",
+    dest="places",
+    type=int,
+    default=3,
+    help="Round floating-point numbers to this many decimal places.",
+)
+parser.add_argument(
+    "--output_file",
+    dest="output",
+    type=argparse.FileType("w"),
+    default=sys.stdout,
+    help="File to which to write the light curve data points",
+)
 
 
 def main(arguments=None):
@@ -79,7 +102,9 @@ def main(arguments=None):
 
         star_diff = db.get_light_curve(star_id, args.filter)
         if star_diff is None:
-            raise ValueError("no light curve for {!r} photometric filter".format(args.filter))
+            raise ValueError(
+                "no light curve for {!r} photometric filter".format(args.filter)
+            )
 
         table = prettytable.PrettyTable()
         table.field_names = ["Date (UTC)", "JD", "Δ Mag", "SNR"]
@@ -89,19 +114,25 @@ def main(arguments=None):
             return "{:.{places}f}".format(f, places=args.places)
 
         for unix_time, magnitude, snr in star_diff:
-            jd = astropy.time.Time(unix_time, format='unix').jd
-            table.add_row([
-                util.utctime(unix_time, suffix=False),
-                format_float(jd),
-                format_float(magnitude),
-                format_float(snr),
-            ])
+            jd = astropy.time.Time(unix_time, format="unix").jd
+            table.add_row(
+                [
+                    util.utctime(unix_time, suffix=False),
+                    format_float(jd),
+                    format_float(magnitude),
+                    format_float(snr),
+                ]
+            )
 
         args.output.write(str(table))
-        args.output.write('\n')
+        args.output.write("\n")
 
         if args.output != sys.stdout:
-            print("Wrote light curve in {!r} photometric filter to {!r}.".format(args.filter, args.output.name))
+            print(
+                "Wrote light curve in {!r} photometric filter to {!r}.".format(
+                    args.filter, args.output.name
+                )
+            )
 
 
 if __name__ == "__main__":
