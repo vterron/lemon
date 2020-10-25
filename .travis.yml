@@ -5,10 +5,20 @@ python:
     # Python system packages only include Python 2.7 libraries on Ubuntu 12.04.
     - "2.7"
 
-install: true
+env:
+  global:
+    - WASP10_DATA=$HOME/WASP10_data
+    - secure: he7Pc9wLoKddJ+FDgzyiiNrlGjeelLX16SUhCniLLev1Dsdvyy0wKL7HBEstrJjfTL2rVg2p2rR07bcC0TWXTAGxhbOIw+rddN+cZr50oWvs43Xru0kX0esErm0KmrxNpoqK7I090RmhN7BBk/uVuVpIDW4E3cKmrwCQQ7Jh3Gc=
 
 virtualenv:
   system_site_packages: true
+
+git:
+  depth: false
+
+cache:
+  directories:
+  - $WASP10_DATA
 
 before_install:
   - sudo apt-get update
@@ -24,10 +34,38 @@ before_install:
   - sudo ./ci/travis-setup.sh
   - python ./setup.py
 
-script:
   - export iraf=/iraf/iraf/
   - export IRAFARCH=linux64
-  - ./run_tests.py
+  - export PATH=$(pwd):$PATH
+
+install: true
+
+jobs:
+  include:
+    # Download integration test data to the cached directory.
+    - stage: Setup
+      name: "Prepare test data"
+      script: ./test/integration/wasp10b-download.sh $WASP10_DATA
+
+    - stage: Tests
+      name: "Unit Tests"
+      script: ./run_tests.py
+
+    # Exercise the multiprocessing logic of `photometry` and `diffphot`.
+    # The goal is to make sure that light cuves computed in parallel are
+    # absolutely independent of each other.
+
+    - script: NCORES=1 ./test/integration/wasp10b.py
+      name: "Integration Test (cores = 1)"
+
+    - script: NCORES=2 ./test/integration/wasp10b.py
+      name: "Integration Test (cores = 2)"
+
+    - script: NCORES=3 ./test/integration/wasp10b.py
+      name: "Integration Test (cores = 3)"
+
+    - script: NCORES=4 ./test/integration/wasp10b.py
+      name: "Integration Test (cores = 4)"
 
 notifications:
   email:

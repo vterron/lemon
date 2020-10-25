@@ -229,11 +229,11 @@ class ExportCurveDialog(object):
                 values = []
                 assert len(row) == 7
                 if self.date_secs_checkbox.get_active():
-                    values.append(str(unix_time))
+                    values.append(parse_float(unix_time))
                 if self.date_str_checkbox.get_active():
                     values.append(row[1])
                 if self.date_julian_checkbox.get_active():
-                    values.append(str(row[2]))
+                    values.append(parse_float(row[2]))
                 if self.mags_checkbox.get_active():
                     values.append(parse_float(row[3]))
                 if self.snr_checkbox.get_active():
@@ -400,7 +400,7 @@ class StarDetailsGUI(object):
         # the user having to click on the column header), unless the user
         # has selected a diferent column or order.
         if self.curve_store.get_sort_column_id() == (None, None):
-            self.curve_store.set_sort_column_id(1, gtk.SORT_ASCENDING)
+            self.curve_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
 
     def update_reference_stars(self, curve):
         """ Update the list of reference stars """

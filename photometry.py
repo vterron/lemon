@@ -1073,13 +1073,14 @@ def main(arguments=None):
     print "%sRunning SExtractor on the sources image..." % style.prefix,
     sys.stdout.flush()
 
-    # Work on a temporary copy of the input image, in order not to modify it.
+    # Work on a temporary copy of the sources image, in order not to modify it.
     basename = os.path.basename(sources_img_path)
     root, extension = os.path.splitext(basename)
     kwargs = dict(prefix="{0}_".format(root), suffix=extension)
     tmp_fd, tmp_sources_img_path = tempfile.mkstemp(**kwargs)
     os.close(tmp_fd)
     shutil.copy2(sources_img_path, tmp_sources_img_path)
+    util.owner_writable(tmp_sources_img_path, True)  # chmod u+w
     atexit.register(util.clean_tmp_files, tmp_sources_img_path)
 
     # Remove from the FITS header the path to the on-disk catalog, if present,
@@ -1337,388 +1338,343 @@ def main(arguments=None):
     print msg % style.prefix,
     sys.stdout.flush()
 
-    output_db = database.LEMONdB(output_db_path)
+    with database.LEMONdB(output_db_path) as output_db:
 
-    # The fact that the QPhot object returned by qphot.run() preserves the
-    # order of the astronomical objects proves to be useful again: it allows us
-    # to match each astromatic.Coordinates object in options.coordinates to the
-    # corresponding QPhotResult object. Note that qphot.run() accepts celestial
-    # coordinates but returns the x- and y-coordinates of their centers, as
-    # IRAF's qphot does.
+        # The fact that the QPhot object returned by qphot.run() preserves the
+        # order of the astronomical objects proves to be useful again: it allows us
+        # to match each astromatic.Coordinates object in options.coordinates to the
+        # corresponding QPhotResult object. Note that qphot.run() accepts celestial
+        # coordinates but returns the x- and y-coordinates of their centers, as
+        # IRAF's qphot does.
 
-    assert len(options.coordinates) == len(sources_phot)
-    it = itertools.izip(options.coordinates, sources_phot)
-    for id_, (object_coords, object_phot) in enumerate(it):
-        x, y = object_phot.x, object_phot.y
-        ra, dec, pm_ra, pm_dec = object_coords
-        imag = object_phot.mag
+        assert len(options.coordinates) == len(sources_phot)
+        it = itertools.izip(options.coordinates, sources_phot)
+        for id_, (object_coords, object_phot) in enumerate(it):
+            x, y = object_phot.x, object_phot.y
+            ra, dec, pm_ra, pm_dec = object_coords
+            imag = object_phot.mag
 
-        args = (id_, x, y, ra, dec, options.epoch, pm_ra, pm_dec, imag)
-        output_db.add_star(*args)
+            args = (id_, x, y, ra, dec, options.epoch, pm_ra, pm_dec, imag)
+            output_db.add_star(*args)
 
-    output_db.commit()
-    print "done."
+        output_db.commit()
+        print "done."
 
-    # Store some relevant information about the sources image in the LEMONdB.
-    # Do this by creating a database.Image object, which encapsulates a FITS
-    # file, and assign it to the LEMONdB.simage attribute. The image is also
-    # stored as a blob and is available through the LEMONdB.mosaic attribute.
-    #
-    # In the case of the sources image, unlike for the images on which we do
-    # photometry, there are several fields that are allowed to be None. This
-    # is because we may detect sources on an image resulting from assembling
-    # several ones into a custom mosaic: the resulting image does not have a
-    # proper (a) photometric filter, (b) observation date, (c) airmass or (d)
-    # gain. Therefore, we use None, which SQLite interprets as NULL.
-
-    path = sources_img.path
-    pfilter = util.func_catchall(sources_img.pfilter, options.filterk)
-
-    kwargs = dict(
-        date_keyword=options.datek,
-        time_keyword=options.timek,
-        exp_keyword=options.exptimek,
-    )
-    unix_time = util.func_catchall(sources_img.date, **kwargs)
-
-    # In theory, sources should be detected on the result on mosaicking several
-    # FITS images, in order to improve the signal-to-noise ratio and allow for
-    # a more accurate detection of faint astronomical objects. However, and as
-    # Javier Blasco pointed out in issue #19, not all users need to do this: it
-    # may be enough for them to use to detect sources one of the FITS images on
-    # which they also want to do photometry.
-    #
-    # Allow to do photometry on the sources FITS image
-    # [URL] https://github.com/vterron/lemon/issues/19
-    #
-    # In order to make this possible, ignore the Unix time and photometric
-    # filter of the sources image (using None instead, regardless of what we
-    # read from the FITS header) if there is an image with the same date and
-    # filter among those on which we are going to do photometry. This prevents
-    # the database.DuplicateImageError exception, with a message such as "Image
-    # with Unix time 1325631812.2045 (Tue Jan 3 23:03:32 2012 UTC) and filter J
-    # already in database"), from being raised. The idea is to store in the
-    # output database as much information as possible about the sources image,
-    # but if needed we can get by without these two values. After all, the data
-    # about the sources image is mostly stored for book-keeping purposes, in
-    # order to simplify future analysis and debugging.
-
-    # Nested defaultdict, always returns a list
-    if dates_counter[unix_time][pfilter]:
-
-        # There can only be one FITS file with the same observation date and
-        # photometric filter, as duplicate images were previously discarded.
-        assert len(dates_counter[unix_time][pfilter]) == 1
-        img = fitsimage.FITSImage(dates_counter[unix_time][pfilter][0])
-        if pfilter == img.pfilter(options.filterk):
-
-            msg1 = (
-                "%s has the same date (%.4f, %s) and filter (%s) as the "
-                "sources image (%s)"
-            )
-            date_str = util.utctime(unix_time)
-            args = (img.path, unix_time, date_str, pfilter, path)
-            logging.debug(msg1 % args)
-
-            msg2 = (
-                "This must mean you are doing photometry on the FITS image "
-                "that you are also using to detect astronomical sources"
-            )
-            logging.debug(msg2)
-
-            msg3 = (
-                "Avoid collision: ignore date and filter of the sources "
-                "image (store in the LEMONdB a None instead)"
-            )
-            logging.debug(msg3)
-
-            unix_time = None
-            pfilter = None
-
-    object_ = util.func_catchall(sources_img.read_keyword, options.objectk)
-    airmass = util.func_catchall(sources_img.read_keyword, options.airmassk)
-    # If not given with --gaink, read it from the FITS header
-    if options.gain:
-        gain = options.gain
-    else:
-        gain = util.func_catchall(sources_img.read_keyword, options.gaink)
-
-    ra, dec = sources_img_ra, sources_img_dec
-
-    args = (path, pfilter, unix_time, object_, airmass, gain, ra, dec)
-    simage = database.Image(*args)
-    output_db.simage = simage
-    output_db.commit()
-
-    for pfilter, images in sorted(files.iteritems()):
-        print style.prefix
-        msg = "%sLet's do photometry on the %d images taken in the %s filter."
-        args = (style.prefix, len(images), pfilter)
-        print msg % args
-
-        # The procedure if the dimensions of the aperture and sky annuli are to
-        # be extracted from the --annuli file is simple: just take the first
-        # CandidateAnnuli instance, as they are sorted in increasing order by
-        # the standard deviation (which means that the best one is the first
-        # element of the list) and use it.
+        # Store some relevant information about the sources image in the LEMONdB.
+        # Do this by creating a database.Image object, which encapsulates a FITS
+        # file, and assign it to the LEMONdB.simage attribute. The image is also
+        # stored as a blob and is available through the LEMONdB.mosaic attribute.
         #
-        # Alternatively, if the dimensions of the annuli are to be determined
-        # by the median FWHM of the images, this has to be done for each
-        # different filter in which images were taken. This contrasts with when
-        # specific sizes (in pixels) are given for the annuli, which are used
-        # for all the filters.
+        # In the case of the sources image, unlike for the images on which we do
+        # photometry, there are several fields that are allowed to be None. This
+        # is because we may detect sources on an image resulting from assembling
+        # several ones into a custom mosaic: the resulting image does not have a
+        # proper (a) photometric filter, (b) observation date, (c) airmass or (d)
+        # gain. Therefore, we use None, which SQLite interprets as NULL.
 
-        if json_annuli:
-            # Store all the CandidateAnnuli objects in the LEMONdB
-            assert len(json_annuli[pfilter])
-            for cand in json_annuli[pfilter]:
-                output_db.add_candidate_pparams(cand, pfilter)
+        path = sources_img.path
+        pfilter = util.func_catchall(sources_img.pfilter, options.filterk)
 
-            filter_annuli = json_annuli[pfilter][0]
-            aperture = filter_annuli.aperture
-            annulus = filter_annuli.annulus
-            dannulus = filter_annuli.dannulus
+        kwargs = dict(
+            date_keyword=options.datek,
+            time_keyword=options.timek,
+            exp_keyword=options.exptimek,
+        )
+        unix_time = util.func_catchall(sources_img.date, **kwargs)
 
-            msg = "%sUsing the parameters listed in the JSON file, which are:"
+        # In theory, sources should be detected on the result on mosaicking several
+        # FITS images, in order to improve the signal-to-noise ratio and allow for
+        # a more accurate detection of faint astronomical objects. However, and as
+        # Javier Blasco pointed out in issue #19, not all users need to do this: it
+        # may be enough for them to use to detect sources one of the FITS images on
+        # which they also want to do photometry.
+        #
+        # Allow to do photometry on the sources FITS image
+        # [URL] https://github.com/vterron/lemon/issues/19
+        #
+        # In order to make this possible, ignore the Unix time and photometric
+        # filter of the sources image (using None instead, regardless of what we
+        # read from the FITS header) if there is an image with the same date and
+        # filter among those on which we are going to do photometry. This prevents
+        # the database.DuplicateImageError exception, with a message such as "Image
+        # with Unix time 1325631812.2045 (Tue Jan 3 23:03:32 2012 UTC) and filter J
+        # already in database"), from being raised. The idea is to store in the
+        # output database as much information as possible about the sources image,
+        # but if needed we can get by without these two values. After all, the data
+        # about the sources image is mostly stored for book-keeping purposes, in
+        # order to simplify future analysis and debugging.
+
+        # Nested defaultdict, always returns a list
+        if dates_counter[unix_time][pfilter]:
+
+            # There can only be one FITS file with the same observation date and
+            # photometric filter, as duplicate images were previously discarded.
+            assert len(dates_counter[unix_time][pfilter]) == 1
+            img = fitsimage.FITSImage(dates_counter[unix_time][pfilter][0])
+            if pfilter == img.pfilter(options.filterk):
+
+                msg1 = (
+                    "%s has the same date (%.4f, %s) and filter (%s) as the "
+                    "sources image (%s)"
+                )
+                date_str = util.utctime(unix_time)
+                args = (img.path, unix_time, date_str, pfilter, path)
+                logging.debug(msg1 % args)
+
+                msg2 = (
+                    "This must mean you are doing photometry on the FITS image "
+                    "that you are also using to detect astronomical sources"
+                )
+                logging.debug(msg2)
+
+                msg3 = (
+                    "Avoid collision: ignore date and filter of the sources "
+                    "image (store in the LEMONdB a None instead)"
+                )
+                logging.debug(msg3)
+
+                unix_time = None
+                pfilter = None
+
+        object_ = util.func_catchall(sources_img.read_keyword, options.objectk)
+        airmass = util.func_catchall(sources_img.read_keyword, options.airmassk)
+        # If not given with --gaink, read it from the FITS header
+        if options.gain:
+            gain = options.gain
+        else:
+            gain = util.func_catchall(sources_img.read_keyword, options.gaink)
+
+        ra, dec = sources_img_ra, sources_img_dec
+
+        args = (path, pfilter, unix_time, object_, airmass, gain, ra, dec)
+        simage = database.Image(*args)
+        output_db.simage = simage
+        output_db.commit()
+
+        for pfilter, images in sorted(files.iteritems()):
+            print style.prefix
+            msg = "%sLet's do photometry on the %d images taken in the %s filter."
+            args = (style.prefix, len(images), pfilter)
+            print msg % args
+
+            # The procedure if the dimensions of the aperture and sky annuli are to
+            # be extracted from the --annuli file is simple: just take the first
+            # CandidateAnnuli instance, as they are sorted in increasing order by
+            # the standard deviation (which means that the best one is the first
+            # element of the list) and use it.
+            #
+            # Alternatively, if the dimensions of the annuli are to be determined
+            # by the median FWHM of the images, this has to be done for each
+            # different filter in which images were taken. This contrasts with when
+            # specific sizes (in pixels) are given for the annuli, which are used
+            # for all the filters.
+
+            if json_annuli:
+                # Store all the CandidateAnnuli objects in the LEMONdB
+                assert len(json_annuli[pfilter])
+                for cand in json_annuli[pfilter]:
+                    output_db.add_candidate_pparams(cand, pfilter)
+
+                filter_annuli = json_annuli[pfilter][0]
+                aperture = filter_annuli.aperture
+                annulus = filter_annuli.annulus
+                dannulus = filter_annuli.dannulus
+
+                msg = "%sUsing the parameters listed in the JSON file, which are:"
+                print msg % style.prefix
+                msg = "%sAperture radius = %.3f pixels"
+                print msg % (style.prefix, aperture)
+                msg = "%sSky annulus, inner radius = %.3f pixels"
+                print msg % (style.prefix, annulus)
+                msg = "%sSky annulus, width = %.3f pixels"
+                print msg % (style.prefix, dannulus)
+
+            elif options.individual_fwhm:
+                msg = "%sUsing parameters derived from the FWHM of each image:"
+                print msg % style.prefix
+                msg = "%sAperture radius = %.2f x FWHM pixels"
+                print msg % (style.prefix, options.aperture)
+                msg = "%sSky annulus, inner radius = %.2f x FWHM pixels"
+                print msg % (style.prefix, options.annulus)
+                msg = "%sSky annulus, width = %.2f x FWHM pixels"
+                print msg % (style.prefix, options.dannulus)
+
+            elif not fixed_annuli:
+                msg = "%sCalculating the median FWHM for this filter..."
+                print msg % style.prefix,
+                sys.stdout.flush()
+
+                pfilter_fwhms = []
+                for path in images:
+                    img = fitsimage.FITSImage(path)
+                    img_fwhm = get_fwhm(img, options)
+                    logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
+                    pfilter_fwhms.append(img_fwhm)
+
+                fwhm = numpy.median(pfilter_fwhms)
+                print "done."
+
+                aperture = fwhm * options.aperture
+                annulus = fwhm * options.annulus
+                dannulus = fwhm * options.dannulus
+
+                msg = "%sFWHM (%s) = %.3f pixels, therefore:"
+                print msg % (style.prefix, pfilter, fwhm)
+                msg = "%sAperture radius = %.3f x %.2f = %.3f pixels"
+                print msg % (style.prefix, fwhm, options.aperture, aperture)
+                msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
+                print msg % (style.prefix, fwhm, options.annulus, annulus)
+                msg = "%sSky annulus, width = %.3f x %.2f = %.3f pixels"
+                print msg % (style.prefix, fwhm, options.dannulus, dannulus)
+
+                if dannulus < options.min:
+                    dannulus = options.min
+                    msg = style.prefix + DANNULUS_TOO_THIN_MSG
+                    warnings.warn(msg % dannulus)
+
+            else:  # fixed aperture and sky annuli directly specified in pixels
+                aperture = options.aperture_pix
+                annulus = options.annulus_pix
+                dannulus = options.dannulus_pix
+
+                msg = "%sAperture radius = %.3f pixels"
+                print msg % (style.prefix, aperture)
+                msg = "%sSky annulus, inner radius = %.3f pixels"
+                print msg % (style.prefix, annulus)
+                msg = "%sSky annulus, width = %.3f pixels"
+                print msg % (style.prefix, dannulus)
+
+            # The task of doing photometry on a series of images is inherently
+            # parallelizable; use a pool of workers to which to assign the images.
+            pool = multiprocessing.Pool(options.ncores)
+
+            def fwhm_derived_params(img):
+                """Return the FWHM-derived aperture and sky annuli parameters.
+
+                Return a database.PhotometricParameters object (a three-element
+                named tuple) containing (1) the aperture radius, (2) sky annulus
+                inner radius and (3) its width, in pixels, which with to do
+                photometry. These are equal to the FWHM of the FITS file (a
+                fitsimage.FITSImage object) times the --aperture, --annulus
+                and --dannulus options, respectively.
+
+                """
+
+                fwhm = get_fwhm(img, options)
+                aperture = fwhm * options.aperture
+                annulus = fwhm * options.annulus
+                dannulus = fwhm * options.dannulus
+
+                path = img.path
+                logging.debug("%s: FWHM = %.3f" % (path, fwhm))
+                msg = "%s: FWHM-derived aperture: %.3f x %.2f = %.3f pixels"
+                logging.debug(msg % (path, fwhm, options.aperture, aperture))
+                msg = "%s: FWHM-derived annulus: %.3f x %.2f = %.3f pixels"
+                logging.debug(msg % (path, fwhm, options.annulus, annulus))
+                msg = "%s: FWHM-derived dannulus: %.3f x %.2f = %.3f pixels"
+                logging.debug(msg % (path, fwhm, options.dannulus, dannulus))
+
+                args = aperture, annulus, dannulus
+                return database.PhotometricParameters(*args)
+
+            # Define qphot_params either as a function that always returns the same
+            # PhotometricParameters object (since identical photometric parameters
+            # are to be used for all the images in this photometric filter) or, if
+            # the --individual-fwhm option was used, derives them from the FWHM of
+            # each of the FITS images. This allows us to, in both cases, make the
+            # map_async_args() generator loop over the images on which photometry
+            # is to be done and, for each one of them, call qphot_params() to get
+            # the parameters that have to be used.
+
+            if not options.individual_fwhm:
+                args = aperture, annulus, dannulus
+                pparams = database.PhotometricParameters(*args)
+                qphot_params = lambda x: pparams
+            else:
+                qphot_params = fwhm_derived_params
+
+            def map_async_args():
+                for path in images:
+                    img = fitsimage.FITSImage(path)
+                    yield (img, qphot_params(img), options)
+
+            # Unlike the sources image, the options.exptimek FITS keyword is *not*
+            # optional for the images on which we do photometry: qphot() needs it
+            # to normalize the computed magnitudes to an exposure time of one time
+            # unit. However, this point cannot be reached if one of the images does
+            # not contain this keyword, as it was needed in order to make sure that
+            # there are no duplicate observation dates. There is no need to turn
+            # the MissingFITSKeyword warning into an exception.
+
+            result = pool.map_async(parallel_photometry, map_async_args())
+            util.show_progress(0.0)
+            while not result.ready():
+                time.sleep(1)
+                util.show_progress(queue.qsize() / len(images) * 100)
+                # Do not update the progress bar when debugging; instead, print it
+                # on a new line each time. This prevents the next logging message,
+                # if any, from being printed on the same line that the bar.
+                if logging_level < logging.WARNING:
+                    print
+
+            result.get()  # reraise exceptions of the remote call, if any
+            util.show_progress(100)  # in case the queue was ready too soon
+            print
+
+            msg = "%sStoring photometric measurements in the database..."
             print msg % style.prefix
-            msg = "%sAperture radius = %.3f pixels"
-            print msg % (style.prefix, aperture)
-            msg = "%sSky annulus, inner radius = %.3f pixels"
-            print msg % (style.prefix, annulus)
-            msg = "%sSky annulus, width = %.3f pixels"
-            print msg % (style.prefix, dannulus)
-
-        elif options.individual_fwhm:
-            msg = "%sUsing parameters derived from the FWHM of each image:"
-            print msg % style.prefix
-            msg = "%sAperture radius = %.2f x FWHM pixels"
-            print msg % (style.prefix, options.aperture)
-            msg = "%sSky annulus, inner radius = %.2f x FWHM pixels"
-            print msg % (style.prefix, options.annulus)
-            msg = "%sSky annulus, width = %.2f x FWHM pixels"
-            print msg % (style.prefix, options.dannulus)
-
-        elif not fixed_annuli:
-            msg = "%sCalculating the median FWHM for this filter..."
-            print msg % style.prefix,
             sys.stdout.flush()
 
-            pfilter_fwhms = []
-            for path in images:
-                img = fitsimage.FITSImage(path)
-                img_fwhm = get_fwhm(img, options)
-                logging.debug("%s: FWHM = %.3f" % (img.path, img_fwhm))
-                pfilter_fwhms.append(img_fwhm)
+            util.show_progress(0)
+            qphot_results = (queue.get() for x in xrange(queue.qsize()))
+            for index, args in enumerate(qphot_results):
 
-            fwhm = numpy.median(pfilter_fwhms)
-            print "done."
+                db_image, pparams, img_qphot = args
+                logging.debug("Storing image %s in database" % db_image.path)
+                output_db.add_image(db_image)
+                logging.debug("Image %s successfully stored" % db_image.path)
 
-            aperture = fwhm * options.aperture
-            annulus = fwhm * options.annulus
-            dannulus = fwhm * options.dannulus
-
-            msg = "%sFWHM (%s) = %.3f pixels, therefore:"
-            print msg % (style.prefix, pfilter, fwhm)
-            msg = "%sAperture radius = %.3f x %.2f = %.3f pixels"
-            print msg % (style.prefix, fwhm, options.aperture, aperture)
-            msg = "%sSky annulus, inner radius = %.3f x %.2f = %.3f pixels"
-            print msg % (style.prefix, fwhm, options.annulus, annulus)
-            msg = "%sSky annulus, width = %.3f x %.2f = %.3f pixels"
-            print msg % (style.prefix, fwhm, options.dannulus, dannulus)
-
-            if dannulus < options.min:
-                dannulus = options.min
-                msg = style.prefix + DANNULUS_TOO_THIN_MSG
-                warnings.warn(msg % dannulus)
-
-        else:  # fixed aperture and sky annuli directly specified in pixels
-            aperture = options.aperture_pix
-            annulus = options.annulus_pix
-            dannulus = options.dannulus_pix
-
-            msg = "%sAperture radius = %.3f pixels"
-            print msg % (style.prefix, aperture)
-            msg = "%sSky annulus, inner radius = %.3f pixels"
-            print msg % (style.prefix, annulus)
-            msg = "%sSky annulus, width = %.3f pixels"
-            print msg % (style.prefix, dannulus)
-
-        # The task of doing photometry on a series of images is inherently
-        # parallelizable; use a pool of workers to which to assign the images.
-        pool = multiprocessing.Pool(options.ncores)
-
-        def fwhm_derived_params(img):
-            """Return the FWHM-derived aperture and sky annuli parameters.
-
-            Return a database.PhotometricParameters object (a three-element
-            named tuple) containing (1) the aperture radius, (2) sky annulus
-            inner radius and (3) its width, in pixels, which with to do
-            photometry. These are equal to the FWHM of the FITS file (a
-            fitsimage.FITSImage object) times the --aperture, --annulus
-            and --dannulus options, respectively.
-
-            """
-
-            fwhm = get_fwhm(img, options)
-            aperture = fwhm * options.aperture
-            annulus = fwhm * options.annulus
-            dannulus = fwhm * options.dannulus
-
-            path = img.path
-            logging.debug("%s: FWHM = %.3f" % (path, fwhm))
-            msg = "%s: FWHM-derived aperture: %.3f x %.2f = %.3f pixels"
-            logging.debug(msg % (path, fwhm, options.aperture, aperture))
-            msg = "%s: FWHM-derived annulus: %.3f x %.2f = %.3f pixels"
-            logging.debug(msg % (path, fwhm, options.annulus, annulus))
-            msg = "%s: FWHM-derived dannulus: %.3f x %.2f = %.3f pixels"
-            logging.debug(msg % (path, fwhm, options.dannulus, dannulus))
-
-            args = aperture, annulus, dannulus
-            return database.PhotometricParameters(*args)
-
-        # Define qphot_params either as a function that always returns the same
-        # PhotometricParameters object (since identical photometric parameters
-        # are to be used for all the images in this photometric filter) or, if
-        # the --individual-fwhm option was used, derives them from the FWHM of
-        # each of the FITS images. This allows us to, in both cases, make the
-        # map_async_args() generator loop over the images on which photometry
-        # is to be done and, for each one of them, call qphot_params() to get
-        # the parameters that have to be used.
-
-        if not options.individual_fwhm:
-            args = aperture, annulus, dannulus
-            pparams = database.PhotometricParameters(*args)
-            qphot_params = lambda x: pparams
-        else:
-            qphot_params = fwhm_derived_params
-
-        def map_async_args():
-            for path in images:
-                img = fitsimage.FITSImage(path)
-                yield (img, qphot_params(img), options)
-
-        # Unlike the sources image, the options.exptimek FITS keyword is *not*
-        # optional for the images on which we do photometry: qphot() needs it
-        # to normalize the computed magnitudes to an exposure time of one time
-        # unit. However, this point cannot be reached if one of the images does
-        # not contain this keyword, as it was needed in order to make sure that
-        # there are no duplicate observation dates. There is no need to turn
-        # the MissingFITSKeyword warning into an exception.
-
-        result = pool.map_async(parallel_photometry, map_async_args())
-        util.show_progress(0.0)
-        while not result.ready():
-            time.sleep(1)
-            util.show_progress(queue.qsize() / len(images) * 100)
-            # Do not update the progress bar when debugging; instead, print it
-            # on a new line each time. This prevents the next logging message,
-            # if any, from being printed on the same line that the bar.
-            if logging_level < logging.WARNING:
-                print
-
-        result.get()  # reraise exceptions of the remote call, if any
-        util.show_progress(100)  # in case the queue was ready too soon
-        print
-
-        msg = "%sStoring photometric measurements in the database..."
-        print msg % style.prefix
-        sys.stdout.flush()
-
-        util.show_progress(0)
-        qphot_results = (queue.get() for x in xrange(queue.qsize()))
-        for index, args in enumerate(qphot_results):
-
-            db_image, pparams, img_qphot = args
-            logging.debug("Storing image %s in database" % db_image.path)
-            output_db.add_image(db_image)
-            logging.debug("Image %s successfully stored" % db_image.path)
-
-            # Now store each photometric measurement
-            for object_id, object_phot in enumerate(img_qphot):
-                # INDEF photometric measurements have a magnitude of None, and
-                # those with at least one saturated pixel in the aperture have
-                # a magnitude of infinity. In both cases the measurement is
-                # useless for our photometric purposes and can be ignored.
-                if object_phot.mag is None:
-                    msg = "%s: object %d is INDEF (None)"
-                    args = db_image.path, object_id
-                    logging.debug(msg % args)
-                    continue
-
-                elif object_phot.mag == float("infinity"):
-                    msg = "%s: object %d is saturated (infinity)"
-                    args = db_image.path, object_id
-                    logging.debug(msg % args)
-                    continue
-
-                else:
-                    msg = "%s: object %d magnitude = %f"
-                    args = db_image.path, object_id, object_phot.mag
-                    logging.debug(msg % args)
-
-                # Photometric measurements with a signal-to-noise ratio less
-                # than or equal to one are ignored -- not only because these
-                # measurements are anything but reliable, but also because such
-                # values are outside of the domain of the function that
-                # converts SNRs to errors in magnitudes.
-                object_snr = object_phot.snr(db_image.gain)
-                if object_snr <= 1:
-                    msg = "%s: object %d ignored (SNR = %f <= 1)"
-                    args = db_image.path, object_id, object_snr
-                    logging.debug(msg % args)
-                    continue
-
-                else:
-                    msg = "%s: object %d SNR = %f"
-                    args = db_image.path, object_id, object_snr
-                    logging.debug(msg % args)
-
-                    msg = "%s: storing measurement for object %d in database"
-                    args = db_image.path, object_id
-                    logging.debug(msg % args)
-
-                    args = (
-                        object_id,
-                        db_image.unix_time,
-                        db_image.pfilter,
-                        object_phot.mag,
-                        object_snr,
-                    )
-
-                    output_db.add_photometry(*args)
-
-                    msg = "%s: measurement for object %d successfully stored"
-                    args = db_image.path, object_id
-                    logging.debug(msg % args)
-
-                    # Store the pixel (x and y) coordinates where photometry
-                    # has been done. Useful mostly, if not exclusively, for
-                    # debugging purposes, in case we need or want to make sure
-                    # the measurement was taken at the proper-motion corrected
-                    # coordinates.
-
-                    pm_ra, pm_dec = output_db.get_star(object_id)[5:7]
-
-                    if not pm_ra and not pm_dec:
-
-                        msg = "%s: object %d does not have proper motion"
+                # Now store each photometric measurement
+                for object_id, object_phot in enumerate(img_qphot):
+                    # INDEF photometric measurements have a magnitude of None, and
+                    # those with at least one saturated pixel in the aperture have
+                    # a magnitude of infinity. In both cases the measurement is
+                    # useless for our photometric purposes and can be ignored.
+                    if object_phot.mag is None:
+                        msg = "%s: object %d is INDEF (None)"
                         args = db_image.path, object_id
                         logging.debug(msg % args)
+                        continue
+
+                    elif object_phot.mag == float("infinity"):
+                        msg = "%s: object %d is saturated (infinity)"
+                        args = db_image.path, object_id
+                        logging.debug(msg % args)
+                        continue
 
                     else:
-
-                        assert pm_ra is not None
-                        assert pm_dec is not None
-
-                        msg = "%s: object %d pm_ra = %f (x = %f)"
-                        args = db_image.path, object_id, pm_ra, object_phot.x
+                        msg = "%s: object %d magnitude = %f"
+                        args = db_image.path, object_id, object_phot.mag
                         logging.debug(msg % args)
 
-                        msg = "%s: object %d pm_dec = %f (y = %f)"
-                        args = db_image.path, object_id, pm_dec, object_phot.y
+                    # Photometric measurements with a signal-to-noise ratio less
+                    # than or equal to one are ignored -- not only because these
+                    # measurements are anything but reliable, but also because such
+                    # values are outside of the domain of the function that
+                    # converts SNRs to errors in magnitudes.
+                    object_snr = object_phot.snr(db_image.gain)
+                    if object_snr <= 1:
+                        msg = "%s: object %d ignored (SNR = %f <= 1)"
+                        args = db_image.path, object_id, object_snr
+                        logging.debug(msg % args)
+                        continue
+
+                    else:
+                        msg = "%s: object %d SNR = %f"
+                        args = db_image.path, object_id, object_snr
                         logging.debug(msg % args)
 
-                        msg = "%s: storing proper-motion corrections for object %d"
+                        msg = "%s: storing measurement for object %d in database"
                         args = db_image.path, object_id
                         logging.debug(msg % args)
 
@@ -1726,58 +1682,103 @@ def main(arguments=None):
                             object_id,
                             db_image.unix_time,
                             db_image.pfilter,
-                            object_phot.x,
-                            object_phot.y,
+                            object_phot.mag,
+                            object_snr,
                         )
 
-                        output_db.add_pm_correction(*args)
+                        output_db.add_photometry(*args)
 
-                        msg = "%s: proper-motion correction for object %d sucessfully stored"
+                        msg = "%s: measurement for object %d successfully stored"
                         args = db_image.path, object_id
                         logging.debug(msg % args)
 
-            util.show_progress(100 * (index + 1) / len(images))
-            if logging_level < logging.WARNING:
+                        # Store the pixel (x and y) coordinates where photometry
+                        # has been done. Useful mostly, if not exclusively, for
+                        # debugging purposes, in case we need or want to make sure
+                        # the measurement was taken at the proper-motion corrected
+                        # coordinates.
+
+                        pm_ra, pm_dec = output_db.get_star(object_id)[5:7]
+
+                        if not pm_ra and not pm_dec:
+
+                            msg = "%s: object %d does not have proper motion"
+                            args = db_image.path, object_id
+                            logging.debug(msg % args)
+
+                        else:
+
+                            assert pm_ra is not None
+                            assert pm_dec is not None
+
+                            msg = "%s: object %d pm_ra = %f (x = %f)"
+                            args = db_image.path, object_id, pm_ra, object_phot.x
+                            logging.debug(msg % args)
+
+                            msg = "%s: object %d pm_dec = %f (y = %f)"
+                            args = db_image.path, object_id, pm_dec, object_phot.y
+                            logging.debug(msg % args)
+
+                            msg = "%s: storing proper-motion corrections for object %d"
+                            args = db_image.path, object_id
+                            logging.debug(msg % args)
+
+                            args = (
+                                object_id,
+                                db_image.unix_time,
+                                db_image.pfilter,
+                                object_phot.x,
+                                object_phot.y,
+                            )
+
+                            output_db.add_pm_correction(*args)
+
+                            msg = "%s: proper-motion correction for object %d sucessfully stored"
+                            args = db_image.path, object_id
+                            logging.debug(msg % args)
+
+                util.show_progress(100 * (index + 1) / len(images))
+                if logging_level < logging.WARNING:
+                    print
+
+            else:
+                logging.info("Photometry for %s completed" % pfilter)
+                logging.debug("Committing database transaction")
+                output_db.commit()
+                logging.info("Database transaction commited")
+
+                util.show_progress(100.0)
                 print
 
-        else:
-            logging.info("Photometry for %s completed" % pfilter)
-            logging.debug("Committing database transaction")
-            output_db.commit()
-            logging.info("Database transaction commited")
+        # Collect information that can be used by the query optimizer to help make
+        # better query planning choices. In the absence of ANALYZE information,
+        # SQLite assumes that each table contains one million records when deciding
+        # between doing a full table scan and constructing an automatic index.
 
-            util.show_progress(100.0)
-            print
+        print "%sGathering statistics about tables and indexes..." % style.prefix,
+        sys.stdout.flush()
+        output_db.analyze()
+        print "done."
 
-    # Collect information that can be used by the query optimizer to help make
-    # better query planning choices. In the absence of ANALYZE information,
-    # SQLite assumes that each table contains one million records when deciding
-    # between doing a full table scan and constructing an automatic index.
+        # Store into the METADATA table of the LEMONdB the current time (in seconds
+        # since the Unix epoch), the login name of the currently effective user id
+        # and the hostname of the machine where Python is currently executing.
 
-    print "%sGathering statistics about tables and indexes..." % style.prefix,
-    sys.stdout.flush()
-    output_db.analyze()
-    print "done."
+        output_db.date = time.time()
+        output_db.author = pwd.getpwuid(os.getuid())[0]
+        output_db.hostname = socket.gethostname()
+        output_db.commit()
 
-    # Store into the METADATA table of the LEMONdB the current time (in seconds
-    # since the Unix epoch), the login name of the currently effective user id
-    # and the hostname of the machine where Python is currently executing.
+        # Use as unique identifier of the LEMONdB a 32-digit hexadecimal number:
+        # the MD5 hash of the concatenation, in this order, of the LEMONdB.date,
+        # author and hostname properties, which we have just set above.
 
-    output_db.date = time.time()
-    output_db.author = pwd.getpwuid(os.getuid())[0]
-    output_db.hostname = socket.gethostname()
-    output_db.commit()
-
-    # Use as unique identifier of the LEMONdB a 32-digit hexadecimal number:
-    # the MD5 hash of the concatenation, in this order, of the LEMONdB.date,
-    # author and hostname properties, which we have just set above.
-
-    md5 = hashlib.md5()
-    md5.update(str(output_db.date))
-    md5.update(str(output_db.author))
-    md5.update(str(output_db.hostname))
-    output_db.id = md5.hexdigest()
-    output_db.commit()
+        md5 = hashlib.md5()
+        md5.update(str(output_db.date))
+        md5.update(str(output_db.author))
+        md5.update(str(output_db.hostname))
+        output_db.id = md5.hexdigest()
+        output_db.commit()
 
     util.owner_writable(output_db_path, False)  # chmod u-w
     print "%sYou're done ^_^" % style.prefix
