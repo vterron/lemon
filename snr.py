@@ -42,7 +42,7 @@ def snr_to_error(snr):
     Henden and Ronald H. Kaitchuc [1982, page 79]
 
     The domain of the formula is the set of all non-negative numbers, as the
-    base-10 logarithm of zero or a negative value cannot be calculated. This,
+    base-10 logarithm of zero or a negative value cannot be calculated. Thus,
     ValueError is raised if the signal-to-noise ratio is not above one.
 
     """
