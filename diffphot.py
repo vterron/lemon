@@ -35,11 +35,14 @@ Briefly, the approach followed to compute each light curve consists in (a)
 identifying the most constant stars in the field, (b) computing an artificial
 comparison star by taking the weighted mean of the instrumental magnitudes of
 these constant stars, using weights inversely proportional to their standard
-deviations and, lastly, (c) comparing the instrumental magnitude of our star to
-that of the comparison star. In this last step we subtract the magnitude of the
-star from that of the comparison star: in this manner, positive values mean
-that the former is brighter than the latter.
+deviations and (c) subtracting the magnitude of the artificial comparison star
+from that of our star. This, along with the fact that magnitudes become lower
+the brighter astronomical objects appear, implies that:
 
+ (1) Negative values in the light curve mean mean that our star is brighter
+     than the artificial comparison star, and
+ (2) A decreasing differental magnitude in the light curve means that our
+     star appears brighter.
 """
 
 import copy
