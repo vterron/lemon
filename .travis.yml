@@ -8,7 +8,7 @@ python:
 env:
   global:
     - WASP10_DATA=$HOME/WASP10_data
-    - secure: he7Pc9wLoKddJ+FDgzyiiNrlGjeelLX16SUhCniLLev1Dsdvyy0wKL7HBEstrJjfTL2rVg2p2rR07bcC0TWXTAGxhbOIw+rddN+cZr50oWvs43Xru0kX0esErm0KmrxNpoqK7I090RmhN7BBk/uVuVpIDW4E3cKmrwCQQ7Jh3Gc=
+    - secure: "EEA1YcB7rIBu5jQipl89lGxmRvk1IZ158i0J1PC1L7tFaq6hK7g1nf4rJWjrwYBS4gZT8z1fA8eiP3KJ8hRmh4S9cYq6FD/PpwknFo2QysoUrS2d2XxK92nfJSkjJ7Gx5F1fVqtqITda5uJwhEVGZdgkCFv5JGvJcdGWHZVyNAc="
 
 virtualenv:
   system_site_packages: true
